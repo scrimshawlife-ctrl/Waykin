@@ -4,6 +4,24 @@
 
 A movement-driven experience engine where persistent companions change how real-world activity feels.
 
+## Validation
+
+The canonical validation harness is the single source of truth:
+
+```bash
+make validate
+# or
+./scripts/validate.sh
+```
+
+This runs:
+- Tool version checks
+- `xcodegen generate`
+- `swift build`
+- `swift test`
+
+See `KNOWN_LIMITATIONS.md` for gates that remain unverified until full simulator execution.
+
 ## Build & Run (Swift Package)
 
 ```bash
