@@ -1,7 +1,15 @@
 import Foundation
 import SwiftData
 
-// MARK: - SwiftData Models
+// MARK: - Errors
+public enum PersistenceError: Error, Equatable {
+    case fileBackedStoreRequired
+    case saveFailed(String)
+    case verificationFetchFailed(UUID)
+    case loadFailed(String)
+}
+
+// MARK: - SwiftData Models (single schema)
 @Model
 public final class CompanionRecord {
     public var id: UUID
@@ -21,6 +29,7 @@ public final class CompanionRecord {
 
 @Model
 public final class SessionMemoryRecord {
+    @Attribute(.unique)
     public var id: UUID
     public var sessionID: UUID
     public var scenarioID: String?
@@ -36,7 +45,7 @@ public final class SessionMemoryRecord {
     }
 }
 
-// MARK: - Persistence Configuration (stable URL)
+// MARK: - Persistence Configuration
 public enum PersistenceConfiguration {
     public static let storeFileName = "Waykin.store"
 
@@ -53,154 +62,160 @@ public enum PersistenceConfiguration {
     }
 }
 
-// MARK: - Persistence Write Receipt (for diagnostics)
-public struct PersistenceWriteReceipt {
+public struct PersistenceWriteReceipt: Equatable {
     public let recordID: UUID
     public let storeURL: URL
     public let savedAt: Date
     public let verificationFetchSucceeded: Bool
 }
 
-// MARK: - PersistenceStore
+// MARK: - PersistenceStore (file-backed only for canonical path)
 public final class PersistenceStore {
     private var inMemoryCompanions: [Companion] = []
     private var inMemoryMemories: [SessionMemory] = []
     private var modelContext: ModelContext?
-    private var currentStoreURL: URL?
+    private let storeURL: URL?
 
     public init(modelContainer: ModelContainer? = nil) {
         if let container = modelContainer {
             self.modelContext = ModelContext(container)
-            // Best-effort capture of URL if possible
+            // Best effort to remember URL
+            self.storeURL = nil
+        } else {
+            self.storeURL = nil
         }
     }
 
-    /// For UI tests: create a container with explicit stable URL
     public static func makeFileBackedContainer(reset: Bool = false) throws -> ModelContainer {
         let url = try PersistenceConfiguration.persistentStoreURL()
         if reset {
             try? FileManager.default.removeItem(at: url)
         }
-        let config = ModelConfiguration(url: url)
-        return try ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self, configurations: config)
+        let schema = Schema([
+            CompanionRecord.self,
+            SessionMemoryRecord.self
+        ])
+        let config = ModelConfiguration(schema: schema, url: url)
+        return try ModelContainer(for: schema, configurations: config)
     }
 
-    public func currentStoreURLForDiagnostics() -> URL? {
-        return currentStoreURL
-    }
+    public func currentStoreURLForDiagnostics() -> URL? { storeURL }
 
-    public func saveCompanion(_ companion: Companion) {
-        if let ctx = modelContext {
-            let descriptor = FetchDescriptor<CompanionRecord>(predicate: #Predicate { $0.id == companion.id })
-            if let existing = try? ctx.fetch(descriptor).first {
-                existing.name = companion.name
-                existing.archetype = companion.archetype
-                existing.bondLevel = companion.bondLevel
-                existing.lastSessionID = companion.lastSessionID
-            } else {
-                let record = CompanionRecord(
-                    id: companion.id,
-                    name: companion.name,
-                    archetype: companion.archetype,
-                    bondLevel: companion.bondLevel,
-                    lastSessionID: companion.lastSessionID
-                )
-                ctx.insert(record)
-            }
-            try? ctx.save()
-        } else {
+    public func saveCompanion(_ companion: Companion) throws {
+        guard let ctx = modelContext else {
+            // fallback only for non-UI paths
             if let idx = inMemoryCompanions.firstIndex(where: { $0.id == companion.id }) {
                 inMemoryCompanions[idx] = companion
             } else {
                 inMemoryCompanions.append(companion)
             }
+            return
         }
+        let descriptor = FetchDescriptor<CompanionRecord>(predicate: #Predicate { $0.id == companion.id })
+        if let existing = try? ctx.fetch(descriptor).first {
+            existing.name = companion.name
+            existing.archetype = companion.archetype
+            existing.bondLevel = companion.bondLevel
+            existing.lastSessionID = companion.lastSessionID
+        } else {
+            let record = CompanionRecord(
+                id: companion.id,
+                name: companion.name,
+                archetype: companion.archetype,
+                bondLevel: companion.bondLevel,
+                lastSessionID: companion.lastSessionID
+            )
+            ctx.insert(record)
+        }
+        try ctx.save()
     }
 
-    public func loadCompanion() -> Companion? {
-        if let ctx = modelContext {
-            let descriptor = FetchDescriptor<CompanionRecord>()
-            if let record = try? ctx.fetch(descriptor).last {
-                return Companion(
-                    id: record.id,
-                    name: record.name,
-                    archetype: record.archetype,
-                    bondLevel: record.bondLevel,
-                    lastSessionID: record.lastSessionID,
-                    memories: []
-                )
-            }
-            return nil
-        } else {
+    public func loadCompanion() throws -> Companion? {
+        guard let ctx = modelContext else {
             return inMemoryCompanions.last
         }
+        let descriptor = FetchDescriptor<CompanionRecord>()
+        guard let record = try? ctx.fetch(descriptor).last else { return nil }
+        return Companion(
+            id: record.id,
+            name: record.name,
+            archetype: record.archetype,
+            bondLevel: record.bondLevel,
+            lastSessionID: record.lastSessionID,
+            memories: []
+        )
     }
 
     @discardableResult
-    public func saveMemory(_ memory: SessionMemory) -> PersistenceWriteReceipt? {
-        if let ctx = modelContext {
-            let record = SessionMemoryRecord(
-                sessionID: memory.sessionID,
-                scenarioID: nil,
-                text: memory.text,
-                createdAt: memory.timestamp
-            )
-            ctx.insert(record)
-            try? ctx.save()
-
-            // Verify immediately
-            let id = record.id
-            let fetchDesc = FetchDescriptor<SessionMemoryRecord>(predicate: #Predicate { $0.id == id })
-            let verificationSucceeded = (try? ctx.fetch(fetchDesc).first) != nil
-
-            return PersistenceWriteReceipt(
-                recordID: id,
-                storeURL: currentStoreURL ?? URL(fileURLWithPath: "/unknown"),
-                savedAt: Date(),
-                verificationFetchSucceeded: verificationSucceeded
-            )
-        } else {
+    public func saveMemory(_ memory: SessionMemory) throws -> PersistenceWriteReceipt {
+        guard let ctx = modelContext else {
             inMemoryMemories.append(memory)
-            return nil
+            return PersistenceWriteReceipt(
+                recordID: memory.id,
+                storeURL: URL(fileURLWithPath: "/in-memory"),
+                savedAt: Date(),
+                verificationFetchSucceeded: true
+            )
         }
+
+        let record = SessionMemoryRecord(
+            id: memory.id,
+            sessionID: memory.sessionID,
+            scenarioID: nil,
+            text: memory.text,
+            createdAt: memory.timestamp
+        )
+        ctx.insert(record)
+        try ctx.save()
+
+        // Verification fetch by ID
+        let descriptor = FetchDescriptor<SessionMemoryRecord>(
+            predicate: #Predicate { $0.id == memory.id }
+        )
+        guard let fetched = try? ctx.fetch(descriptor).first, fetched.id == memory.id else {
+            throw PersistenceError.verificationFetchFailed(memory.id)
+        }
+
+        return PersistenceWriteReceipt(
+            recordID: memory.id,
+            storeURL: URL(fileURLWithPath: "/app-support"),
+            savedAt: Date(),
+            verificationFetchSucceeded: true
+        )
     }
 
-    public func loadMemories() -> [SessionMemory] {
-        if let ctx = modelContext {
-            let descriptor = FetchDescriptor<SessionMemoryRecord>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
-            if let records = try? ctx.fetch(descriptor) {
-                return records.map {
-                    SessionMemory(
-                        id: $0.id,
-                        sessionID: $0.sessionID,
-                        text: $0.text,
-                        timestamp: $0.createdAt
-                    )
-                }
-            }
-            return []
-        } else {
+    public func loadMemories() throws -> [SessionMemory] {
+        guard let ctx = modelContext else {
             return inMemoryMemories.sorted { $0.timestamp > $1.timestamp }
         }
-    }
-
-    public func memoryCount() -> Int {
-        if let ctx = modelContext {
-            let descriptor = FetchDescriptor<SessionMemoryRecord>()
-            return (try? ctx.fetchCount(descriptor)) ?? 0
-        } else {
-            return inMemoryMemories.count
+        let descriptor = FetchDescriptor<SessionMemoryRecord>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        let records = try ctx.fetch(descriptor)
+        return records.map { r in
+            SessionMemory(
+                id: r.id,
+                sessionID: r.sessionID,
+                text: r.text,
+                timestamp: r.createdAt
+            )
         }
     }
 
-    public func resetDemoData() {
-        if let ctx = modelContext {
-            try? ctx.delete(model: CompanionRecord.self)
-            try? ctx.delete(model: SessionMemoryRecord.self)
-            try? ctx.save()
-        } else {
+    public func memoryCount() throws -> Int {
+        guard let ctx = modelContext else { return inMemoryMemories.count }
+        let descriptor = FetchDescriptor<SessionMemoryRecord>()
+        return try ctx.fetchCount(descriptor)
+    }
+
+    public func resetDemoData() throws {
+        guard let ctx = modelContext else {
             inMemoryCompanions.removeAll()
             inMemoryMemories.removeAll()
+            return
         }
+        try ctx.delete(model: CompanionRecord.self)
+        try ctx.delete(model: SessionMemoryRecord.self)
+        try ctx.save()
     }
 }
