@@ -1,12 +1,18 @@
-# Waykin
+<p align="center">
+  <img src="docs/assets/hero/waykin-hero-banner.png" alt="Waykin concept banner showing a traveler and luminous companion on a trail at dawn" width="100%">
+</p>
 
-**Minimum Proof of Concept (MPOC)**
+<h1 align="center">Waykin</h1>
 
-A movement-driven experience platform where companions, rivals, and pursuers react to how you move through the real world.
+<p align="center">
+  <strong>Movement becomes adventure.</strong>
+</p>
 
-> Movement is the input. Experience, memory, and story are the output.
+<p align="center">
+  A movement-driven experience platform where companions, rivals, and pursuers react to how you move through the real world.
+</p>
 
-**Current status:** Package validated. Simulator smoke validated. Real Core Location path implemented. Physical-device walk validation pending (see docs).
+> **Concept visual:** The hero artwork illustrates the product direction and is not current application footage.
 
 ## Quick Start
 
@@ -48,22 +54,26 @@ The same core engines drive both simulated Demo Mode and real-device sessions.
 
 Three deterministic Experience Packs are implemented:
 
-### Companion Walk
-- Calm movement with companion presence
-- Bond growth and memory progression
-- Day / night tone adaptation
+| Companion Walk | Orc Pursuit | Future Self |
+|---|---|---|
+| ![Companion Walk](docs/assets/experiences/companion-walk-card.png) | ![Orc Pursuit](docs/assets/experiences/orc-pursuit-card.png) | ![Future Self](docs/assets/experiences/future-self-card.png) |
+| Calm companionship and exploration | Adaptive pursuit pressure | A stronger version of you stays ahead |
 
-### Orc Pursuit
-- Pursuit pressure that changes with movement
-- Threat increases when stopped
-- Deterministic simulated outcomes
+*Concept visuals — illustrate intended experience direction. Not current application footage.*
 
-### Future Self
-- Adaptive rival that matches or leads your pace
-- Catch-window mechanics
-- Pace comparison feedback
+**Experience Pack Overview**
+
+![Experience Pack Overview](docs/assets/experiences/experience-pack-overview.png)
+
+Appearance + behavior + rules + progression
 
 All experiences use the canonical MovementEngine and produce SessionMemory records.
+
+## How It Works (Concept)
+
+![Movement to Memory](docs/assets/diagrams/movement-to-memory.png)
+
+*Concept visual — Movement becomes adaptive experience, persistent memory, and shared story.*
 
 ## Supported Surfaces (Observed)
 
@@ -109,6 +119,10 @@ See `DEMO_SCRIPT.md` for exact terminal and UI flows.
 
 ## Architecture
 
+![Waykin Architecture Diagram](docs/assets/diagrams/waykin-architecture.png)
+
+*Engineering diagram — based on the current repository implementation.*
+
 High-level data flow (proven in package + simulator):
 
 ```
@@ -133,32 +147,11 @@ Major boundaries:
 
 Full details: `ARCHITECTURE.md`
 
-## Repository Map
+## Validation Pipeline
 
-```
-Waykin/
-├── App/                        # SwiftUI + SwiftData app shell
-├── Sources/WaykinCore/
-│   ├── Domain/
-│   ├── Engines/                # Movement, Experience, Companion, Recommendation
-│   ├── Experiences/            # CompanionWalk, OrcPursuit, FutureSelf
-│   ├── Location/               # RealLocationProvider
-│   └── Persistence/
-├── Tests/                      # Package unit tests (17)
-├── WaykinUITests/              # Simulator UI smoke tests
-├── scripts/
-│   ├── validate.sh
-│   └── validate_simulator.sh
-├── docs/
-│   └── PHYSICAL_DEVICE_WALK_VALIDATION.md
-├── Makefile
-├── project.yml
-├── DEMO_SCRIPT.md
-├── KNOWN_LIMITATIONS.md
-└── ARCHITECTURE.md
-```
+![Validation Pipeline](docs/assets/diagrams/validation-pipeline.png)
 
-## Validation
+*Engineering diagram — current observed state.*
 
 Canonical commands (verified):
 
@@ -216,8 +209,6 @@ Simulator-valid MPOC
 → Audio-first behavior
 → Wearables and glasses adapters
 ```
-
-See `ROADMAP.md` if present in broader context; current engineering frontier is physical-device evidence.
 
 ## Safety and Privacy
 
