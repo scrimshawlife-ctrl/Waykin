@@ -28,6 +28,16 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: WaykinApp
+  WaykinUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - WaykinUITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: WaykinApp
 packages:
   WaykinCore:
     path: .
@@ -40,5 +50,6 @@ schemes:
     test:
       targets:
         - WaykinTests
+        - WaykinUITests
     run:
       config: Debug
