@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-// SwiftData models (visible to iOS app target)
+// MARK: - SwiftData Models
 @Model
 public final class CompanionRecord {
     public var id: UUID
@@ -36,21 +36,61 @@ public final class SessionMemoryRecord {
     }
 }
 
-// PersistenceStore supports both SwiftData (for iOS app) and in-memory (for package/CLI/tests)
+// MARK: - Persistence Configuration (stable URL)
+public enum PersistenceConfiguration {
+    public static let storeFileName = "Waykin.store"
+
+    public static func persistentStoreURL(fileManager: FileManager = .default) throws -> URL {
+        let appSupport = try fileManager.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        let waykinDir = appSupport.appendingPathComponent("Waykin", isDirectory: true)
+        try fileManager.createDirectory(at: waykinDir, withIntermediateDirectories: true)
+        return waykinDir.appendingPathComponent(storeFileName)
+    }
+}
+
+// MARK: - Persistence Write Receipt (for diagnostics)
+public struct PersistenceWriteReceipt {
+    public let recordID: UUID
+    public let storeURL: URL
+    public let savedAt: Date
+    public let verificationFetchSucceeded: Bool
+}
+
+// MARK: - PersistenceStore
 public final class PersistenceStore {
     private var inMemoryCompanions: [Companion] = []
     private var inMemoryMemories: [SessionMemory] = []
     private var modelContext: ModelContext?
+    private var currentStoreURL: URL?
 
     public init(modelContainer: ModelContainer? = nil) {
         if let container = modelContainer {
             self.modelContext = ModelContext(container)
+            // Best-effort capture of URL if possible
         }
+    }
+
+    /// For UI tests: create a container with explicit stable URL
+    public static func makeFileBackedContainer(reset: Bool = false) throws -> ModelContainer {
+        let url = try PersistenceConfiguration.persistentStoreURL()
+        if reset {
+            try? FileManager.default.removeItem(at: url)
+        }
+        let config = ModelConfiguration(url: url)
+        return try ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self, configurations: config)
+    }
+
+    public func currentStoreURLForDiagnostics() -> URL? {
+        return currentStoreURL
     }
 
     public func saveCompanion(_ companion: Companion) {
         if let ctx = modelContext {
-            // Upsert CompanionRecord
             let descriptor = FetchDescriptor<CompanionRecord>(predicate: #Predicate { $0.id == companion.id })
             if let existing = try? ctx.fetch(descriptor).first {
                 existing.name = companion.name
@@ -96,16 +136,32 @@ public final class PersistenceStore {
         }
     }
 
-    public func saveMemory(_ memory: SessionMemory) {
+    @discardableResult
+    public func saveMemory(_ memory: SessionMemory) -> PersistenceWriteReceipt? {
         if let ctx = modelContext {
             let record = SessionMemoryRecord(
                 sessionID: memory.sessionID,
-                text: memory.text
+                scenarioID: nil,
+                text: memory.text,
+                createdAt: memory.timestamp
             )
             ctx.insert(record)
             try? ctx.save()
+
+            // Verify immediately
+            let id = record.id
+            let fetchDesc = FetchDescriptor<SessionMemoryRecord>(predicate: #Predicate { $0.id == id })
+            let verificationSucceeded = (try? ctx.fetch(fetchDesc).first) != nil
+
+            return PersistenceWriteReceipt(
+                recordID: id,
+                storeURL: currentStoreURL ?? URL(fileURLWithPath: "/unknown"),
+                savedAt: Date(),
+                verificationFetchSucceeded: verificationSucceeded
+            )
         } else {
             inMemoryMemories.append(memory)
+            return nil
         }
     }
 
@@ -113,11 +169,27 @@ public final class PersistenceStore {
         if let ctx = modelContext {
             let descriptor = FetchDescriptor<SessionMemoryRecord>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
             if let records = try? ctx.fetch(descriptor) {
-                return records.map { SessionMemory(sessionID: $0.sessionID, text: $0.text) }
+                return records.map {
+                    SessionMemory(
+                        id: $0.id,
+                        sessionID: $0.sessionID,
+                        text: $0.text,
+                        timestamp: $0.createdAt
+                    )
+                }
             }
             return []
         } else {
             return inMemoryMemories.sorted { $0.timestamp > $1.timestamp }
+        }
+    }
+
+    public func memoryCount() -> Int {
+        if let ctx = modelContext {
+            let descriptor = FetchDescriptor<SessionMemoryRecord>()
+            return (try? ctx.fetchCount(descriptor)) ?? 0
+        } else {
+            return inMemoryMemories.count
         }
     }
 

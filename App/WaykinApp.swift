@@ -10,6 +10,13 @@ enum AppRoute: Hashable {
     case memoryHistory
 }
 
+enum PersistenceLoadState: String, Equatable {
+    case idle
+    case loading
+    case loaded
+    case failed
+}
+
 @main
 struct WaykinApp: App {
     @State private var appModel = WaykinAppModel()
@@ -54,31 +61,56 @@ final class WaykinAppModel {
     var selectedTimeContext: String = "day"
     var path = NavigationPath()
 
+    // Persistence diagnostics (exposed for UI tests)
+    var persistenceMode: String = "UNKNOWN"
+    var persistenceLoadState: PersistenceLoadState = .idle
+    var persistenceMemoryCount: Int = 0
+    var lastSavedMemoryID: String = ""
+    var memories: [SessionMemory] = []
+
     init() {
         let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
-        let shouldReset = ProcessInfo.processInfo.arguments.contains("-WAYKIN_RESET_STATE")
+        let shouldResetArg = ProcessInfo.processInfo.arguments
+        let shouldReset = shouldResetArg.contains("-WAYKIN_RESET_STATE") && 
+                          !shouldResetArg.contains("-WAYKIN_RESET_STATE NO")
+
+        persistenceLoadState = .loading
 
         var container: ModelContainer?
         do {
-            let url = URL.applicationSupportDirectory.appendingPathComponent("Waykin.store")
-            if shouldReset || isUITesting {
-                try? FileManager.default.removeItem(at: url)
+            if isUITesting {
+                // UI tests must use file-backed store
+                container = try PersistenceStore.makeFileBackedContainer(reset: shouldReset)
+                persistenceMode = "FILE_BACKED"
+            } else {
+                let url = try PersistenceConfiguration.persistentStoreURL()
+                let config = ModelConfiguration(url: url)
+                container = try ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self, configurations: config)
+                persistenceMode = "FILE_BACKED"
             }
-            let config = ModelConfiguration(url: url)
-            container = try ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self, configurations: config)
         } catch {
-            print("SwiftData container creation failed, falling back to in-memory")
+            print("SwiftData file-backed init failed: \(error)")
+            // In UI testing we must not silently fall back
+            if isUITesting {
+                persistenceMode = "FAILED_FILE_BACKED"
+            } else {
+                persistenceMode = "IN_MEMORY_FALLBACK"
+            }
         }
 
         if let c = container {
             self.persistenceStore = PersistenceStore(modelContainer: c)
         } else {
             self.persistenceStore = PersistenceStore()
+            if isUITesting {
+                persistenceMode = "FAILED_FILE_BACKED"
+            }
         }
 
         self.demoController = DemoSessionController(movementEngine: movementEngine)
 
-        if shouldReset || isUITesting {
+        // Only reset when explicitly requested
+        if shouldReset {
             persistenceStore.resetDemoData()
         }
 
@@ -86,10 +118,15 @@ final class WaykinAppModel {
             var c = loaded
             c.memories = persistenceStore.loadMemories()
             self.companion = c
+            self.memories = c.memories
         } else {
             self.companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
             persistenceStore.saveCompanion(self.companion)
+            self.memories = []
         }
+
+        persistenceMemoryCount = persistenceStore.memoryCount()
+        persistenceLoadState = .loaded
         refreshRecommendation()
     }
 
@@ -127,15 +164,23 @@ final class WaykinAppModel {
             var updated = companion
             updated.bondLevel += result.bondDelta
             let mem = SessionMemory(sessionID: summary.sessionID, text: result.memoryText)
-            updated.memories.append(mem)
+
+            // Save and verify durability before navigation
+            let receipt = persistenceStore.saveMemory(mem)
             persistenceStore.saveCompanion(updated)
-            persistenceStore.saveMemory(mem)
+
+            updated.memories.append(mem)
             companion = updated
             lastSummary = summary
             demoMessage = "Session ended: \(result.outcome). Bond +\(result.bondDelta)"
+
+            if let r = receipt {
+                lastSavedMemoryID = r.recordID.uuidString
+            }
+            persistenceMemoryCount = persistenceStore.memoryCount()
             refreshRecommendation()
 
-            // Deterministic navigation to summary after persistence
+            // Only navigate after save
             path.append(AppRoute.summary(summary.id))
         }
     }
@@ -146,6 +191,8 @@ final class WaykinAppModel {
         persistenceStore.saveCompanion(companion)
         lastSummary = nil
         demoMessage = "Data reset"
+        persistenceMemoryCount = 0
+        lastSavedMemoryID = ""
         path = NavigationPath()
     }
 
@@ -154,7 +201,7 @@ final class WaykinAppModel {
     }
 }
 
-// MARK: - Views
+// MARK: - Views (minimal changes for diagnostics)
 
 struct HomeView: View {
     @Bindable var appModel: WaykinAppModel
@@ -188,6 +235,18 @@ struct HomeView: View {
             }
             .accessibilityIdentifier("waykin.memory.open")
 
+            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                VStack {
+                    Text("Persistence: \(appModel.persistenceMode)")
+                        .accessibilityIdentifier("waykin.persistence.mode")
+                    Text("State: \(appModel.persistenceLoadState.rawValue)")
+                        .accessibilityIdentifier("waykin.persistence.state")
+                    Text("MemCount: \(appModel.persistenceMemoryCount)")
+                        .accessibilityIdentifier("waykin.persistence.memoryCount")
+                }
+                .font(.caption2)
+            }
+
             Divider()
 
             Text("Time Context (for testing)")
@@ -199,18 +258,6 @@ struct HomeView: View {
             if !appModel.demoMessage.isEmpty {
                 Text(appModel.demoMessage)
             }
-
-            if let summary = appModel.lastSummary {
-                VStack {
-                    Text("Last Summary: \(summary.outcome) • +\(summary.bondDelta) bond")
-                    Text(summary.memory.text).font(.caption2)
-                }
-            }
-
-            Button("Reset Demo Data") {
-                appModel.resetDemoData()
-            }
-            .foregroundStyle(.red)
         }
         .padding()
     }
@@ -250,7 +297,6 @@ struct ActiveSessionView: View {
             Text("Status: \(ps.statusText)")
                 .accessibilityIdentifier("waykin.session.elapsed")
 
-            // MapKit
             let center = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
             Map(coordinateRegion: .constant(MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))))
                 .frame(height: 220)
@@ -271,11 +317,6 @@ struct ActiveSessionView: View {
                 .accessibilityIdentifier("waykin.session.experienceState")
         }
         .padding()
-        .onAppear {
-            if !appModel.demoController.isRunning {
-                // startDemo already pushed the route in the model
-            }
-        }
     }
 }
 
@@ -319,11 +360,20 @@ struct MemoryHistoryView: View {
                 .font(.title)
                 .accessibilityIdentifier("waykin.memory.screen")
 
-            List(appModel.companion.memories, id: \.id) { mem in
-                Text(mem.text)
-                    .accessibilityIdentifier("waykin.memory.item")
+            if appModel.memories.isEmpty {
+                Text("No memories yet")
+                    .accessibilityIdentifier("waykin.memory.empty")
+            } else {
+                List(appModel.memories, id: \.id) { mem in
+                    Text(mem.text)
+                        .accessibilityIdentifier("waykin.memory.item.\(mem.id.uuidString)")
+                }
             }
         }
         .padding()
+        .onAppear {
+            appModel.memories = appModel.persistenceStore.loadMemories()
+            appModel.persistenceMemoryCount = appModel.persistenceStore.memoryCount()
+        }
     }
 }
