@@ -17,14 +17,18 @@ Expected output shows:
 
 ## Full iOS Flow (in Xcode)
 
-1. Create new iOS App project
-2. Drag Sources/WaykinCore into the project
-3. Implement SwiftUI views using the provided stubs in App/
-4. Use MovementEngine in a @ObservableObject
-5. Wire experiences as plugins
-6. Use SwiftData for Companion + Memories
-7. Add MapKit for PHONE_MAP presentation
-8. RealityKit for PHONE_AR (stub provided)
+1. `make generate`
+2. Open the generated `Waykin.xcodeproj`
+3. Select the Waykin scheme and an iPhone Simulator
+4. Run the application
+5. Use Demo Scenarios or the real-walk entry point
+
+The project already wires:
+- MovementEngine
+- Experience Packs
+- SwiftData for Companion + Memories (file-backed in UI tests)
+- MapKit for active session
+- RealLocationProvider path (physical device required for live GPS)
 
 ## Permission Handling
 
