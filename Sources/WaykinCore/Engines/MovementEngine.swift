@@ -1,4 +1,10 @@
 import Foundation
+import CoreLocation
+
+public enum MovementError: Error, Equatable {
+    case noActiveSession
+    case sessionAlreadyActive
+}
 
 public protocol LocationProviding {
     func requestAuthorization()
@@ -21,16 +27,17 @@ public final class SystemClock: ClockProviding {
 }
 
 public protocol MovementSessionManaging {
-    func startSession(activity: ActivityType, experienceID: String) -> MovementSession
-    func pauseSession()
-    func resumeSession()
-    func endSession() -> MovementSession
-    func simulateMovement(for session: inout MovementSession, deltaSeconds: TimeInterval, speed: Double)
     var currentSession: MovementSession? { get }
+    func startSession(activity: ActivityType, experienceID: String) throws
+    func pauseSession() throws
+    func resumeSession() throws
+    func endSession() throws -> MovementSession
+    func simulate(deltaSeconds: TimeInterval, speed: Double)
+    func ingestRealLocation(_ point: RoutePoint)
 }
 
 public final class MovementEngine: MovementSessionManaging {
-    private var session: MovementSession?
+    private(set) public var currentSession: MovementSession?
     private let clock: ClockProviding
     private var lastUpdate: Date?
 
@@ -38,76 +45,82 @@ public final class MovementEngine: MovementSessionManaging {
         self.clock = clock ?? SystemClock()
     }
 
-    public var currentSession: MovementSession? { session }
-
-    public func startSession(activity: ActivityType, experienceID: String) -> MovementSession {
+    public func startSession(activity: ActivityType, experienceID: String) throws {
+        if currentSession != nil {
+            throw MovementError.sessionAlreadyActive
+        }
         let newSession = MovementSession(activityType: activity, experienceID: experienceID)
-        self.session = newSession
-        self.lastUpdate = clock.now
-        return newSession
+        currentSession = newSession
+        lastUpdate = clock.now
     }
 
-    public func pauseSession() {
-        guard var s = session else { return }
+    public func pauseSession() throws {
+        guard var s = currentSession else { throw MovementError.noActiveSession }
         s.movementState = .paused
-        session = s
+        currentSession = s
     }
 
-    public func resumeSession() {
-        guard var s = session else { return }
+    public func resumeSession() throws {
+        guard var s = currentSession else { throw MovementError.noActiveSession }
         s.movementState = .moving
         lastUpdate = clock.now
-        session = s
+        currentSession = s
     }
 
-    public func endSession() -> MovementSession {
-        guard var s = session else { fatalError("No active session") }
+    public func endSession() throws -> MovementSession {
+        guard var s = currentSession else { throw MovementError.noActiveSession }
         s.endedAt = clock.now
         s.movementState = .stopped
-        session = s
-        return s
+        let ended = s
+        currentSession = nil
+        return ended
     }
 
-    public func simulateMovement(for session: inout MovementSession, deltaSeconds: TimeInterval, speed: Double) {
-        guard session.movementState == .moving || session.movementState == .idle else { return }
+    public func simulate(deltaSeconds: TimeInterval, speed: Double) {
+        guard var s = currentSession,
+              s.movementState == .moving || s.movementState == .idle else { return }
 
         let now = clock.now
-        session.elapsedTime += deltaSeconds
-        if speed > 0.1 {
-            session.activeTime += deltaSeconds
-            session.currentSpeedMetersPerSecond = speed
-            let distanceDelta = speed * deltaSeconds
-            session.distanceMeters += distanceDelta
-            session.averageSpeedMetersPerSecond = session.distanceMeters / max(session.activeTime, 0.001)
+        s.elapsedTime += deltaSeconds
 
-            // Add route point (simulated straight line for POC)
-            let lastLat = session.routePoints.last?.latitude ?? 37.7749
-            let lastLon = session.routePoints.last?.longitude ?? -122.4194
+        if speed > 0.1 {
+            s.activeTime += deltaSeconds
+            s.currentSpeedMetersPerSecond = speed
+            let distanceDelta = speed * deltaSeconds
+            s.distanceMeters += distanceDelta
+            s.averageSpeedMetersPerSecond = s.distanceMeters / max(s.activeTime, 0.001)
+
+            let lastLat = s.routePoints.last?.latitude ?? 37.7749
+            let lastLon = s.routePoints.last?.longitude ?? -122.4194
             let newPoint = RoutePoint(
                 timestamp: now,
-                latitude: lastLat + (distanceDelta * 0.00001), // crude
+                latitude: lastLat + (distanceDelta * 0.00001),
                 longitude: lastLon,
                 altitude: 10,
                 speed: speed
             )
-            session.routePoints.append(newPoint)
+            s.routePoints.append(newPoint)
         } else {
-            session.currentSpeedMetersPerSecond = 0
+            s.currentSpeedMetersPerSecond = 0
         }
+
+        s.movementState = speed > 0.1 ? .moving : .paused
         lastUpdate = now
-        session.movementState = speed > 0.1 ? .moving : .paused
+        currentSession = s
     }
 
-    // Real location update would feed here in full app
     public func ingestRealLocation(_ point: RoutePoint) {
-        guard var s = session, s.movementState == .moving else { return }
-        // In real impl, calculate delta from previous
+        guard var s = currentSession, s.movementState == .moving else { return }
+
         s.routePoints.append(point)
-        // Simplified distance calc
+
         if let last = s.routePoints.dropLast().last {
-            let dist = sqrt(pow(point.latitude - last.latitude, 2) + pow(point.longitude - last.longitude, 2)) * 111000 // rough m
+            let clLast = CLLocation(latitude: last.latitude, longitude: last.longitude)
+            let clNew = CLLocation(latitude: point.latitude, longitude: point.longitude)
+            let dist = clLast.distance(from: clNew)
             s.distanceMeters += dist
         }
-        session = s
+
+        currentSession = s
     }
 }

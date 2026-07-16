@@ -15,23 +15,30 @@ public struct CompanionWalkExperience: WaykinExperience {
     public init() {}
 
     public func start(context: ExperienceContext) -> ExperienceSessionState {
-        var state = ExperienceSessionState()
-        state.data["bond"] = "0"
-        state.data["mood"] = context.timeOfDay == "night" ? "calm_guardian" : "curious"
-        state.narrative.append("Your companion falls in step beside you.")
-        return state
+        let state = CompanionWalkState(
+            accumulatedBondProgress: 0,
+            movementSeconds: 0,
+            milestoneIndex: 0,
+            tone: context.timeOfDay == "night" ? "calm_guardian" : "curious"
+        )
+        return ExperienceSessionState(runtimeState: .companionWalk(state))
     }
 
     public func update(previousState: ExperienceSessionState, movement: MovementSnapshot, context: ExperienceContext) -> ExperienceUpdate {
-        var state = previousState
-        var bond = Int(state.data["bond"] ?? "0") ?? 0
-        if movement.isMoving {
-            bond += 1
-            state.data["bond"] = "\(bond)"
+        guard case .companionWalk(var walkState) = previousState.runtimeState else {
+            return ExperienceUpdate(state: previousState, companionCommands: [], audioCues: [], narrativeEvents: [], rewardEvents: [])
         }
+
+        if movement.isMoving {
+            walkState.movementSeconds += 1.0
+            walkState.accumulatedBondProgress += 0.1
+        }
+
+        let newState = ExperienceSessionState(runtimeState: .companionWalk(walkState))
+
         let tone = context.timeOfDay == "night" ? "The stars feel closer tonight." : "Look at that view!"
         return ExperienceUpdate(
-            state: state,
+            state: newState,
             companionCommands: [.showMessage(tone), .setBehavior(movement.isMoving ? "follow" : "observe")],
             audioCues: movement.isMoving ? ["soft footsteps"] : [],
             narrativeEvents: [tone],
@@ -40,16 +47,19 @@ public struct CompanionWalkExperience: WaykinExperience {
     }
 
     public func finish(state: ExperienceSessionState, session: MovementSession) -> ExperienceResult {
-        let bond = Int(state.data["bond"] ?? "0") ?? 0
-        return ExperienceResult(
-            outcome: "COMPLETED",
-            bondDelta: bond / 10,
-            memoryText: "We walked \(Int(session.distanceMeters))m together. Bond grew by \(bond / 10)."
-        )
+        if case .companionWalk(let walkState) = state.runtimeState {
+            let bond = Int(walkState.accumulatedBondProgress)
+            return ExperienceResult(
+                outcome: "COMPLETED",
+                bondDelta: bond / 10,
+                memoryText: "We walked \(Int(session.distanceMeters))m together. Bond grew by \(bond / 10)."
+            )
+        }
+        return ExperienceResult(outcome: "COMPLETED", bondDelta: 1, memoryText: "Walk completed.")
     }
 }
 
-// MARK: - Orc Pursuit
+// MARK: - Orc Pursuit (typed state skeleton, time-based logic to be expanded)
 public struct OrcPursuitExperience: WaykinExperience {
     public var definition: ExperienceDefinition {
         ExperienceDefinition(
@@ -64,34 +74,37 @@ public struct OrcPursuitExperience: WaykinExperience {
     public init() {}
 
     public func start(context: ExperienceContext) -> ExperienceSessionState {
-        var state = ExperienceSessionState()
-        state.data["pursuerDistance"] = "120"
-        state.data["threat"] = "2"
-        state.narrative.append(context.timeOfDay == "night" ? "Torches flicker in the dark." : "You hear war drums.")
-        return state
+        let state = OrcPursuitState(
+            pursuerDistanceMeters: 120,
+            threatLevel: 2,
+            escapeMomentum: 0,
+            pressureTier: 1,
+            nearCaptureCount: 0,
+            elapsedSeconds: 0
+        )
+        return ExperienceSessionState(runtimeState: .orcPursuit(state))
     }
 
     public func update(previousState: ExperienceSessionState, movement: MovementSnapshot, context: ExperienceContext) -> ExperienceUpdate {
-        var state = previousState
-        var dist = Double(state.data["pursuerDistance"] ?? "120") ?? 120
-        var threat = Int(state.data["threat"] ?? "2") ?? 2
-
-        if movement.isMoving && movement.speed > 1.5 {
-            dist += movement.speed * 0.8
-        } else {
-            dist -= 4.0
-            threat = min(10, threat + 1)
+        guard case .orcPursuit(var pursuit) = previousState.runtimeState else {
+            return ExperienceUpdate(state: previousState, companionCommands: [], audioCues: [], narrativeEvents: [], rewardEvents: [])
         }
 
-        state.data["pursuerDistance"] = String(format: "%.0f", max(10, dist))
-        state.data["threat"] = "\(threat)"
+        pursuit.elapsedSeconds += 1.0
 
-        let cmd: CompanionCommand = threat > 7 ? .setThreatLevel(0.9) : .setThreatLevel(0.3)
-        let msg = dist < 30 ? "They're closing fast!" : "Keep the distance."
+        if movement.isMoving && movement.speed > 1.5 {
+            pursuit.pursuerDistanceMeters += movement.speed * 0.8
+        } else {
+            pursuit.pursuerDistanceMeters -= 4.0
+            pursuit.threatLevel = min(10, pursuit.threatLevel + 0.5)
+        }
+
+        let newState = ExperienceSessionState(runtimeState: .orcPursuit(pursuit))
+        let msg = pursuit.pursuerDistanceMeters < 30 ? "They're closing fast!" : "Keep the distance."
 
         return ExperienceUpdate(
-            state: state,
-            companionCommands: [cmd, .showMessage(msg)],
+            state: newState,
+            companionCommands: [.setThreatLevel(pursuit.threatLevel / 10), .showMessage(msg)],
             audioCues: ["heartbeat", "distant drums"],
             narrativeEvents: [msg],
             rewardEvents: []
@@ -99,13 +112,15 @@ public struct OrcPursuitExperience: WaykinExperience {
     }
 
     public func finish(state: ExperienceSessionState, session: MovementSession) -> ExperienceResult {
-        let dist = Double(state.data["pursuerDistance"] ?? "50") ?? 50
-        let outcome = dist > 80 ? "ESCAPED" : (dist < 20 ? "CAUGHT_SIMULATED" : "SURVIVED")
-        return ExperienceResult(outcome: outcome, bondDelta: 2, memoryText: "Orc pursuit ended with \(outcome).")
+        if case .orcPursuit(let pursuit) = state.runtimeState {
+            let outcome = pursuit.pursuerDistanceMeters > 80 ? "ESCAPED" : (pursuit.pursuerDistanceMeters < 20 ? "CAUGHT_SIMULATED" : "SURVIVED")
+            return ExperienceResult(outcome: outcome, bondDelta: 2, memoryText: "Orc pursuit ended with \(outcome).")
+        }
+        return ExperienceResult(outcome: "SURVIVED", bondDelta: 1, memoryText: "Pursuit ended.")
     }
 }
 
-// MARK: - Future Self
+// MARK: - Future Self (typed state skeleton)
 public struct FutureSelfExperience: WaykinExperience {
     public var definition: ExperienceDefinition {
         ExperienceDefinition(
@@ -120,39 +135,45 @@ public struct FutureSelfExperience: WaykinExperience {
     public init() {}
 
     public func start(context: ExperienceContext) -> ExperienceSessionState {
-        var state = ExperienceSessionState()
-        state.data["leadMeters"] = "35"
-        state.data["targetPace"] = "5.5"
-        state.narrative.append("A familiar silhouette pulls ahead.")
-        return state
+        let state = FutureSelfState(
+            targetSpeedMetersPerSecond: 2.8,
+            leadMeters: 35,
+            paceStability: 0,
+            catchWindowActive: false,
+            catchCount: 0,
+            effortTrend: 0
+        )
+        return ExperienceSessionState(runtimeState: .futureSelf(state))
     }
 
     public func update(previousState: ExperienceSessionState, movement: MovementSnapshot, context: ExperienceContext) -> ExperienceUpdate {
-        var state = previousState
-        var lead = Double(state.data["leadMeters"] ?? "35") ?? 35
-
-        if movement.speed > 2.5 {
-            lead = max(5, lead - (movement.speed - 2.0) * 2)
-        } else {
-            lead += 1.5
+        guard case .futureSelf(var fs) = previousState.runtimeState else {
+            return ExperienceUpdate(state: previousState, companionCommands: [], audioCues: [], narrativeEvents: [], rewardEvents: [])
         }
 
-        state.data["leadMeters"] = String(format: "%.0f", lead)
+        if movement.speed > fs.targetSpeedMetersPerSecond {
+            fs.leadMeters = max(5, fs.leadMeters - (movement.speed - fs.targetSpeedMetersPerSecond) * 1.5)
+        } else {
+            fs.leadMeters += 1.2
+        }
 
-        let msg = lead < 15 ? "You're catching up!" : "Stay with the pace."
+        let newState = ExperienceSessionState(runtimeState: .futureSelf(fs))
+        let msg = fs.leadMeters < 15 ? "You're catching up!" : "Stay with the pace."
 
         return ExperienceUpdate(
-            state: state,
+            state: newState,
             companionCommands: [.showMessage(msg), .setBehavior("lead")],
             audioCues: ["encouraging breaths"],
             narrativeEvents: [msg],
-            rewardEvents: lead < 10 ? ["close_window"] : []
+            rewardEvents: fs.leadMeters < 10 ? ["close_window"] : []
         )
     }
 
     public func finish(state: ExperienceSessionState, session: MovementSession) -> ExperienceResult {
-        let lead = Double(state.data["leadMeters"] ?? "30") ?? 30
-        let outcome = lead < 10 ? "CAUGHT_FUTURE_SELF" : "HELD_TARGET_PACE"
-        return ExperienceResult(outcome: outcome, bondDelta: 3, memoryText: "You chased your future self. Ended at \(outcome).")
+        if case .futureSelf(let fs) = state.runtimeState {
+            let outcome = fs.leadMeters < 10 ? "CAUGHT_FUTURE_SELF" : "HELD_TARGET_PACE"
+            return ExperienceResult(outcome: outcome, bondDelta: 3, memoryText: "You chased your future self. Ended at \(outcome).")
+        }
+        return ExperienceResult(outcome: "HELD_TARGET_PACE", bondDelta: 2, memoryText: "Chase completed.")
     }
 }
