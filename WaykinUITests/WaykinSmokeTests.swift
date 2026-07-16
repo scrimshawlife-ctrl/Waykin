@@ -34,12 +34,38 @@ final class WaykinSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.screen").firstMatch.waitForExistence(timeout: 10))
 
-        let memLink = app.buttons["Memory History"]
-        if memLink.waitForExistence(timeout: 3) { memLink.tap() }
+        // Return home to reliably open Memory History from Home
+        let homeBtnAfterSummary = app.buttons.matching(identifier: "waykin.summary.home").firstMatch
+        if homeBtnAfterSummary.waitForExistence(timeout: 3) { homeBtnAfterSummary.tap() }
 
-        // Use any memory row (query-backed)
-        let firstMem = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'waykin.memory.item'")).firstMatch
-        XCTAssertTrue(firstMem.waitForExistence(timeout: 5))
+        // Now open Memory History from Home
+        let memLink = app.buttons["Memory History"]
+        XCTAssertTrue(memLink.waitForExistence(timeout: 5))
+        memLink.tap()
+
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.memory.screen").firstMatch.waitForExistence(timeout: 5))
+
+        // Wait for query diagnostics
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.memory.queryState").firstMatch.waitForExistence(timeout: 5))
+        let stateLabel = app.staticTexts.matching(identifier: "waykin.memory.queryState").firstMatch.label
+        XCTAssertEqual(stateLabel, "POPULATED")
+
+        let countLabel = app.staticTexts.matching(identifier: "waykin.persistence.queryMemoryCount").firstMatch
+        XCTAssertTrue(countLabel.waitForExistence(timeout: 5))
+        XCTAssertTrue(Int(countLabel.label) ?? 0 >= 1)
+
+        let idsLabel = app.staticTexts.matching(identifier: "waykin.persistence.queryMemoryIDs").firstMatch
+        XCTAssertTrue(idsLabel.waitForExistence(timeout: 5))
+        let ids = idsLabel.label
+        XCTAssertFalse(ids.isEmpty)
+
+        // Extract first ID (newest first)
+        let memoryID = ids.components(separatedBy: ",").first ?? ""
+        XCTAssertFalse(memoryID.isEmpty)
+
+        // Assert exact row using the stable identifier from dedicated row
+        let exactRow = app.descendants(matching: .any)["waykin.memory.item.\(memoryID)"]
+        XCTAssertTrue(exactRow.waitForExistence(timeout: 5))
 
         let homeBtn = app.buttons.matching(identifier: "waykin.summary.home").firstMatch
         if homeBtn.waitForExistence(timeout: 3) { homeBtn.tap() }
@@ -56,8 +82,25 @@ final class WaykinSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.memory.screen").firstMatch.waitForExistence(timeout: 5))
 
-        let restored = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH 'waykin.memory.item'")).firstMatch
-        XCTAssertTrue(restored.waitForExistence(timeout: 10))
+        // Wait for query populated after relaunch
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.memory.queryState").firstMatch.waitForExistence(timeout: 5))
+        let relaunchState = app.staticTexts.matching(identifier: "waykin.memory.queryState").firstMatch.label
+        XCTAssertEqual(relaunchState, "POPULATED")
+
+        let relaunchCount = app.staticTexts.matching(identifier: "waykin.persistence.queryMemoryCount").firstMatch
+        XCTAssertTrue(relaunchCount.waitForExistence(timeout: 5))
+        XCTAssertTrue(Int(relaunchCount.label) ?? 0 >= 1)
+
+        let relaunchIDs = app.staticTexts.matching(identifier: "waykin.persistence.queryMemoryIDs").firstMatch
+        XCTAssertTrue(relaunchIDs.waitForExistence(timeout: 5))
+        XCTAssertTrue(relaunchIDs.label.contains(memoryID))
+
+        // Assert the exact row after relaunch
+        let restoredRow = app.descendants(matching: .any)["waykin.memory.item.\(memoryID)"]
+        if !restoredRow.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(restoredRow.waitForExistence(timeout: 10))
     }
 
     func testDayAndNightRecommendationsDiffer() {
