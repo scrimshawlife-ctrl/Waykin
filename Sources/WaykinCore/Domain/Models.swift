@@ -74,12 +74,44 @@ public struct MovementSession: Codable, Identifiable {
     }
 }
 
+// MARK: - Typed Experience State (replaces stringly-typed data)
+public enum ExperienceRuntimeState: Codable, Equatable {
+    case companionWalk(CompanionWalkState)
+    case orcPursuit(OrcPursuitState)
+    case futureSelf(FutureSelfState)
+}
+
+public struct CompanionWalkState: Codable, Equatable {
+    public var accumulatedBondProgress: Double
+    public var movementSeconds: TimeInterval
+    public var milestoneIndex: Int
+    public var tone: String
+}
+
+public struct OrcPursuitState: Codable, Equatable {
+    public var pursuerDistanceMeters: Double
+    public var threatLevel: Double
+    public var escapeMomentum: Double
+    public var pressureTier: Int
+    public var nearCaptureCount: Int
+    public var elapsedSeconds: TimeInterval
+}
+
+public struct FutureSelfState: Codable, Equatable {
+    public var targetSpeedMetersPerSecond: Double
+    public var leadMeters: Double
+    public var paceStability: Double
+    public var catchWindowActive: Bool
+    public var catchCount: Int
+    public var effortTrend: Double
+}
+
 public struct ExperienceSessionState: Codable {
-    public var data: [String: String] = [:]
+    public var runtimeState: ExperienceRuntimeState?
     public var narrative: [String] = []
 
-    public init(data: [String : String] = [:], narrative: [String] = []) {
-        self.data = data
+    public init(runtimeState: ExperienceRuntimeState? = nil, narrative: [String] = []) {
+        self.runtimeState = runtimeState
         self.narrative = narrative
     }
 }

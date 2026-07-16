@@ -23,8 +23,8 @@ case "future_self": exp = FutureSelfExperience()
 default: exp = CompanionWalkExperience()
 }
 
-var session = movement.startSession(activity: ActivityType.walk, experienceID: chosenExpID)
-print("\nStarted \(session.activityType) with \(chosenExpID)")
+try! movement.startSession(activity: ActivityType.walk, experienceID: chosenExpID)
+print("\nStarted walk with \(chosenExpID)")
 
 let context = ExperienceContext(timeOfDay: "night", activity: ActivityType.walk)
 var expState = exp.start(context: context)
@@ -33,8 +33,9 @@ var companionRuntime = CompanionRuntime()
 print("\nSimulating movement...")
 for tick in 1...10 {
     let speed = tick < 4 ? 1.2 : (tick > 7 ? 0.3 : 2.8)
-    movement.simulateMovement(for: &session, deltaSeconds: 12, speed: speed)
+    movement.simulate(deltaSeconds: 12, speed: speed)
 
+    guard let session = movement.currentSession else { break }
     let snapshot = MovementSnapshot(
         timestamp: Date(),
         speed: session.currentSpeedMetersPerSecond,
@@ -54,7 +55,7 @@ for tick in 1...10 {
     }
 }
 
-let finalSession = movement.endSession()
+let finalSession = try! movement.endSession()
 let result = exp.finish(state: expState, session: finalSession)
 print("\nSession ended. Outcome: \(result.outcome)")
 

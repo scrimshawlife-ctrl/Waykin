@@ -1,0 +1,40 @@
+name: Waykin
+options:
+  bundleIdPrefix: com.waykin
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  WaykinApp:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Sources/WaykinCore
+    settings:
+      base:
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Waykin needs location to track your movement during sessions."
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: "YES"
+    dependencies:
+      - package: WaykinCore
+  WaykinTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: WaykinApp
+packages:
+  WaykinCore:
+    path: .
+    product: WaykinCore
+schemes:
+  Waykin:
+    build:
+      targets:
+        WaykinApp: all
+    test:
+      targets:
+        - WaykinTests
+    run:
+      config: Debug
