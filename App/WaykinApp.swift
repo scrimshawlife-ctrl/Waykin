@@ -3,14 +3,37 @@ import WaykinCore
 import MapKit
 import SwiftData
 
+enum AppRoute: Hashable {
+    case demoList
+    case activeSession(DemoScenarioID)
+    case summary(UUID)
+    case memoryHistory
+}
+
 @main
 struct WaykinApp: App {
     @State private var appModel = WaykinAppModel()
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
+            NavigationStack(path: $appModel.path) {
                 HomeView(appModel: appModel)
+                    .navigationDestination(for: AppRoute.self) { route in
+                        switch route {
+                        case .demoList:
+                            DemoScenarioListView(appModel: appModel)
+                        case .activeSession(let scenario):
+                            ActiveSessionView(appModel: appModel, scenario: scenario)
+                        case .summary(let id):
+                            if let summary = appModel.lastSummary, summary.id == id {
+                                SessionSummaryView(summary: summary, appModel: appModel)
+                            } else {
+                                Text("Summary not found")
+                            }
+                        case .memoryHistory:
+                            MemoryHistoryView(appModel: appModel)
+                        }
+                    }
             }
         }
     }
@@ -29,25 +52,40 @@ final class WaykinAppModel {
     var lastSummary: SessionSummary?
     var demoMessage = ""
     var selectedTimeContext: String = "day"
+    var path = NavigationPath()
 
     init() {
-        if let container = try? ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self) {
-            self.persistenceStore = PersistenceStore(modelContainer: container)
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
+        let shouldReset = ProcessInfo.processInfo.arguments.contains("-WAYKIN_RESET_STATE")
+
+        var container: ModelContainer?
+        do {
+            let url = URL.applicationSupportDirectory.appendingPathComponent("Waykin.store")
+            if shouldReset || isUITesting {
+                try? FileManager.default.removeItem(at: url)
+            }
+            let config = ModelConfiguration(url: url)
+            container = try ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self, configurations: config)
+        } catch {
+            print("SwiftData container creation failed, falling back to in-memory")
+        }
+
+        if let c = container {
+            self.persistenceStore = PersistenceStore(modelContainer: c)
         } else {
             self.persistenceStore = PersistenceStore()
         }
 
         self.demoController = DemoSessionController(movementEngine: movementEngine)
 
-        let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
-        let shouldReset = ProcessInfo.processInfo.arguments.contains("-WAYKIN_RESET_STATE")
-
         if shouldReset || isUITesting {
             persistenceStore.resetDemoData()
         }
 
         if let loaded = persistenceStore.loadCompanion() {
-            self.companion = loaded
+            var c = loaded
+            c.memories = persistenceStore.loadMemories()
+            self.companion = c
         } else {
             self.companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
             persistenceStore.saveCompanion(self.companion)
@@ -72,6 +110,7 @@ final class WaykinAppModel {
         do {
             try demoController.start(scenarioID: scenario)
             demoMessage = "Running \(scenario.rawValue)..."
+            path.append(AppRoute.activeSession(scenario))
         } catch {
             demoMessage = "Failed to start demo"
         }
@@ -95,6 +134,9 @@ final class WaykinAppModel {
             lastSummary = summary
             demoMessage = "Session ended: \(result.outcome). Bond +\(result.bondDelta)"
             refreshRecommendation()
+
+            // Deterministic navigation to summary after persistence
+            path.append(AppRoute.summary(summary.id))
         }
     }
 
@@ -104,6 +146,11 @@ final class WaykinAppModel {
         persistenceStore.saveCompanion(companion)
         lastSummary = nil
         demoMessage = "Data reset"
+        path = NavigationPath()
+    }
+
+    func returnHome() {
+        path = NavigationPath()
     }
 }
 
@@ -131,11 +178,15 @@ struct HomeView: View {
                 }
             }
 
-            NavigationLink("Demo Scenarios", value: "demoList")
-                .accessibilityIdentifier("waykin.demo.open")
+            Button("Demo Scenarios") {
+                appModel.path.append(AppRoute.demoList)
+            }
+            .accessibilityIdentifier("waykin.demo.open")
 
-            NavigationLink("Memory History", value: "memory")
-                .accessibilityIdentifier("waykin.memory.open")
+            Button("Memory History") {
+                appModel.path.append(AppRoute.memoryHistory)
+            }
+            .accessibilityIdentifier("waykin.memory.open")
 
             Divider()
 
@@ -162,13 +213,6 @@ struct HomeView: View {
             .foregroundStyle(.red)
         }
         .padding()
-        .navigationDestination(for: String.self) { value in
-            if value == "demoList" {
-                DemoScenarioListView(appModel: appModel)
-            } else if value == "memory" {
-                MemoryHistoryView(appModel: appModel)
-            }
-        }
     }
 }
 
@@ -182,14 +226,11 @@ struct DemoScenarioListView: View {
                 .accessibilityIdentifier("waykin.demo.screen")
 
             ForEach(DemoScenarioID.allCases, id: \.self) { scenario in
-                NavigationLink(value: scenario) {
-                    Text(scenario.rawValue)
+                Button(scenario.rawValue) {
+                    appModel.startDemo(scenario)
                 }
                 .accessibilityIdentifier("waykin.demo.scenario.\(scenario.rawValue)")
             }
-        }
-        .navigationDestination(for: DemoScenarioID.self) { scenario in
-            ActiveSessionView(appModel: appModel, scenario: scenario)
         }
         .padding()
     }
@@ -209,7 +250,7 @@ struct ActiveSessionView: View {
             Text("Status: \(ps.statusText)")
                 .accessibilityIdentifier("waykin.session.elapsed")
 
-            // MapKit rendering (simple static region for smoke proof)
+            // MapKit
             let center = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
             Map(coordinateRegion: .constant(MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))))
                 .frame(height: 220)
@@ -232,7 +273,7 @@ struct ActiveSessionView: View {
         .padding()
         .onAppear {
             if !appModel.demoController.isRunning {
-                appModel.startDemo(scenario)
+                // startDemo already pushed the route in the model
             }
         }
     }
@@ -240,7 +281,7 @@ struct ActiveSessionView: View {
 
 struct SessionSummaryView: View {
     let summary: SessionSummary
-    let memory: SessionMemory?
+    @Bindable var appModel: WaykinAppModel
 
     var body: some View {
         VStack(spacing: 12) {
@@ -257,13 +298,13 @@ struct SessionSummaryView: View {
             Text("Duration: \(Int(summary.duration))s")
                 .accessibilityIdentifier("waykin.summary.duration")
 
-            if let memory = memory {
-                Text("Memory: \(memory.text)")
-                    .accessibilityIdentifier("waykin.summary.memory")
-            }
+            Text("Memory: \(summary.memory.text)")
+                .accessibilityIdentifier("waykin.summary.memory")
 
-            NavigationLink("Back to Home", value: "home")
-                .accessibilityIdentifier("waykin.summary.home")
+            Button("Back to Home") {
+                appModel.returnHome()
+            }
+            .accessibilityIdentifier("waykin.summary.home")
         }
         .padding()
     }
