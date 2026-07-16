@@ -1,80 +1,54 @@
-import WaykinCore
 import Foundation
+import WaykinCore
 
-print("=== WAYKIN MPOC DEMO ===")
-print("Simulating full product loop without GPS or permissions.\n")
+print("=== WAYKIN SOLO MVP DEMO ===")
+print("Deterministic audio-first walking loop; no GPS or permissions required.\n")
 
 let movement = MovementEngine()
 let companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
 let memoryEngine = MemoryEngine()
-let recEngine = RecommendationEngine()
+let recommendation = RecommendationEngine().recommend(for: "night", lastExperience: nil, activity: .walk).first
 
 print("Companion: \(companion.name) (Bond: \(companion.bondLevel))")
+print("Recommended path: \(recommendation?.experienceID ?? "companion_walk") / \(recommendation?.variantID ?? "nighttimeGuardian")")
 
-let recs = recEngine.recommend(for: "night", lastExperience: "future_self", activity: ActivityType.walk)
-print("\nRecommendations (night):")
-for r in recs { print(" - \(r.experienceID) (\(r.variantID)) score:\(r.score)") }
-
-let chosenExpID = "orc_pursuit"
-let exp: any WaykinExperience
-switch chosenExpID {
-case "orc_pursuit": exp = OrcPursuitExperience()
-case "future_self": exp = FutureSelfExperience()
-default: exp = CompanionWalkExperience()
-}
-
-try! movement.startSession(activity: ActivityType.walk, experienceID: chosenExpID)
-print("\nStarted walk with \(chosenExpID)")
-
-let context = ExperienceContext(timeOfDay: "night", activity: ActivityType.walk)
-var expState = exp.start(context: context)
+let experience = CompanionWalkExperience()
+let context = ExperienceContext(timeOfDay: TimeContext.night.rawValue, activity: .walk, bondLevel: companion.bondLevel, eventSeed: 7)
+var state = experience.start(context: context)
 var companionRuntime = CompanionRuntime()
 
-print("\nSimulating movement...")
-for tick in 1...10 {
-    let speed = tick < 4 ? 1.2 : (tick > 7 ? 0.3 : 2.8)
-    movement.simulate(deltaSeconds: 12, speed: speed)
+try movement.startSession(activity: .walk, experienceID: "companion_walk")
+print("\nStarted Begin Walk demo.")
 
+let ticks: [(TimeInterval, Double)] = [
+    (12, 1.2), (12, 1.3), (12, 1.5), (12, 0.2),
+    (12, 1.6), (12, 1.7), (12, 1.4), (12, 1.5)
+]
+
+for (index, tick) in ticks.enumerated() {
+    movement.simulate(deltaSeconds: tick.0, speed: tick.1)
     guard let session = movement.currentSession else { break }
+
     let snapshot = MovementSnapshot(
-        timestamp: Date(),
+        timestamp: session.routePoints.last?.timestamp ?? Date(timeIntervalSince1970: Double(index) * tick.0),
         speed: session.currentSpeedMetersPerSecond,
-        distanceDelta: 0,
-        isMoving: speed > 0.5
+        distanceDelta: tick.0 * tick.1,
+        isMoving: tick.1 > 0.1
     )
+    let update = experience.update(previousState: state, movement: snapshot, context: context)
+    state = update.state
+    update.companionCommands.forEach { companionRuntime.apply(command: $0) }
 
-    let update = exp.update(previousState: expState, movement: snapshot, context: context)
-    expState = update.state
-
-    for cmd in update.companionCommands {
-        companionRuntime.apply(command: cmd)
-    }
-
-    if !update.narrativeEvents.isEmpty {
-        print("  Tick \(tick): \(update.narrativeEvents.joined()) | Dist: \(Int(session.distanceMeters))m")
-    }
+    let cue = update.semanticAudioCues.first?.kind.rawValue ?? "none"
+    let event = update.narrativeEvents.first ?? "quiet"
+    print("Tick \(index + 1): event=\(event), audio=\(cue), companion=\(companionRuntime.state.rawValue), distance=\(Int(session.distanceMeters))m")
 }
 
-let finalSession = try! movement.endSession()
-let result = exp.finish(state: expState, session: finalSession)
+let finalSession = try movement.endSession()
+let result = experience.finish(state: state, session: finalSession)
+let memory = memoryEngine.createMemory(session: finalSession, result: result, companion: companion)
+
 print("\nSession ended. Outcome: \(result.outcome)")
-
-let mem = memoryEngine.createMemory(session: finalSession, result: result, companion: companion)
-print("Memory: \"\(mem.text)\"")
-
-var updatedCompanion = companion
-updatedCompanion.bondLevel += result.bondDelta
-updatedCompanion.memories.append(mem)
-updatedCompanion.lastSessionID = finalSession.id
-
-print("\nUpdated Companion Bond: \(updatedCompanion.bondLevel)")
-print("Memories count: \(updatedCompanion.memories.count)")
-
-let nextRecs = recEngine.recommend(for: "day", lastExperience: chosenExpID, activity: ActivityType.walk)
-print("\nNext day recommendations:")
-for r in nextRecs.prefix(2) {
-    print(" - \(r.experienceID) because: \(r.observedReasons + r.inferredReasons)")
-}
-
-print("\n=== DEMO COMPLETE - Full loop proven ===")
-print("Companion now remembers the session and bond increased.")
+print("Memory: \"\(memory.text)\"")
+print("Bond +\(result.bondDelta)")
+print("\n=== DEMO COMPLETE ===")

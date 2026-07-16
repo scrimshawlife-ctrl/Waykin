@@ -9,6 +9,9 @@ public final class DemoSessionController {
     public private(set) var isPaused = false
     public private(set) var tickIndex = 0
     public private(set) var presentationState = MapPresentationState(userCoordinate: nil, route: [], entities: [], statusText: "")
+    public private(set) var companionRuntime = CompanionRuntime()
+    public private(set) var currentEvent: WorldEvent?
+    public private(set) var currentAudioCue: AudioCue?
     
     private let scenarios: [DemoScenario] = [
         DemoScenario(
@@ -18,27 +21,9 @@ public final class DemoSessionController {
             timeContext: .midday,
             ticks: Array(repeating: (delta: 8.0, speed: 1.4), count: 12),
             expectedOutcome: "COMPLETED"
-        ),
-        DemoScenario(
-            id: .nightOrcPursuit,
-            activity: .walk,
-            experienceID: "orc_pursuit",
-            timeContext: .night,
-            ticks: [
-                (8, 2.8), (8, 2.5), (8, 1.8), (8, 0.4), (8, 3.2),
-                (8, 2.9), (8, 2.1), (8, 0.2)
-            ],
-            expectedOutcome: "ESCAPED"
-        ),
-        DemoScenario(
-            id: .futureSelfInterval,
-            activity: .walk,
-            experienceID: "future_self",
-            timeContext: .twilight,
-            ticks: Array(repeating: (delta: 7.0, speed: 2.6), count: 10),
-            expectedOutcome: "HELD_TARGET_PACE"
         )
     ]
+    private var currentExperienceState: ExperienceSessionState?
     
     public init(movementEngine: MovementEngine) {
         self.movementEngine = movementEngine
@@ -52,8 +37,13 @@ public final class DemoSessionController {
         tickIndex = 0
         isRunning = true
         isPaused = false
+        companionRuntime = CompanionRuntime()
+        currentEvent = nil
+        currentAudioCue = nil
         
         try movementEngine.startSession(activity: scenario.activity, experienceID: scenario.experienceID)
+        let context = ExperienceContext(timeOfDay: scenario.timeContext.rawValue, activity: scenario.activity)
+        currentExperienceState = CompanionWalkExperience().start(context: context)
         updatePresentation()
     }
     
@@ -73,6 +63,23 @@ public final class DemoSessionController {
         guard let scenario = currentScenario, isRunning, !isPaused, tickIndex < scenario.ticks.count else { return }
         let (delta, speed) = scenario.ticks[tickIndex]
         movementEngine.simulate(deltaSeconds: delta, speed: speed)
+        if let previousState = currentExperienceState {
+            let movement = MovementSnapshot(
+                timestamp: movementEngine.currentSession?.routePoints.last?.timestamp ?? Date(timeIntervalSince1970: TimeInterval(tickIndex) * delta),
+                speed: speed,
+                distanceDelta: max(0, speed * delta),
+                isMoving: speed > 0.1
+            )
+            let context = ExperienceContext(timeOfDay: scenario.timeContext.rawValue, activity: scenario.activity)
+            let update = CompanionWalkExperience().update(previousState: previousState, movement: movement, context: context)
+            currentExperienceState = update.state
+            update.companionCommands.forEach { companionRuntime.apply(command: $0) }
+            if case .companionWalk(let state) = update.state.runtimeState {
+                currentEvent = state.lastEvent
+                currentAudioCue = state.activeAudioCues.first
+            }
+            companionRuntime.apply(event: currentEvent)
+        }
         tickIndex += 1
         updatePresentation()
     }
@@ -98,15 +105,9 @@ public final class DemoSessionController {
         
         guard let session = finalSession else { return (nil, nil, nil) }
         
-        let exp: any WaykinExperience
-        switch scenario.experienceID {
-        case "orc_pursuit": exp = OrcPursuitExperience()
-        case "future_self": exp = FutureSelfExperience()
-        default: exp = CompanionWalkExperience()
-        }
-        
+        let exp = CompanionWalkExperience()
         let context = ExperienceContext(timeOfDay: scenario.timeContext.rawValue, activity: scenario.activity)
-        let state = exp.start(context: context)
+        let state = currentExperienceState ?? exp.start(context: context)
         let result = exp.finish(state: state, session: session)
         
         let summary = SessionSummary(
@@ -125,7 +126,10 @@ public final class DemoSessionController {
         )
         
         currentScenario = nil
+        currentExperienceState = nil
         tickIndex = 0
+        currentEvent = nil
+        currentAudioCue = nil
         presentationState = MapPresentationState(userCoordinate: nil, route: [], entities: [], statusText: "Session complete")
         
         return (session, result, summary)
@@ -151,7 +155,7 @@ public final class DemoSessionController {
             userCoordinate: userCoord,
             route: route,
             entities: entities,
-            statusText: "Dist: \(Int(session.distanceMeters))m • Speed: \(String(format: "%.1f", session.currentSpeedMetersPerSecond)) m/s"
+            statusText: "Dist: \(Int(session.distanceMeters))m - Speed: \(String(format: "%.1f", session.currentSpeedMetersPerSecond)) m/s - Lira: \(companionRuntime.state.rawValue)"
         )
     }
 }

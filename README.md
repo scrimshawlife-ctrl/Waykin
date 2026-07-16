@@ -1,232 +1,105 @@
-<p align="center">
-  <img src="docs/assets/hero/waykin-hero-banner.png" alt="Waykin concept banner showing a traveler and luminous companion on a trail at dawn" width="100%">
-</p>
+# Waykin
 
-<h1 align="center">Waykin</h1>
+Waykin is an audio-first adaptive walking experience where a persistent companion and occasional phenomena respond to how you move.
 
-<p align="center">
-  <strong>Movement becomes adventure.</strong>
-</p>
-
-<p align="center">
-  A movement-driven experience platform where companions, rivals, and pursuers react to how you move through the real world.
-</p>
-
-> **Concept visual:** The hero artwork illustrates the product direction and is not current application footage.
+The current MVP is intentionally narrow: one walking loop, one companion, one bounded pressure phenomenon, deterministic Demo Mode, physical-device walk wiring, persistent Bond, and concise session memories.
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/scrimshawlife-ctrl/Waykin.git
-cd Waykin
-make generate
 make build
 make test
 make validate
+make validate-simulator
 ```
 
-### Simulator Validation
+`make validate-simulator` requires an available iOS Simulator. By default it targets `iPhone 17 Pro`; override with:
 
 ```bash
-make validate-simulator
-# or with explicit device
 WAYKIN_SIMULATOR_NAME="iPhone 17 Pro" make validate-simulator
 ```
 
-## What Waykin Is
+## Current Product Loop
 
-Waykin is **not** a fitness tracker, virtual pet, cosmetic skin system, or AR novelty.
-
-It is a system where:
-
-```
-Movement
-  → Experience rules (Experience Pack)
-  → Companion / rival behavior
-  → Session result
-  → Persistent memory
-  → Future recommendations
+```text
+Home
+  -> Begin Walk
+  -> Active Session
+  -> Session Summary
+  -> Memory
 ```
 
-The same core engines drive both simulated Demo Mode and real-device sessions.
+Home shows Lira, Bond, the latest memory when one exists, one primary Begin Walk action, Memory History, and a separate real-walk entry for physical-device validation. Demo Mode runs the same deterministic walking loop without requiring movement or location permission.
 
-## Current Proof of Concept
+## Runtime Flow
 
-Three deterministic Experience Packs are implemented:
-
-| Companion Walk | Orc Pursuit | Future Self |
-|---|---|---|
-| ![Companion Walk](docs/assets/experiences/companion-walk-card.png) | ![Orc Pursuit](docs/assets/experiences/orc-pursuit-card.png) | ![Future Self](docs/assets/experiences/future-self-card.png) |
-| Calm companionship and exploration | Adaptive pursuit pressure | A stronger version of you stays ahead |
-
-*Concept visuals — illustrate intended experience direction. Not current application footage.*
-
-**Experience Pack Overview**
-
-![Experience Pack Overview](docs/assets/experiences/experience-pack-overview.png)
-
-Appearance + behavior + rules + progression
-
-All experiences use the canonical MovementEngine and produce SessionMemory records.
-
-## How It Works (Concept)
-
-![Movement to Memory](docs/assets/diagrams/movement-to-memory.png)
-
-*Concept visual — Movement becomes adaptive experience, persistent memory, and shared story.*
-
-## Supported Surfaces (Observed)
-
-| Surface                     | Current state                              |
-|-----------------------------|--------------------------------------------|
-| Swift package               | VALIDATED (17 tests)                       |
-| iOS Simulator               | VALIDATED (build + UI smoke)               |
-| Demo Mode                   | VALIDATED (CALM_DAY_WALK, NIGHT_ORC_PURSUIT, FUTURE_SELF_INTERVAL) |
-| MapKit presentation         | Present in ActiveSessionView               |
-| SwiftData persistence       | File-backed + @Query memory restoration    |
-| Real Core Location path     | IMPLEMENTED (RealLocationProvider + real session start) |
-| Physical iPhone walk        | IMPLEMENTED_UNVERIFIED / pending manual protocol |
-| Phone AR (RealityKit)       | Structural stubs only                      |
-| AR glasses                  | Future presentation surface                |
-
-## Run in Xcode
-
-1. Install XcodeGen if needed: `brew install xcodegen`
-2. `make generate`
-3. Open the generated `Waykin.xcodeproj`
-4. Select the **Waykin** scheme
-5. Choose an iPhone Simulator
-6. Run the app
-7. Use "Demo Scenarios" or the "Start Real Walk (COMPANION_WALK)" entry
-
-Demo Mode requires no location permission. The real walk path requests When-In-Use authorization only when started.
-
-## Demo Mode
-
-Demo Mode exists to provide:
-
-- No physical movement required
-- No location permission required
-- Deterministic, repeatable regression surface using the exact same MovementEngine and ExperienceEngine
-
-Scenarios (via DemoSessionController):
-
-- `CALM_DAY_WALK`
-- `NIGHT_ORC_PURSUIT`
-- `FUTURE_SELF_INTERVAL`
-
-See `DEMO_SCRIPT.md` for exact terminal and UI flows.
-
-## Architecture
-
-![Waykin Architecture Diagram](docs/assets/diagrams/waykin-architecture.png)
-
-*Engineering diagram — based on the current repository implementation.*
-
-High-level data flow (proven in package + simulator):
-
-```
-World Context (time, activity)
+```text
+MovementSnapshot
       ↓
-Movement Engine (snapshots + real ingestion)
+WorldState
       ↓
-Experience Engine (Experience Pack rules)
+WorldEventGenerator
       ↓
-Companion Runtime
+WorldEvent
       ↓
-Memory + Persistence (SwiftData)
+CompanionRuntime / PursuitState
       ↓
-Presentation Adapters (MapKit, SwiftUI, future AR)
+AudioCue
+      ↓
+SessionMemory + Bond
 ```
 
-Major boundaries:
-- `MovementEngine` + `LocationProviding` (sim + real)
-- `WaykinExperience` protocol (pure functions)
-- `PersistenceStore` with throwing save + @Query views
-- AppModel owns engines and navigation
+The core package emits semantic state and semantic audio cues. SwiftUI, MapKit, persistence, and future playback adapters consume that state without owning gameplay rules.
 
-Full details: `ARCHITECTURE.md`
+## Implemented Scope
 
-## Validation Pipeline
+- Walking is the MVP activity.
+- Lira is the single companion.
+- Bond is the persistent progression measure.
+- Pursuit is a bounded pressure state, not a separate enemy system.
+- Event generation is deterministic, seeded, cooldown-aware, and test-covered.
+- Audio is represented as semantic cues; production audio assets are not required for tests.
+- SwiftData persists companion Bond and session memories.
+- Demo Mode is deterministic and package-testable.
+- Physical-device walking is wired through When-In-Use Core Location, but field behavior remains unverified until manually tested.
 
-![Validation Pipeline](docs/assets/diagrams/validation-pipeline.png)
+Existing run, cycle, hike, climb, Orc Pursuit, and Future Self code may still exist as compatibility surface from the earlier proof of concept. They are not advertised as validated MVP capabilities.
 
-*Engineering diagram — current observed state.*
+## Explicit Non-Goals
 
-Canonical commands (verified):
+Waykin currently does not include multiplayer, social graphs, accounts, backend infrastructure, marketplace or creator systems, generative AI, AR gameplay, wearable integration, live weather, currencies, inventory, skill trees, achievements, or a generalized narrative engine.
 
-```bash
-make build          # swift build
-make test           # swift test (17 tests)
-make validate       # full harness (package + generation)
-make validate-simulator
-```
-
-### Validation Matrix
-
-| Layer                  | Command                     | Evidence (observed)                  |
-|------------------------|-----------------------------|--------------------------------------|
-| Package build          | `make build`                | PASS                                 |
-| Package tests          | `make test`                 | 17 tests, 0 failures                 |
-| Canonical harness      | `make validate`             | OVERALL: PASS (package + generation) |
-| Simulator UI tests     | `make validate-simulator`   | 7 tests targeted; UI smoke surface   |
-| Physical device        | Manual protocol             | Pending (see physical doc)           |
-
-## Physical-Device Validation
-
-Three-layer strategy:
-
-1. Deterministic Demo Mode (package)
-2. Simulator route + UI validation
-3. Physical iPhone field validation (required for real GPS, drift, battery, usability)
-
-Simulator cannot fully prove real GPS behavior, outdoor accuracy, or device sensor characteristics.
-
-See `docs/PHYSICAL_DEVICE_WALK_VALIDATION.md` for the preflight checklist and 5–10 minute COMPANION_WALK protocol.
-
-**No physical walk receipt has been filled yet.** All physical claims remain `NOT_COMPUTABLE` until direct device observation.
-
-## Current Scope
-
-| Capability | Status                  |
-|------------|-------------------------|
-| Walk       | Current focus (real path ready) |
-| Run        | Core model present      |
-| Cycling    | Deferred                |
-| Hiking     | Deferred                |
-| Climbing   | Deferred                |
-| Marketplace| Deferred                |
-| Multiplayer| Deferred                |
-| AR glasses | Future                  |
-
-## Roadmap (High Level)
-
-```
-Simulator-valid MPOC
-→ Physical walk validation (COMPANION_WALK)
-→ Real run validation
-→ Outdoor usability refinement
-→ Audio-first behavior
-→ Wearables and glasses adapters
-```
-
-## Safety and Privacy
+## Safety And Privacy
 
 - Waykin is not safety equipment.
-- Location is used only during active movement sessions (When-In-Use).
-- Demo Mode works completely without location permission.
-- Exact route coordinates should not be committed in validation artifacts.
-- Unsupported conclusions (battery, AR performance, real-world accuracy) remain `NOT_COMPUTABLE`.
+- Location is requested only for an active real walk.
+- Demo Mode requires no location permission.
+- Pause and stop behavior are preserved.
+- Session memories are concise deterministic facts, not precise historical route archives.
+- Pursuit pressure must never instruct unsafe movement or continued exertion through distress.
 
-## Contributing and Agent Workflow
+## Validation Status
 
-- Read the existing engineering contracts in the repository.
-- Preserve canonical validation: always run `make validate` before claiming success.
-- Run `make validate-simulator` for any UI or session flow changes.
-- Keep changes scoped. Do not fabricate test results or physical evidence.
-- Distinguish clearly between simulator-validated and physical-device surfaces.
-- Physical-device claims require the manual protocol in `docs/PHYSICAL_DEVICE_WALK_VALIDATION.md`.
+Observed on July 16, 2026:
+
+| Layer | Command | Status |
+|---|---|---|
+| Package build | `make build` | PASS |
+| Package tests | `make test` | PASS, 25 tests |
+| Canonical harness | `make validate` | PASS, including native app build |
+| Simulator UI | `make validate-simulator` | PASS, 6 UI tests |
+| Physical GPS walk | Manual protocol | NOT_COMPUTABLE |
+| Physical audio playback | Manual protocol | NOT_COMPUTABLE |
+
+Do not mark physical GPS, audio-device, battery, or outdoor usability behavior as validated without direct device evidence.
+
+## Documentation
+
+- Architecture: `ARCHITECTURE.md`
+- Known limitations: `KNOWN_LIMITATIONS.md`
+- Solo MVP scope contract: `docs/SOLO_MVP_SCOPE.md`
+- Physical-device manual protocol: `docs/PHYSICAL_DEVICE_WALK_VALIDATION.md`
 
 ## License
 
-Apache 2.0 — see `LICENSE`.
+Apache 2.0. See `LICENSE`.

@@ -1,0 +1,68 @@
+# Waykin Solo MVP Scope
+
+## Product Promise
+
+Waykin is an audio-first adaptive walking experience where the real world quietly appears to notice, remember, and respond through Lira, Bond, bounded phenomena, and concise session memories.
+
+The first release should make a user finish a walk and want to go out again tomorrow to see what happens.
+
+## Five Primary Systems
+
+1. Movement Engine
+2. World State
+3. Event Generator
+4. Companion Runtime
+5. Audio Experience Layer
+
+Persistence may support these systems by storing Bond, companion identity, and concise memories. It must not become a generalized platform.
+
+## Allowed MVP Content
+
+- One primary activity: walking.
+- One companion: Lira.
+- One pursuer or pressure source represented through bounded pursuit state.
+- One coherent world interpretation: the world quietly responds to movement.
+- One persistent progression measure: Bond.
+- One deterministic event-generation mechanism.
+- One audio-first semantic presentation path.
+- One deterministic Demo Mode.
+- One physical-device walk path.
+- Minimal session, summary, and memory UI.
+
+## Explicit Non-Goals
+
+- Multiplayer.
+- Social graphs.
+- User-generated content.
+- Creator SDKs.
+- Marketplaces.
+- Downloadable experience packs.
+- Procedural story generation.
+- Generative AI.
+- Cloud backend infrastructure.
+- Accounts or authentication.
+- Currencies, inventory, crafting, skill trees, or achievements.
+- Large quest systems.
+- RealityKit gameplay.
+- AR glasses integration.
+- Wearable integration.
+- Live weather APIs.
+- Remote configuration.
+- Analytics platforms.
+- Multiple companions.
+- Multiple pursuer species.
+- Generalized narrative engines.
+
+## Expansion Gate
+
+No major system may be added until repeated physical-device sessions demonstrate that the existing loop creates return intent and the current limitation cannot be solved through configuration, audio, tuning, or simplification.
+
+## Deletion Or Simplification Rule
+
+Before adding or retaining a feature, ask:
+
+```text
+Can the vertical slice remain compelling without this?
+```
+
+If yes, omit it or defer it. Existing compatibility code may remain only when deleting it would create more risk than value in the current pass.

@@ -1,7 +1,7 @@
 import Foundation
 
 public enum CompanionBehaviorState: String, Codable {
-    case idle, follow, lead, celebrate, observe, rest
+    case idle, follow, lead, celebrate, observe, drawNear, rest
 }
 
 public struct CompanionRuntime {
@@ -18,6 +18,25 @@ public struct CompanionRuntime {
             self.relativeDistance = d
         case .showMessage, .setThreatLevel:
             break
+        }
+    }
+
+    public mutating func apply(event: WorldEvent?) {
+        guard let event else { return }
+
+        switch event.kind {
+        case .companionDrawsNear, .bondMoment:
+            state = .drawNear
+            relativeDistance = 1.2
+        case .companionMovesAhead, .pursuitFades:
+            state = .lead
+            relativeDistance = 4.0
+        case .companionObserves, .familiarPlaceStirs, .quietInterval, .distantPresence:
+            state = .observe
+            relativeDistance = 2.5
+        case .pursuitBegins, .pursuitIntensifies:
+            state = .follow
+            relativeDistance = 1.8
         }
     }
 }

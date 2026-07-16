@@ -7,7 +7,7 @@ public protocol MemoryGenerating {
 public struct DeterministicMemoryGenerator: MemoryGenerating {
     public func generateMemory(session: MovementSession, result: ExperienceResult, companion: Companion) -> SessionMemory {
         let dist = Int(session.distanceMeters)
-        let text = "We completed a \(session.activityType) of \(dist)m using \(session.experienceID). \(result.memoryText) Bond +\(result.bondDelta)."
+        let text = "\(companion.name) remembers a \(dist)m walk. \(result.memoryText)"
         return SessionMemory(id: UUID(), sessionID: session.id, text: text, timestamp: Date())
     }
 }

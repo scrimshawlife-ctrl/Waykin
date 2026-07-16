@@ -15,11 +15,24 @@ public struct CompanionWalkExperience: WaykinExperience {
     public init() {}
 
     public func start(context: ExperienceContext) -> ExperienceSessionState {
+        let timeContext = TimeContext(rawValue: context.timeOfDay) ?? .midday
+        let initialWorld = WorldState(
+            timeContext: timeContext,
+            movementState: .idle,
+            currentSpeedMetersPerSecond: 0,
+            sessionDistanceMeters: 0,
+            activeTime: 0,
+            bondLevel: context.bondLevel,
+            familiarity: 0,
+            energy: 0,
+            pressure: 0
+        )
         let state = CompanionWalkState(
             accumulatedBondProgress: 0,
             movementSeconds: 0,
             milestoneIndex: 0,
-            tone: context.timeOfDay == "night" ? "calm_guardian" : "curious"
+            tone: context.timeOfDay == "night" ? "calm_guardian" : "curious",
+            worldState: initialWorld
         )
         return ExperienceSessionState(runtimeState: .companionWalk(state))
     }
@@ -29,33 +42,158 @@ public struct CompanionWalkExperience: WaykinExperience {
             return ExperienceUpdate(state: previousState, companionCommands: [], audioCues: [], narrativeEvents: [], rewardEvents: [])
         }
 
+        let delta = max(0, movement.distanceDelta.finiteOrZero)
+        let tickSeconds: TimeInterval = movement.isMoving ? max(1, delta / max(movement.speed, 0.5)) : 1
         if movement.isMoving {
-            walkState.movementSeconds += 1.0
-            walkState.accumulatedBondProgress += 0.1
+            walkState.movementSeconds += tickSeconds
+            walkState.accumulatedBondProgress += min(0.4, tickSeconds / 90)
         }
 
-        let newState = ExperienceSessionState(runtimeState: .companionWalk(walkState))
+        let timeContext = TimeContext(rawValue: context.timeOfDay) ?? .midday
+        let priorWorld = walkState.worldState
+        let priorDistance = priorWorld?.sessionDistanceMeters ?? 0
+        let pressure = Self.nextPressure(previous: priorWorld?.pressure ?? 0, movement: movement, activeTime: walkState.movementSeconds)
+        var worldState = WorldState(
+            timeContext: timeContext,
+            movementState: movement.isMoving ? .moving : .paused,
+            currentSpeedMetersPerSecond: movement.speed,
+            sessionDistanceMeters: priorDistance + delta,
+            activeTime: walkState.movementSeconds,
+            bondLevel: context.bondLevel,
+            familiarity: min(1, (priorDistance + delta) / 1800),
+            energy: min(1, max(0, movement.speed) / 2.2),
+            pressure: pressure,
+            lastEventAt: walkState.lastEvent?.occurredAt
+        )
 
-        let tone = context.timeOfDay == "night" ? "The stars feel closer tonight." : "Look at that view!"
+        var generator = WorldEventGenerator(seed: context.eventSeed)
+        let event = generator.evaluate(state: worldState, now: movement.timestamp)
+        worldState.lastEventAt = event?.occurredAt ?? worldState.lastEventAt
+
+        if let event {
+            walkState.lastEvent = event
+            walkState.pursuitState = Self.nextPursuitState(current: walkState.pursuitState, event: event)
+        } else if walkState.pursuitState == .close && pressure < 0.45 {
+            walkState.pursuitState = .fading
+        }
+
+        var audioLayer = AudioExperienceLayer()
+        let cue = audioLayer.cue(for: event, now: movement.timestamp)
+        walkState.activeAudioCues = cue.map { [$0] } ?? []
+        walkState.worldState = worldState
+
+        let behavior = Self.behavior(for: event, moving: movement.isMoving)
+        let tone = Self.message(for: event, timeContext: timeContext, pursuitState: walkState.pursuitState)
+        let newState = ExperienceSessionState(runtimeState: .companionWalk(walkState), narrative: event.map { [$0.debugLabel] } ?? [])
+
         return ExperienceUpdate(
             state: newState,
-            companionCommands: [.showMessage(tone), .setBehavior(movement.isMoving ? "follow" : "observe")],
-            audioCues: movement.isMoving ? ["soft footsteps"] : [],
-            narrativeEvents: [tone],
+            companionCommands: [.showMessage(tone), .setBehavior(behavior.rawValue)],
+            audioCues: cue.map { [$0.kind.rawValue] } ?? [],
+            semanticAudioCues: cue.map { [$0] } ?? [],
+            narrativeEvents: event.map { [$0.kind.rawValue] } ?? [],
             rewardEvents: []
         )
     }
 
     public func finish(state: ExperienceSessionState, session: MovementSession) -> ExperienceResult {
         if case .companionWalk(let walkState) = state.runtimeState {
-            let bond = Int(walkState.accumulatedBondProgress)
+            let bond = max(1, Int(walkState.accumulatedBondProgress.rounded(.down)))
+            let distance = Int(session.distanceMeters)
+            let memory = Self.memoryText(
+                companionName: "Lira",
+                distanceMeters: distance,
+                event: walkState.lastEvent,
+                bondDelta: bond
+            )
             return ExperienceResult(
                 outcome: "COMPLETED",
-                bondDelta: bond / 10,
-                memoryText: "We walked \(Int(session.distanceMeters))m together. Bond grew by \(bond / 10)."
+                bondDelta: bond,
+                memoryText: memory
             )
         }
         return ExperienceResult(outcome: "COMPLETED", bondDelta: 1, memoryText: "Walk completed.")
+    }
+
+    private static func nextPressure(previous: Double, movement: MovementSnapshot, activeTime: TimeInterval) -> Double {
+        let timePressure = min(0.45, activeTime / 1800)
+        let pausePressure = movement.isMoving ? -0.08 : 0.16
+        let speedRelief = movement.speed > 1.2 ? -0.06 : 0.04
+        return (previous + timePressure + pausePressure + speedRelief).clamped01
+    }
+
+    private static func nextPursuitState(current: PursuitState, event: WorldEvent) -> PursuitState {
+        switch event.kind {
+        case .distantPresence:
+            return current == .inactive ? .noticed : current
+        case .pursuitBegins:
+            return .approaching
+        case .pursuitIntensifies:
+            return .close
+        case .pursuitFades:
+            return .fading
+        default:
+            return current
+        }
+    }
+
+    private static func behavior(for event: WorldEvent?, moving: Bool) -> CompanionBehaviorState {
+        guard let event else { return moving ? .follow : .observe }
+        switch event.kind {
+        case .companionDrawsNear, .bondMoment:
+            return .drawNear
+        case .companionMovesAhead, .pursuitFades:
+            return .lead
+        case .quietInterval:
+            return .rest
+        case .companionObserves, .familiarPlaceStirs, .distantPresence:
+            return .observe
+        case .pursuitBegins, .pursuitIntensifies:
+            return .follow
+        }
+    }
+
+    private static func message(for event: WorldEvent?, timeContext: TimeContext, pursuitState: PursuitState) -> String {
+        guard let event else {
+            return timeContext == .night ? "Lira keeps close in the dark." : "Lira matches your pace."
+        }
+
+        switch event.kind {
+        case .companionDrawsNear:
+            return "Lira draws near."
+        case .companionMovesAhead:
+            return "Lira moves a few steps ahead."
+        case .companionObserves:
+            return "Lira pauses, listening."
+        case .distantPresence:
+            return "Something distant notices the walk."
+        case .pursuitBegins:
+            return "A presence begins to follow."
+        case .pursuitIntensifies:
+            return "The pressure moves closer."
+        case .pursuitFades:
+            return "The pressure falls away."
+        case .familiarPlaceStirs:
+            return "This place feels faintly remembered."
+        case .quietInterval:
+            return "The world settles into quiet."
+        case .bondMoment:
+            return "Lira answers with a familiar motif."
+        }
+    }
+
+    private static func memoryText(companionName: String, distanceMeters: Int, event: WorldEvent?, bondDelta: Int) -> String {
+        if let event {
+            switch event.kind {
+            case .pursuitBegins, .pursuitIntensifies, .distantPresence:
+                return "A distant presence followed during a \(distanceMeters)m walk, then faded. Bond increased by \(bondDelta)."
+            case .bondMoment, .companionDrawsNear:
+                return "\(companionName) stayed close during a \(distanceMeters)m walk. Bond increased by \(bondDelta)."
+            default:
+                return "\(companionName) noticed a quiet shift during a \(distanceMeters)m walk. Bond increased by \(bondDelta)."
+            }
+        }
+        return "\(companionName) stayed close during a quiet \(distanceMeters)m walk. Bond increased by \(bondDelta)."
     }
 }
 

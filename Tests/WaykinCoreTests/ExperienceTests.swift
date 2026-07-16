@@ -41,7 +41,8 @@ final class ExperienceTests: XCTestCase {
         let day = rec.recommend(for: "day", lastExperience: nil, activity: .walk)
         let night = rec.recommend(for: "night", lastExperience: nil, activity: .walk)
 
-        XCTAssertTrue(day.contains { $0.experienceID == "future_self" })
-        XCTAssertTrue(night.contains { $0.experienceID == "companion_walk" })
+        XCTAssertEqual(day.map(\.experienceID), ["companion_walk"])
+        XCTAssertEqual(night.map(\.experienceID), ["companion_walk"])
+        XCTAssertNotEqual(day.first?.variantID, night.first?.variantID)
     }
 }

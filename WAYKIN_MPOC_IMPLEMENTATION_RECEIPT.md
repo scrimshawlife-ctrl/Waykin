@@ -1,81 +1,60 @@
-# WAYKIN MPOC — IMPLEMENTATION RECEIPT
+# Waykin Solo MVP Vertical Slice Receipt
 
-## A. BASELINE
-- Repository: https://github.com/scrimshawlife-ctrl/Waykin (cloned locally)
-- Branch: main
-- Initial state: minimal (README + LICENSE only)
-- Build environment: Swift 6 (macOS), Command Line Tools (full Xcode required for iOS/AR)
-- Platform target: iOS 17+ (simulated via package + demo executable)
+## A. Baseline
 
-## B. IMPLEMENTED
-- Movement Engine: Yes (with simulation + real ingestion stub)
-- Demo Mode: Yes (full loop runnable via `swift run WaykinDemo`)
-- Companion Walk: Yes
-- Orc Pursuit: Yes (threat/distance adapts to movement)
-- Future Self: Yes (lead adjusts to pace)
-- Recommendation Engine: Yes (day/night + last-experience bias)
-- Memory: Yes (deterministic generator + storage in Companion)
-- Persistence: Codable + in-memory simulation (SwiftData stub ready)
-- Presentation: Basic SwiftUI shell + Map/AR placeholders
-- Audio: Cues emitted as strings (AVFoundation ready for extension)
+- Branch: `main`
+- Starting SHA: `fe77e58012be420edeca0909037bc7a8414418cb`
+- Initial worktree state: clean
+- Swift: Apple Swift 6.3.2
+- Xcode: 26.5
+- Initial package build: PASS after running outside the sandbox to allow Swift module-cache writes
+- Initial package tests: PASS, 17 tests
+- Initial canonical validation: PASS for package + generation; native app build failed
+- Initial simulator validation: FAIL at app build
+- Initial native failure: `App/WaykinApp.swift` had invalid `Button(scenario).description)` syntax
 
-## C. EXPERIENCE PROOF
-### Companion Walk
-- Demonstrated: Bond growth with movement, day/night tone
-- Missing: Full UI integration
+## B. Implemented Vertical Slice
 
-### Orc Pursuit
-- Demonstrated: Threat increases on stop, decreases on move; ESCAPED outcome
-- Missing: Visual orcs in AR
+Current bounded runtime flow:
 
-### Future Self
-- Demonstrated: Lead meters close with good pace
-- Missing: Ghost entity visualization
+```text
+MovementSnapshot
+      ↓
+WorldState
+      ↓
+WorldEventGenerator
+      ↓
+WorldEvent
+      ↓
+CompanionRuntime / PursuitState
+      ↓
+AudioCue
+      ↓
+SessionMemory + Bond
+```
 
-## D. VALIDATION
-- Build: SUCCESS (`swift build`)
-- Tests: Core logic verified via demo; XCTest module unavailable in CLI env (full Xcode needed)
-- Demo scenarios: CALM_DAY_WALK / NIGHT_ORC_PURSUIT / FUTURE_SELF_INTERVAL all runnable
-- Permission denial: Core never requires; demo works 100% offline
-- Persistence: Memories and bond persist across simulated sessions
-- Day/night switching: Confirmed in recommendations and experiences
+Implemented systems:
 
-## E. SHADOW FINDINGS
-- Finding: Codable structs initially caused decoder-only inits in demo
-- Severity: Medium (fixed with explicit public inits)
-- Evidence: Build failures resolved
-- Resolution: Added memberwise inits to all models
+- Movement Engine
+- World State
+- Event Generator
+- Companion Runtime
+- Audio Experience Layer
+- Persistence support for Bond and memories
 
-## F. KNOWN LIMITATIONS
-- Limitation: Full AR (RealityKit) and native iOS build require full Xcode + device
-- Impact: Low for POC thesis proof (demo proves loop)
-- Classification: OBSERVED (environment has only CLT)
+## C. Product Scope
 
-- Limitation: No real CoreLocation in demo
-- Impact: Low (simulation is deterministic and complete)
-- Classification: INFERRED (by design for testability)
+The product surface is consolidated around Companion Walk as the MVP walking loop. Pursuit is represented as occasional pressure inside that world. Future Self and Orc Pursuit code remains only as proof-of-concept compatibility and is not advertised as validated MVP scope.
 
-## G. FILES CHANGED / CREATED
-- Package.swift
-- Sources/WaykinCore/Domain/Models.swift
-- Sources/WaykinCore/Engines/* (Movement, CompanionRuntime, Memory, Recommendation)
-- Sources/WaykinCore/Experiences/*
-- Demo/main.swift
-- Tests/* (partial)
-- App/WaykinApp.swift (SwiftUI shell)
-- README.md, DEMO_SCRIPT.md, ARCHITECTURE.md (added), etc.
-- WAYKIN_MPOC_IMPLEMENTATION_RECEIPT.md
+## D. Validation Status
 
-## H. RUN INSTRUCTIONS
-1. cd to Waykin
-2. swift build
-3. swift run WaykinDemo   (proves full loop)
-4. Open App/ files in Xcode for iOS target
+- `make build`: PASS
+- `make test`: PASS, 25 tests
+- `make validate`: PASS, package + generation + native app build
+- `make validate-simulator`: PASS, 6 UI tests
 
-## I. FINAL STATUS
-WAYKIN_MPOC_VALID
+Physical GPS, outdoor behavior, physical audio playback, battery, and safety-in-motion evidence remain `NOT_COMPUTABLE` until direct device validation.
 
-## J. NEXT RECOMMENDED BUILD
-- Objective: Wire real MapKit + basic RealityKit companion anchor
-- Rationale: The engine and experiences are proven; UI layer next
-- Preconditions: Full Xcode + iOS device/simulator
+## E. Final Scope Audit
+
+This pass did not add backend infrastructure, marketplace features, multiplayer, AR gameplay, creator SDKs, generalized narrative engines, generative AI, or third-party dependencies.

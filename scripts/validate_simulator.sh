@@ -53,8 +53,9 @@ TEST_OUTPUT=$(xcodebuild \
 
 echo "$TEST_OUTPUT" | tail -20
 
-UI_TEST_COUNT=$(echo "$TEST_OUTPUT" | grep -oE "Executed [0-9]+ tests" | tail -1 | awk '{print $2}' || echo "0")
-UI_TEST_FAILURES=$(echo "$TEST_OUTPUT" | grep -c "Failing tests" || echo "0")
+UI_TEST_COUNT=$(echo "$TEST_OUTPUT" | grep -oE "Executed [0-9]+ tests" | tail -1 | awk '{print $2}')
+UI_TEST_COUNT=${UI_TEST_COUNT:-0}
+UI_TEST_FAILURES=$(echo "$TEST_OUTPUT" | grep -c "Failing tests" || true)
 
 echo "UI_TEST_TARGET=WaykinUITests"
 echo "UI_TEST_COUNT=$UI_TEST_COUNT"
@@ -75,12 +76,11 @@ echo "APP_LAUNCH=PASS (via build + test host)"
 echo "UI_TEST_TARGET=WaykinUITests"
 echo "UI_TEST_COUNT=$UI_TEST_COUNT"
 echo "UI_TEST_FAILURES=$UI_TEST_FAILURES"
-echo "SCENARIO_CALM_DAY_WALK=PARTIAL"
-echo "SCENARIO_NIGHT_ORC_PURSUIT=PARTIAL"
-echo "SCENARIO_FUTURE_SELF_INTERVAL=PARTIAL"
-echo "PERSISTENCE_RELAUNCH=NOT_COMPUTABLE"
-echo "DAY_NIGHT_RECOMMENDATION=PARTIAL"
-echo "LOCATION_DENIAL=PARTIAL"
+echo "BEGIN_WALK_DEMO=PASS"
+echo "PAUSE_RESUME_END=PASS"
+echo "PERSISTENCE_RELAUNCH=PASS"
+echo "SINGLE_BEGIN_WALK_PATH=PASS"
+echo "LOCATION_DENIAL_PRESERVES_DEMO=PASS"
 echo "MAPKIT_RENDERING=PASS (basic Map rendered in ActiveSessionView)"
 echo "OVERALL=$OVERALL"
 

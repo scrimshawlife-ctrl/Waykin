@@ -19,18 +19,38 @@ final class WaykinSmokeTests: XCTestCase {
     func testAppLaunchesAndDemoIsReachable() {
         launch(reset: true)
         XCTAssertTrue(app.staticTexts["Waykin"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons.matching(identifier: "waykin.beginWalk").count, 1)
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.demo.mode").firstMatch.exists)
     }
 
-    func testCalmDayWalkCompletesAndCreatesMemory() { launch(reset: true); runScenario("calmDayWalk") }
-    func testNightOrcPursuitChangesThreatAndCompletes() { launch(reset: true); runScenario("nightOrcPursuit") }
-    func testFutureSelfIntervalShowsCatchWindowAndCompletes() { launch(reset: true); runScenario("futureSelfInterval") }
+    func testBeginWalkCompletesAndCreatesMemory() {
+        launch(reset: true)
+        runBeginWalk()
+    }
+
+    func testPauseResumeEndWorks() {
+        launch(reset: true)
+
+        let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 5))
+        begin.tap()
+
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.session.screen").firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons.matching(identifier: "waykin.session.pause").firstMatch.waitForExistence(timeout: 5))
+        app.buttons.matching(identifier: "waykin.session.pause").firstMatch.tap()
+        app.buttons.matching(identifier: "waykin.session.resume").firstMatch.tap()
+        app.buttons.matching(identifier: "waykin.session.runToEnd").firstMatch.tap()
+        app.buttons.matching(identifier: "waykin.session.end").firstMatch.tap()
+
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.screen").firstMatch.waitForExistence(timeout: 10))
+    }
 
     func testMemoryPersistsAcrossRelaunch() {
         launch(reset: true)
 
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.persistence.mode").firstMatch.waitForExistence(timeout: 5))
 
-        runScenario("calmDayWalk")
+        runBeginWalk()
 
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.screen").firstMatch.waitForExistence(timeout: 10))
 
@@ -103,27 +123,25 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertTrue(restoredRow.waitForExistence(timeout: 10))
     }
 
-    func testDayAndNightRecommendationsDiffer() {
+    func testHomeKeepsSingleBeginWalkPath() {
         launch(reset: true)
         XCTAssertTrue(app.staticTexts["Waykin"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons.matching(identifier: "waykin.beginWalk").count, 1)
     }
 
     func testLocationDenialPreservesDemoMode() {
         launch(reset: true)
-        XCTAssertTrue(app.buttons["Demo Scenarios"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons.matching(identifier: "waykin.beginWalk").firstMatch.waitForExistence(timeout: 5))
     }
 
-    private func runScenario(_ raw: String) {
-        let demoLink = app.buttons["Demo Scenarios"]
-        XCTAssertTrue(demoLink.waitForExistence(timeout: 5)); demoLink.tap()
-
-        let scenarioBtn = app.buttons.matching(identifier: "waykin.demo.scenario.\(raw)").firstMatch
-        XCTAssertTrue(scenarioBtn.waitForExistence(timeout: 5)); scenarioBtn.tap()
+    private func runBeginWalk() {
+        let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 5)); begin.tap()
 
         let runBtn = app.buttons["Run to End"]
         if runBtn.waitForExistence(timeout: 3) { runBtn.tap() }
 
-        let complete = app.buttons.matching(identifier: "waykin.session.complete").firstMatch
+        let complete = app.buttons.matching(identifier: "waykin.session.end").firstMatch
         if complete.waitForExistence(timeout: 5) { complete.tap() }
 
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.screen").firstMatch.waitForExistence(timeout: 10))

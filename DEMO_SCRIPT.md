@@ -1,41 +1,29 @@
 # Waykin Demo Script
 
-## Terminal Demo (Fastest)
+## Terminal Demo
 
 ```bash
-cd /path/to/Waykin
 swift run WaykinDemo
 ```
 
-Expected output shows:
-- Companion created
-- Night recommendations
-- Orc Pursuit simulation with threat increasing when stopped
-- Memory generated
-- Bond increase
-- Next-day different recommendations
+The terminal demo is retained as a fast package-level smoke path.
 
-## Full iOS Flow (in Xcode)
+## iOS Demo Mode
 
 1. `make generate`
-2. Open the generated `Waykin.xcodeproj`
+2. Open `Waykin.xcodeproj`
 3. Select the Waykin scheme and an iPhone Simulator
-4. Run the application
-5. Use Demo Scenarios or the real-walk entry point
+4. Launch the app
+5. Tap `Begin Walk`
+6. In the active session, use `Run to End`
+7. Tap `End`
+8. Confirm Session Summary appears
+9. Return home and open Memory History
 
-The project already wires:
-- MovementEngine
-- Experience Packs
-- SwiftData for Companion + Memories (file-backed in UI tests)
-- MapKit for active session
-- RealLocationProvider path (physical device required for live GPS)
+Demo Mode uses the same deterministic walking loop as the core package and does not require location permission.
 
-## Permission Handling
+## Real Walk Path
 
-The core never assumes location is granted. Demo works without any permissions.
+The `Start Real Walk` button starts the physical-device Core Location path for manual validation. It requests When-In-Use location authorization only when the real walk starts.
 
-## Day / Night
-
-Pass "day" or "night" to RecommendationEngine and ExperienceContext.
-
-This is sufficient to prove the thesis.
+Physical GPS behavior, outdoor route accuracy, battery impact, and physical audio behavior remain `NOT_COMPUTABLE` until directly observed on device.

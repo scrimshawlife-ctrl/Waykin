@@ -7,6 +7,7 @@ public enum PersistenceError: Error, Equatable {
     case saveFailed(String)
     case verificationFetchFailed(UUID)
     case loadFailed(String)
+    case duplicateSessionMemory(UUID)
 }
 
 // MARK: - SwiftData Models (single schema)
@@ -149,6 +150,9 @@ public final class PersistenceStore {
     @discardableResult
     public func saveMemory(_ memory: SessionMemory) throws -> PersistenceWriteReceipt {
         guard let ctx = modelContext else {
+            if inMemoryMemories.contains(where: { $0.sessionID == memory.sessionID }) {
+                throw PersistenceError.duplicateSessionMemory(memory.sessionID)
+            }
             inMemoryMemories.append(memory)
             return PersistenceWriteReceipt(
                 recordID: memory.id,
@@ -156,6 +160,13 @@ public final class PersistenceStore {
                 savedAt: Date(),
                 verificationFetchSucceeded: true
             )
+        }
+
+        let existingDescriptor = FetchDescriptor<SessionMemoryRecord>(
+            predicate: #Predicate { $0.sessionID == memory.sessionID }
+        )
+        if let existing = try ctx.fetch(existingDescriptor).first {
+            throw PersistenceError.duplicateSessionMemory(existing.sessionID)
         }
 
         let record = SessionMemoryRecord(

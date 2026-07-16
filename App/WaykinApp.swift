@@ -1,6 +1,5 @@
 import SwiftUI
 import WaykinCore
-import WaykinCore
 import MapKit
 import SwiftData
 
@@ -151,7 +150,7 @@ final class WaykinAppModel {
     func startDemo(_ scenario: DemoScenarioID) {
         do {
             try demoController.start(scenarioID: scenario)
-            demoMessage = "Running \(scenario).description)..."
+            demoMessage = "Walking with Lira..."
             path.append(AppRoute.activeSession(scenario))
         } catch {
             demoMessage = "Failed to start demo"
@@ -251,14 +250,19 @@ final class WaykinAppModel {
                 id: UUID(),
                 sessionID: ended.id,
                 activity: ended.activityType,
-                experienceID: ended.experienceID,
+                experience: ended.experienceID,
+                variant: "physical_device_unverified",
+                duration: ended.elapsedTime,
+                activeTime: ended.activeTime,
                 distanceMeters: ended.distanceMeters,
-                duration: ended.activeTime,
-                outcome: "COMPLETED"
+                averageSpeed: ended.averageSpeedMetersPerSecond,
+                outcome: "COMPLETED",
+                bondDelta: 1,
+                memory: SessionMemory(sessionID: ended.id, text: "Lira stayed close during a real walk. Physical GPS and audio behavior remain unverified.")
             )
             lastSummary = summary
 
-            let memText = "Real walk completed. Distance \(Int(ended.distanceMeters))m."
+            let memText = summary.memory.text
             let mem = SessionMemory(sessionID: summary.sessionID, text: memText)
             let receipt = try persistenceStore.saveMemory(mem)
             lastSavedMemoryID = receipt.recordID.uuidString
@@ -276,19 +280,30 @@ final class WaykinAppModel {
 
 struct HomeView: View {
     @Environment(WaykinAppModel.self) private var appModel
+    @Query(sort: \SessionMemoryRecord.createdAt, order: .reverse)
+    private var memoryRecords: [SessionMemoryRecord]
 
     var body: some View {
         VStack(spacing: 16) {
             Text("Waykin").font(.largeTitle.bold()).accessibilityIdentifier("waykin.home")
             Text("Companion: \(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
 
-            if let rec = appModel.activeRecommendation {
-                Text("Recommended: \(rec.experienceID) (\(rec.variantID))")
-                    .accessibilityIdentifier("waykin.recommendation.primary")
+            if let lastMemory = memoryRecords.first {
+                Text(lastMemory.text)
+                    .font(.callout)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("waykin.memory.latest")
             }
 
-            Button("Demo Scenarios") { appModel.path.append(AppRoute.demoList) }
-                .accessibilityIdentifier("waykin.demo.open")
+            Button("Begin Walk") { appModel.startDemo(.calmDayWalk) }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("waykin.beginWalk")
+
+            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                Text("Demo Mode")
+                    .font(.caption)
+                    .accessibilityIdentifier("waykin.demo.mode")
+            }
 
             Button("Memory History") { appModel.path.append(AppRoute.memoryHistory) }
                 .accessibilityIdentifier("waykin.memory.open")
@@ -301,7 +316,7 @@ struct HomeView: View {
             .accessibilityIdentifier("waykin.real.activity.walk")
             .accessibilityIdentifier("waykin.real.experience.companionWalk")
 
-            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") || true {  // dev diagnostics
+            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Location: \(appModel.realLocationProvider.authorizationStatus).description)")
                         .accessibilityIdentifier("waykin.location.authorization")
@@ -333,8 +348,8 @@ struct DemoScenarioListView: View {
         VStack {
             Text("Demo Scenarios").font(.title).accessibilityIdentifier("waykin.demo.screen")
             ForEach(DemoScenarioID.allCases, id: \.self) { scenario in
-                Button(scenario).description) { appModel.startDemo(scenario) }
-                    .accessibilityIdentifier("waykin.demo.scenario.\(scenario).description)")
+                Button(scenario.rawValue) { appModel.startDemo(scenario) }
+                    .accessibilityIdentifier("waykin.demo.scenario.\(scenario.rawValue)")
             }
         }.padding()
     }
@@ -346,8 +361,16 @@ struct ActiveSessionView: View {
 
     var body: some View {
         VStack {
-            Text("Active: \(scenario).description)").font(.title2).accessibilityIdentifier("waykin.session.screen")
+            Text("Active Walk").font(.title2).accessibilityIdentifier("waykin.session.screen")
             Text(appModel.demoController.presentationState.statusText).accessibilityIdentifier("waykin.session.elapsed")
+            if let event = appModel.demoController.currentEvent {
+                Text(event.kind.rawValue)
+                    .accessibilityIdentifier("waykin.session.phenomenon")
+            }
+            if let cue = appModel.demoController.currentAudioCue {
+                Text(cue.kind.rawValue)
+                    .accessibilityIdentifier("waykin.session.audioCue")
+            }
 
             let center = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
             Map(coordinateRegion: .constant(MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))))
@@ -355,7 +378,14 @@ struct ActiveSessionView: View {
                 .accessibilityIdentifier("waykin.session.map")
 
             HStack {
-                Button("Complete") { appModel.endDemo() }.accessibilityIdentifier("waykin.session.complete")
+                Button("Pause") { appModel.pauseDemo() }
+                    .accessibilityIdentifier("waykin.session.pause")
+                Button("Resume") { appModel.resumeDemo() }
+                    .accessibilityIdentifier("waykin.session.resume")
+                Button("Run to End") { appModel.runDemoToEnd() }
+                    .accessibilityIdentifier("waykin.session.runToEnd")
+                Button("End") { appModel.endDemo() }
+                    .accessibilityIdentifier("waykin.session.end")
             }
 
             // Live real controls (physical device)

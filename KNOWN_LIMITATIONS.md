@@ -1,27 +1,37 @@
 # Waykin Known Limitations
 
-## Package Level (VALID)
-- Core engines and typed state
-- Deterministic simulation
-- 17 package tests (make test)
-- Canonical validation harness (make validate): OVERALL PASS
+## Observed Validated Surface
 
-## Simulator Runtime
-- Package + generation: VALIDATED (17 tests)
-- UI smoke harness: targets 7 tests in WaykinUITests
-- MapKit rendering: present in ActiveSessionView
-- SwiftData + @Query memory restoration: implemented and used in app
-- RealLocationProvider + live session start/pause/resume/end: implemented
-- Demo scenarios (CALM_DAY_WALK / NIGHT_ORC_PURSUIT / FUTURE_SELF_INTERVAL): wired
+- Package build and tests pass for the deterministic walking loop.
+- Demo Mode runs without location permission.
+- Native app build passes in the available Xcode simulator environment.
+- SwiftData persistence covers Bond and session memories.
+- The app exposes one primary Begin Walk path.
 
-## Still NOT_COMPUTABLE / Pending Physical Device
-- PHYSICAL_DEVICE_LOCATION
-- AUDIO_DEVICE_PLAYBACK
-- PHONE_AR_RUNTIME
-- AR_GLASSES_RUNTIME
-- OUTDOOR_ROUTE_ACCURACY
-- Full real GPS drift, battery, and background behavior
+## NOT_COMPUTABLE Until Direct Device Evidence
 
-See docs/PHYSICAL_DEVICE_WALK_VALIDATION.md for the manual protocol. No filled receipt yet.
+- Physical-device GPS behavior.
+- Outdoor route accuracy.
+- Battery behavior during real walks.
+- Physical audio playback behavior.
+- Headphone or spatial-audio behavior.
+- Physical-device interruption behavior.
 
-These must be directly observed before marking PASS.
+No physical walk receipt has been filled in this repository. Do not mark these as PASS from simulator or package evidence.
+
+## Deferred Product Scope
+
+- Walking is the MVP focus.
+- Event variety is intentionally bounded.
+- Production audio assets may remain incomplete.
+- There is no AR implementation.
+- There is no multiplayer.
+- There is no backend.
+- There are no accounts or authentication.
+- There is no marketplace or creator SDK.
+- There is no generalized narrative engine or generative AI.
+- Run, cycle, hike, and climb model values may exist for compatibility, but they are not validated MVP capabilities.
+
+## Compatibility Debt
+
+Some earlier proof-of-concept code for Orc Pursuit and Future Self remains. It should not be expanded or advertised as current product scope unless the solo MVP expansion gate is satisfied.
