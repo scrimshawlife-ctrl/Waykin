@@ -1,0 +1,30 @@
+# Swift Package
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+*.mode1v3
+*.mode2v3
+
+# macOS
+.DS_Store
+*.swp
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+*.exe
+*.out
+
+# IDE
+.idea/
+.vscode/
