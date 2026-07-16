@@ -11,14 +11,17 @@ final class ExperienceTests: XCTestCase {
         let update1 = exp.update(previousState: state, movement: stopped, context: ctx)
         state = update1.state
 
-        let threat1 = Int(state.data["threat"] ?? "0") ?? 0
-        XCTAssertGreaterThan(threat1, 2)
+        if case .orcPursuit(let s) = state.runtimeState {
+            XCTAssertGreaterThan(s.threatLevel, 2)
+        } else {
+            XCTFail("Expected orcPursuit state")
+        }
 
-        // Moving should reduce threat/distance
         let moving = MovementSnapshot(timestamp: Date(), speed: 2.5, distanceDelta: 10, isMoving: true)
         let update2 = exp.update(previousState: state, movement: moving, context: ctx)
-        let dist = Double(update2.state.data["pursuerDistance"] ?? "0") ?? 0
-        XCTAssertGreaterThan(dist, 20)
+        if case .orcPursuit(let s2) = update2.state.runtimeState {
+            XCTAssertGreaterThan(s2.pursuerDistanceMeters, 20)
+        }
     }
 
     func testFutureSelfLeadAdjusts() {
@@ -28,8 +31,9 @@ final class ExperienceTests: XCTestCase {
 
         let fast = MovementSnapshot(timestamp: Date(), speed: 3.0, distanceDelta: 15, isMoving: true)
         let update = exp.update(previousState: state, movement: fast, context: ctx)
-        let lead = Double(update.state.data["leadMeters"] ?? "100") ?? 100
-        XCTAssertLessThan(lead, 35) // should close
+        if case .futureSelf(let s) = update.state.runtimeState {
+            XCTAssertLessThan(s.leadMeters, 35)
+        }
     }
 
     func testRecommendationDayNightDiffers() {

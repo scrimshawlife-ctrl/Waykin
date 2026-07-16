@@ -1,0 +1,27 @@
+name: Waykin Canonical Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Run canonical validation
+        run: ./scripts/validate.sh
+
+      - name: Upload validation log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-log
+          path: /tmp/waykin-*.log
+          retention-days: 7
