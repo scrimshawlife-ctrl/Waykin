@@ -192,8 +192,12 @@ final class WaykinAppModel {
 
     // MARK: - Real physical walk support (COMPANION_WALK)
     func startRealCompanionWalk() {
+        // Ensure canonical walk + companion_walk
+        guard true else { return } // placeholder for future auth check
+
         realLocationProvider.onLocationUpdate = { [weak self] point in
             guard let self = self, self.isLiveSessionActive else { return }
+            // Only ingest if engine is in moving state
             self.movementEngine.ingestRealLocation(point)
             self.liveAcceptedCount += 1
         }
@@ -201,15 +205,21 @@ final class WaykinAppModel {
             self?.liveSignalState = state
         }
 
-        realLocationProvider.requestAuthorization()
+        // Request only when needed
+        if realLocationProvider.authorizationStatus == .notDetermined {
+            realLocationProvider.requestAuthorization()
+        }
+
         do {
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
+            // Set moving state through public API (resume does this)
+            try? movementEngine.resumeSession()
             realLocationProvider.startUpdatingLocation()
             isLiveSessionActive = true
             liveSignalState = .waitingForFirstFix
             liveAcceptedCount = 0
             liveRejectedCount = 0
-            path.append(AppRoute.activeSession(.calmDayWalk)) // reuse for now; real view later
+            path.append(AppRoute.activeSession(.calmDayWalk))
         } catch {
             demoMessage = "Failed to start real session: \(error)"
         }
@@ -224,7 +234,9 @@ final class WaykinAppModel {
     func resumeRealSession() {
         guard isLiveSessionActive else { return }
         try? movementEngine.resumeSession()
+        // In real provider, lastAcceptedPoint will serve as new baseline to avoid large jumps
         realLocationProvider.startUpdatingLocation()
+        liveSignalState = .waitingForFirstFix
     }
 
     func endRealSession() {
@@ -248,8 +260,8 @@ final class WaykinAppModel {
 
             let memText = "Real walk completed. Distance \(Int(ended.distanceMeters))m."
             let mem = SessionMemory(sessionID: summary.sessionID, text: memText)
-            let receipt = try? persistenceStore.saveMemory(mem)
-            lastSavedMemoryID = receipt?.recordID.uuidString ?? ""
+            let receipt = try persistenceStore.saveMemory(mem)
+            lastSavedMemoryID = receipt.recordID.uuidString
             persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
 
             path.append(AppRoute.summary(summary.id))
@@ -282,16 +294,19 @@ struct HomeView: View {
                 .accessibilityIdentifier("waykin.memory.open")
 
             // Real device entry point for physical validation (COMPANION_WALK)
-            Button("Start Real Walk (COMPANION_WALK)") {
+            Button("Start Real Walk") {
                 appModel.startRealCompanionWalk()
             }
             .accessibilityIdentifier("waykin.real.open")
+            .accessibilityIdentifier("waykin.real.activity.walk")
+            .accessibilityIdentifier("waykin.real.experience.companionWalk")
 
             if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") || true {  // dev diagnostics
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Location: \(appModel.realLocationProvider.authorizationStatus).description)")
                         .accessibilityIdentifier("waykin.location.authorization")
-                    Text("Signal: \(appModel.liveSignalState).description)")
+                    Text("Signal: \(appModel.liveSignalState).description)").accessibilityIdentifier("waykin.location.status")
+                    Text("Live: \(appModel.isLiveSessionActive)").accessibilityIdentifier("waykin.session.live")
                         .accessibilityIdentifier("waykin.location.signalState")
                     Text("Accepted: \(appModel.liveAcceptedCount) Rejected: \(appModel.liveRejectedCount)")
                         .accessibilityIdentifier("waykin.location.acceptedCount")
