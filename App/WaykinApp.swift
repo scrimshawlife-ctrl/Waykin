@@ -22,8 +22,12 @@ struct WaykinApp: App {
     init() {
         do {
             let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
-            let shouldReset = ProcessInfo.processInfo.arguments.contains("-WAYKIN_RESET_STATE") &&
-                              !ProcessInfo.processInfo.arguments.contains("-WAYKIN_RESET_STATE NO")
+            var shouldReset = false
+            let args = ProcessInfo.processInfo.arguments
+            if let idx = args.firstIndex(of: "-WAYKIN_RESET_STATE"), idx + 1 < args.count {
+            let val = args[idx + 1].trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            shouldReset = (val == "YES" || val == "TRUE" || val == "1")
+        }
 
             let container: ModelContainer
             if isUITesting {
@@ -93,16 +97,21 @@ final class WaykinAppModel {
     var persistenceLoadState: PersistenceLoadState = .loaded
     var persistenceMemoryCount: Int = 0
     var lastSavedMemoryID: String = ""
+    var persistenceStorePathHash: String = ""
 
     init(persistenceStore: PersistenceStore) {
         self.persistenceStore = persistenceStore
         self.demoController = DemoSessionController(movementEngine: movementEngine)
 
         let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
-        let shouldReset = ProcessInfo.processInfo.arguments.contains("-WAYKIN_RESET_STATE") &&
-                          !ProcessInfo.processInfo.arguments.contains("-WAYKIN_RESET_STATE NO")
+        var shouldReset = false
+        let args = ProcessInfo.processInfo.arguments
+        if let idx = args.firstIndex(of: "-WAYKIN_RESET_STATE"), idx + 1 < args.count {
+            let val = args[idx + 1].trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            shouldReset = (val == "YES" || val == "TRUE" || val == "1")
+        }
 
-        if shouldReset || isUITesting {
+        if shouldReset {
             _ = try? persistenceStore.resetDemoData()
         }
 
@@ -113,6 +122,7 @@ final class WaykinAppModel {
             _ = try? persistenceStore.saveCompanion(self.companion)
         }
         persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
+        persistenceStorePathHash = String((try? PersistenceConfiguration.persistentStoreURL().path.hashValue) ?? 0)
         refreshRecommendation()
     }
 
@@ -198,6 +208,7 @@ struct HomeView: View {
                     Text("Persistence: \(appModel.persistenceMode)").accessibilityIdentifier("waykin.persistence.mode")
                     Text("State: \(appModel.persistenceLoadState.rawValue)").accessibilityIdentifier("waykin.persistence.state")
                     Text("MemCount: \(appModel.persistenceMemoryCount)").accessibilityIdentifier("waykin.persistence.queryMemoryCount")
+                    Text("PathHash: \(appModel.persistenceStorePathHash)").accessibilityIdentifier("waykin.persistence.storePathHash")
                 }.font(.caption2)
             }
         }.padding()
@@ -252,22 +263,59 @@ struct SessionSummaryView: View {
     }
 }
 
+// MARK: - Dedicated Memory Row for stable XCUI identity
+struct MemoryRowView: View {
+    let record: SessionMemoryRecord
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(record.text)
+                .accessibilityIdentifier("waykin.memory.text.\(record.id.uuidString)")
+
+            if let scenario = record.scenarioID {
+                Text(scenario)
+                    .font(.caption)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("waykin.memory.item.\(record.id.uuidString)")
+        .accessibilityValue(record.id.uuidString)
+    }
+}
+
 // MARK: - Query-backed MemoryHistoryView (canonical source)
 struct MemoryHistoryView: View {
+    @Environment(WaykinAppModel.self) private var appModel
     @Query(sort: \SessionMemoryRecord.createdAt, order: .reverse)
     private var memoryRecords: [SessionMemoryRecord]
 
+    private var queryState: String {
+        memoryRecords.isEmpty ? "EMPTY" : "POPULATED"
+    }
+
     var body: some View {
         VStack {
-            Text("Memory History").font(.title).accessibilityIdentifier("waykin.memory.screen")
+            Text("Memory History")
+                .font(.title)
+                .accessibilityIdentifier("waykin.memory.screen")
+
+            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                Text(String(memoryRecords.count))
+                    .accessibilityIdentifier("waykin.persistence.queryMemoryCount")
+                Text(memoryRecords.map { $0.id.uuidString }.joined(separator: ","))
+                    .accessibilityIdentifier("waykin.persistence.queryMemoryIDs")
+                Text(queryState)
+                    .accessibilityIdentifier("waykin.memory.queryState")
+                Text(appModel.persistenceStorePathHash)
+                    .accessibilityIdentifier("waykin.persistence.storePathHash")
+            }
 
             if memoryRecords.isEmpty {
-                Text("No memories yet").accessibilityIdentifier("waykin.memory.empty")
+                Text("No memories yet")
+                    .accessibilityIdentifier("waykin.memory.empty")
             } else {
                 List(memoryRecords) { rec in
-                    Text(rec.text)
-                        .accessibilityIdentifier("waykin.memory.item.\(rec.id.uuidString)")
-                        .accessibilityValue(rec.scenarioID ?? "")
+                    MemoryRowView(record: rec)
                 }
             }
         }
