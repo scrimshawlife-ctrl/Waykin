@@ -1,11 +1,7 @@
 import Foundation
 
 public enum ActivityType: String, Codable, CaseIterable {
-    case walk
-    case run
-    case cycle
-    case hike
-    case climb
+    case walk, run, cycle, hike, climb
 }
 
 public enum MovementState: String, Codable {
@@ -74,7 +70,7 @@ public struct MovementSession: Codable, Identifiable {
     }
 }
 
-// MARK: - Typed Experience State (replaces stringly-typed data)
+// MARK: - Typed Experience State
 public enum ExperienceRuntimeState: Codable, Equatable {
     case companionWalk(CompanionWalkState)
     case orcPursuit(OrcPursuitState)
@@ -146,7 +142,7 @@ public struct Companion: Codable, Identifiable {
     }
 }
 
-public struct SessionMemory: Codable, Identifiable {
+public struct SessionMemory: Codable, Identifiable, Equatable {
     public let id: UUID
     public let sessionID: UUID
     public let text: String
@@ -194,6 +190,77 @@ public struct ExperienceRecommendation: Codable {
     }
 }
 
-public enum AttentionState {
-    case idle, lowAttentionMovement, highAttentionMovement, paused, postSession
+// MARK: - Time Context & Variants (formalized)
+public enum TimeContext: String, Codable, CaseIterable {
+    case dawn, morning, midday, goldenHour, twilight, night, deepNight
+}
+
+public enum ExperienceVariantID: String, Codable, CaseIterable {
+    // Companion Walk
+    case daylightExplorer, twilightLantern, nighttimeGuardian
+    // Orc Pursuit
+    case daylightRaiders, twilightTorchPursuit, nighttimeShadowPursuit
+    // Future Self
+    case daylightRival, twilightEcho, nighttimeGhost
+}
+
+public struct ExperienceVariantDefinition {
+    public let id: ExperienceVariantID
+    public let timeContexts: Set<TimeContext>
+    public let difficultyModifier: Double
+    public let visualProfile: String
+    public let audioProfile: String
+    public let narrativeTone: String
+}
+
+// MARK: - Demo Scenarios
+public enum DemoScenarioID: String, Codable, CaseIterable {
+    case calmDayWalk
+    case nightOrcPursuit
+    case futureSelfInterval
+}
+
+public struct DemoScenario {
+    public let id: DemoScenarioID
+    public let activity: ActivityType
+    public let experienceID: String
+    public let timeContext: TimeContext
+    public let ticks: [(delta: TimeInterval, speed: Double)]
+    public let expectedOutcome: String
+}
+
+// MARK: - Presentation
+public struct Coordinate: Codable, Equatable {
+    public let lat: Double
+    public let lon: Double
+}
+
+public struct MapEntity: Identifiable, Equatable {
+    public let id: UUID
+    public let role: String
+    public let coordinate: Coordinate
+    public let relativeDistanceMeters: Double?
+}
+
+public struct MapPresentationState {
+    public var userCoordinate: Coordinate?
+    public var route: [Coordinate]
+    public var entities: [MapEntity]
+    public var statusText: String
+}
+
+// MARK: - Session Summary
+public struct SessionSummary: Identifiable, Equatable {
+    public let id: UUID
+    public let sessionID: UUID
+    public let activity: ActivityType
+    public let experience: String
+    public let variant: String
+    public let duration: TimeInterval
+    public let activeTime: TimeInterval
+    public let distanceMeters: Double
+    public let averageSpeed: Double
+    public let outcome: String
+    public let bondDelta: Int
+    public let memory: SessionMemory
 }
