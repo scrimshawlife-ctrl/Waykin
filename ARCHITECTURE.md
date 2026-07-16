@@ -17,3 +17,8 @@ Choose activity + experience → start session → simulate/update loop → fini
 
 ## Future
 Add real LocationProvider, SwiftData persistence, RealityKit adapter.
+
+## Observed Additions (MPOC evolution)
+- RealLocationProvider (LocationProviding) for physical device path
+- SwiftData PersistenceStore with file-backed container and @Query-backed views
+- Real session lifecycle in WaykinAppModel (startRealCompanionWalk, pause, resume, end)
