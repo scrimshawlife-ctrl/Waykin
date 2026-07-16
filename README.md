@@ -61,3 +61,13 @@ See `WAYKIN_MPOC_IMPLEMENTATION_RECEIPT.md` (generated at end of build).
 - Climb activity is extension point only
 
 This MPOC proves: Choose movement → Choose experience → Move/simulate → Experience reacts → Memory created → Companion remembers → New recommendation.
+
+## Simulator Validation
+
+```bash
+make validate-simulator
+# or with specific device
+WAYKIN_SIMULATOR_NAME="iPhone 17 Pro" make validate-simulator
+```
+
+See `scripts/validate_simulator.sh` and `KNOWN_LIMITATIONS.md`.

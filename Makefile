@@ -1,7 +1,7 @@
 # Waykin Validation Makefile
 # Canonical targets for build, test, and validation.
 
-.PHONY: generate build test validate clean-generated
+.PHONY: generate build test validate validate-simulator clean-generated
 
 generate:
 	@rm -rf Waykin.xcodeproj
@@ -15,6 +15,9 @@ test:
 
 validate:
 	@./scripts/validate.sh
+
+validate-simulator:
+	@./scripts/validate_simulator.sh $(WAYKIN_SIMULATOR_NAME)
 
 clean-generated:
 	rm -rf Waykin.xcodeproj
