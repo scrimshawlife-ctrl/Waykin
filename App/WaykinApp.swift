@@ -3,7 +3,7 @@ import WaykinCore
 
 @main
 struct WaykinApp: App {
-    @State private var appModel = AppModel()
+    @State private var appModel = WaykinAppModel()
 
     var body: some Scene {
         WindowGroup {
@@ -16,111 +16,126 @@ struct WaykinApp: App {
 
 @MainActor
 @Observable
-final class AppModel {
+final class WaykinAppModel {
     let movementEngine = MovementEngine()
-    let memoryEngine = MemoryEngine()
+    let persistenceStore = PersistenceStore()
     let recommendationEngine = RecommendationEngine()
-    let persistence = PersistenceStore()
-
+    let demoController: DemoSessionController
+    
     var companion: Companion
-    var currentRecommendation: ExperienceRecommendation?
-    var lastMemory: SessionMemory?
-    var isInDemo = false
+    var activeRecommendation: ExperienceRecommendation?
+    var lastSummary: SessionSummary?
     var demoMessage = ""
-
+    
     init() {
-        // Try to load persisted companion or create default
-        if let loaded = persistence.loadCompanion() {
+        self.demoController = DemoSessionController(movementEngine: movementEngine)
+        
+        if let loaded = persistenceStore.loadCompanion() {
             self.companion = loaded
         } else {
             self.companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
-            persistence.saveCompanion(self.companion)
+            persistenceStore.saveCompanion(self.companion)
         }
-        self.currentRecommendation = recommendationEngine.recommend(for: "day", lastExperience: nil, activity: .walk).first
-        self.lastMemory = persistence.loadMemories().first
+        refreshRecommendation()
     }
-
-    func startNativeDemo() {
-        isInDemo = true
-        demoMessage = "Demo Mode: Simulating NIGHT_ORC_PURSUIT..."
-
-        // Use the real engine
-        try? movementEngine.startSession(activity: .walk, experienceID: "orc_pursuit")
-
-        // Simulate a short session
-        for _ in 0..<8 {
-            movementEngine.simulate(deltaSeconds: 10, speed: Double.random(in: 1.5...3.0))
-        }
-
-        guard let session = movementEngine.currentSession else { return }
-
-        let exp = OrcPursuitExperience()
-        let context = ExperienceContext(timeOfDay: "night", activity: .walk)
-        let state = exp.start(context: context)
-        let result = exp.finish(state: state, session: session)
-
-        let memory = memoryEngine.createMemory(session: session, result: result, companion: companion)
-        persistence.saveMemory(memory)
-
-        companion.bondLevel += result.bondDelta
-        companion.memories.append(memory)
-        persistence.saveCompanion(companion)
-
-        lastMemory = memory
-        demoMessage = "Demo complete. Memory saved. Bond now \(companion.bondLevel)."
-        isInDemo = false
-    }
-
+    
     func refreshRecommendation() {
-        currentRecommendation = recommendationEngine.recommend(for: "day", lastExperience: companion.lastSessionID?.uuidString, activity: .walk).first
+        activeRecommendation = recommendationEngine.recommend(
+            for: "day",
+            lastExperience: companion.lastSessionID?.uuidString,
+            activity: .walk
+        ).first
+    }
+    
+    func startDemo(_ scenario: DemoScenarioID) {
+        do {
+            try demoController.start(scenarioID: scenario)
+            demoMessage = "Running \(scenario.rawValue)..."
+        } catch {
+            demoMessage = "Failed to start demo"
+        }
+    }
+    
+    func pauseDemo() { demoController.pause() }
+    func resumeDemo() { demoController.resume() }
+    func advanceDemo() { demoController.advanceOneTick() }
+    func runDemoToEnd() { demoController.runToEnd() }
+    
+    func endDemo() {
+        let (_, result, summary) = demoController.end()
+        if let result = result, let summary = summary {
+            var updated = companion
+            updated.bondLevel += result.bondDelta
+            let mem = SessionMemory(sessionID: summary.sessionID, text: result.memoryText)
+            updated.memories.append(mem)
+            persistenceStore.saveCompanion(updated)
+            persistenceStore.saveMemory(mem)
+            companion = updated
+            lastSummary = summary
+            demoMessage = "Session ended: \(result.outcome). Bond +\(result.bondDelta)"
+            refreshRecommendation()
+        }
+    }
+    
+    func resetDemoData() {
+        persistenceStore.resetDemoData()
+        companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
+        persistenceStore.saveCompanion(companion)
+        lastSummary = nil
+        demoMessage = "Data reset"
     }
 }
 
 struct HomeView: View {
-    @Bindable var appModel: AppModel
-
+    @Bindable var appModel: WaykinAppModel
+    
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Waykin")
-                .font(.largeTitle.bold())
-
+        VStack(spacing: 16) {
+            Text("Waykin").font(.largeTitle.bold())
+            
             Text("Companion: \(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
-                .font(.headline)
-
-            if let rec = appModel.currentRecommendation {
-                VStack {
-                    Text("Recommended: \(rec.experienceID)")
-                    Text(rec.observedReasons.joined(separator: ", "))
-                        .font(.caption)
+            
+            if let rec = appModel.activeRecommendation {
+                Text("Recommended: \(rec.experienceID) (\(rec.variantID))")
+                    .font(.caption)
+            }
+            
+            Divider()
+            
+            Text("Demo Scenarios")
+            ForEach(DemoScenarioID.allCases, id: \.self) { scenario in
+                Button("Start \(scenario.rawValue)") {
+                    appModel.startDemo(scenario)
                 }
-                .padding()
-                .background(.thinMaterial)
-                .cornerRadius(12)
             }
-
-            Button("Start Native Demo (NIGHT_ORC_PURSUIT)") {
-                appModel.startNativeDemo()
+            
+            if appModel.demoController.isRunning {
+                VStack {
+                    Text(appModel.demoController.presentationState.statusText)
+                    HStack {
+                        Button("Pause") { appModel.pauseDemo() }
+                        Button("Resume") { appModel.resumeDemo() }
+                        Button("Advance Tick") { appModel.advanceDemo() }
+                        Button("Run to End") { appModel.runDemoToEnd() }
+                        Button("End Session") { appModel.endDemo() }
+                    }
+                }
             }
-            .buttonStyle(.borderedProminent)
-
+            
             if !appModel.demoMessage.isEmpty {
-                Text(appModel.demoMessage)
-                    .font(.caption)
+                Text(appModel.demoMessage).font(.caption)
             }
-
-            if let mem = appModel.lastMemory {
-                Text("Last Memory: \(mem.text)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            
+            if let summary = appModel.lastSummary {
+                VStack {
+                    Text("Last Summary: \(summary.outcome) • +\(summary.bondDelta) bond")
+                    Text(summary.memory.text).font(.caption2)
+                }
             }
-
-            Button("Refresh Recommendation") {
-                appModel.refreshRecommendation()
-            }
+            
+            Button("Reset Demo Data") { appModel.resetDemoData() }
+                .foregroundStyle(.red)
         }
         .padding()
-        .onAppear {
-            appModel.refreshRecommendation()
-        }
     }
 }
