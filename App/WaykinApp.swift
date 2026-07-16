@@ -1,5 +1,6 @@
 import SwiftUI
 import WaykinCore
+import WaykinCore
 import MapKit
 import SwiftData
 
@@ -85,6 +86,8 @@ final class WaykinAppModel {
     let recommendationEngine = RecommendationEngine()
     let demoController: DemoSessionController
 
+    let realLocationProvider = RealLocationProvider()
+
     var companion: Companion
     var activeRecommendation: ExperienceRecommendation?
     var lastSummary: SessionSummary?
@@ -98,6 +101,12 @@ final class WaykinAppModel {
     var persistenceMemoryCount: Int = 0
     var lastSavedMemoryID: String = ""
     var persistenceStorePathHash: String = ""
+
+    // Live real-session state (physical device)
+    var isLiveSessionActive = false
+    var liveSignalState: LiveLocationSignalState = .waitingForAuthorization
+    var liveAcceptedCount: Int = 0
+    var liveRejectedCount: Int = 0
 
     init(persistenceStore: PersistenceStore) {
         self.persistenceStore = persistenceStore
@@ -142,7 +151,7 @@ final class WaykinAppModel {
     func startDemo(_ scenario: DemoScenarioID) {
         do {
             try demoController.start(scenarioID: scenario)
-            demoMessage = "Running \(scenario.rawValue)..."
+            demoMessage = "Running \(scenario).description)..."
             path.append(AppRoute.activeSession(scenario))
         } catch {
             demoMessage = "Failed to start demo"
@@ -180,7 +189,76 @@ final class WaykinAppModel {
     }
 
     func returnHome() { path = NavigationPath() }
+
+    // MARK: - Real physical walk support (COMPANION_WALK)
+    func startRealCompanionWalk() {
+        realLocationProvider.onLocationUpdate = { [weak self] point in
+            guard let self = self, self.isLiveSessionActive else { return }
+            self.movementEngine.ingestRealLocation(point)
+            self.liveAcceptedCount += 1
+        }
+        realLocationProvider.onSignalStateChange = { [weak self] state in
+            self?.liveSignalState = state
+        }
+
+        realLocationProvider.requestAuthorization()
+        do {
+            try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
+            realLocationProvider.startUpdatingLocation()
+            isLiveSessionActive = true
+            liveSignalState = .waitingForFirstFix
+            liveAcceptedCount = 0
+            liveRejectedCount = 0
+            path.append(AppRoute.activeSession(.calmDayWalk)) // reuse for now; real view later
+        } catch {
+            demoMessage = "Failed to start real session: \(error)"
+        }
+    }
+
+    func pauseRealSession() {
+        guard isLiveSessionActive else { return }
+        try? movementEngine.pauseSession()
+        realLocationProvider.stopUpdatingLocation()
+    }
+
+    func resumeRealSession() {
+        guard isLiveSessionActive else { return }
+        try? movementEngine.resumeSession()
+        realLocationProvider.startUpdatingLocation()
+    }
+
+    func endRealSession() {
+        guard isLiveSessionActive else { return }
+        realLocationProvider.stopUpdatingLocation()
+        do {
+            let ended = try movementEngine.endSession()
+            isLiveSessionActive = false
+
+            // Create minimal summary + memory for proof
+            let summary = SessionSummary(
+                id: UUID(),
+                sessionID: ended.id,
+                activity: ended.activityType,
+                experienceID: ended.experienceID,
+                distanceMeters: ended.distanceMeters,
+                duration: ended.activeTime,
+                outcome: "COMPLETED"
+            )
+            lastSummary = summary
+
+            let memText = "Real walk completed. Distance \(Int(ended.distanceMeters))m."
+            let mem = SessionMemory(sessionID: summary.sessionID, text: memText)
+            let receipt = try? persistenceStore.saveMemory(mem)
+            lastSavedMemoryID = receipt?.recordID.uuidString ?? ""
+            persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
+
+            path.append(AppRoute.summary(summary.id))
+        } catch {
+            demoMessage = "Real session end failed: \(error)"
+        }
+    }
 }
+
 
 // MARK: - Views
 
@@ -203,10 +281,28 @@ struct HomeView: View {
             Button("Memory History") { appModel.path.append(AppRoute.memoryHistory) }
                 .accessibilityIdentifier("waykin.memory.open")
 
+            // Real device entry point for physical validation (COMPANION_WALK)
+            Button("Start Real Walk (COMPANION_WALK)") {
+                appModel.startRealCompanionWalk()
+            }
+            .accessibilityIdentifier("waykin.real.open")
+
+            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") || true {  // dev diagnostics
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Location: \(appModel.realLocationProvider.authorizationStatus).description)")
+                        .accessibilityIdentifier("waykin.location.authorization")
+                    Text("Signal: \(appModel.liveSignalState).description)")
+                        .accessibilityIdentifier("waykin.location.signalState")
+                    Text("Accepted: \(appModel.liveAcceptedCount) Rejected: \(appModel.liveRejectedCount)")
+                        .accessibilityIdentifier("waykin.location.acceptedCount")
+                }
+                .font(.caption2)
+            }
+
             if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                 VStack {
                     Text("Persistence: \(appModel.persistenceMode)").accessibilityIdentifier("waykin.persistence.mode")
-                    Text("State: \(appModel.persistenceLoadState.rawValue)").accessibilityIdentifier("waykin.persistence.state")
+                    Text("State: \(appModel.persistenceLoadState).description)").accessibilityIdentifier("waykin.persistence.state")
                     Text("MemCount: \(appModel.persistenceMemoryCount)").accessibilityIdentifier("waykin.persistence.queryMemoryCount")
                     Text("PathHash: \(appModel.persistenceStorePathHash)").accessibilityIdentifier("waykin.persistence.storePathHash")
                 }.font(.caption2)
@@ -222,8 +318,8 @@ struct DemoScenarioListView: View {
         VStack {
             Text("Demo Scenarios").font(.title).accessibilityIdentifier("waykin.demo.screen")
             ForEach(DemoScenarioID.allCases, id: \.self) { scenario in
-                Button(scenario.rawValue) { appModel.startDemo(scenario) }
-                    .accessibilityIdentifier("waykin.demo.scenario.\(scenario.rawValue)")
+                Button(scenario).description) { appModel.startDemo(scenario) }
+                    .accessibilityIdentifier("waykin.demo.scenario.\(scenario).description)")
             }
         }.padding()
     }
@@ -235,7 +331,7 @@ struct ActiveSessionView: View {
 
     var body: some View {
         VStack {
-            Text("Active: \(scenario.rawValue)").font(.title2).accessibilityIdentifier("waykin.session.screen")
+            Text("Active: \(scenario).description)").font(.title2).accessibilityIdentifier("waykin.session.screen")
             Text(appModel.demoController.presentationState.statusText).accessibilityIdentifier("waykin.session.elapsed")
 
             let center = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
@@ -245,6 +341,20 @@ struct ActiveSessionView: View {
 
             HStack {
                 Button("Complete") { appModel.endDemo() }.accessibilityIdentifier("waykin.session.complete")
+            }
+
+            // Live real controls (physical device)
+            if appModel.isLiveSessionActive {
+                HStack(spacing: 12) {
+                    Button("Pause") { appModel.pauseRealSession() }
+                        .accessibilityIdentifier("waykin.session.pause")
+                    Button("Resume") { appModel.resumeRealSession() }
+                        .accessibilityIdentifier("waykin.session.resume")
+                    Button("End Real") { appModel.endRealSession() }
+                        .accessibilityIdentifier("waykin.session.end")
+                }
+                Text("Live Signal: \(appModel.liveSignalState).description)")
+                    .accessibilityIdentifier("waykin.session.liveSignal")
             }
         }.padding()
     }
