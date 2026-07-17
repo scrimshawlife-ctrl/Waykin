@@ -112,6 +112,7 @@ final class RealMovementSessionTests: XCTestCase {
         let model = try makeModel(provider: provider, audio: audio)
         model.startRealCompanionWalk()
         audio.stopCalls = 0
+        let startingBond = model.companion.bondLevel
 
         model.endRealSession()
         model.endRealSession()
@@ -120,6 +121,9 @@ final class RealMovementSessionTests: XCTestCase {
         XCTAssertNil(model.movementEngine.currentSession)
         XCTAssertEqual(audio.stopCalls, 1)
         XCTAssertEqual(model.persistenceMemoryCount, 1)
+        XCTAssertEqual(model.companion.bondLevel, startingBond + 1)
+        XCTAssertEqual(try model.persistenceStore.loadCompanion()?.bondLevel, startingBond + 1)
+        XCTAssertFalse(model.lastSummary?.memory.text.contains("unverified") ?? true)
     }
 
     private func makeModel(

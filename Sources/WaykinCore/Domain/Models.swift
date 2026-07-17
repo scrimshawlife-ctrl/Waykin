@@ -104,7 +104,7 @@ public struct WorldState: Codable, Equatable, Sendable {
     }
 }
 
-public enum WorldEventKind: String, Codable, CaseIterable, Sendable {
+public enum WorldEventKind: String, Codable, CaseIterable, Hashable, Sendable {
     case companionDrawsNear
     case companionMovesAhead
     case companionObserves
@@ -231,6 +231,9 @@ public struct CompanionWalkState: Codable, Equatable {
     public var worldState: WorldState?
     public var pursuitState: PursuitState
     public var lastEvent: WorldEvent?
+    public var lastEventElapsed: TimeInterval?
+    public var lastEventElapsedByKind: [WorldEventKind: TimeInterval]
+    public var eventHistory: [WorldEvent]
     public var activeAudioCues: [AudioCue]
 
     public init(
@@ -241,6 +244,9 @@ public struct CompanionWalkState: Codable, Equatable {
         worldState: WorldState? = nil,
         pursuitState: PursuitState = .inactive,
         lastEvent: WorldEvent? = nil,
+        lastEventElapsed: TimeInterval? = nil,
+        lastEventElapsedByKind: [WorldEventKind: TimeInterval] = [:],
+        eventHistory: [WorldEvent] = [],
         activeAudioCues: [AudioCue] = []
     ) {
         self.accumulatedBondProgress = accumulatedBondProgress
@@ -250,6 +256,9 @@ public struct CompanionWalkState: Codable, Equatable {
         self.worldState = worldState
         self.pursuitState = pursuitState
         self.lastEvent = lastEvent
+        self.lastEventElapsed = lastEventElapsed
+        self.lastEventElapsedByKind = lastEventElapsedByKind
+        self.eventHistory = eventHistory
         self.activeAudioCues = activeAudioCues
     }
 }

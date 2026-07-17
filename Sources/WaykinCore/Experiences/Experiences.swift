@@ -38,6 +38,37 @@ public struct CompanionWalkExperience: WaykinExperience {
     }
 
     public func update(previousState: ExperienceSessionState, movement: MovementSnapshot, context: ExperienceContext) -> ExperienceUpdate {
+        update(
+            previousState: previousState,
+            movement: movement,
+            context: context,
+            scheduledEventKind: nil,
+            suppressGeneratedEvents: false
+        )
+    }
+
+    func updateForDemo(
+        previousState: ExperienceSessionState,
+        movement: MovementSnapshot,
+        context: ExperienceContext,
+        scheduledEventKind: WorldEventKind?
+    ) -> ExperienceUpdate {
+        update(
+            previousState: previousState,
+            movement: movement,
+            context: context,
+            scheduledEventKind: scheduledEventKind,
+            suppressGeneratedEvents: true
+        )
+    }
+
+    private func update(
+        previousState: ExperienceSessionState,
+        movement: MovementSnapshot,
+        context: ExperienceContext,
+        scheduledEventKind: WorldEventKind?,
+        suppressGeneratedEvents: Bool
+    ) -> ExperienceUpdate {
         guard case .companionWalk(var walkState) = previousState.runtimeState else {
             return ExperienceUpdate(state: previousState, companionCommands: [], audioCues: [], narrativeEvents: [], rewardEvents: [])
         }
@@ -66,15 +97,42 @@ public struct CompanionWalkExperience: WaykinExperience {
             lastEventAt: walkState.lastEvent?.occurredAt
         )
 
-        var generator = WorldEventGenerator(seed: context.eventSeed)
-        let event = generator.evaluate(state: worldState, now: movement.timestamp)
+        let allowedKinds = Set(WorldEventKind.allCases.filter {
+            Self.isAllowedTransition(from: walkState.pursuitState, eventKind: $0)
+        })
+        let event: WorldEvent?
+        if suppressGeneratedEvents {
+            event = scheduledEventKind.flatMap { kind in
+                guard allowedKinds.contains(kind) else { return nil }
+                return WorldEvent(
+                    kind: kind,
+                    occurredAt: movement.timestamp,
+                    intensity: max(worldState.energy, worldState.pressure),
+                    debugLabel: kind.rawValue
+                )
+            }
+        } else {
+            var generator = WorldEventGenerator(seed: context.eventSeed)
+            event = generator.evaluate(
+                state: worldState,
+                now: movement.timestamp,
+                elapsed: walkState.movementSeconds,
+                lastGeneratedAtElapsed: walkState.lastEventElapsed,
+                lastFiredAtElapsedByKind: walkState.lastEventElapsedByKind,
+                allowedKinds: allowedKinds
+            )
+        }
         worldState.lastEventAt = event?.occurredAt ?? worldState.lastEventAt
 
         if let event {
             walkState.lastEvent = event
+            walkState.lastEventElapsed = walkState.movementSeconds
+            walkState.lastEventElapsedByKind[event.kind] = walkState.movementSeconds
+            walkState.eventHistory.append(event)
+            if walkState.eventHistory.count > 32 {
+                walkState.eventHistory.removeFirst(walkState.eventHistory.count - 32)
+            }
             walkState.pursuitState = Self.nextPursuitState(current: walkState.pursuitState, event: event)
-        } else if walkState.pursuitState == .close && pressure < 0.45 {
-            walkState.pursuitState = .fading
         }
 
         var audioLayer = AudioExperienceLayer()
@@ -103,8 +161,7 @@ public struct CompanionWalkExperience: WaykinExperience {
             let memory = Self.memoryText(
                 companionName: "Lira",
                 distanceMeters: distance,
-                event: walkState.lastEvent,
-                bondDelta: bond
+                events: walkState.eventHistory
             )
             return ExperienceResult(
                 outcome: "COMPLETED",
@@ -134,6 +191,21 @@ public struct CompanionWalkExperience: WaykinExperience {
             return .fading
         default:
             return current
+        }
+    }
+
+    private static func isAllowedTransition(from current: PursuitState, eventKind: WorldEventKind) -> Bool {
+        switch eventKind {
+        case .distantPresence:
+            return current == .inactive
+        case .pursuitBegins:
+            return current == .noticed
+        case .pursuitIntensifies:
+            return current == .approaching || current == .close
+        case .pursuitFades:
+            return current == .approaching || current == .close
+        default:
+            return true
         }
     }
 
@@ -182,18 +254,30 @@ public struct CompanionWalkExperience: WaykinExperience {
         }
     }
 
-    private static func memoryText(companionName: String, distanceMeters: Int, event: WorldEvent?, bondDelta: Int) -> String {
-        if let event {
-            switch event.kind {
-            case .pursuitBegins, .pursuitIntensifies, .distantPresence:
-                return "A distant presence followed during a \(distanceMeters)m walk, then faded. Bond increased by \(bondDelta)."
-            case .bondMoment, .companionDrawsNear:
-                return "\(companionName) stayed close during a \(distanceMeters)m walk. Bond increased by \(bondDelta)."
-            default:
-                return "\(companionName) noticed a quiet shift during a \(distanceMeters)m walk. Bond increased by \(bondDelta)."
-            }
+    private static func memoryText(companionName: String, distanceMeters: Int, events: [WorldEvent]) -> String {
+        let kinds = Set(events.map(\.kind))
+        if kinds.contains(.companionObserves),
+           kinds.contains(.companionDrawsNear),
+           kinds.contains(.distantPresence),
+           kinds.contains(.pursuitFades) {
+            return "\(companionName) watched the path, drew close when a distant presence appeared, and stayed beside you until it faded."
         }
-        return "\(companionName) stayed close during a quiet \(distanceMeters)m walk. Bond increased by \(bondDelta)."
+        if kinds.contains(.distantPresence), kinds.contains(.pursuitFades) {
+            return "\(companionName) noticed a distant presence and stayed beside you until it faded."
+        }
+        if kinds.contains(.distantPresence) {
+            return "\(companionName) noticed a distant presence during a \(distanceMeters)m walk."
+        }
+        if kinds.contains(.companionDrawsNear) {
+            return "\(companionName) drew close during a \(distanceMeters)m walk."
+        }
+        if kinds.contains(.companionObserves) {
+            return "\(companionName) watched the path during a \(distanceMeters)m walk."
+        }
+        if kinds.contains(.bondMoment) {
+            return "\(companionName) shared a familiar motif during a \(distanceMeters)m walk."
+        }
+        return "\(companionName) stayed close during a quiet \(distanceMeters)m walk."
     }
 }
 

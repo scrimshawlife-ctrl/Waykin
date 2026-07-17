@@ -31,13 +31,28 @@ public struct WorldEventRule: Codable, Equatable, Sendable {
     }
 
     public func isEligible(for state: WorldState, now: Date) -> Bool {
+        guard meetsThresholds(for: state) else { return false }
+        if let last = state.lastEventAt, now.timeIntervalSince(last) < cooldown { return false }
+        return state.movementState == .moving || state.movementState == .paused
+    }
+
+    func isEligible(
+        for state: WorldState,
+        elapsed: TimeInterval,
+        lastFiredAtElapsed: TimeInterval?
+    ) -> Bool {
+        guard meetsThresholds(for: state) else { return false }
+        if let lastFiredAtElapsed, elapsed - lastFiredAtElapsed < cooldown { return false }
+        return state.movementState == .moving || state.movementState == .paused
+    }
+
+    private func meetsThresholds(for state: WorldState) -> Bool {
         if state.energy < minimumEnergy { return false }
         if state.pressure < minimumPressure { return false }
         if state.pressure > maximumPressure { return false }
         if state.familiarity < minimumFamiliarity { return false }
         if state.bondLevel < minimumBondLevel { return false }
-        if let last = state.lastEventAt, now.timeIntervalSince(last) < cooldown { return false }
-        return state.movementState == .moving || state.movementState == .paused
+        return true
     }
 }
 
@@ -83,19 +98,46 @@ public struct SeededRandomNumberGenerator: RandomNumberGenerator, Sendable {
 public struct WorldEventGenerator: Sendable {
     private var rng: SeededRandomNumberGenerator
     private let configuration: WorldEventGeneratorConfiguration
-    private var lastGeneratedAt: Date?
+    private var lastGeneratedAtElapsed: TimeInterval?
+    private var lastFiredAtElapsedByKind: [WorldEventKind: TimeInterval] = [:]
 
     public init(seed: UInt64, configuration: WorldEventGeneratorConfiguration = WorldEventGeneratorConfiguration()) {
         self.rng = SeededRandomNumberGenerator(seed: seed)
         self.configuration = configuration
     }
 
-    public mutating func evaluate(state: WorldState, now: Date) -> WorldEvent? {
-        if let lastGeneratedAt, now.timeIntervalSince(lastGeneratedAt) < configuration.minimumTickSpacing {
+    public mutating func evaluate(
+        state: WorldState,
+        now: Date,
+        elapsed: TimeInterval? = nil,
+        lastGeneratedAtElapsed externalLastGeneratedAtElapsed: TimeInterval? = nil,
+        lastFiredAtElapsedByKind externalLastFiredAtElapsedByKind: [WorldEventKind: TimeInterval] = [:],
+        allowedKinds: Set<WorldEventKind>? = nil
+    ) -> WorldEvent? {
+        let elapsed = max(0, (elapsed ?? state.activeTime).finiteOrZero)
+        let lastGenerated = [lastGeneratedAtElapsed, externalLastGeneratedAtElapsed]
+            .compactMap { $0 }
+            .max()
+        if let lastGenerated, elapsed - lastGenerated < configuration.minimumTickSpacing {
             return nil
         }
 
-        let eligible = configuration.rules.filter { $0.isEligible(for: state, now: now) }
+        let eligible = configuration.rules.filter { rule in
+            if let allowedKinds, !allowedKinds.contains(rule.kind) {
+                return false
+            }
+            let lastFired = [
+                lastFiredAtElapsedByKind[rule.kind],
+                externalLastFiredAtElapsedByKind[rule.kind]
+            ]
+                .compactMap { $0 }
+                .max()
+            return rule.isEligible(
+                for: state,
+                elapsed: elapsed,
+                lastFiredAtElapsed: lastFired
+            )
+        }
         guard !eligible.isEmpty else { return nil }
 
         let totalWeight = eligible.reduce(UInt64(0)) { $0 + $1.weight }
@@ -106,7 +148,8 @@ public struct WorldEventGenerator: Sendable {
             return pick < cursor
         } ?? eligible[0]
 
-        lastGeneratedAt = now
+        lastGeneratedAtElapsed = elapsed
+        lastFiredAtElapsedByKind[selected.kind] = elapsed
         return WorldEvent(
             kind: selected.kind,
             occurredAt: now,

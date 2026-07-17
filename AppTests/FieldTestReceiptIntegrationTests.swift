@@ -21,8 +21,8 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertEqual(disabled.activePresencePresentation.phrase, "Lira is listening.")
         enabled.runDemoToEnd()
         disabled.runDemoToEnd()
-        enabledClock.now = enabledClock.now.addingTimeInterval(96)
-        disabledClock.now = disabledClock.now.addingTimeInterval(96)
+        enabledClock.now = enabledClock.now.addingTimeInterval(280)
+        disabledClock.now = disabledClock.now.addingTimeInterval(280)
         enabled.endDemo()
         disabled.endDemo()
 
@@ -39,8 +39,42 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertEqual(receipt.mode, .demo)
         XCTAssertEqual(receipt.outcome, .completed)
         XCTAssertEqual(receipt.persistence, .succeeded)
-        XCTAssertEqual(receipt.summary.durationSeconds, 96)
+        XCTAssertEqual(receipt.summary.durationSeconds, 280)
+        XCTAssertEqual(receipt.summary.bondDelta, enabled.lastSummary?.bondDelta)
         XCTAssertTrue(receipt.summary.memoryWritten)
+        XCTAssertEqual(
+            receipt.timeline
+                .filter { $0.category == .worldEventEmitted }
+                .map(\.code),
+            [
+                WorldEventKind.companionObserves.rawValue,
+                WorldEventKind.companionDrawsNear.rawValue,
+                WorldEventKind.distantPresence.rawValue,
+                WorldEventKind.pursuitBegins.rawValue,
+                WorldEventKind.pursuitIntensifies.rawValue,
+                WorldEventKind.pursuitFades.rawValue,
+                WorldEventKind.bondMoment.rawValue
+            ]
+        )
+        XCTAssertTrue(receipt.summary.worldEventCounts.values.allSatisfy { $0 == 1 })
+        XCTAssertEqual(
+            receipt.timeline
+                .filter { $0.category == .audioCueRequested }
+                .map(\.code),
+            [
+                AudioCueKind.quietShift.rawValue,
+                AudioCueKind.companionNear.rawValue,
+                AudioCueKind.distantFootsteps.rawValue,
+                AudioCueKind.distantFootsteps.rawValue,
+                AudioCueKind.pursuitPressure.rawValue,
+                AudioCueKind.pursuitRelease.rawValue,
+                AudioCueKind.bondMotif.rawValue
+            ]
+        )
+        XCTAssertEqual(
+            enabled.lastSummary?.memory.text,
+            "Lira watched the path, drew close when a distant presence appeared, and stayed beside you until it faded."
+        )
         XCTAssertEqual(receipt.timeline.last?.category, .sessionCompleted)
         XCTAssertTrue(receipt.timeline.contains { $0.category == .audioLifecycleAction && $0.code == "stop" })
     }
@@ -88,6 +122,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertEqual(receipt.summary.acceptedSampleCount, 2)
         XCTAssertEqual(receipt.summary.rejectedSampleCount, 1)
         XCTAssertEqual(receipt.summary.memoryWritten, true)
+        XCTAssertEqual(receipt.summary.bondDelta, 1)
         XCTAssertEqual(model.persistenceMemoryCount, 1)
     }
 

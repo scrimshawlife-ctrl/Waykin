@@ -501,6 +501,15 @@ final class WaykinAppModel {
             return
         }
 
+        let experienceResult = realExperienceState.map {
+            CompanionWalkExperience().finish(state: $0, session: ended)
+        }
+        let physicalBondDelta = 1
+        let memoryText = experienceResult?.memoryText
+            ?? "Lira stayed close during a quiet \(Int(ended.distanceMeters))m walk."
+        var updatedCompanion = companion
+        updatedCompanion.bondLevel += physicalBondDelta
+
         realWalkState = .completed
         lifecycleSuspendedRealWalk = false
         realExperienceState = nil
@@ -517,14 +526,16 @@ final class WaykinAppModel {
                 distanceMeters: ended.distanceMeters,
                 averageSpeed: ended.averageSpeedMetersPerSecond,
                 outcome: "COMPLETED",
-                bondDelta: 1,
-                memory: SessionMemory(sessionID: ended.id, text: "Lira stayed close during a real walk. Physical GPS and audio behavior remain unverified.")
+                bondDelta: physicalBondDelta,
+                memory: SessionMemory(sessionID: ended.id, text: memoryText)
         )
         lastSummary = summary
 
         let mem = SessionMemory(sessionID: summary.sessionID, text: summary.memory.text)
         do {
             let receipt = try persistenceStore.saveMemory(mem)
+            try persistenceStore.saveCompanion(updatedCompanion)
+            companion = updatedCompanion
             lastSavedMemoryID = receipt.recordID.uuidString
             persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
 
@@ -532,7 +543,7 @@ final class WaykinAppModel {
             finishFieldTestReceipt(
                 session: ended,
                 outcome: .userEnded,
-                endingBond: companion.bondLevel,
+                endingBond: updatedCompanion.bondLevel,
                 memoryWritten: true,
                 persistence: .succeeded,
                 endedAt: endedAt
@@ -629,8 +640,9 @@ final class WaykinAppModel {
             update.companionCommands.forEach { self.realCompanionRuntime.apply(command: $0) }
             self.recordObservedMovementState(snapshot.isMoving ? .moving : .paused, at: snapshot.timestamp)
             if case .companionWalk(let walkState) = update.state.runtimeState {
-                self.realCompanionRuntime.apply(event: walkState.lastEvent)
-                if let event = walkState.lastEvent {
+                let event = update.narrativeEvents.isEmpty ? nil : walkState.lastEvent
+                self.realCompanionRuntime.apply(event: event)
+                if let event {
                     self.activeFieldTestReceipt?.recordWorldEvent(event)
                 }
             }
@@ -938,6 +950,7 @@ struct ActiveSessionView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(appModel.demoController.isRunning || appModel.isLiveSessionActive)
     }
 }
 
@@ -954,6 +967,14 @@ struct SessionSummaryView: View {
                     .accessibilityIdentifier("waykin.session.closing")
             }
             Text(summary.memory.text).accessibilityIdentifier("waykin.summary.memory")
+            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
+                    .accessibilityIdentifier("waykin.summary.memoryWrite")
+                Text(appModel.latestFieldTestReceiptURL.map {
+                    FileManager.default.fileExists(atPath: $0.path) ? "WRITTEN" : "MISSING"
+                } ?? "MISSING")
+                .accessibilityIdentifier("waykin.summary.receiptWrite")
+            }
             Button("Back to Home") { appModel.returnHome() }.accessibilityIdentifier("waykin.summary.home")
         }.padding()
     }

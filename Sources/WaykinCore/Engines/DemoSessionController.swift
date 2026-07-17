@@ -3,6 +3,16 @@ import Foundation
 @MainActor
 @Observable
 public final class DemoSessionController {
+    private static let demoEventSequence: [WorldEventKind] = [
+        .companionObserves,
+        .companionDrawsNear,
+        .distantPresence,
+        .pursuitBegins,
+        .pursuitIntensifies,
+        .pursuitFades,
+        .bondMoment
+    ]
+
     public let movementEngine: MovementEngine
     public private(set) var currentScenario: DemoScenario?
     public private(set) var isRunning = false
@@ -24,7 +34,7 @@ public final class DemoSessionController {
             activity: .walk,
             experienceID: "companion_walk",
             timeContext: .midday,
-            ticks: Array(repeating: (delta: 8.0, speed: 1.4), count: 12),
+            ticks: Array(repeating: (delta: 40.0, speed: 1.4), count: demoEventSequence.count),
             expectedOutcome: "COMPLETED"
         )
     ]
@@ -76,11 +86,19 @@ public final class DemoSessionController {
                 isMoving: speed > 0.1
             )
             let context = ExperienceContext(timeOfDay: scenario.timeContext.rawValue, activity: scenario.activity)
-            let update = CompanionWalkExperience().update(previousState: previousState, movement: movement, context: context)
+            let scheduledEventKind = Self.demoEventSequence.indices.contains(tickIndex)
+                ? Self.demoEventSequence[tickIndex]
+                : nil
+            let update = CompanionWalkExperience().updateForDemo(
+                previousState: previousState,
+                movement: movement,
+                context: context,
+                scheduledEventKind: scheduledEventKind
+            )
             currentExperienceState = update.state
             update.companionCommands.forEach { companionRuntime.apply(command: $0) }
             if case .companionWalk(let state) = update.state.runtimeState {
-                currentEvent = state.lastEvent
+                currentEvent = update.narrativeEvents.isEmpty ? nil : state.lastEvent
                 currentAudioCue = state.activeAudioCues.first
             }
             companionRuntime.apply(event: currentEvent)

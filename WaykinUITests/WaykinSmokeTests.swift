@@ -56,6 +56,25 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.session.closing").firstMatch.exists)
     }
 
+    func testActiveSessionRequiresEndAndWritesMemoryAndReceipt() {
+        launch(reset: true)
+
+        let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 5))
+        begin.tap()
+
+        let end = app.buttons.matching(identifier: "waykin.session.end").firstMatch
+        XCTAssertTrue(end.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.navigationBars.buttons.count, 0)
+
+        app.buttons.matching(identifier: "waykin.session.runToEnd").firstMatch.tap()
+        end.tap()
+
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.screen").firstMatch.waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts.matching(identifier: "waykin.summary.memoryWrite").firstMatch.label, "WRITTEN")
+        XCTAssertEqual(app.staticTexts.matching(identifier: "waykin.summary.receiptWrite").firstMatch.label, "WRITTEN")
+    }
+
     func testActiveSessionPrioritizesCompanionPresenceBeforeMovement() {
         launch(reset: true)
         let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
