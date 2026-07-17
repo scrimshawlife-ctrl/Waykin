@@ -100,6 +100,22 @@ struct CompanionPresencePresentation {
     var distanceText: String { "\(max(0, Int(distanceMeters))) m" }
     var pressureLabel: String { pursuitState == .inactive ? "Path quiet" : "Pressure \(pursuitState.rawValue)" }
     var audioLabel: String { audioCueKind == nil ? "Sound quiet" : "Sound active" }
+    var phraseIsRedundantForAccessibility: Bool {
+        guard !isOpening else { return false }
+
+        return switch eventKind {
+        case .pursuitIntensifies:
+            pursuitState == .close
+        case .pursuitFades:
+            pursuitState == .fading
+        case .quietInterval:
+            pursuitState == .inactive
+        case nil:
+            pursuitState == .close || pursuitState == .fading
+        default:
+            false
+        }
+    }
     var animationKey: String { "\(behavior.rawValue)-\(pursuitState.rawValue)-\(eventKind?.rawValue ?? "none")" }
 }
 
@@ -119,25 +135,35 @@ enum CompanionPresenceStyle {
 struct CompanionPresenceView: View {
     let presentation: CompanionPresencePresentation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var expanded = false
 
     var body: some View {
         VStack(spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
+            AnyLayout(dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(alignment: .firstTextBaseline))) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(presentation.companionName)
                         .font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilitySortPriority(6)
                         .accessibilityIdentifier("waykin.session.companionName")
                     Text("Companion Walk")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .accessibilitySortPriority(5.9)
                         .accessibilityIdentifier("waykin.session.screen")
                 }
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Text("Bond \(presentation.bondLevel)")
                     .font(.headline)
+                    .accessibilityLabel("Bond level")
+                    .accessibilityValue("\(presentation.bondLevel)")
+                    .accessibilitySortPriority(5.8)
                     .accessibilityIdentifier("waykin.session.bond")
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             ZStack {
                 Circle()
@@ -157,31 +183,47 @@ struct CompanionPresenceView: View {
             .frame(height: 190)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(presentation.companionName) presence")
-            .accessibilityValue("\(presentation.behavior.rawValue), \(presentation.pressureLabel.lowercased())")
+            .accessibilitySortPriority(5)
             .accessibilityIdentifier("waykin.session.presence")
 
             Text(presentation.phrase)
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 48)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilitySortPriority(4.8)
                 .accessibilityIdentifier("waykin.session.phrase")
+                .accessibilityHidden(presentation.phraseIsRedundantForAccessibility)
 
-            HStack(spacing: 24) {
+            AnyLayout(dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: 24))) {
                 Label(presentation.pressureLabel, systemImage: "circle.dotted")
+                    .accessibilityLabel("Path status")
+                    .accessibilityValue(presentation.pressureLabel)
+                    .accessibilitySortPriority(4.6)
                     .accessibilityIdentifier("waykin.session.pressure")
                 Label(presentation.audioLabel, systemImage: presentation.audioCueKind == nil ? "speaker.slash" : "speaker.wave.2")
+                    .accessibilityLabel("Sound status")
+                    .accessibilityValue(presentation.audioLabel)
+                    .accessibilitySortPriority(4.5)
                     .accessibilityIdentifier("waykin.session.audioCue")
             }
             .font(.callout)
+            .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
 
-            HStack(spacing: 48) {
+            AnyLayout(dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: 48))) {
                 metric(value: presentation.elapsedText, label: "Time", identifier: "waykin.session.elapsed")
                 metric(value: presentation.distanceText, label: "Distance", identifier: "waykin.session.distance")
             }
+            .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
         }
         .foregroundStyle(.white)
         .onAppear(perform: animatePresence)
         .onChange(of: presentation.animationKey) { _, _ in animatePresence() }
+        .onChange(of: reduceMotion) { _, _ in animatePresence() }
     }
 
     private var presenceColor: Color {
@@ -199,11 +241,16 @@ struct CompanionPresenceView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label), \(value)")
+        .accessibilitySortPriority(4)
         .accessibilityIdentifier(identifier)
     }
 
     private func animatePresence() {
-        expanded = false
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            expanded = false
+        }
         guard let duration = presentation.animationDuration(reduceMotion: reduceMotion) else { return }
         withAnimation(.easeInOut(duration: duration).repeatCount(2, autoreverses: true)) {
             expanded = true
@@ -215,6 +262,12 @@ struct CompactSessionMap: View {
     let latitude: Double?
     let longitude: Double?
 
+    var locationAccessibilityValue: String {
+        latitude == nil || longitude == nil
+            ? "Waiting for a location update."
+            : "Current location is available for this walk."
+    }
+
     var body: some View {
         let center = CLLocationCoordinate2D(
             latitude: latitude ?? 37.7749,
@@ -224,22 +277,32 @@ struct CompactSessionMap: View {
             Label("Location context", systemImage: "map")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.82))
-            Map(
-                initialPosition: .region(MKCoordinateRegion(
-                    center: center,
-                    span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
-                )),
-                interactionModes: []
-            ) {
-                if latitude != nil, longitude != nil {
-                    Marker("Current location", coordinate: center)
+                .accessibilityHidden(true)
+            ZStack {
+                Map(
+                    initialPosition: .region(MKCoordinateRegion(
+                        center: center,
+                        span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
+                    )),
+                    interactionModes: []
+                ) {
+                    if latitude != nil, longitude != nil {
+                        Marker("Current location", coordinate: center)
+                    }
                 }
+                .id("\(latitude ?? 0)-\(longitude ?? 0)")
+                .accessibilityHidden(true)
+
+                Color.clear
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Location context")
+                    .accessibilityValue(locationAccessibilityValue)
+                    .accessibilityAddTraits(.isImage)
+                    .accessibilitySortPriority(-1)
+                    .accessibilityIdentifier("waykin.session.map")
             }
-            .id("\(latitude ?? 0)-\(longitude ?? 0)")
             .frame(height: 76)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-            .accessibilityLabel(latitude == nil ? "Map waiting for location" : "Map showing current location context")
-            .accessibilityIdentifier("waykin.session.map")
         }
     }
 }

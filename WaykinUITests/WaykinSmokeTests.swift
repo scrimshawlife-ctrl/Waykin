@@ -97,6 +97,70 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertLessThanOrEqual(map.frame.height, 100)
     }
 
+    func testActiveSessionAccessibilityAtLargestTextSize() {
+        app = XCUIApplication()
+        app.launchArguments = [
+            "-WAYKIN_UI_TESTING", "YES",
+            "-WAYKIN_RESET_STATE", "YES",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge"
+        ]
+        app.launch()
+
+        let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 5))
+        begin.tap()
+
+        let presence = app.descendants(matching: .any).matching(identifier: "waykin.session.presence").firstMatch
+        let phrase = app.staticTexts.matching(identifier: "waykin.session.phrase").firstMatch
+        let pathStatus = app.descendants(matching: .any).matching(identifier: "waykin.session.pressure").firstMatch
+        let pause = app.buttons.matching(identifier: "waykin.session.pause").firstMatch
+        let end = app.buttons.matching(identifier: "waykin.session.end").firstMatch
+        let map = app.descendants(matching: .any).matching(identifier: "waykin.session.map").firstMatch
+
+        XCTAssertTrue(presence.waitForExistence(timeout: 5))
+        XCTAssertTrue(phrase.exists)
+        XCTAssertTrue(pathStatus.exists)
+        XCTAssertTrue(pause.exists)
+        XCTAssertTrue(end.exists)
+        XCTAssertTrue(map.exists)
+        XCTAssertEqual(pause.label, "Pause walk")
+        XCTAssertEqual(end.label, "End walk")
+        XCTAssertGreaterThanOrEqual(pause.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(pause.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(end.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(end.frame.height, 44)
+        XCTAssertEqual(presence.label, "Lira presence")
+        XCTAssertTrue((presence.value as? String ?? "").isEmpty)
+        XCTAssertEqual(phrase.label, "Lira is listening.")
+        XCTAssertEqual(pathStatus.label, "Path status")
+        XCTAssertEqual(pathStatus.value as? String, "Path quiet")
+
+        let accessibilityIdentifiers = app.descendants(matching: .any)
+            .allElementsBoundByAccessibilityElement
+            .map(\.identifier)
+        guard
+            let presenceIndex = accessibilityIdentifiers.firstIndex(of: "waykin.session.presence"),
+            let phraseIndex = accessibilityIdentifiers.firstIndex(of: "waykin.session.phrase"),
+            let pathStatusIndex = accessibilityIdentifiers.firstIndex(of: "waykin.session.pressure"),
+            let pauseIndex = accessibilityIdentifiers.firstIndex(of: "waykin.session.pause"),
+            let mapIndex = accessibilityIdentifiers.firstIndex(of: "waykin.session.map")
+        else {
+            return XCTFail("Expected active-session elements in the accessibility hierarchy")
+        }
+        XCTAssertLessThan(presenceIndex, phraseIndex)
+        XCTAssertLessThan(phraseIndex, pathStatusIndex)
+        XCTAssertLessThan(pathStatusIndex, pauseIndex)
+        XCTAssertLessThan(pauseIndex, mapIndex)
+
+        XCTAssertEqual(map.label, "Location context")
+        XCTAssertEqual(map.value as? String, "Waiting for a location update.")
+        XCTAssertEqual(app.maps.count, 0)
+        XCTAssertEqual(app.images.matching(identifier: "waykin.session.map").count, 1)
+        let mapSemantics = "\(map.label) \(map.value as? String ?? "")"
+        XCTAssertFalse(mapSemantics.contains("37.7749"))
+        XCTAssertFalse(mapSemantics.contains("-122.4194"))
+    }
+
     func testMemoryPersistsAcrossRelaunch() {
         launch(reset: true)
 

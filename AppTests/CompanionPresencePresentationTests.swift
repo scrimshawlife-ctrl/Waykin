@@ -58,6 +58,38 @@ final class CompanionPresencePresentationTests: XCTestCase {
         XCTAssertNil(presentation.animationDuration(reduceMotion: true))
     }
 
+    func testPresentationProvidesExplicitNonColorStatusText() {
+        let presentation = makePresentation(behavior: .rest, pursuit: .approaching)
+
+        XCTAssertEqual(presentation.phrase, "Something is keeping pace.")
+        XCTAssertEqual(presentation.pressureLabel, "Pressure approaching")
+        XCTAssertEqual(presentation.audioLabel, "Sound quiet")
+    }
+
+    func testPressureEquivalentPhrasesHaveOneAccessibilityOwner() {
+        XCTAssertTrue(makePresentation(pursuit: .close, event: .pursuitIntensifies).phraseIsRedundantForAccessibility)
+        XCTAssertTrue(makePresentation(pursuit: .fading, event: .pursuitFades).phraseIsRedundantForAccessibility)
+        XCTAssertTrue(makePresentation(pursuit: .inactive, event: .quietInterval).phraseIsRedundantForAccessibility)
+        XCTAssertTrue(makePresentation(pursuit: .close).phraseIsRedundantForAccessibility)
+        XCTAssertTrue(makePresentation(pursuit: .fading).phraseIsRedundantForAccessibility)
+
+        XCTAssertFalse(makePresentation(pursuit: .noticed, event: .pursuitBegins).phraseIsRedundantForAccessibility)
+        XCTAssertFalse(makePresentation(pursuit: .approaching).phraseIsRedundantForAccessibility)
+        XCTAssertFalse(makePresentation(pursuit: .close, event: .companionDrawsNear).phraseIsRedundantForAccessibility)
+        XCTAssertFalse(makePresentation(pursuit: .noticed, event: .quietInterval).phraseIsRedundantForAccessibility)
+        XCTAssertFalse(makePresentation(pursuit: .close, event: .pursuitIntensifies, isOpening: true).phraseIsRedundantForAccessibility)
+    }
+
+    func testMapAccessibilityProvidesContextWithoutCoordinates() {
+        let waiting = CompactSessionMap(latitude: nil, longitude: nil)
+        let located = CompactSessionMap(latitude: 37.7749, longitude: -122.4194)
+
+        XCTAssertEqual(waiting.locationAccessibilityValue, "Waiting for a location update.")
+        XCTAssertEqual(located.locationAccessibilityValue, "Current location is available for this walk.")
+        XCTAssertFalse(located.locationAccessibilityValue.contains("37.7749"))
+        XCTAssertFalse(located.locationAccessibilityValue.contains("-122.4194"))
+    }
+
     func testClosingPhraseReflectsActualPressureState() {
         XCTAssertEqual(makePresentation(pursuit: .fading).closingPhrase, "The presence faded.")
         XCTAssertEqual(makePresentation(pursuit: .close).closingPhrase, "Lira stayed with you.")

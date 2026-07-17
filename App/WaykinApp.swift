@@ -888,6 +888,7 @@ struct HomeView: View {
 
 struct ActiveSessionView: View {
     @Environment(WaykinAppModel.self) private var appModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let scenario: DemoScenarioID
 
     var body: some View {
@@ -901,22 +902,30 @@ struct ActiveSessionView: View {
                 VStack(spacing: CompanionPresenceStyle.sectionSpacing) {
                     CompanionPresenceView(presentation: presentation)
 
-                    HStack(spacing: 12) {
+                    AnyLayout(dynamicTypeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(spacing: 12))
+                        : AnyLayout(HStackLayout(spacing: 12))) {
                         if presentation.isPaused {
                             Button {
                                 appModel.isLiveSessionActive ? appModel.resumeRealSession() : appModel.resumeDemo()
                             } label: {
                                 Label("Resume", systemImage: "play.fill")
+                                    .frame(minWidth: 48, minHeight: 48)
                             }
                             .buttonStyle(.borderedProminent)
+                            .accessibilityLabel("Resume walk")
+                            .accessibilitySortPriority(2)
                             .accessibilityIdentifier("waykin.session.resume")
                         } else {
                             Button {
                                 appModel.isLiveSessionActive ? appModel.pauseRealSession() : appModel.pauseDemo()
                             } label: {
                                 Label("Pause", systemImage: "pause.fill")
+                                    .frame(minWidth: 48, minHeight: 48)
                             }
                             .buttonStyle(.bordered)
+                            .accessibilityLabel("Pause walk")
+                            .accessibilitySortPriority(2)
                             .accessibilityIdentifier("waykin.session.pause")
                         }
 
@@ -924,19 +933,29 @@ struct ActiveSessionView: View {
                             appModel.isLiveSessionActive ? appModel.endRealSession() : appModel.endDemo()
                         } label: {
                             Label("End", systemImage: "stop.fill")
+                                .frame(minWidth: 48, minHeight: 48)
                         }
                         .buttonStyle(.bordered)
+                        .accessibilityLabel("End walk")
+                        .accessibilitySortPriority(1.9)
                         .accessibilityIdentifier("waykin.session.end")
                     }
+                    .frame(maxWidth: .infinity)
 
                     if !appModel.isLiveSessionActive {
-                        Button("Run to End") { appModel.runDemoToEnd() }
-                            .font(.caption)
-                            .accessibilityIdentifier("waykin.session.runToEnd")
+                        Button { appModel.runDemoToEnd() } label: {
+                            Text("Run to End")
+                                .frame(minWidth: 48, minHeight: 48)
+                        }
+                        .font(.caption)
+                        .accessibilitySortPriority(1)
+                        .accessibilityIdentifier("waykin.session.runToEnd")
                     } else {
                         Text("Signal: \(appModel.liveSignalState).description)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilitySortPriority(1)
                             .accessibilityIdentifier("waykin.session.liveSignal")
                     }
 
