@@ -179,7 +179,8 @@ struct ARCompanionLabView: View {
 
     private func stateButton(_ state: CompanionPresentationState) -> some View {
         Button(state.rawValue.capitalized) { runtime.setState(state) }
-            .buttonStyle(runtime.currentState == state ? .borderedProminent : .bordered)
+            .buttonStyle(.bordered)
+            .tint(runtime.currentState == state ? .accentColor : .secondary)
             .accessibilityIdentifier("waykin.ar.state.\(state.rawValue)")
     }
 }
