@@ -1,0 +1,64 @@
+import ARKit
+import RealityKit
+import UIKit
+import WaykinCore
+
+@MainActor
+final class ARPlacementResolver {
+    private let registry: AREntityRegistry
+
+    init(registry: AREntityRegistry) {
+        self.registry = registry
+    }
+
+    @discardableResult
+    func placePlaceholder(
+        id: String,
+        intent: SpatialIntent,
+        in arView: ARView
+    ) -> Bool {
+        guard intent.placement == .groundPlane else { return false }
+
+        let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        guard let query = arView.makeRaycastQuery(
+            from: screenCenter,
+            allowing: .estimatedPlane,
+            alignment: .horizontal
+        ), let result = arView.session.raycast(query).first else {
+            return false
+        }
+
+        let anchor = AnchorEntity(raycastResult: result)
+        let radius = placeholderRadius(for: intent.scaleClass)
+        let mesh = MeshResource.generateSphere(radius: radius)
+        let material = SimpleMaterial(color: .systemTeal, isMetallic: false)
+        let marker = ModelEntity(mesh: mesh, materials: [material])
+        marker.position.y = radius
+        anchor.addChild(marker)
+
+        arView.scene.addAnchor(anchor)
+        registry.register(anchor, for: id)
+        return true
+    }
+
+    func remove(id: String) {
+        registry.remove(id)
+    }
+
+    func clear() {
+        registry.clear()
+    }
+
+    private func placeholderRadius(for scaleClass: SpatialScaleClass) -> Float {
+        switch scaleClass {
+        case .companion:
+            return 0.12
+        case .discovery:
+            return 0.08
+        case .threat:
+            return 0.18
+        case .environmental:
+            return 0.24
+        }
+    }
+}
