@@ -106,7 +106,7 @@ final class ARWorldCommandRenderer {
         switch state {
         case .idle:
             entity.scale = SIMD3<Float>(repeating: 1)
-            entity.orientation = simd_quatf()
+            entity.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
         case .follow:
             entity.scale = SIMD3<Float>(1.02, 1.02, 1.02)
             entity.orientation = simd_quatf(angle: 0.18, axis: [0, 1, 0])
@@ -115,7 +115,7 @@ final class ARWorldCommandRenderer {
             entity.orientation = simd_quatf(angle: -0.22, axis: [1, 0, 0])
         case .alert:
             entity.scale = SIMD3<Float>(1.05, 1.14, 0.96)
-            entity.orientation = simd_quatf()
+            entity.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
         case .celebrate:
             entity.scale = SIMD3<Float>(1.12, 1.12, 1.12)
             entity.orientation = simd_quatf(angle: .pi / 5, axis: [0, 1, 0])
