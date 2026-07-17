@@ -19,14 +19,18 @@ Waykin/
 │   │   ├── Models/             Companion, Relationship, Memory, LocationMemory
 │   │   ├── Movement/           GeoCoordinate, MovementSessionTracker, MovementSession
 │   │   ├── Experiences/        Experience protocol, engine/runner, 3 experiences
-│   │   ├── Companion/          CompanionEngine — greetings, bond, place recognition
+│   │   ├── Companion/          CompanionEngine, PresenceNarrator — greetings, bond, place recognition
 │   │   ├── Memory/             MemoryEngine + MemoryStore seam
 │   │   ├── AI/                 AIProvider abstraction, PromptBuilder, offline voice
+│   │   ├── Diagnostics/        SessionReceipt — field-test diagnostics per session
 │   │   └── Recommendation/     RecommendationEngine (time/weather/history scoring)
 │   └── WaykinSim/              waykin-sim: the 2-day demo scenario on macOS
-├── Tests/WaykinCoreTests/      20 unit tests incl. the modularity proof
+├── Tests/WaykinCoreTests/      23 unit tests incl. the modularity proof
+├── Makefile                    make build / test / demo / ios / ui-test
+├── ci/ci.yml                   package tests + demo + iOS build + UI tests
 └── App/                        iOS app (SwiftUI · RealityKit · ARKit · SwiftData)
     ├── project.yml             XcodeGen manifest
+    ├── WaykinUITests/          UI smoke tests (onboarding, memory recall, session)
     └── Waykin/
         ├── Views/              Onboarding, Home, Session, Summary
         ├── AR/                 ARCompanionView (RealityKit follow/idle/celebrate)
@@ -46,7 +50,7 @@ User → Movement Engine → Experience Engine → Companion Intelligence → Me
 Requires Swift 5.9+ (any Mac with Xcode 15+).
 
 ```bash
-swift test          # 20 tests across all five pillars
+swift test          # 23 tests across all five pillars
 swift run waykin-sim
 ```
 
@@ -89,6 +93,29 @@ Demo launch arguments (Scheme ▸ Run ▸ Arguments):
 | `--demo-seed` | Skips onboarding: seeds Ember with yesterday's Future Self memory |
 | `--demo-open <id>` | Jumps straight to a session screen (`walk-together`, `orc-pursuit`, `future-self`) |
 | `--demo-autostart` | Starts the session immediately |
+| `--demo-reset` | Wipes stored state at launch (used by UI tests) |
+
+## Field-test receipts
+
+Every completed session writes a JSON diagnostic receipt (a pattern adopted
+from the sibling implementation): event counts per channel, peak threat /
+ghost gap, GPS sample count, distance, outcome, bond delta, and whether the
+memory was written. The app saves them under `Documents/Receipts/`;
+`waykin-sim` writes them to `./receipts/`. They make real outdoor walks
+auditable after the fact without a debugger attached.
+
+## Development
+
+```bash
+make test       # core unit tests
+make demo       # run the 2-day scenario
+make ios        # generate + build the iOS app
+make ui-test    # UI smoke tests on the iPhone 17 Pro simulator
+```
+
+CI (`ci/ci.yml` — see the note at the bottom about activating it) runs
+package build/tests, the demo scenario, the iOS build, and the UI smoke
+tests on every push and PR to main.
 
 ## The five pillars, and where they live
 
@@ -131,3 +158,7 @@ provider into `AIProvider`. `waykin-sim` prints that prompt at the end of its ru
 
 - [Docs/DEMO.md](Docs/DEMO.md) — the 10-minute Future Self demo script
 - [Docs/LIMITATIONS.md](Docs/LIMITATIONS.md) — known limitations
+
+> **Note:** the CI workflow ships at `ci/ci.yml` because this PR was pushed
+> with a token lacking the `workflow` OAuth scope. Move it to
+> `.github/workflows/ci.yml` after merging (one `git mv`) to activate it.

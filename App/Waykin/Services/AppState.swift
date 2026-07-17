@@ -20,6 +20,12 @@ final class AppState {
 
     init(context: ModelContext) {
         self.context = context
+        if ProcessInfo.processInfo.arguments.contains("--demo-reset") {
+            try? context.delete(model: StoredCompanion.self)
+            try? context.delete(model: StoredMemory.self)
+            try? context.delete(model: StoredLocationMemory.self)
+            try? context.save()
+        }
         let store = SwiftDataMemoryStore(context: context)
         memoryEngine = MemoryEngine(store: store)
         recommendationEngine = RecommendationEngine(experiences: experiences, memoryEngine: memoryEngine)
@@ -64,11 +70,12 @@ final class AppState {
         companionEngine = CompanionEngine(companion: companion, memoryEngine: memoryEngine)
     }
 
+    @discardableResult
     func completeSession(_ session: MovementSession,
                          outcome: ExperienceOutcome,
                          registration: ExperienceEngine.Registration,
-                         locationName: String) {
-        guard let engine = companionEngine else { return }
+                         locationName: String) -> SessionSummary? {
+        guard let engine = companionEngine else { return nil }
         let levelBefore = engine.companion.relationship.level
         let memory = engine.completeSession(session, outcome: outcome,
                                             experienceID: registration.id,
@@ -76,10 +83,18 @@ final class AppState {
                                             locationName: locationName)
         storedCompanion?.apply(engine.companion)
         try? context.save()
-        lastSummary = SessionSummary(session: session, outcome: outcome,
+        let summary = SessionSummary(session: session, outcome: outcome,
                                      memory: memory,
                                      levelBefore: levelBefore,
                                      levelAfter: engine.companion.relationship.level)
+        lastSummary = summary
+        return summary
+    }
+
+    /// Where the app writes field-test receipts (one JSON per session).
+    static var receiptStore: FileReceiptStore {
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return FileReceiptStore(directory: documents.appendingPathComponent("Receipts"))
     }
 
     func recommendations() -> [Recommendation] {

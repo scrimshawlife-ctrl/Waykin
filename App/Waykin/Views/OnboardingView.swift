@@ -29,6 +29,7 @@ struct OnboardingView: View {
             TextField("Name your companion", text: $name)
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal, 40)
+                .accessibilityIdentifier("waykin.onboarding.name")
 
             Button {
                 appState.createCompanion(
@@ -41,6 +42,7 @@ struct OnboardingView: View {
             .buttonStyle(.borderedProminent)
             .padding(.horizontal, 40)
             .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            .accessibilityIdentifier("waykin.onboarding.begin")
             Spacer()
         }
     }

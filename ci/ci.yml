@@ -1,0 +1,47 @@
+# CI shape adopted from the first Waykin implementation, adapted to this
+# repo's layout (package at root, iOS app under App/).
+name: Waykin CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  swift-package:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
+      - name: Demo scenario
+        run: swift run waykin-sim
+
+  native-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+        working-directory: App
+      - name: Build iOS app
+        run: |
+          xcodebuild \
+            -project App/Waykin.xcodeproj \
+            -scheme Waykin \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            build
+      - name: UI smoke tests
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
+          xcodebuild \
+            -project App/Waykin.xcodeproj \
+            -scheme Waykin \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            test

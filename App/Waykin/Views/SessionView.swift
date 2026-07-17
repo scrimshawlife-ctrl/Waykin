@@ -17,6 +17,9 @@ struct SessionView: View {
     @State private var ghostGap: Double?
     @State private var milestone: String?
     @State private var started = false
+    @State private var isMoving = true
+    private let receiptBuilder = SessionReceiptBuilder(
+        mode: ProcessInfo.processInfo.arguments.contains("--demo-autostart") ? .simulated : .physical)
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -36,6 +39,15 @@ struct SessionView: View {
                         .font(.callout)
                         .padding(12)
                         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+                if started {
+                    Text(PresenceNarrator.phrase(
+                        companionName: appState.companionEngine!.companion.name,
+                        behavior: behavior, threat: threat,
+                        ghostGapMeters: ghostGap, isMoving: isMoving))
+                        .font(.footnote.italic())
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("waykin.session.phrase")
                 }
                 hud
                 controls
@@ -86,6 +98,7 @@ struct SessionView: View {
                     Text("End session").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("waykin.session.end")
             } else {
                 Button {
                     start()
@@ -94,6 +107,7 @@ struct SessionView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(runner == nil)
+                .accessibilityIdentifier("waykin.session.start")
             }
         }
     }
@@ -137,13 +151,22 @@ struct SessionView: View {
         guard let runner, let registration,
               let session = locationService.endSession() else { dismiss(); return }
         let outcome = runner.finish(session: session)
-        appState.completeSession(session, outcome: outcome,
-                                 registration: registration,
-                                 locationName: locationService.locationName)
+        let summary = appState.completeSession(session, outcome: outcome,
+                                               registration: registration,
+                                               locationName: locationService.locationName)
+        let receipt = receiptBuilder.finalize(
+            session: session, outcome: outcome,
+            companionName: appState.companionEngine?.companion.name ?? "?",
+            experienceID: registration.id, experienceName: registration.name,
+            locationName: locationService.locationName,
+            memory: summary?.memory)
+        try? AppState.receiptStore.save(receipt)
         dismiss()
     }
 
     private func handle(events: [ExperienceEvent]) {
+        receiptBuilder.record(events)
+        if let latest = locationService.latestUpdate { isMoving = latest.isMoving }
         for event in events {
             switch event {
             case .dialogue(let line): dialogue = line

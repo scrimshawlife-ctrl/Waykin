@@ -30,3 +30,26 @@ targets:
         CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: NO
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
+  WaykinUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - WaykinUITests
+    dependencies:
+      - target: Waykin
+    settings:
+      base:
+        TEST_TARGET_NAME: Waykin
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: NO
+schemes:
+  Waykin:
+    build:
+      targets:
+        Waykin: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - WaykinUITests

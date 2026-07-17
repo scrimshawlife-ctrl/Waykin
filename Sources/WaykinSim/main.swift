@@ -59,7 +59,10 @@ let context = ExperienceContext(companion: brain.companion,
                                 timeOfDay: .evening,
                                 weather: .clear)
 let runner = ExperienceRunner(experience: experience, context: context)
-show(runner.begin(), at: 0)
+let receiptBuilder = SessionReceiptBuilder(mode: .simulated)
+let openingEvents = runner.begin()
+receiptBuilder.record(openingEvents)
+show(openingEvents, at: 0)
 
 // Simulated GPS: 5-second fixes heading up the shoreline. The walker
 // starts easy (1.2 m/s), pushes in the middle (1.6 m/s), pauses once at a
@@ -86,6 +89,7 @@ for tick in 1...120 { // 120 × 5 s = 10 minutes
     guard let update = tracker.record(MovementSample(coordinate: coordinate, timestamp: sampleDate)) else { continue }
 
     let events = runner.handle(update)
+    receiptBuilder.record(events)
     show(events, at: elapsed)
     for event in events {
         if case .ghostDistance(let gap) = event { lastGhostGap = gap }
@@ -122,6 +126,23 @@ let bondAfter = brain.companion.relationship.level
 print("Bond: +\(outcome.bondDelta) → \(brain.companion.relationship.bondPoints) points (\(bondAfter.displayName))")
 if bondAfter > bondBefore { print("💛 Relationship grew: \(bondBefore.displayName) → \(bondAfter.displayName)") }
 print("📖 New memory: “\(memory.text)”")
+
+// Field-test receipt: save next to the working directory for inspection.
+let receipt = receiptBuilder.finalize(session: session, outcome: outcome,
+                                      companionName: brain.companion.name,
+                                      experienceID: registration.id,
+                                      experienceName: registration.name,
+                                      locationName: "Shoreline Park",
+                                      memory: memory)
+let receiptStore = FileReceiptStore(
+    directory: URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        .appendingPathComponent("receipts"))
+if let url = try? receiptStore.save(receipt) {
+    let counts = receipt.eventCounts.sorted { $0.key < $1.key }
+        .map { "\($0.key)×\($0.value)" }.joined(separator: ", ")
+    print("🧾 Receipt: \(counts)")
+    print("   saved to \(url.path)")
+}
 
 // ─── Day 2 ───────────────────────────────────────────────────────────────
 
