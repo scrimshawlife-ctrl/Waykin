@@ -7,6 +7,8 @@
 - Native app build passes in the available Xcode simulator environment.
 - SwiftData persistence covers Bond and session memories.
 - The app exposes one primary Begin Walk path.
+- Real walking sessions use foreground When-In-Use location only and pause when the app becomes inactive or enters the background.
+- Real samples pass through conservative accuracy, age, ordering, displacement, and walking-speed checks before affecting session state.
 
 ## NOT_COMPUTABLE Until Direct Device Evidence
 
@@ -18,8 +20,11 @@
 - Interaction with podcasts, music, route changes, lock screen, and background execution.
 - Outdoor audibility, playback latency, and audio-related battery impact.
 - Physical-device interruption behavior.
+- Whether the conservative defaults are appropriate across devices, terrain, urban canyons, and accessibility-related walking patterns.
 
 No physical walk receipt has been filled in this repository. Do not mark these as PASS from simulator or package evidence.
+
+The recorded route is measurement support for the active Companion Walk only. It is not navigation-grade, does not provide route planning or guidance, and has no background-location guarantee. Battery impact is not characterized.
 
 ## Deferred Product Scope
 

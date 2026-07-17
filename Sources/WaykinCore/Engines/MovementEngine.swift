@@ -1,16 +1,9 @@
 import Foundation
-import CoreLocation
 
 public enum MovementError: Error, Equatable {
     case noActiveSession
     case sessionAlreadyActive
-}
-
-public protocol LocationProviding {
-    func requestAuthorization()
-    func startUpdatingLocation()
-    func stopUpdatingLocation()
-    var onLocationUpdate: ((RoutePoint) -> Void)? { get set }
+    case invalidTransition(from: MovementState, to: MovementState)
 }
 
 public protocol MotionProviding {
@@ -26,6 +19,16 @@ public final class SystemClock: ClockProviding {
     public var now: Date { Date() }
 }
 
+public struct MovementIngestResult: Equatable, Sendable {
+    public let diagnostic: MovementSampleDiagnostic
+    public let snapshot: MovementSnapshot?
+
+    public init(diagnostic: MovementSampleDiagnostic, snapshot: MovementSnapshot?) {
+        self.diagnostic = diagnostic
+        self.snapshot = snapshot
+    }
+}
+
 public protocol MovementSessionManaging {
     var currentSession: MovementSession? { get }
     func startSession(activity: ActivityType, experienceID: String) throws
@@ -38,89 +41,179 @@ public protocol MovementSessionManaging {
 
 public final class MovementEngine: MovementSessionManaging {
     private(set) public var currentSession: MovementSession?
+    private(set) public var lastDiagnostic: MovementSampleDiagnostic?
+    private(set) public var acceptedSampleCount = 0
+    private(set) public var rejectedSampleCount = 0
+
     private let clock: ClockProviding
+    private var integrityProcessor: MovementIntegrityProcessor
     private var lastUpdate: Date?
 
-    public init(clock: ClockProviding? = nil) {
+    public init(
+        clock: ClockProviding? = nil,
+        integrityConfiguration: MovementIntegrityConfiguration = .conservativeWalking
+    ) {
         self.clock = clock ?? SystemClock()
+        self.integrityProcessor = MovementIntegrityProcessor(configuration: integrityConfiguration)
     }
 
     public func startSession(activity: ActivityType, experienceID: String) throws {
-        if currentSession != nil {
-            throw MovementError.sessionAlreadyActive
-        }
-        let newSession = MovementSession(activityType: activity, experienceID: experienceID)
-        currentSession = newSession
+        guard currentSession == nil else { throw MovementError.sessionAlreadyActive }
+        currentSession = MovementSession(activityType: activity, experienceID: experienceID, startedAt: clock.now)
         lastUpdate = clock.now
+        acceptedSampleCount = 0
+        rejectedSampleCount = 0
+        lastDiagnostic = nil
+        integrityProcessor.resetAnchor()
     }
 
     public func pauseSession() throws {
-        guard var s = currentSession else { throw MovementError.noActiveSession }
-        s.movementState = .paused
-        currentSession = s
+        guard var session = currentSession else { throw MovementError.noActiveSession }
+        guard session.movementState == .moving else {
+            throw MovementError.invalidTransition(from: session.movementState, to: .paused)
+        }
+        session.movementState = .paused
+        session.currentSpeedMetersPerSecond = 0
+        currentSession = session
+        integrityProcessor.resetAnchor()
     }
 
     public func resumeSession() throws {
-        guard var s = currentSession else { throw MovementError.noActiveSession }
-        s.movementState = .moving
+        guard var session = currentSession else { throw MovementError.noActiveSession }
+        guard session.movementState == .idle || session.movementState == .paused else {
+            throw MovementError.invalidTransition(from: session.movementState, to: .moving)
+        }
+        session.movementState = .moving
         lastUpdate = clock.now
-        currentSession = s
+        currentSession = session
+        integrityProcessor.resetAnchor()
     }
 
     public func endSession() throws -> MovementSession {
-        guard var s = currentSession else { throw MovementError.noActiveSession }
-        s.endedAt = clock.now
-        s.movementState = .stopped
-        let ended = s
+        guard var session = currentSession else { throw MovementError.noActiveSession }
+        session.endedAt = clock.now
+        session.movementState = .stopped
+        session.currentSpeedMetersPerSecond = 0
+        let ended = session
         currentSession = nil
+        lastUpdate = nil
+        integrityProcessor.resetAnchor()
         return ended
     }
 
     public func simulate(deltaSeconds: TimeInterval, speed: Double) {
-        guard var s = currentSession,
-              s.movementState == .moving || s.movementState == .idle else { return }
+        guard var session = currentSession,
+              session.movementState == .moving || session.movementState == .idle else { return }
 
+        let safeDelta = deltaSeconds.isFinite ? max(0, deltaSeconds) : 0
+        let safeSpeed = speed.isFinite ? max(0, speed) : 0
         let now = clock.now
-        s.elapsedTime += deltaSeconds
+        session.elapsedTime += safeDelta
 
-        if speed > 0.1 {
-            s.activeTime += deltaSeconds
-            s.currentSpeedMetersPerSecond = speed
-            let distanceDelta = speed * deltaSeconds
-            s.distanceMeters += distanceDelta
-            s.averageSpeedMetersPerSecond = s.distanceMeters / max(s.activeTime, 0.001)
+        if safeSpeed > 0.1 {
+            session.activeTime += safeDelta
+            session.currentSpeedMetersPerSecond = safeSpeed
+            let distanceDelta = safeSpeed * safeDelta
+            session.distanceMeters += distanceDelta
+            session.averageSpeedMetersPerSecond = session.distanceMeters / max(session.activeTime, 0.001)
 
-            let lastLat = s.routePoints.last?.latitude ?? 37.7749
-            let lastLon = s.routePoints.last?.longitude ?? -122.4194
-            let newPoint = RoutePoint(
-                timestamp: now,
-                latitude: lastLat + (distanceDelta * 0.00001),
-                longitude: lastLon,
-                altitude: 10,
-                speed: speed
+            let lastLatitude = session.routePoints.last?.latitude ?? 37.7749
+            let lastLongitude = session.routePoints.last?.longitude ?? -122.4194
+            session.routePoints.append(
+                RoutePoint(
+                    timestamp: now,
+                    latitude: lastLatitude + (distanceDelta * 0.00001),
+                    longitude: lastLongitude,
+                    altitude: 10,
+                    speed: safeSpeed
+                )
             )
-            s.routePoints.append(newPoint)
         } else {
-            s.currentSpeedMetersPerSecond = 0
+            session.currentSpeedMetersPerSecond = 0
         }
 
-        s.movementState = speed > 0.1 ? .moving : .paused
+        session.movementState = safeSpeed > 0.1 ? .moving : .paused
         lastUpdate = now
-        currentSession = s
+        currentSession = session
+    }
+
+    @discardableResult
+    public func ingestRealLocationSample(
+        _ sample: LocationSample,
+        receivedAt: Date? = nil
+    ) -> MovementIngestResult {
+        guard var session = currentSession else {
+            return rejectedResult(for: sample, disposition: .rejectedStopped)
+        }
+        guard session.movementState == .moving else {
+            return rejectedResult(for: sample, disposition: .rejectedPaused)
+        }
+
+        let stabilized = integrityProcessor.process(sample, receivedAt: receivedAt ?? clock.now)
+        lastDiagnostic = stabilized.diagnostic
+
+        guard stabilized.diagnostic.disposition == .accepted ||
+                stabilized.diagnostic.disposition == .awaitingFreshAnchor else {
+            rejectedSampleCount += 1
+            return MovementIngestResult(diagnostic: stabilized.diagnostic, snapshot: nil)
+        }
+
+        acceptedSampleCount += 1
+        if let point = stabilized.point {
+            session.routePoints.append(point)
+        }
+        guard stabilized.diagnostic.disposition == .accepted else {
+            currentSession = session
+            return MovementIngestResult(diagnostic: stabilized.diagnostic, snapshot: nil)
+        }
+
+        session.elapsedTime += max(0, stabilized.sampleInterval)
+        session.currentSpeedMetersPerSecond = stabilized.isMoving
+            ? stabilized.diagnostic.derivedSpeedMetersPerSecond
+            : 0
+        if stabilized.isMoving {
+            session.activeTime += max(0, stabilized.sampleInterval)
+        }
+        session.distanceMeters += max(0, stabilized.distanceDelta)
+        session.averageSpeedMetersPerSecond = session.activeTime > 0
+            ? session.distanceMeters / session.activeTime
+            : 0
+        currentSession = session
+
+        let snapshot = MovementSnapshot(
+            timestamp: sample.timestamp,
+            speed: session.currentSpeedMetersPerSecond,
+            distanceDelta: stabilized.distanceDelta,
+            isMoving: stabilized.isMoving
+        )
+        return MovementIngestResult(diagnostic: stabilized.diagnostic, snapshot: snapshot)
     }
 
     public func ingestRealLocation(_ point: RoutePoint) {
-        guard var s = currentSession, s.movementState == .moving else { return }
+        _ = ingestRealLocationSample(
+            LocationSample(
+                timestamp: point.timestamp,
+                latitude: point.latitude,
+                longitude: point.longitude,
+                altitude: point.altitude,
+                horizontalAccuracy: 0,
+                reportedSpeedMetersPerSecond: point.speed
+            ),
+            receivedAt: point.timestamp
+        )
+    }
 
-        s.routePoints.append(point)
-
-        if let last = s.routePoints.dropLast().last {
-            let clLast = CLLocation(latitude: last.latitude, longitude: last.longitude)
-            let clNew = CLLocation(latitude: point.latitude, longitude: point.longitude)
-            let dist = clLast.distance(from: clNew)
-            s.distanceMeters += dist
-        }
-
-        currentSession = s
+    private func rejectedResult(
+        for sample: LocationSample,
+        disposition: MovementSampleDisposition
+    ) -> MovementIngestResult {
+        let diagnostic = MovementSampleDiagnostic(
+            timestamp: sample.timestamp,
+            disposition: disposition,
+            accuracyBucket: .invalid
+        )
+        lastDiagnostic = diagnostic
+        rejectedSampleCount += 1
+        return MovementIngestResult(diagnostic: diagnostic, snapshot: nil)
     }
 }

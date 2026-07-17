@@ -1,37 +1,28 @@
-import Foundation
 import CoreLocation
+import Foundation
 
-public enum LocationRejectionReason: String, Equatable {
-    case invalidAccuracy
-    case staleTimestamp
-    case nonfiniteCoordinate
-    case speedSpike
-    case distanceSpike
-    case duplicate
+public protocol RealLocationProviding: AnyObject {
+    var onLocationSample: ((LocationSample) -> Void)? { get set }
+    var onAuthorizationChange: ((CLAuthorizationStatus) -> Void)? { get set }
+    var onSignalStateChange: ((LiveLocationSignalState) -> Void)? { get set }
+    var authorizationStatus: CLAuthorizationStatus { get }
+    var locationServicesEnabled: Bool { get }
+
+    func requestAuthorization()
+    func startUpdatingLocation()
+    func stopUpdatingLocation()
 }
 
-public enum LocationSampleDisposition: Equatable {
-    case accepted
-    case rejected(LocationRejectionReason)
-}
-
-public final class RealLocationProvider: NSObject, LocationProviding, CLLocationManagerDelegate {
-    public var onLocationUpdate: ((RoutePoint) -> Void)?
+public final class RealLocationProvider: NSObject, RealLocationProviding, CLLocationManagerDelegate {
+    public var onLocationSample: ((LocationSample) -> Void)?
     public var onAuthorizationChange: ((CLAuthorizationStatus) -> Void)?
     public var onSignalStateChange: ((LiveLocationSignalState) -> Void)?
 
     private let manager = CLLocationManager()
-    private var lastAcceptedPoint: RoutePoint?
-    private var lastUpdateTime: Date?
-    private let maxHorizontalAccuracy: Double = 30.0   // meters for walking
-    private let maxSpeedSpike: Double = 5.0             // m/s (~18 km/h) for walking validation
-    private let minDistanceDelta: Double = 1.5          // meters
 
     public private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
     public private(set) var signalState: LiveLocationSignalState = .waitingForAuthorization
-    public private(set) var acceptedCount: Int = 0
-    public private(set) var rejectedCount: Int = 0
-    public private(set) var lastRejection: LocationRejectionReason?
+    public var locationServicesEnabled: Bool { CLLocationManager.locationServicesEnabled() }
 
     public override init() {
         super.init()
@@ -40,9 +31,8 @@ public final class RealLocationProvider: NSObject, LocationProviding, CLLocation
         manager.activityType = .fitness
         manager.distanceFilter = 2
         manager.pausesLocationUpdatesAutomatically = false
+        authorizationStatus = manager.authorizationStatus
     }
-
-    // MARK: - LocationProviding
 
     public func requestAuthorization() {
         manager.requestWhenInUseAuthorization()
@@ -57,8 +47,6 @@ public final class RealLocationProvider: NSObject, LocationProviding, CLLocation
         manager.stopUpdatingLocation()
     }
 
-    // MARK: - CLLocationManagerDelegate
-
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
         onAuthorizationChange?(authorizationStatus)
@@ -71,87 +59,31 @@ public final class RealLocationProvider: NSObject, LocationProviding, CLLocation
         case .notDetermined:
             updateSignal(.waitingForAuthorization)
         @unknown default:
-            updateSignal(.failed("unknown auth"))
+            updateSignal(.failed("Location authorization is unavailable."))
         }
     }
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let cl = locations.last else { return }
-
-        let disposition = validateSample(cl)
-
-        switch disposition {
-        case .accepted:
-            let point = RoutePoint(
-                timestamp: cl.timestamp,
-                latitude: cl.coordinate.latitude,
-                longitude: cl.coordinate.longitude,
-                altitude: cl.altitude,
-                speed: max(cl.speed, 0)
+        for location in locations.sorted(by: { $0.timestamp < $1.timestamp }) {
+            onLocationSample?(
+                LocationSample(
+                    timestamp: location.timestamp,
+                    latitude: location.coordinate.latitude,
+                    longitude: location.coordinate.longitude,
+                    altitude: location.verticalAccuracy >= 0 ? location.altitude : nil,
+                    horizontalAccuracy: location.horizontalAccuracy,
+                    reportedSpeedMetersPerSecond: location.speed
+                )
             )
-
-            // Basic de-dupe / small jump guard
-            if let last = lastAcceptedPoint {
-                let clLast = CLLocation(latitude: last.latitude, longitude: last.longitude)
-                let dist = clLast.distance(from: CLLocation(latitude: point.latitude, longitude: point.longitude))
-                if dist < minDistanceDelta {
-                    recordRejection(.duplicate)
-                    return
-                }
-            }
-
-            lastAcceptedPoint = point
-            lastUpdateTime = Date()
-            acceptedCount += 1
-            updateSignal(.active)
-            onLocationUpdate?(point)
-
-        case .rejected(let reason):
-            recordRejection(reason)
         }
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        updateSignal(.failed(error.localizedDescription))
-    }
-
-    // MARK: - Validation
-
-    private func validateSample(_ cl: CLLocation) -> LocationSampleDisposition {
-        if cl.horizontalAccuracy < 0 || cl.horizontalAccuracy > maxHorizontalAccuracy {
-            return .rejected(.invalidAccuracy)
+        if let locationError = error as? CLError, locationError.code == .locationUnknown {
+            updateSignal(.degraded)
+        } else {
+            updateSignal(.failed("Location is unavailable."))
         }
-        if !cl.coordinate.latitude.isFinite || !cl.coordinate.longitude.isFinite {
-            return .rejected(.nonfiniteCoordinate)
-        }
-        if cl.speed < 0 || !cl.speed.isFinite {
-            return .rejected(.nonfiniteCoordinate)
-        }
-        if cl.timestamp.timeIntervalSinceNow < -30 {   // stale > 30s
-            return .rejected(.staleTimestamp)
-        }
-
-        if let last = lastAcceptedPoint {
-            let clLast = CLLocation(latitude: last.latitude, longitude: last.longitude)
-            let dist = clLast.distance(from: cl)
-            let dt = cl.timestamp.timeIntervalSince(last.timestamp)
-            if dt > 0 {
-                let instSpeed = dist / dt
-                if instSpeed > maxSpeedSpike {
-                    return .rejected(.speedSpike)
-                }
-            }
-            if dist > 100 {   // unrealistic jump for walking in one update
-                return .rejected(.distanceSpike)
-            }
-        }
-
-        return .accepted
-    }
-
-    private func recordRejection(_ reason: LocationRejectionReason) {
-        rejectedCount += 1
-        lastRejection = reason
     }
 
     private func updateSignal(_ state: LiveLocationSignalState) {

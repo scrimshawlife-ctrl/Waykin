@@ -14,6 +14,16 @@ enum PersistenceLoadState: String, Equatable {
     case idle, loading, loaded, failed
 }
 
+enum RealWalkSessionState: Equatable {
+    case idle
+    case requestingPermission
+    case active
+    case paused
+    case ending
+    case completed
+    case failed
+}
+
 @main
 struct WaykinApp: App {
     @Environment(\.scenePhase) private var scenePhase
@@ -85,13 +95,13 @@ struct WaykinApp: App {
 @MainActor
 @Observable
 final class WaykinAppModel {
-    let movementEngine = MovementEngine()
+    let movementEngine: MovementEngine
     let persistenceStore: PersistenceStore
     let recommendationEngine = RecommendationEngine()
     let demoController: DemoSessionController
     let audioPlayer: any AudioCuePlaying
 
-    let realLocationProvider = RealLocationProvider()
+    let realLocationProvider: any RealLocationProviding
 
     var companion: Companion
     var activeRecommendation: ExperienceRecommendation?
@@ -108,17 +118,26 @@ final class WaykinAppModel {
     var persistenceStorePathHash: String = ""
 
     // Live real-session state (physical device)
-    var isLiveSessionActive = false
+    private(set) var realWalkState: RealWalkSessionState = .idle
+    var isLiveSessionActive: Bool { realWalkState == .active || realWalkState == .paused }
     var liveSignalState: LiveLocationSignalState = .waitingForAuthorization
     var liveAcceptedCount: Int = 0
     var liveRejectedCount: Int = 0
     private var realExperienceState: ExperienceSessionState?
     private var realExperienceContext: ExperienceContext?
+    private var lifecycleSuspendedRealWalk = false
 
-    init(persistenceStore: PersistenceStore, audioPlayer: (any AudioCuePlaying)? = nil) {
+    init(
+        persistenceStore: PersistenceStore,
+        audioPlayer: (any AudioCuePlaying)? = nil,
+        movementEngine: MovementEngine = MovementEngine(),
+        realLocationProvider: any RealLocationProviding = RealLocationProvider()
+    ) {
         self.persistenceStore = persistenceStore
+        self.movementEngine = movementEngine
         self.demoController = DemoSessionController(movementEngine: movementEngine)
         self.audioPlayer = audioPlayer ?? AppAudioCuePlayer()
+        self.realLocationProvider = realLocationProvider
 
         var shouldReset = false
         let args = ProcessInfo.processInfo.arguments
@@ -139,6 +158,7 @@ final class WaykinAppModel {
         }
         persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
         persistenceStorePathHash = String((try? PersistenceConfiguration.persistentStoreURL().path.hashValue) ?? 0)
+        configureRealLocationCallbacks()
         refreshRecommendation()
     }
 
@@ -220,46 +240,38 @@ final class WaykinAppModel {
 
     // MARK: - Real physical walk support (COMPANION_WALK)
     func startRealCompanionWalk() {
-        // Ensure canonical walk + companion_walk
-        guard true else { return } // placeholder for future auth check
-
-        realLocationProvider.onLocationUpdate = { [weak self] point in
-            guard let self = self, self.isLiveSessionActive else { return }
-            let previousDistance = self.movementEngine.currentSession?.distanceMeters ?? 0
-            self.movementEngine.ingestRealLocation(point)
-            self.liveAcceptedCount += 1
-            guard
-                let session = self.movementEngine.currentSession,
-                let state = self.realExperienceState,
-                let context = self.realExperienceContext
-            else { return }
-
-            let snapshot = MovementSnapshot(
-                timestamp: point.timestamp,
-                speed: point.speed,
-                distanceDelta: max(0, session.distanceMeters - previousDistance),
-                isMoving: point.speed > 0.1
-            )
-            let update = CompanionWalkExperience().update(previousState: state, movement: snapshot, context: context)
-            self.realExperienceState = update.state
-            self.audioPlayer.handle(update.semanticAudioCues)
+        guard realWalkState == .idle || realWalkState == .completed || realWalkState == .failed else {
+            demoMessage = "A walk is already in progress."
+            return
         }
-        realLocationProvider.onSignalStateChange = { [weak self] state in
-            self?.liveSignalState = state
+        guard realLocationProvider.locationServicesEnabled else {
+            failRealWalk(message: "Location Services are unavailable. Demo Walk is still available.")
+            return
         }
 
-        // Request only when needed
-        if realLocationProvider.authorizationStatus == .notDetermined {
+        switch realLocationProvider.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            beginAuthorizedRealWalk()
+        case .notDetermined:
+            realWalkState = .requestingPermission
+            liveSignalState = .waitingForAuthorization
             realLocationProvider.requestAuthorization()
+        case .denied, .restricted:
+            failRealWalk(message: "Location access is required for a real walk. Demo Walk is still available.")
+        @unknown default:
+            failRealWalk(message: "Location authorization is unavailable. Demo Walk is still available.")
         }
+    }
 
+    private func beginAuthorizedRealWalk() {
+        guard realWalkState != .active && realWalkState != .paused else { return }
         do {
             audioPlayer.stopAll(fadeOut: false)
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
-            // Set moving state through public API (resume does this)
-            try? movementEngine.resumeSession()
+            try movementEngine.resumeSession()
             realLocationProvider.startUpdatingLocation()
-            isLiveSessionActive = true
+            realWalkState = .active
+            lifecycleSuspendedRealWalk = false
             liveSignalState = .waitingForFirstFix
             liveAcceptedCount = 0
             liveRejectedCount = 0
@@ -270,35 +282,49 @@ final class WaykinAppModel {
             )
             realExperienceContext = context
             realExperienceState = CompanionWalkExperience().start(context: context)
+            demoMessage = "Waiting for a reliable location fix..."
             path.append(AppRoute.activeSession(.calmDayWalk))
         } catch {
-            demoMessage = "Failed to start real session: \(error)"
+            failRealWalk(message: "The real walk could not start. Demo Walk is still available.")
         }
     }
 
     func pauseRealSession() {
-        guard isLiveSessionActive else { return }
-        try? movementEngine.pauseSession()
-        realLocationProvider.stopUpdatingLocation()
-        audioPlayer.pauseAll()
+        guard realWalkState == .active else { return }
+        do {
+            try movementEngine.pauseSession()
+            realLocationProvider.stopUpdatingLocation()
+            audioPlayer.pauseAll()
+            realWalkState = .paused
+            lifecycleSuspendedRealWalk = false
+        } catch {
+            failRealWalk(message: "The real walk could not be paused safely.")
+        }
     }
 
     func resumeRealSession() {
-        guard isLiveSessionActive else { return }
-        try? movementEngine.resumeSession()
-        // In real provider, lastAcceptedPoint will serve as new baseline to avoid large jumps
-        realLocationProvider.startUpdatingLocation()
-        liveSignalState = .waitingForFirstFix
-        audioPlayer.resumeAll()
+        guard realWalkState == .paused else { return }
+        do {
+            try movementEngine.resumeSession()
+            realLocationProvider.startUpdatingLocation()
+            liveSignalState = .waitingForFirstFix
+            audioPlayer.resumeAll()
+            realWalkState = .active
+            lifecycleSuspendedRealWalk = false
+        } catch {
+            failRealWalk(message: "The real walk could not resume safely.")
+        }
     }
 
     func endRealSession() {
         guard isLiveSessionActive else { return }
+        realWalkState = .ending
         realLocationProvider.stopUpdatingLocation()
         audioPlayer.stopAll(fadeOut: true)
         do {
             let ended = try movementEngine.endSession()
-            isLiveSessionActive = false
+            realWalkState = .completed
+            lifecycleSuspendedRealWalk = false
             realExperienceState = nil
             realExperienceContext = nil
 
@@ -327,20 +353,30 @@ final class WaykinAppModel {
 
             path.append(AppRoute.summary(summary.id))
         } catch {
-            demoMessage = "Real session end failed: \(error)"
+            failRealWalk(message: "The real walk could not end cleanly.")
         }
     }
 
     func handleScenePhase(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            if shouldResumeAudio {
+            if lifecycleSuspendedRealWalk && realWalkState == .paused {
+                resumeRealSession()
+            } else if shouldResumeAudio {
                 audioPlayer.resumeAll()
             }
         case .inactive, .background:
-            audioPlayer.pauseAll()
+            let wasActiveRealWalk = realWalkState == .active
+            suspendRealWalkForLifecycle()
+            if !wasActiveRealWalk {
+                audioPlayer.pauseAll()
+            }
         @unknown default:
-            audioPlayer.pauseAll()
+            let wasActiveRealWalk = realWalkState == .active
+            suspendRealWalkForLifecycle()
+            if !wasActiveRealWalk {
+                audioPlayer.pauseAll()
+            }
         }
     }
 
@@ -369,6 +405,90 @@ final class WaykinAppModel {
         let realIsMoving = isLiveSessionActive && movementEngine.currentSession?.movementState == .moving
         return demoIsMoving || realIsMoving
     }
+
+    private func configureRealLocationCallbacks() {
+        realLocationProvider.onLocationSample = { [weak self] sample in
+            guard let self, self.realWalkState == .active else { return }
+            let result = self.movementEngine.ingestRealLocationSample(sample)
+            self.liveAcceptedCount = self.movementEngine.acceptedSampleCount
+            self.liveRejectedCount = self.movementEngine.rejectedSampleCount
+
+            guard let snapshot = result.snapshot,
+                  let state = self.realExperienceState,
+                  let context = self.realExperienceContext else { return }
+
+            self.liveSignalState = .active
+            self.demoMessage = "Walking with Lira..."
+            let update = CompanionWalkExperience().update(
+                previousState: state,
+                movement: snapshot,
+                context: context
+            )
+            self.realExperienceState = update.state
+            self.audioPlayer.handle(update.semanticAudioCues)
+        }
+
+        realLocationProvider.onAuthorizationChange = { [weak self] status in
+            guard let self else { return }
+            switch status {
+            case .authorizedWhenInUse, .authorizedAlways:
+                if self.realWalkState == .requestingPermission {
+                    self.beginAuthorizedRealWalk()
+                }
+            case .denied, .restricted:
+                if self.realWalkState == .requestingPermission || self.isLiveSessionActive {
+                    self.failRealWalk(message: "Location access is required for a real walk. Demo Walk is still available.")
+                }
+            case .notDetermined:
+                break
+            @unknown default:
+                self.failRealWalk(message: "Location authorization is unavailable. Demo Walk is still available.")
+            }
+        }
+
+        realLocationProvider.onSignalStateChange = { [weak self] state in
+            guard let self else { return }
+            self.liveSignalState = state
+            switch state {
+            case .failed:
+                self.failRealWalk(message: "Location became unavailable. The walk was stopped safely.")
+            case .unavailable:
+                if self.isLiveSessionActive {
+                    self.failRealWalk(message: "Location access is unavailable. The walk was stopped safely.")
+                }
+            case .degraded:
+                self.demoMessage = "Location signal is temporarily weak."
+            case .waitingForAuthorization, .waitingForFirstFix, .active:
+                break
+            }
+        }
+    }
+
+    private func suspendRealWalkForLifecycle() {
+        guard realWalkState == .active else { return }
+        do {
+            try movementEngine.pauseSession()
+            realLocationProvider.stopUpdatingLocation()
+            audioPlayer.pauseAll()
+            realWalkState = .paused
+            lifecycleSuspendedRealWalk = true
+        } catch {
+            failRealWalk(message: "The real walk was stopped safely after an interruption.")
+        }
+    }
+
+    private func failRealWalk(message: String) {
+        realLocationProvider.stopUpdatingLocation()
+        audioPlayer.stopAll(fadeOut: false)
+        if movementEngine.currentSession != nil {
+            _ = try? movementEngine.endSession()
+        }
+        realExperienceState = nil
+        realExperienceContext = nil
+        lifecycleSuspendedRealWalk = false
+        realWalkState = .failed
+        demoMessage = message
+    }
 }
 
 
@@ -389,6 +509,13 @@ struct HomeView: View {
                     .font(.callout)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("waykin.memory.latest")
+            }
+
+            if !appModel.demoMessage.isEmpty {
+                Text(appModel.demoMessage)
+                    .font(.callout)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("waykin.status")
             }
 
             Button("Begin Walk") { appModel.startDemo(.calmDayWalk) }
@@ -459,18 +586,6 @@ struct ActiveSessionView: View {
                 .frame(height: 220)
                 .accessibilityIdentifier("waykin.session.map")
 
-            HStack {
-                Button("Pause") { appModel.pauseDemo() }
-                    .accessibilityIdentifier("waykin.session.pause")
-                Button("Resume") { appModel.resumeDemo() }
-                    .accessibilityIdentifier("waykin.session.resume")
-                Button("Run to End") { appModel.runDemoToEnd() }
-                    .accessibilityIdentifier("waykin.session.runToEnd")
-                Button("End") { appModel.endDemo() }
-                    .accessibilityIdentifier("waykin.session.end")
-            }
-
-            // Live real controls (physical device)
             if appModel.isLiveSessionActive {
                 HStack(spacing: 12) {
                     Button("Pause") { appModel.pauseRealSession() }
@@ -482,6 +597,17 @@ struct ActiveSessionView: View {
                 }
                 Text("Live Signal: \(appModel.liveSignalState).description)")
                     .accessibilityIdentifier("waykin.session.liveSignal")
+            } else {
+                HStack {
+                    Button("Pause") { appModel.pauseDemo() }
+                        .accessibilityIdentifier("waykin.session.pause")
+                    Button("Resume") { appModel.resumeDemo() }
+                        .accessibilityIdentifier("waykin.session.resume")
+                    Button("Run to End") { appModel.runDemoToEnd() }
+                        .accessibilityIdentifier("waykin.session.runToEnd")
+                    Button("End") { appModel.endDemo() }
+                        .accessibilityIdentifier("waykin.session.end")
+                }
             }
         }.padding()
     }

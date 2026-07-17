@@ -4,11 +4,11 @@ public enum ActivityType: String, Codable, CaseIterable, Sendable {
     case walk, run, cycle, hike, climb
 }
 
-public enum MovementState: String, Codable, Sendable {
+public enum MovementState: String, Codable, Equatable, Sendable {
     case idle, moving, paused, stopped
 }
 
-public struct RoutePoint: Codable, Equatable {
+public struct RoutePoint: Codable, Equatable, Sendable {
     public let timestamp: Date
     public let latitude: Double
     public let longitude: Double
@@ -24,7 +24,7 @@ public struct RoutePoint: Codable, Equatable {
     }
 }
 
-public struct MovementSnapshot: Codable {
+public struct MovementSnapshot: Codable, Equatable, Sendable {
     public let timestamp: Date
     public let speed: Double
     public let distanceDelta: Double

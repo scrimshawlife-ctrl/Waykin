@@ -42,7 +42,7 @@
 2. Grant When-In-Use when prompted
 3. Wait for first fix (liveSignal = active)
 4. Walk 2+ minutes
-5. Confirm distance increases, pace updates
+5. Confirm accepted samples and distance increase without abrupt jumps
 6. Pause 20-30s, confirm stable
 7. Resume, confirm no spike
 8. Walk 2+ more minutes

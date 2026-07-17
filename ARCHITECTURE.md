@@ -5,6 +5,12 @@ Waykin is currently a solo-developer MVP vertical slice, not a platform. The arc
 ## Runtime Flow
 
 ```text
+Core Location sample / deterministic Demo tick
+      ↓
+MovementIntegrityProcessor (real samples only)
+      ↓
+MovementEngine
+      ↓
 MovementSnapshot
       ↓
 WorldState
@@ -26,7 +32,8 @@ SessionMemory + Bond
 
 ## Primary Systems
 
-- Movement Engine: starts, pauses, resumes, ends, simulates, and ingests real walking sessions.
+- Movement Integrity: validates real sample accuracy and timestamps, rejects implausible displacement, stabilizes walking speed, and establishes fresh anchors across lifecycle gaps.
+- Movement Engine: owns session transitions, elapsed and active time, distance, speed, route points, simulation, and accepted real walking samples.
 - World State: derives serializable session context from local movement signals, Bond, time context, familiarity, energy, and pressure.
 - Event Generator: emits zero or one deterministic semantic event per tick using a seeded, weighted, cooldown-aware configuration.
 - Companion Runtime: maps events and commands into a small behavior vocabulary for Lira.
@@ -39,6 +46,8 @@ Persistence supports Bond and concise memories. It is not a generalized backend 
 
 SwiftUI and MapKit consume state from the core. They do not own gameplay rules.
 
+`RealLocationProvider` is a foreground Core Location adapter. It converts `CLLocation` values into raw `LocationSample` values and reports authorization and signal state. The core `MovementEngine` is the sole owner of movement acceptance and metrics. Only an accepted `MovementSnapshot` can update Companion Walk state or semantic audio.
+
 Production-capable playback remains behind the semantic `AudioCue` boundary. The core knows no filenames; `AppAudioCuePlayer` uses `AVAudioPlayer` and a centralized app-target catalog to resolve local assets or fail to silence safely.
 
 ## Retained Compatibility
@@ -48,6 +57,7 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 ## Deferred Seams
 
 - Manual physical-device GPS and audio validation.
+- Device-specific calibration of the conservative walking integrity thresholds.
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
