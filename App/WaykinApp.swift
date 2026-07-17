@@ -108,6 +108,7 @@ final class WaykinAppModel {
     var companion: Companion
     var activeRecommendation: ExperienceRecommendation?
     var lastSummary: SessionSummary?
+    var lastClosingPhrase = ""
     var demoMessage = ""
     var selectedTimeContext: String = "day"
     var path = NavigationPath()
@@ -129,9 +130,36 @@ final class WaykinAppModel {
     var liveRejectedCount: Int = 0
     private var realExperienceState: ExperienceSessionState?
     private var realExperienceContext: ExperienceContext?
+    private(set) var realCompanionRuntime = CompanionRuntime()
     private var lifecycleSuspendedRealWalk = false
     private var activeFieldTestReceipt: FieldTestReceiptBuilder?
     private var lastObservedMovementState: MovementState = .idle
+
+    var activePresencePresentation: CompanionPresencePresentation {
+        let usesPhysicalRuntime = isLiveSessionActive
+        let walkState: CompanionWalkState? = if usesPhysicalRuntime {
+            if case .companionWalk(let state) = realExperienceState?.runtimeState { state } else { nil }
+        } else {
+            demoController.companionWalkState
+        }
+        let session = movementEngine.currentSession
+        let coordinate = session?.routePoints.last
+
+        return CompanionPresencePresentation(
+            companionName: companion.name,
+            bondLevel: companion.bondLevel,
+            behavior: usesPhysicalRuntime ? realCompanionRuntime.state : demoController.companionRuntime.state,
+            pursuitState: walkState?.pursuitState ?? .inactive,
+            eventKind: walkState?.lastEvent?.kind,
+            audioCueKind: walkState?.activeAudioCues.first?.kind,
+            elapsedSeconds: session?.elapsedTime ?? 0,
+            distanceMeters: session?.distanceMeters ?? 0,
+            isPaused: usesPhysicalRuntime ? realWalkState == .paused : demoController.isPaused,
+            isOpening: usesPhysicalRuntime ? liveAcceptedCount == 0 : demoController.tickIndex == 0,
+            latitude: coordinate?.latitude,
+            longitude: coordinate?.longitude
+        )
+    }
 
     init(
         persistenceStore: PersistenceStore,
@@ -187,6 +215,7 @@ final class WaykinAppModel {
 
     func startDemo(_ scenario: DemoScenarioID) {
         do {
+            lastClosingPhrase = ""
             audioPlayer.stopAll(fadeOut: false)
             try demoController.start(scenarioID: scenario)
             if let session = movementEngine.currentSession, fieldTestReceiptStore != nil {
@@ -265,6 +294,7 @@ final class WaykinAppModel {
     }
 
     func endDemo() {
+        lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
         let didCompleteScenario = demoController.currentScenario.map {
             demoController.tickIndex >= $0.ticks.count
@@ -404,6 +434,8 @@ final class WaykinAppModel {
             )
             realExperienceContext = context
             realExperienceState = CompanionWalkExperience().start(context: context)
+            realCompanionRuntime = CompanionRuntime()
+            lastClosingPhrase = ""
             demoMessage = "Waiting for a reliable location fix..."
             path.append(AppRoute.activeSession(.calmDayWalk))
         } catch {
@@ -450,6 +482,7 @@ final class WaykinAppModel {
 
     func endRealSession() {
         guard isLiveSessionActive else { return }
+        lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
         activeFieldTestReceipt?.recordSessionTransition(from: fieldTestState(for: realWalkState), to: .ending, at: endedAt)
         realWalkState = .ending
@@ -593,10 +626,13 @@ final class WaykinAppModel {
                 context: context
             )
             self.realExperienceState = update.state
+            update.companionCommands.forEach { self.realCompanionRuntime.apply(command: $0) }
             self.recordObservedMovementState(snapshot.isMoving ? .moving : .paused, at: snapshot.timestamp)
-            if case .companionWalk(let walkState) = update.state.runtimeState,
-               let event = walkState.lastEvent {
-                self.activeFieldTestReceipt?.recordWorldEvent(event)
+            if case .companionWalk(let walkState) = update.state.runtimeState {
+                self.realCompanionRuntime.apply(event: walkState.lastEvent)
+                if let event = walkState.lastEvent {
+                    self.activeFieldTestReceipt?.recordWorldEvent(event)
+                }
             }
             update.semanticAudioCues.forEach {
                 self.activeFieldTestReceipt?.recordAudioCue($0, at: snapshot.timestamp)
@@ -843,47 +879,65 @@ struct ActiveSessionView: View {
     let scenario: DemoScenarioID
 
     var body: some View {
-        VStack {
-            Text("Active Walk").font(.title2).accessibilityIdentifier("waykin.session.screen")
-            Text(appModel.demoController.presentationState.statusText).accessibilityIdentifier("waykin.session.elapsed")
-            if let event = appModel.demoController.currentEvent {
-                Text(event.kind.rawValue)
-                    .accessibilityIdentifier("waykin.session.phenomenon")
-            }
-            if let cue = appModel.demoController.currentAudioCue {
-                Text(cue.kind.rawValue)
-                    .accessibilityIdentifier("waykin.session.audioCue")
-            }
+        let presentation = appModel.activePresencePresentation
 
-            let center = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
-            Map(coordinateRegion: .constant(MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))))
-                .frame(height: 220)
-                .accessibilityIdentifier("waykin.session.map")
+        ZStack {
+            CompanionPresenceStyle.background(for: presentation.pressureIntensity)
+                .ignoresSafeArea()
 
-            if appModel.isLiveSessionActive {
-                HStack(spacing: 12) {
-                    Button("Pause") { appModel.pauseRealSession() }
-                        .accessibilityIdentifier("waykin.session.pause")
-                    Button("Resume") { appModel.resumeRealSession() }
-                        .accessibilityIdentifier("waykin.session.resume")
-                    Button("End Real") { appModel.endRealSession() }
+            ScrollView {
+                VStack(spacing: CompanionPresenceStyle.sectionSpacing) {
+                    CompanionPresenceView(presentation: presentation)
+
+                    HStack(spacing: 12) {
+                        if presentation.isPaused {
+                            Button {
+                                appModel.isLiveSessionActive ? appModel.resumeRealSession() : appModel.resumeDemo()
+                            } label: {
+                                Label("Resume", systemImage: "play.fill")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("waykin.session.resume")
+                        } else {
+                            Button {
+                                appModel.isLiveSessionActive ? appModel.pauseRealSession() : appModel.pauseDemo()
+                            } label: {
+                                Label("Pause", systemImage: "pause.fill")
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("waykin.session.pause")
+                        }
+
+                        Button(role: .destructive) {
+                            appModel.isLiveSessionActive ? appModel.endRealSession() : appModel.endDemo()
+                        } label: {
+                            Label("End", systemImage: "stop.fill")
+                        }
+                        .buttonStyle(.bordered)
                         .accessibilityIdentifier("waykin.session.end")
+                    }
+
+                    if !appModel.isLiveSessionActive {
+                        Button("Run to End") { appModel.runDemoToEnd() }
+                            .font(.caption)
+                            .accessibilityIdentifier("waykin.session.runToEnd")
+                    } else {
+                        Text("Signal: \(appModel.liveSignalState).description)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("waykin.session.liveSignal")
+                    }
+
+                    CompactSessionMap(
+                        latitude: presentation.latitude,
+                        longitude: presentation.longitude
+                    )
                 }
-                Text("Live Signal: \(appModel.liveSignalState).description)")
-                    .accessibilityIdentifier("waykin.session.liveSignal")
-            } else {
-                HStack {
-                    Button("Pause") { appModel.pauseDemo() }
-                        .accessibilityIdentifier("waykin.session.pause")
-                    Button("Resume") { appModel.resumeDemo() }
-                        .accessibilityIdentifier("waykin.session.resume")
-                    Button("Run to End") { appModel.runDemoToEnd() }
-                        .accessibilityIdentifier("waykin.session.runToEnd")
-                    Button("End") { appModel.endDemo() }
-                        .accessibilityIdentifier("waykin.session.end")
-                }
+                .padding(.horizontal, CompanionPresenceStyle.horizontalPadding)
+                .padding(.vertical, 12)
             }
-        }.padding()
+        }
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -894,6 +948,11 @@ struct SessionSummaryView: View {
     var body: some View {
         VStack {
             Text("Session Summary").font(.title).accessibilityIdentifier("waykin.summary.screen")
+            if !appModel.lastClosingPhrase.isEmpty {
+                Text(appModel.lastClosingPhrase)
+                    .font(.headline)
+                    .accessibilityIdentifier("waykin.session.closing")
+            }
             Text(summary.memory.text).accessibilityIdentifier("waykin.summary.memory")
             Button("Back to Home") { appModel.returnHome() }.accessibilityIdentifier("waykin.summary.home")
         }.padding()

@@ -26,4 +26,15 @@ final class DemoAndPhysicsTests: XCTestCase {
         XCTAssertEqual(scenarios.map(\.id), [.calmDayWalk])
         XCTAssertEqual(scenarios.map(\.experienceID), ["companion_walk"])
     }
+
+    @MainActor
+    func testDemoExposesCanonicalWalkStateForPresentation() throws {
+        let controller = DemoSessionController(movementEngine: MovementEngine())
+        try controller.start(scenarioID: .calmDayWalk)
+
+        XCTAssertNotNil(controller.companionWalkState)
+        XCTAssertEqual(controller.companionWalkState?.pursuitState, .inactive)
+        controller.advanceOneTick()
+        XCTAssertNotNil(controller.companionWalkState?.worldState)
+    }
 }

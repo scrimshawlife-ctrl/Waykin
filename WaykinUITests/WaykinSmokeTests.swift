@@ -36,13 +36,46 @@ final class WaykinSmokeTests: XCTestCase {
         begin.tap()
 
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.session.screen").firstMatch.waitForExistence(timeout: 5))
+        let phrase = app.staticTexts.matching(identifier: "waykin.session.phrase").firstMatch
+        let presence = app.descendants(matching: .any).matching(identifier: "waykin.session.presence").firstMatch
+        XCTAssertTrue(phrase.waitForExistence(timeout: 5))
+        XCTAssertTrue(presence.waitForExistence(timeout: 5))
+        let phraseBeforePause = phrase.label
+        let presenceBeforePause = presence.value as? String
         XCTAssertTrue(app.buttons.matching(identifier: "waykin.session.pause").firstMatch.waitForExistence(timeout: 5))
         app.buttons.matching(identifier: "waykin.session.pause").firstMatch.tap()
-        app.buttons.matching(identifier: "waykin.session.resume").firstMatch.tap()
+        let resume = app.buttons.matching(identifier: "waykin.session.resume").firstMatch
+        XCTAssertTrue(resume.waitForExistence(timeout: 5))
+        XCTAssertEqual(phrase.label, phraseBeforePause)
+        XCTAssertEqual(presence.value as? String, presenceBeforePause)
+        resume.tap()
         app.buttons.matching(identifier: "waykin.session.runToEnd").firstMatch.tap()
         app.buttons.matching(identifier: "waykin.session.end").firstMatch.tap()
 
         XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.screen").firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.session.closing").firstMatch.exists)
+    }
+
+    func testActiveSessionPrioritizesCompanionPresenceBeforeMovement() {
+        launch(reset: true)
+        let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 5))
+        begin.tap()
+
+        let presence = app.descendants(matching: .any).matching(identifier: "waykin.session.presence").firstMatch
+        let phrase = app.staticTexts.matching(identifier: "waykin.session.phrase").firstMatch
+        let elapsed = app.descendants(matching: .any).matching(identifier: "waykin.session.elapsed").firstMatch
+        let distance = app.descendants(matching: .any).matching(identifier: "waykin.session.distance").firstMatch
+        let map = app.descendants(matching: .any).matching(identifier: "waykin.session.map").firstMatch
+
+        XCTAssertTrue(presence.waitForExistence(timeout: 5))
+        XCTAssertTrue(phrase.waitForExistence(timeout: 5))
+        XCTAssertEqual(phrase.label, "Lira is listening.")
+        XCTAssertTrue(elapsed.exists)
+        XCTAssertTrue(distance.exists)
+        XCTAssertTrue(map.exists)
+        XCTAssertGreaterThan(presence.frame.height, map.frame.height)
+        XCTAssertLessThanOrEqual(map.frame.height, 100)
     }
 
     func testMemoryPersistsAcrossRelaunch() {

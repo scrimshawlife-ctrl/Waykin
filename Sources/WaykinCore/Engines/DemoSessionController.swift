@@ -12,6 +12,11 @@ public final class DemoSessionController {
     public private(set) var companionRuntime = CompanionRuntime()
     public private(set) var currentEvent: WorldEvent?
     public private(set) var currentAudioCue: AudioCue?
+
+    public var companionWalkState: CompanionWalkState? {
+        guard case .companionWalk(let state) = currentExperienceState?.runtimeState else { return nil }
+        return state
+    }
     
     private let scenarios: [DemoScenario] = [
         DemoScenario(

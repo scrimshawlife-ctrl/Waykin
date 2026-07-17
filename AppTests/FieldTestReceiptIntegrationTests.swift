@@ -17,6 +17,8 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
 
         enabled.startDemo(.calmDayWalk)
         disabled.startDemo(.calmDayWalk)
+        XCTAssertEqual(enabled.activePresencePresentation.phrase, "Lira is listening.")
+        XCTAssertEqual(disabled.activePresencePresentation.phrase, "Lira is listening.")
         enabled.runDemoToEnd()
         disabled.runDemoToEnd()
         enabledClock.now = enabledClock.now.addingTimeInterval(96)
@@ -41,6 +43,26 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertTrue(receipt.summary.memoryWritten)
         XCTAssertEqual(receipt.timeline.last?.category, .sessionCompleted)
         XCTAssertTrue(receipt.timeline.contains { $0.category == .audioLifecycleAction && $0.code == "stop" })
+    }
+
+    func testDemoAndPhysicalPathsExposeTheSamePresenceContract() throws {
+        let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 1_500))
+        let demo = try makeModel(clock: clock, receiptStore: nil)
+        let physical = try makeModel(
+            clock: clock,
+            provider: ReceiptLocationProvider(status: .authorizedWhenInUse),
+            receiptStore: nil
+        )
+
+        demo.startDemo(.calmDayWalk)
+        physical.startRealCompanionWalk()
+
+        let demoPresence = demo.activePresencePresentation
+        let physicalPresence = physical.activePresencePresentation
+        XCTAssertEqual(demoPresence.companionName, physicalPresence.companionName)
+        XCTAssertEqual(demoPresence.behavior.rawValue, physicalPresence.behavior.rawValue)
+        XCTAssertEqual(demoPresence.pursuitState, physicalPresence.pursuitState)
+        XCTAssertEqual(demoPresence.phrase, physicalPresence.phrase)
     }
 
     func testPhysicalReceiptAggregatesAcceptedAndRejectedSamples() throws {
