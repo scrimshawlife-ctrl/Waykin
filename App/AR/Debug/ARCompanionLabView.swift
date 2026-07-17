@@ -9,16 +9,20 @@ final class ARCompanionLabRuntime {
     private let registry = AREntityRegistry()
     private let diagnostics = ARDiagnosticRecorder()
     private let sessionCoordinator = ARSessionCoordinator()
+    private let demoBridge = ARDemoRuntimeBridge()
     private lazy var renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
 
     private(set) var capabilityState: ARCapabilityState = .checking
     private(set) var lastResult = "Waiting for AR session"
     private(set) var currentState: CompanionPresentationState = .idle
     private(set) var trackingText = "Checking"
+    private(set) var demoTickText = "Demo not started"
+    private(set) var demoEventText = "No event"
     private weak var arView: ARView?
 
     var registryCount: Int { registry.count }
     var receipt: ARValidationReceipt { diagnostics.summary }
+    var isDemoRunning: Bool { demoBridge.isRunning }
 
     func attach(_ arView: ARView) {
         self.arView = arView
@@ -37,7 +41,7 @@ final class ARCompanionLabRuntime {
     func placeLira() {
         guard let arView else { return }
         let presentation = CompanionPresentation(
-            id: UUID(),
+            id: ARCompanionRuntimeAdapter.companionID,
             name: "Lira",
             behavior: currentState.rawValue,
             spatialIntent: companionIntent
@@ -48,6 +52,38 @@ final class ARCompanionLabRuntime {
     func setState(_ state: CompanionPresentationState) {
         currentState = state
         report(renderer.setCompanionState(state))
+    }
+
+    func startDemoArc() {
+        guard let arView else { return }
+        do {
+            clearRenderedContent(resetDemo: false)
+            let frame = try demoBridge.start()
+            render(frame, in: arView)
+            lastResult = "Demo arc started"
+        } catch {
+            lastResult = "Demo start failed"
+        }
+    }
+
+    func advanceDemoArc() {
+        guard let arView else { return }
+        guard let frame = demoBridge.advance() else {
+            lastResult = "Start the demo arc first"
+            return
+        }
+        render(frame, in: arView)
+    }
+
+    func runDemoArcToEnd() {
+        guard let arView else { return }
+        if !demoBridge.isRunning {
+            startDemoArc()
+        }
+        for frame in demoBridge.runRemaining() {
+            render(frame, in: arView)
+        }
+        lastResult = "Demo arc complete"
     }
 
     func spawnDiscovery() {
@@ -84,14 +120,35 @@ final class ARCompanionLabRuntime {
     }
 
     func clear() {
-        guard let arView else { return }
-        report(renderer.render(.clearSession, in: arView))
-        currentState = .idle
+        clearRenderedContent(resetDemo: true)
     }
 
     func pause() {
-        clear()
+        clearRenderedContent(resetDemo: true)
         sessionCoordinator.pause()
+    }
+
+    private func clearRenderedContent(resetDemo: Bool) {
+        guard let arView else { return }
+        report(renderer.render(.clearSession, in: arView))
+        currentState = .idle
+        demoTickText = "Demo not started"
+        demoEventText = "No event"
+        if resetDemo {
+            demoBridge.reset()
+        }
+    }
+
+    private func render(_ frame: ARDemoFrame, in arView: ARView) {
+        for command in frame.commands {
+            report(renderer.render(command, in: arView))
+        }
+        currentState = frame.companionState
+        demoTickText = "Tick \(frame.tickIndex)/\(demoBridge.totalTicks) • distance \(String(format: "%.1f", frame.relativeDistance))m"
+        demoEventText = frame.eventKind?.rawValue ?? "Opening"
+        if frame.isComplete {
+            lastResult = "Demo arc complete"
+        }
     }
 
     private var companionIntent: SpatialIntent {
@@ -124,53 +181,75 @@ struct ARCompanionLabView: View {
             ARCompanionCameraView(runtime: runtime)
                 .ignoresSafeArea()
 
-            VStack(spacing: 8) {
-                HStack {
-                    Text("AR: \(runtime.trackingText)")
-                    Spacer()
-                    Text("Entities: \(runtime.registryCount)")
-                        .accessibilityIdentifier("waykin.ar.registryCount")
-                }
-                .font(.caption.weight(.semibold))
+            ScrollView {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("AR: \(runtime.trackingText)")
+                        Spacer()
+                        Text("Entities: \(runtime.registryCount)")
+                            .accessibilityIdentifier("waykin.ar.registryCount")
+                    }
+                    .font(.caption.weight(.semibold))
 
-                Text(runtime.lastResult)
-                    .font(.caption2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("waykin.ar.lastCommand")
+                    Text(runtime.lastResult)
+                        .font(.caption2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("waykin.ar.lastCommand")
 
-                if controlsExpanded {
-                    Button("Place Lira") { runtime.placeLira() }
+                    Text(runtime.demoTickText)
+                        .font(.caption2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("waykin.ar.demo.tick")
+                    Text("Event: \(runtime.demoEventText)")
+                        .font(.caption2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("waykin.ar.demo.event")
+
+                    if controlsExpanded {
+                        HStack {
+                            Button("Start Arc") { runtime.startDemoArc() }
+                                .accessibilityIdentifier("waykin.ar.demo.start")
+                            Button("Next Event") { runtime.advanceDemoArc() }
+                                .accessibilityIdentifier("waykin.ar.demo.next")
+                            Button("Run Arc") { runtime.runDemoArcToEnd() }
+                                .accessibilityIdentifier("waykin.ar.demo.run")
+                        }
                         .buttonStyle(.borderedProminent)
-                        .accessibilityIdentifier("waykin.ar.placeCompanion")
 
-                    HStack {
-                        stateButton(.idle)
-                        stateButton(.follow)
-                        stateButton(.investigate)
-                    }
-                    HStack {
-                        stateButton(.alert)
-                        stateButton(.celebrate)
-                    }
-                    HStack {
-                        Button("Discovery") { runtime.spawnDiscovery() }
-                            .accessibilityIdentifier("waykin.ar.spawnDiscovery")
-                        Button("Threat") { runtime.spawnThreat() }
-                            .accessibilityIdentifier("waykin.ar.spawnThreat")
-                        Button("Clear", role: .destructive) { runtime.clear() }
-                            .accessibilityIdentifier("waykin.ar.clear")
-                    }
-                    .buttonStyle(.bordered)
-                }
+                        Button("Place Lira") { runtime.placeLira() }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("waykin.ar.placeCompanion")
 
-                Button(controlsExpanded ? "Hide Controls" : "Show Controls") {
-                    controlsExpanded.toggle()
+                        HStack {
+                            stateButton(.idle)
+                            stateButton(.follow)
+                            stateButton(.investigate)
+                        }
+                        HStack {
+                            stateButton(.alert)
+                            stateButton(.celebrate)
+                        }
+                        HStack {
+                            Button("Discovery") { runtime.spawnDiscovery() }
+                                .accessibilityIdentifier("waykin.ar.spawnDiscovery")
+                            Button("Threat") { runtime.spawnThreat() }
+                                .accessibilityIdentifier("waykin.ar.spawnThreat")
+                            Button("Clear", role: .destructive) { runtime.clear() }
+                                .accessibilityIdentifier("waykin.ar.clear")
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    Button(controlsExpanded ? "Hide Controls" : "Show Controls") {
+                        controlsExpanded.toggle()
+                    }
+                    .font(.caption)
                 }
-                .font(.caption)
+                .padding(12)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                .padding()
             }
-            .padding(12)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
-            .padding()
+            .frame(maxHeight: 330)
         }
         .navigationTitle("Waykin AR Lab")
         .navigationBarTitleDisplayMode(.inline)
