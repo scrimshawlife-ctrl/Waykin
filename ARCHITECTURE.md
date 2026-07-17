@@ -80,19 +80,9 @@ App-target AR adapter
 ARKit + RealityKit presentation
 ```
 
-The contract is intentionally presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth.
+AR-1 introduces an isolated app-target session shell: `ARCapabilityMonitor`, `ARSessionCoordinator`, `AREntityRegistry`, `ARPlacementResolver`, and `WaykinARView`. These types own device support checks, camera authorization mapping, ARSession lifecycle, horizontal-surface raycasts, placeholder entity construction, and bounded cleanup. They do not connect AR state to movement or make tracking an alternate source of gameplay truth.
 
-### AR Session Shell
-
-The app target now contains an isolated AR-1 shell under `App/AR/`:
-
-- `ARCapabilityMonitor` maps hardware support and camera authorization into the platform-neutral `ARCapabilityState` contract.
-- `ARSessionCoordinator` owns `ARSession` startup, horizontal-plane configuration, pause/reset behavior, interruption recovery, and tracking-state reporting.
-- `AREntityRegistry` owns the association between semantic IDs and RealityKit entities and guarantees bounded replacement, removal, and session clearing.
-- `ARPlacementResolver` converts a ground-plane `SpatialIntent` into a validated RealityKit raycast placement and rejects unresolved placement instead of inventing coordinates.
-- `WaykinARView` hosts a manually configured `ARView` and exposes a temporary tap-to-place marker for physical-device validation.
-
-This shell is not connected to movement, companion, event, Bond, memory, or pursuit state. It proves app-target capability, tracking, placement, and cleanup only. The temporary marker is engineering instrumentation, not canonical gameplay content.
+`WaykinARLab` is a dedicated engineering target that launches the AR shell directly for physical-device validation. It is separate from the canonical walking app so camera, placement, interruption, and cleanup behavior can be tested without changing the existing product loop. Its placeholder sphere is instrumentation, not gameplay content.
 
 ## Retained Compatibility
 
@@ -106,8 +96,8 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
-- Wiring the AR session shell into the primary product navigation.
-- Mapping canonical companion state into RealityKit entities and animation.
-- Physical-device validation of AR placement, tracking loss, interruption recovery, outdoor readability, and battery impact.
+- Integration of AR shell state into the canonical walking product loop.
+- Lira model loading, animation, companion positioning, and event-driven AR commands.
+- Physical-device validation of placement, tracking loss, interruption recovery, outdoor readability, and battery impact.
 
 The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, generative AI, wearables, and generalized narrative infrastructure.
