@@ -64,6 +64,24 @@ SwiftUI and MapKit consume state from the core. They do not own gameplay rules.
 
 Production-capable playback remains behind the semantic `AudioCue` boundary. The core knows no filenames; `AppAudioCuePlayer` uses `AVAudioPlayer` and a centralized app-target catalog to resolve local assets or fail to silence safely.
 
+### AR Presentation Contract
+
+`WaykinCore` now defines platform-neutral AR presentation values under `Sources/WaykinCore/Presentation/`. `SpatialIntent` describes the semantic placement role of a companion, discovery, threat, or environmental object without importing ARKit, RealityKit, or renderer-specific coordinates.
+
+`ARWorldCommand` carries immutable spawn, update, removal, and session-clear intents across the core-to-app boundary. The future app-target AR adapter owns tracking, anchors, entity construction, animation playback, occlusion, and graceful capability fallback. It may realize or defer commands, but it must not mutate movement, world, event, companion, pursuit, Bond, or persistence state.
+
+```text
+WaykinCore semantic state
+      ↓
+SpatialIntent / ARWorldCommand
+      ↓
+App-target AR adapter
+      ↓
+ARKit + RealityKit presentation
+```
+
+The contract is intentionally presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth.
+
 ## Retained Compatibility
 
 The repository still contains deprecated proof-of-concept runtime types for Orc Pursuit and Future Self. They are retained only as temporary source/API compatibility while the current product surface, recommendations, Demo Mode, variants, and tests are consolidated around Companion Walk. Future deletion or migration should follow `docs/SOLO_MVP_SCOPE.md`.
@@ -76,5 +94,7 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
+- App-target ARKit and RealityKit session implementation.
+- Physical-device validation of AR placement, tracking loss, interruption recovery, and battery impact.
 
-The architecture deliberately defers backend services, accounts, multiplayer, AR gameplay, creator tools, marketplaces, generative AI, wearables, and generalized narrative infrastructure.
+The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, generative AI, wearables, and generalized narrative infrastructure.
