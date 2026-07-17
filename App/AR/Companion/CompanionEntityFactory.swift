@@ -63,11 +63,13 @@ enum CompanionEntityFactory {
         let indicator = model(name: "StatusIndicator", mesh: .generateSphere(radius: 0.025), material: light)
         indicator.position = [0, config.heightMeters * 1.12, 0]
 
-        [body, head, leftEar, rightEar, tail, core, shadow, indicator].forEach(root.addChild)
+        for child in [body, head, leftEar, rightEar, tail, core, shadow, indicator] {
+            root.addChild(child)
+        }
         return root
     }
 
-    private static func model(name: String, mesh: MeshResource, material: Material) -> ModelEntity {
+    private static func model(name: String, mesh: MeshResource, material: SimpleMaterial) -> ModelEntity {
         let entity = ModelEntity(mesh: mesh, materials: [material])
         entity.name = name
         return entity
