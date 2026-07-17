@@ -32,13 +32,15 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         }
     }
 
-    func testLiraFactoryProducesIndependentEntities() {
+    func testLiraFactoryProducesIndependentEntities() throws {
         let factory = CompanionEntityFactory()
         let first = factory.makeLira()
         let second = factory.makeLira()
+        let firstBody = try XCTUnwrap(first.findEntity(named: "Body"))
+        let secondBody = try XCTUnwrap(second.findEntity(named: "Body"))
 
         XCTAssertFalse(first === second)
-        XCTAssertFalse(first.findEntity(named: "Body") === second.findEntity(named: "Body"))
+        XCTAssertFalse(firstBody === secondBody)
     }
 
     func testVisualConfigurationClampsUnsafeValues() {
