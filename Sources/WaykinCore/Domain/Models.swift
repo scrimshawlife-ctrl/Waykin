@@ -428,4 +428,32 @@ public struct SessionSummary: Identifiable, Equatable {
     public let outcome: String
     public let bondDelta: Int
     public let memory: SessionMemory
+
+    public init(
+        id: UUID,
+        sessionID: UUID,
+        activity: ActivityType,
+        experience: String,
+        variant: String,
+        duration: TimeInterval,
+        activeTime: TimeInterval,
+        distanceMeters: Double,
+        averageSpeed: Double,
+        outcome: String,
+        bondDelta: Int,
+        memory: SessionMemory
+    ) {
+        self.id = id
+        self.sessionID = sessionID
+        self.activity = activity
+        self.experience = experience
+        self.variant = variant
+        self.duration = duration
+        self.activeTime = activeTime
+        self.distanceMeters = distanceMeters
+        self.averageSpeed = averageSpeed
+        self.outcome = outcome
+        self.bondDelta = bondDelta
+        self.memory = memory
+    }
 }

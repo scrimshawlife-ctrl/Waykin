@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftData
+import WaykinCore
 import XCTest
 @testable import WaykinApp
 

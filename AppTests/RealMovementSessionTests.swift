@@ -1,5 +1,6 @@
 import CoreLocation
 import SwiftData
+import WaykinCore
 import XCTest
 @testable import WaykinApp
 

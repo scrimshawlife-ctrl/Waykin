@@ -9,7 +9,6 @@ targets:
     platform: iOS
     sources:
       - App
-      - Sources/WaykinCore
     settings:
       base:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Waykin uses your location during an active movement session to measure distance, pace, and route progress."
@@ -17,7 +16,8 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: "YES"
     dependencies:
-      - package: WaykinCore
+      - package: Waykin
+        product: WaykinCore
   WaykinTests:
     type: bundle.unit-test
     platform: iOS
@@ -29,6 +29,8 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: WaykinApp
+      - package: Waykin
+        product: WaykinCore
   WaykinUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -40,9 +42,8 @@ targets:
     dependencies:
       - target: WaykinApp
 packages:
-  WaykinCore:
+  Waykin:
     path: .
-    product: WaykinCore
 schemes:
   Waykin:
     build:
