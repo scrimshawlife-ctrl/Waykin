@@ -19,6 +19,22 @@ targets:
     dependencies:
       - package: Waykin
         product: WaykinCore
+  WaykinARLab:
+    type: application
+    platform: iOS
+    sources:
+      - App/AR
+      - ARLab
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.waykin.arlab
+        INFOPLIST_KEY_NSCameraUsageDescription: "Waykin AR Lab uses the camera to validate augmented-reality tracking and placement."
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: "YES"
+    dependencies:
+      - package: Waykin
+        product: WaykinCore
   WaykinTests:
     type: bundle.unit-test
     platform: iOS
@@ -54,5 +70,11 @@ schemes:
       targets:
         - WaykinTests
         - WaykinUITests
+    run:
+      config: Debug
+  WaykinARLab:
+    build:
+      targets:
+        WaykinARLab: all
     run:
       config: Debug
