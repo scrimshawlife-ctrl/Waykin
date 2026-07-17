@@ -6,48 +6,50 @@ import WaykinCore
 @MainActor
 struct WaykinARView: UIViewRepresentable {
     @Binding var capabilityState: ARCapabilityState
+    @Binding var pendingCommand: ARWorldCommand?
+    @Binding var registryCount: Int
+    @Binding var lastCommandResult: String
     let sessionCoordinator: ARSessionCoordinator
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
         arView.session = sessionCoordinator.session
-
         context.coordinator.attach(to: arView)
-        sessionCoordinator.onCapabilityStateChange = { state in
-            capabilityState = state
-        }
-
-        Task {
-            await sessionCoordinator.start()
-        }
+        sessionCoordinator.onCapabilityStateChange = { capabilityState = $0 }
+        context.coordinator.diagnostics.record(.sessionStarted)
+        Task { await sessionCoordinator.start() }
         return arView
     }
 
-    func updateUIView(_ arView: ARView, context: Context) {}
+    func updateUIView(_ arView: ARView, context: Context) {
+        guard let command = pendingCommand else { return }
+        let result = context.coordinator.renderer.render(command, in: arView)
+        registryCount = context.coordinator.registry.count
+        lastCommandResult = result.rawValue
+        DispatchQueue.main.async { pendingCommand = nil }
+    }
 
     static func dismantleUIView(_ arView: ARView, coordinator: Coordinator) {
-        coordinator.clear()
+        _ = coordinator.renderer.render(.clearSession, in: arView)
+        coordinator.diagnostics.record(.sessionStopped)
         arView.session.pause()
     }
 
     @MainActor
     final class Coordinator: NSObject {
-        private let registry = AREntityRegistry()
-        private lazy var placementResolver = ARPlacementResolver(registry: registry)
-        private weak var arView: ARView?
+        let registry = AREntityRegistry()
+        let diagnostics = ARDiagnosticRecorder()
+        lazy var renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
 
         func attach(to arView: ARView) {
-            self.arView = arView
-            let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+            let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
             arView.addGestureRecognizer(tap)
         }
 
-        @objc private func handleTap() {
-            guard let arView else { return }
+        @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
+            guard let arView = recognizer.view as? ARView else { return }
             let intent = SpatialIntent(
                 placement: .groundPlane,
                 distanceBand: .near,
@@ -55,11 +57,12 @@ struct WaykinARView: UIViewRepresentable {
                 scaleClass: .discovery,
                 persistence: .transient
             )
-            _ = placementResolver.placePlaceholder(id: "ar1.placeholder", intent: intent, in: arView)
-        }
-
-        func clear() {
-            placementResolver.clear()
+            let success = ARPlacementResolver(registry: registry).placePlaceholder(
+                id: "ar1.placeholder",
+                intent: intent,
+                in: arView
+            )
+            diagnostics.record(success ? .placementSucceeded : .placementFailed, detail: "tap-marker")
         }
     }
 }
@@ -68,39 +71,102 @@ struct WaykinARView: UIViewRepresentable {
 struct ARSessionShellView: View {
     @State private var capabilityState: ARCapabilityState = .checking
     @State private var sessionCoordinator = ARSessionCoordinator()
+    @State private var pendingCommand: ARWorldCommand?
+    @State private var registryCount = 0
+    @State private var currentState = CompanionPresentationState.idle
+    @State private var lastCommandResult = "none"
+
+    private let companionID = UUID(uuidString: "E144A294-8E20-4CE2-AF28-220BB84C087B")!
 
     var body: some View {
         ZStack(alignment: .top) {
             WaykinARView(
                 capabilityState: $capabilityState,
+                pendingCommand: $pendingCommand,
+                registryCount: $registryCount,
+                lastCommandResult: $lastCommandResult,
                 sessionCoordinator: sessionCoordinator
             )
             .ignoresSafeArea()
 
-            Text(statusText)
-                .font(.callout.weight(.semibold))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: Capsule())
-                .padding(.top, 12)
-                .accessibilityIdentifier("waykin.ar.capabilityState")
+            VStack(spacing: 8) {
+                Text(statusText)
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .accessibilityIdentifier("waykin.ar.capabilityState")
+
+                Spacer()
+
+                VStack(spacing: 8) {
+                    HStack {
+                        Button("Place Lira") { spawnLira() }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("waykin.ar.placeCompanion")
+                        Button("Clear") { pendingCommand = .clearSession }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("waykin.ar.clear")
+                    }
+
+                    HStack {
+                        stateButton("Idle", .idle)
+                        stateButton("Follow", .follow)
+                        stateButton("Investigate", .investigate)
+                    }
+                    HStack {
+                        stateButton("Alert", .alert)
+                        stateButton("Celebrate", .celebrate)
+                    }
+
+                    Text("Entities: \(registryCount) • State: \(currentState.rawValue) • Last: \(lastCommandResult)")
+                        .font(.caption2.monospaced())
+                        .accessibilityIdentifier("waykin.ar.registryCount")
+                }
+                .padding(12)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            }
+            .padding()
         }
+    }
+
+    private func stateButton(_ title: String, _ state: CompanionPresentationState) -> some View {
+        Button(title) {
+            currentState = state
+            pendingCommand = .updateCompanion(companionPresentation(behavior: state.rawValue))
+        }
+        .buttonStyle(.bordered)
+        .accessibilityIdentifier("waykin.ar.state.\(state.rawValue)")
+    }
+
+    private func spawnLira() {
+        currentState = .idle
+        pendingCommand = .spawnCompanion(companionPresentation(behavior: "idle"))
+    }
+
+    private func companionPresentation(behavior: String) -> CompanionPresentation {
+        CompanionPresentation(
+            id: companionID,
+            name: "Lira",
+            behavior: behavior,
+            spatialIntent: SpatialIntent(
+                placement: .groundPlane,
+                distanceBand: .near,
+                bearing: .ahead,
+                scaleClass: .companion,
+                persistence: .session
+            )
+        )
     }
 
     private var statusText: String {
         switch capabilityState {
-        case .checking:
-            return "Checking AR capability…"
-        case .available:
-            return "AR ready"
-        case .unsupported:
-            return "AR is not supported on this device"
-        case .cameraDenied:
-            return "Camera access is required for AR"
-        case .trackingLimited:
-            return "Move slowly while tracking recovers"
-        case .active:
-            return "Tap a detected surface to place a marker"
+        case .checking: "Checking AR capability…"
+        case .available: "AR ready"
+        case .unsupported: "AR is not supported on this device"
+        case .cameraDenied: "Camera access is required for AR"
+        case .trackingLimited: "Move slowly while tracking recovers"
+        case .active: "Place Lira or tap a surface for a marker"
         }
     }
 }
