@@ -66,9 +66,9 @@ Production-capable playback remains behind the semantic `AudioCue` boundary. The
 
 ### AR Presentation Contract
 
-`WaykinCore` now defines platform-neutral AR presentation values under `Sources/WaykinCore/Presentation/`. `SpatialIntent` describes the semantic placement role of a companion, discovery, threat, or environmental object without importing ARKit, RealityKit, or renderer-specific coordinates.
+`WaykinCore` defines platform-neutral AR presentation values under `Sources/WaykinCore/Presentation/`. `SpatialIntent` describes the semantic placement role of a companion, discovery, threat, or environmental object without importing ARKit, RealityKit, or renderer-specific coordinates.
 
-`ARWorldCommand` carries immutable spawn, update, removal, and session-clear intents across the core-to-app boundary. The future app-target AR adapter owns tracking, anchors, entity construction, animation playback, occlusion, and graceful capability fallback. It may realize or defer commands, but it must not mutate movement, world, event, companion, pursuit, Bond, or persistence state.
+`ARWorldCommand` carries immutable spawn, update, removal, and session-clear intents across the core-to-app boundary. The app-target AR adapter owns tracking, anchors, entity construction, animation playback, occlusion, and graceful capability fallback. It may realize or defer commands, but it must not mutate movement, world, event, companion, pursuit, Bond, or persistence state.
 
 ```text
 WaykinCore semantic state
@@ -82,6 +82,18 @@ ARKit + RealityKit presentation
 
 The contract is intentionally presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth.
 
+### AR Session Shell
+
+The app target now contains an isolated AR-1 shell under `App/AR/`:
+
+- `ARCapabilityMonitor` maps hardware support and camera authorization into the platform-neutral `ARCapabilityState` contract.
+- `ARSessionCoordinator` owns `ARSession` startup, horizontal-plane configuration, pause/reset behavior, interruption recovery, and tracking-state reporting.
+- `AREntityRegistry` owns the association between semantic IDs and RealityKit entities and guarantees bounded replacement, removal, and session clearing.
+- `ARPlacementResolver` converts a ground-plane `SpatialIntent` into a validated RealityKit raycast placement and rejects unresolved placement instead of inventing coordinates.
+- `WaykinARView` hosts a manually configured `ARView` and exposes a temporary tap-to-place marker for physical-device validation.
+
+This shell is not connected to movement, companion, event, Bond, memory, or pursuit state. It proves app-target capability, tracking, placement, and cleanup only. The temporary marker is engineering instrumentation, not canonical gameplay content.
+
 ## Retained Compatibility
 
 The repository still contains deprecated proof-of-concept runtime types for Orc Pursuit and Future Self. They are retained only as temporary source/API compatibility while the current product surface, recommendations, Demo Mode, variants, and tests are consolidated around Companion Walk. Future deletion or migration should follow `docs/SOLO_MVP_SCOPE.md`.
@@ -94,7 +106,8 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
-- App-target ARKit and RealityKit session implementation.
-- Physical-device validation of AR placement, tracking loss, interruption recovery, and battery impact.
+- Wiring the AR session shell into the primary product navigation.
+- Mapping canonical companion state into RealityKit entities and animation.
+- Physical-device validation of AR placement, tracking loss, interruption recovery, outdoor readability, and battery impact.
 
 The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, generative AI, wearables, and generalized narrative infrastructure.
