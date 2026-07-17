@@ -16,14 +16,33 @@ final class ARRuntimeIntegrationTests: XCTestCase {
         XCTAssertEqual(adapter.presentationState(for: .celebrate), .celebrate)
     }
 
+    func testEventSemanticsOverrideGenericRuntimeState() {
+        let adapter = ARCompanionRuntimeAdapter()
+        var runtime = CompanionRuntime()
+        runtime.state = .follow
+
+        XCTAssertEqual(
+            adapter.presentationState(runtime: runtime, event: event(.pursuitBegins)),
+            .alert
+        )
+        XCTAssertEqual(
+            adapter.presentationState(runtime: runtime, event: event(.bondMoment)),
+            .celebrate
+        )
+        XCTAssertEqual(
+            adapter.presentationState(runtime: runtime, event: event(.companionObserves)),
+            .investigate
+        )
+    }
+
     func testAdapterProducesStableCompanionIdentity() {
         let adapter = ARCompanionRuntimeAdapter()
         var runtime = CompanionRuntime()
         runtime.state = .observe
         runtime.relativeDistance = 2.5
 
-        let first = adapter.companionCommand(runtime: runtime, replacingExisting: false)
-        let second = adapter.companionCommand(runtime: runtime, replacingExisting: true)
+        let first = adapter.companionCommand(runtime: runtime, event: nil, replacingExisting: false)
+        let second = adapter.companionCommand(runtime: runtime, event: nil, replacingExisting: true)
 
         guard case .spawnCompanion(let spawn) = first,
               case .updateCompanion(let update) = second else {
@@ -44,12 +63,14 @@ final class ARRuntimeIntegrationTests: XCTestCase {
         XCTAssertEqual(opening.commands.count, 1)
 
         var events: [WorldEventKind] = []
+        var states: [CompanionPresentationState] = []
         while bridge.tickIndex < bridge.totalTicks {
             guard let frame = bridge.advance() else {
                 return XCTFail("Expected a demo frame")
             }
             if let event = frame.eventKind {
                 events.append(event)
+                states.append(frame.companionState)
             }
         }
 
@@ -62,13 +83,22 @@ final class ARRuntimeIntegrationTests: XCTestCase {
             .pursuitFades,
             .bondMoment
         ])
+        XCTAssertEqual(states, [
+            .investigate,
+            .alert,
+            .investigate,
+            .alert,
+            .alert,
+            .follow,
+            .celebrate
+        ])
     }
 
     func testThreatLifecycleUsesStableSemanticIdentity() {
         let adapter = ARCompanionRuntimeAdapter()
-        let begins = WorldEvent(kind: .pursuitBegins, timestamp: .distantPast, metadata: [:])
-        let intensifies = WorldEvent(kind: .pursuitIntensifies, timestamp: .distantPast, metadata: [:])
-        let fades = WorldEvent(kind: .pursuitFades, timestamp: .distantPast, metadata: [:])
+        let begins = event(.pursuitBegins)
+        let intensifies = event(.pursuitIntensifies)
+        let fades = event(.pursuitFades)
 
         guard case .spawnThreat(let initial)? = adapter.eventCommands(for: begins).first,
               case .spawnThreat(let updated)? = adapter.eventCommands(for: intensifies).first,
@@ -80,5 +110,14 @@ final class ARRuntimeIntegrationTests: XCTestCase {
         XCTAssertEqual(updated.id, initial.id)
         XCTAssertGreaterThan(updated.intensity, initial.intensity)
         XCTAssertEqual(removed, initial.id)
+    }
+
+    private func event(_ kind: WorldEventKind) -> WorldEvent {
+        WorldEvent(
+            kind: kind,
+            occurredAt: .distantPast,
+            intensity: 0.5,
+            debugLabel: kind.rawValue
+        )
     }
 }
