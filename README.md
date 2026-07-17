@@ -5,8 +5,8 @@
 > journey feel like a shared adventure.
 
 This repository is the MPOC build: one persistent companion, GPS movement
-sessions, three plug-in experiences (**Companion Walk**, **Orc Pursuit**,
-**Future Self**), an AR companion, and a memory system that makes tomorrow's
+sessions, four plug-in experiences (**Companion Walk**, **Orc Pursuit**,
+**Future Self**, **Wandering Paths**), an AR companion, and a memory system that makes tomorrow's
 greeting different because of today's walk.
 
 ## Layout
@@ -18,7 +18,7 @@ Waykin/
 │   ├── WaykinCore/             Platform-free engines (no UIKit/ARKit/CoreLocation)
 │   │   ├── Models/             Companion, Relationship, Memory, LocationMemory
 │   │   ├── Movement/           GeoCoordinate, MovementSessionTracker, MovementSession
-│   │   ├── Experiences/        Experience protocol, engine/runner, 3 experiences
+│   │   ├── Experiences/        Experience protocol, engine/runner, 4 experiences
 │   │   ├── Companion/          CompanionEngine, PresenceNarrator — greetings, bond, place recognition
 │   │   ├── Memory/             MemoryEngine + MemoryStore seam
 │   │   ├── AI/                 AIProvider abstraction, PromptBuilder, offline voice
@@ -65,6 +65,7 @@ Try the other experiences:
 ```bash
 swift run waykin-sim --experience orc-pursuit
 swift run waykin-sim --experience walk-together
+swift run waykin-sim --experience wandering-paths
 ```
 
 ## Running the iOS app
@@ -91,7 +92,7 @@ Demo launch arguments (Scheme ▸ Run ▸ Arguments):
 | Flag | Effect |
 |---|---|
 | `--demo-seed` | Skips onboarding: seeds Ember with yesterday's Future Self memory |
-| `--demo-open <id>` | Jumps straight to a session screen (`walk-together`, `orc-pursuit`, `future-self`) |
+| `--demo-open <id>` | Jumps straight to a session screen (`walk-together`, `orc-pursuit`, `future-self`, `wandering-paths`) |
 | `--demo-autostart` | Starts the session immediately |
 | `--demo-reset` | Wipes stored state at launch (used by UI tests) |
 
