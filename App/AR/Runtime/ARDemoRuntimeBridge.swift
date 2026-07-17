@@ -68,6 +68,7 @@ final class ARDemoRuntimeBridge {
         let runtime = controller.companionRuntime
         let companionCommand = adapter.companionCommand(
             runtime: runtime,
+            event: event,
             replacingExisting: hasSpawnedCompanion
         )
         hasSpawnedCompanion = true
@@ -76,7 +77,7 @@ final class ARDemoRuntimeBridge {
         return ARDemoFrame(
             tickIndex: controller.tickIndex,
             eventKind: event?.kind,
-            companionState: adapter.presentationState(for: runtime.state),
+            companionState: adapter.presentationState(runtime: runtime, event: event),
             relativeDistance: runtime.relativeDistance,
             commands: commands,
             isComplete: controller.tickIndex >= totalTicks && totalTicks > 0
