@@ -12,16 +12,18 @@ final class ARPlacementResolver {
     }
 
     @discardableResult
-    func placePlaceholder(
+    func place(
+        entity: Entity,
         id: String,
         intent: SpatialIntent,
-        in arView: ARView
+        in arView: ARView,
+        screenPoint: CGPoint? = nil
     ) -> Bool {
         guard intent.placement == .groundPlane else { return false }
 
-        let screenCenter = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        let point = screenPoint ?? CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
         guard let query = arView.makeRaycastQuery(
-            from: screenCenter,
+            from: point,
             allowing: .estimatedPlane,
             alignment: .horizontal
         ), let result = arView.session.raycast(query).first else {
@@ -29,16 +31,25 @@ final class ARPlacementResolver {
         }
 
         let anchor = AnchorEntity(raycastResult: result)
+        anchor.name = "Anchor.\(id)"
+        anchor.addChild(entity)
+        arView.scene.addAnchor(anchor)
+        registry.register(anchor, for: id)
+        return true
+    }
+
+    @discardableResult
+    func placePlaceholder(
+        id: String,
+        intent: SpatialIntent,
+        in arView: ARView
+    ) -> Bool {
         let radius = placeholderRadius(for: intent.scaleClass)
         let mesh = MeshResource.generateSphere(radius: radius)
         let material = SimpleMaterial(color: .systemTeal, isMetallic: false)
         let marker = ModelEntity(mesh: mesh, materials: [material])
         marker.position.y = radius
-        anchor.addChild(marker)
-
-        arView.scene.addAnchor(anchor)
-        registry.register(anchor, for: id)
-        return true
+        return place(entity: marker, id: id, intent: intent, in: arView)
     }
 
     func remove(id: String) {
@@ -51,14 +62,10 @@ final class ARPlacementResolver {
 
     private func placeholderRadius(for scaleClass: SpatialScaleClass) -> Float {
         switch scaleClass {
-        case .companion:
-            return 0.12
-        case .discovery:
-            return 0.08
-        case .threat:
-            return 0.18
-        case .environmental:
-            return 0.24
+        case .companion: 0.12
+        case .discovery: 0.08
+        case .threat: 0.18
+        case .environmental: 0.24
         }
     }
 }
