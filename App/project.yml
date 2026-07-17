@@ -1,0 +1,32 @@
+name: Waykin
+options:
+  bundleIdPrefix: com.waykin
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  WaykinCore:
+    path: ..
+targets:
+  Waykin:
+    type: application
+    platform: iOS
+    sources:
+      - Waykin
+    dependencies:
+      - package: WaykinCore
+        product: WaykinCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Waykin tracks your route during walks and runs so your companion can join the journey."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Waykin shows your companion in augmented reality using the camera."
+        INFOPLIST_KEY_NSMotionUsageDescription: "Waykin uses motion data to detect whether you are walking or running."
+        INFOPLIST_KEY_UIRequiredDeviceCapabilities: ""
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: NO
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0

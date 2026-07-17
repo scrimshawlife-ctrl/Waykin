@@ -1,109 +1,133 @@
-# Waykin
+# Waykin — Minimum Proof of Concept
 
-Waykin is an audio-first adaptive walking experience where a persistent companion and occasional phenomena respond to how you move.
+> Waykin is not an app that records movement. It is a platform where movement
+> changes the behavior of a persistent AI companion, making every real-world
+> journey feel like a shared adventure.
 
-The current MVP is intentionally narrow: one walking loop, one companion, one bounded pressure phenomenon, deterministic Demo Mode, physical-device walk wiring, persistent Bond, and concise session memories.
+This repository is the MPOC build: one persistent companion, GPS movement
+sessions, three plug-in experiences (**Companion Walk**, **Orc Pursuit**,
+**Future Self**), an AR companion, and a memory system that makes tomorrow's
+greeting different because of today's walk.
 
-## Quick Start
+## Layout
+
+```
+Waykin/
+├── Package.swift               Swift package: engines + simulator
+├── Sources/
+│   ├── WaykinCore/             Platform-free engines (no UIKit/ARKit/CoreLocation)
+│   │   ├── Models/             Companion, Relationship, Memory, LocationMemory
+│   │   ├── Movement/           GeoCoordinate, MovementSessionTracker, MovementSession
+│   │   ├── Experiences/        Experience protocol, engine/runner, 3 experiences
+│   │   ├── Companion/          CompanionEngine — greetings, bond, place recognition
+│   │   ├── Memory/             MemoryEngine + MemoryStore seam
+│   │   ├── AI/                 AIProvider abstraction, PromptBuilder, offline voice
+│   │   └── Recommendation/     RecommendationEngine (time/weather/history scoring)
+│   └── WaykinSim/              waykin-sim: the 2-day demo scenario on macOS
+├── Tests/WaykinCoreTests/      20 unit tests incl. the modularity proof
+└── App/                        iOS app (SwiftUI · RealityKit · ARKit · SwiftData)
+    ├── project.yml             XcodeGen manifest
+    └── Waykin/
+        ├── Views/              Onboarding, Home, Session, Summary
+        ├── AR/                 ARCompanionView (RealityKit follow/idle/celebrate)
+        └── Services/           AppState, SwiftData persistence, CoreLocation, audio
+```
+
+The dependency rule: **WaykinCore imports only Foundation.** Every engine is
+deterministic and testable; the app layer adapts CoreLocation, SwiftData,
+RealityKit, and AVFoundation onto core protocols.
+
+```
+User → Movement Engine → Experience Engine → Companion Intelligence → Memory Engine → Presentation
+```
+
+## Quick start (no device needed)
+
+Requires Swift 5.9+ (any Mac with Xcode 15+).
 
 ```bash
-make build
-make test
-make validate
-make validate-simulator
+swift test          # 20 tests across all five pillars
+swift run waykin-sim
 ```
 
-`make validate-simulator` requires an available iOS Simulator. By default it targets `iPhone 17 Pro`; override with:
+`waykin-sim` plays the full demonstration scenario: Day 1 onboarding, a
+simulated 10-minute **Future Self** walk at Shoreline Park (with a mid-walk
+pause and a finishing surge), the session summary, the generated memory —
+then Day 2, where Ember greets you with yesterday's memory, recognizes the
+park, and recommends today's experiences.
+
+Try the other experiences:
 
 ```bash
-WAYKIN_SIMULATOR_NAME="iPhone 17 Pro" make validate-simulator
+swift run waykin-sim --experience orc-pursuit
+swift run waykin-sim --experience walk-together
 ```
 
-## Current Product Loop
+## Running the iOS app
 
-```text
-Home
-  -> Begin Walk
-  -> Active Session
-  -> Session Summary
-  -> Memory
+Requires Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen)
+(`brew install xcodegen`).
+
+```bash
+cd App
+xcodegen generate
+open Waykin.xcodeproj    # select the Waykin scheme, pick a simulator or device, Run
 ```
 
-Home shows Lira, Bond, the latest memory when one exists, one primary Begin Walk action, Memory History, and a separate real-walk entry for physical-device validation. Demo Mode runs the same deterministic walking loop without requiring movement or location permission.
+- **On device** (recommended): full ARKit companion + real GPS.
+- **On simulator**: AR falls back to a 2D companion; simulate movement with
+  *Features ▸ Location ▸ Freeway Drive* or:
 
-## Runtime Flow
+  ```bash
+  xcrun simctl location booted start --speed=1.6 --interval=2 37.4312,-122.0898 37.4420,-122.0898
+  ```
 
-```text
-MovementSnapshot
-      ↓
-WorldState
-      ↓
-WorldEventGenerator
-      ↓
-WorldEvent
-      ↓
-CompanionRuntime / PursuitState
-      ↓
-AudioCue
-      ↓
-SessionMemory + Bond
+Demo launch arguments (Scheme ▸ Run ▸ Arguments):
+
+| Flag | Effect |
+|---|---|
+| `--demo-seed` | Skips onboarding: seeds Ember with yesterday's Future Self memory |
+| `--demo-open <id>` | Jumps straight to a session screen (`walk-together`, `orc-pursuit`, `future-self`) |
+| `--demo-autostart` | Starts the session immediately |
+
+## The five pillars, and where they live
+
+| Pillar | Proof |
+|---|---|
+| 1. Persistent companion | `CompanionEngine` — greetings evolve with bond level and days elapsed; state persists via SwiftData (`StoredCompanion`) |
+| 2. Movement session | `MovementSessionTracker` — haversine distance, rolling pace, stop detection, walk/run auto-detection, GPS-noise rejection |
+| 3. Experience engine | `Experience` protocol + `ExperienceEngine` registry; `testNewExperiencePluginNeedsNoEngineChanges` registers a 4th experience without touching any engine |
+| 4. AR companion | `ARCompanionView` — RealityKit entity anchored ahead of the camera, eases toward you (follow), bobs by state, spins to celebrate |
+| 5. Memory | `MemoryEngine` — every session stores location, duration, distance, experience, bond gain, and one generated memory; next visit → “I remember this place.” |
+
+## Adding a fourth experience
+
+```swift
+final class SunsetChaseExperience: Experience {
+    let id = "sunset-chase"; let name = "Sunset Chase"
+    let summary = "Reach the overlook before the sun dips."
+    let difficulty = Difficulty.moderate
+    func begin(context: ExperienceContext) -> [ExperienceEvent] { ... }
+    func update(_ update: MovementUpdate, context: ExperienceContext) -> [ExperienceEvent] { ... }
+    func end(session: MovementSession, context: ExperienceContext) -> ExperienceOutcome { ... }
+}
+
+engine.register(id: "sunset-chase", name: "Sunset Chase",
+                summary: "...", difficulty: .moderate) { SunsetChaseExperience() }
 ```
 
-The core package emits semantic state and semantic audio cues. SwiftUI, MapKit, persistence, and the app-target audio adapter consume that state without owning gameplay rules or filenames.
+Nothing else changes — the movement engine, runner, recommendation engine,
+memory generator, and UI pick it up automatically.
 
-## Implemented Scope
+## AI layer
 
-- Walking is the MVP activity.
-- Lira is the single companion.
-- Bond is the persistent progression measure.
-- Pursuit is a bounded pressure state, not a separate enemy system.
-- Event generation is deterministic, seeded, cooldown-aware, and test-covered.
-- Seven semantic audio cues map through an `AVAudioPlayer` app adapter to restrained bundled placeholder WAV files or safe silence.
-- SwiftData persists companion Bond and session memories.
-- Demo Mode is deterministic and package-testable.
-- Physical-device walking is wired through When-In-Use Core Location, but field behavior remains unverified until manually tested.
+The MPOC runs fully offline: `RuleBasedProvider` gives the companion a short,
+memory-aware voice, and `PromptBuilder` assembles the exact system prompt
+(activity, location, weather, relationship level, recent memories, active
+experience, achievements) that a hosted model receives when you plug a real
+provider into `AIProvider`. `waykin-sim` prints that prompt at the end of its run.
 
-Existing run, cycle, hike, and climb model values may still exist for compatibility. Deprecated Orc Pursuit and Future Self runtime types remain only as temporary source/API compatibility and are not returned by recommendations, Demo Mode, variants, or the primary UI.
+## Docs
 
-## Explicit Non-Goals
-
-Waykin currently does not include multiplayer, social graphs, accounts, backend infrastructure, marketplace or creator systems, generative AI, AR gameplay, wearable integration, live weather, currencies, inventory, skill trees, achievements, or a generalized narrative engine.
-
-## Safety And Privacy
-
-- Waykin is not safety equipment.
-- Location is requested only for an active real walk.
-- Demo Mode requires no location permission.
-- Pause and stop behavior are preserved.
-- Session memories are concise deterministic facts, not precise historical route archives.
-- Local field-test receipts contain privacy-filtered aggregates and sparse semantic events, retain at most 20 files, and never upload automatically.
-- Pursuit pressure must never instruct unsafe movement or continued exertion through distress.
-
-## Validation Status
-
-Observed on July 16, 2026:
-
-| Layer | Command | Status |
-|---|---|---|
-| Package build | `make build` | PASS |
-| Package tests | `make test` | PASS, 40 tests |
-| Native app tests | focused `xcodebuild test` | PASS, 58 tests |
-| Canonical harness | `make validate` | PASS, including native app build |
-| Simulator UI | `make validate-simulator` | PASS, 6 UI tests |
-| Physical GPS walk | Manual protocol | NOT_COMPUTABLE |
-| Physical audio playback | Manual protocol | NOT_COMPUTABLE |
-
-Do not mark physical GPS, audio-device, battery, or outdoor usability behavior as validated without direct device evidence.
-
-## Documentation
-
-- Architecture: `ARCHITECTURE.md`
-- Known limitations: `KNOWN_LIMITATIONS.md`
-- Solo MVP scope contract: `docs/SOLO_MVP_SCOPE.md`
-- Physical-device manual protocol: `docs/PHYSICAL_DEVICE_WALK_VALIDATION.md`
-- Local field-test receipt protocol: `docs/FIELD_TEST_PROTOCOL.md`
-- Audio asset contract: `docs/AUDIO_ASSET_CONTRACT.md`
-
-## License
-
-Apache 2.0. See `LICENSE`.
+- [Docs/DEMO.md](Docs/DEMO.md) — the 10-minute Future Self demo script
+- [Docs/LIMITATIONS.md](Docs/LIMITATIONS.md) — known limitations
