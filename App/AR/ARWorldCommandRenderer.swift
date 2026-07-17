@@ -34,31 +34,25 @@ final class ARWorldCommandRenderer {
     func render(_ command: ARWorldCommand, in arView: ARView) -> ARCommandResult {
         switch command {
         case .spawnCompanion(let presentation):
-            return placeCompanion(presentation, in: arView)
+            placeCompanion(presentation, in: arView)
         case .updateCompanion(let presentation):
-            let id = presentation.id.uuidString
-            guard let anchor = registry.entity(for: id), let lira = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
-                return placeCompanion(presentation, in: arView)
-            }
-            apply(state: CompanionStateReducer.state(for: presentation.behavior), to: lira)
-            diagnostics.record(.stateChanged, detail: CompanionStateReducer.state(for: presentation.behavior).rawValue)
-            return .accepted
+            updateCompanion(presentation, in: arView)
         case .spawnDiscovery(let presentation):
-            return place(
+            place(
                 discoveryFactory.makeEntity(),
                 id: presentation.id.uuidString,
                 intent: presentation.spatialIntent,
                 in: arView
             )
         case .spawnThreat(let presentation):
-            return place(
+            place(
                 threatFactory.makeEntity(intensity: presentation.intensity),
                 id: presentation.id.uuidString,
                 intent: presentation.spatialIntent,
                 in: arView
             )
         case .updateThreat(let presentation):
-            return place(
+            place(
                 threatFactory.makeEntity(intensity: presentation.intensity),
                 id: presentation.id.uuidString,
                 intent: presentation.spatialIntent,
@@ -73,6 +67,19 @@ final class ARWorldCommandRenderer {
             diagnostics.record(.sessionCleared)
             return .accepted
         }
+    }
+
+    private func updateCompanion(_ presentation: CompanionPresentation, in arView: ARView) -> ARCommandResult {
+        let id = presentation.id.uuidString
+        guard let anchor = registry.entity(for: id),
+              let lira = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
+            return placeCompanion(presentation, in: arView)
+        }
+
+        let state = CompanionStateReducer.state(for: presentation.behavior)
+        apply(state: state, to: lira)
+        diagnostics.record(.stateChanged, detail: state.rawValue)
+        return .accepted
     }
 
     private func placeCompanion(_ presentation: CompanionPresentation, in arView: ARView) -> ARCommandResult {
@@ -106,7 +113,7 @@ final class ARWorldCommandRenderer {
     private func apply(state: CompanionPresentationState, to lira: Entity) {
         lira.transform.scale = SIMD3(repeating: 1)
         lira.position.y = 0.015
-        lira.orientation = simd_quatf()
+        lira.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
 
         switch state {
         case .idle:
