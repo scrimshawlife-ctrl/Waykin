@@ -31,6 +31,8 @@ Local field-test receipts may observe existing runtime signals for bounded engin
 - One physical-device walk path.
 - Minimal session, summary, and memory UI.
 
+Presentation quality must communicate current metrics and pressure through natural accessibility language and non-color cues without adding new runtime systems or product scope.
+
 ## Explicit Non-Goals
 
 - Multiplayer.

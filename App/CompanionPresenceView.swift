@@ -98,7 +98,32 @@ struct CompanionPresencePresentation {
     }
 
     var distanceText: String { "\(max(0, Int(distanceMeters))) m" }
+    var elapsedAccessibilityValue: String {
+        let total = max(0, Int(elapsedSeconds))
+        let minutes = total / 60
+        let seconds = total % 60
+        let minuteText = "\(minutes) minute\(minutes == 1 ? "" : "s")"
+        let secondText = "\(seconds) second\(seconds == 1 ? "" : "s")"
+
+        if minutes == 0 { return secondText }
+        if seconds == 0 { return minuteText }
+        return "\(minuteText), \(secondText)"
+    }
+    var distanceAccessibilityValue: String {
+        let meters = max(0, Int(distanceMeters))
+        return "\(meters) meter\(meters == 1 ? "" : "s")"
+    }
     var pressureLabel: String { pursuitState == .inactive ? "Path quiet" : "Pressure \(pursuitState.rawValue)" }
+    var pressureAccessibilityValue: String {
+        switch pursuitState {
+        case .inactive: "The path is quiet."
+        case .noticed: "A change has been noticed on the path."
+        case .approaching: "Something is drawing closer on the path."
+        case .close: "The pressure is close."
+        case .fading: "The pressure is fading."
+        }
+    }
+    var pressureStrokeWidth: CGFloat { CGFloat(2 + pressureIntensity * 6) }
     var audioLabel: String { audioCueKind == nil ? "Sound quiet" : "Sound active" }
     var phraseIsRedundantForAccessibility: Bool {
         guard !isOpening else { return false }
@@ -167,7 +192,10 @@ struct CompanionPresenceView: View {
 
             ZStack {
                 Circle()
-                    .stroke(Color.white.opacity(0.16 + presentation.pressureIntensity * 0.28), lineWidth: 2)
+                    .stroke(
+                        Color.white.opacity(0.16 + presentation.pressureIntensity * 0.28),
+                        lineWidth: presentation.pressureStrokeWidth
+                    )
                     .frame(width: 176, height: 176)
                 Circle()
                     .stroke(Color(red: 0.42, green: 0.82, blue: 0.78).opacity(0.48), lineWidth: 5)
@@ -200,7 +228,7 @@ struct CompanionPresenceView: View {
                 : AnyLayout(HStackLayout(spacing: 24))) {
                 Label(presentation.pressureLabel, systemImage: "circle.dotted")
                     .accessibilityLabel("Path status")
-                    .accessibilityValue(presentation.pressureLabel)
+                    .accessibilityValue(presentation.pressureAccessibilityValue)
                     .accessibilitySortPriority(4.6)
                     .accessibilityIdentifier("waykin.session.pressure")
                 Label(presentation.audioLabel, systemImage: presentation.audioCueKind == nil ? "speaker.slash" : "speaker.wave.2")
@@ -215,8 +243,18 @@ struct CompanionPresenceView: View {
             AnyLayout(dynamicTypeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
                 : AnyLayout(HStackLayout(spacing: 48))) {
-                metric(value: presentation.elapsedText, label: "Time", identifier: "waykin.session.elapsed")
-                metric(value: presentation.distanceText, label: "Distance", identifier: "waykin.session.distance")
+                metric(
+                    value: presentation.elapsedText,
+                    accessibilityValue: presentation.elapsedAccessibilityValue,
+                    label: "Time",
+                    identifier: "waykin.session.elapsed"
+                )
+                metric(
+                    value: presentation.distanceText,
+                    accessibilityValue: presentation.distanceAccessibilityValue,
+                    label: "Distance",
+                    identifier: "waykin.session.distance"
+                )
             }
             .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
         }
@@ -234,13 +272,14 @@ struct CompanionPresenceView: View {
         }
     }
 
-    private func metric(value: String, label: String, identifier: String) -> some View {
+    private func metric(value: String, accessibilityValue: String, label: String, identifier: String) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.title2.monospacedDigit().bold())
             Text(label).font(.caption).foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label), \(value)")
+        .accessibilityLabel(label)
+        .accessibilityValue(accessibilityValue)
         .accessibilitySortPriority(4)
         .accessibilityIdentifier(identifier)
     }

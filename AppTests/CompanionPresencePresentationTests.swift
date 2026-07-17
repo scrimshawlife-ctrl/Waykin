@@ -30,6 +30,54 @@ final class CompanionPresencePresentationTests: XCTestCase {
         XCTAssertEqual(makePresentation(pursuit: .fading).pressureIntensity, 0.12)
     }
 
+    func testPressureStatesHaveDistinctHumanAccessibilityDescriptions() {
+        let descriptions: [(PursuitState, String)] = [
+            (.inactive, "The path is quiet."),
+            (.noticed, "A change has been noticed on the path."),
+            (.approaching, "Something is drawing closer on the path."),
+            (.close, "The pressure is close."),
+            (.fading, "The pressure is fading.")
+        ]
+
+        XCTAssertEqual(Set(descriptions.map { $0.1 }).count, descriptions.count)
+        for (state, expected) in descriptions {
+            XCTAssertEqual(makePresentation(pursuit: state).pressureAccessibilityValue, expected)
+        }
+    }
+
+    func testAccessibilityValuesDoNotLeakRawPressureOrDebugTokens() {
+        for state in [PursuitState.inactive, .noticed, .approaching, .close, .fading] {
+            let value = makePresentation(pursuit: state).pressureAccessibilityValue.lowercased()
+            XCTAssertNotEqual(value, state.rawValue.lowercased())
+            XCTAssertFalse(value.contains("pressure \(state.rawValue.lowercased())"))
+            XCTAssertFalse(value.rangeOfCharacter(from: .decimalDigits) != nil)
+            XCTAssertFalse(value.contains("pursuitstate"))
+            XCTAssertFalse(value.contains("debug"))
+        }
+    }
+
+    func testMetricsProvideNaturalSingularAndPluralAccessibilityValues() {
+        XCTAssertEqual(makePresentation(elapsedSeconds: 0).elapsedAccessibilityValue, "0 seconds")
+        XCTAssertEqual(makePresentation(elapsedSeconds: 1).elapsedAccessibilityValue, "1 second")
+        XCTAssertEqual(makePresentation(elapsedSeconds: 59).elapsedAccessibilityValue, "59 seconds")
+        XCTAssertEqual(makePresentation(elapsedSeconds: 60).elapsedAccessibilityValue, "1 minute")
+        XCTAssertEqual(makePresentation(elapsedSeconds: 61).elapsedAccessibilityValue, "1 minute, 1 second")
+        XCTAssertEqual(makePresentation(elapsedSeconds: 122).elapsedAccessibilityValue, "2 minutes, 2 seconds")
+        XCTAssertEqual(makePresentation(distanceMeters: 0).distanceAccessibilityValue, "0 meters")
+        XCTAssertEqual(makePresentation(distanceMeters: 1).distanceAccessibilityValue, "1 meter")
+        XCTAssertEqual(makePresentation(distanceMeters: 2).distanceAccessibilityValue, "2 meters")
+    }
+
+    func testPressureChangesBothTextAndOuterRingGeometry() {
+        let quiet = makePresentation(pursuit: .inactive)
+        let close = makePresentation(pursuit: .close)
+
+        XCTAssertNotEqual(quiet.pressureLabel, close.pressureLabel)
+        XCTAssertNotEqual(quiet.pressureStrokeWidth, close.pressureStrokeWidth)
+        XCTAssertEqual(quiet.pressureStrokeWidth, 2, accuracy: 0.001)
+        XCTAssertEqual(close.pressureStrokeWidth, 6.5, accuracy: 0.001)
+    }
+
     func testWorldPhrasesAreDeterministicFromExistingState() {
         XCTAssertEqual(makePresentation(event: .companionObserves).phrase, "Lira is watching the path.")
         XCTAssertEqual(makePresentation(event: .companionDrawsNear).phrase, "Lira draws near.")
@@ -101,7 +149,9 @@ final class CompanionPresencePresentationTests: XCTestCase {
         pursuit: PursuitState = .inactive,
         event: WorldEventKind? = nil,
         isOpening: Bool = false,
-        isPaused: Bool = false
+        isPaused: Bool = false,
+        elapsedSeconds: TimeInterval = 0,
+        distanceMeters: Double = 0
     ) -> CompanionPresencePresentation {
         CompanionPresencePresentation(
             companionName: "Lira",
@@ -110,8 +160,8 @@ final class CompanionPresencePresentationTests: XCTestCase {
             pursuitState: pursuit,
             eventKind: event,
             audioCueKind: nil,
-            elapsedSeconds: 0,
-            distanceMeters: 0,
+            elapsedSeconds: elapsedSeconds,
+            distanceMeters: distanceMeters,
             isPaused: isPaused,
             isOpening: isOpening,
             latitude: nil,

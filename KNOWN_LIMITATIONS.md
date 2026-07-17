@@ -28,6 +28,30 @@ The local field-test receipt is engineering evidence only. It has no remote anal
 
 The recorded route is measurement support for the active Companion Walk only. It is not navigation-grade, does not provide route planning or guidance, and has no background-location guarantee. Battery impact is not characterized.
 
+## Accessibility Evidence
+
+### OBSERVED Simulator Evidence
+
+- At the largest simulator text-size setting, the accessibility UI test confirms traversal through the presence, phrase, initial quiet Path status, controls, and waiting map in the intended order.
+- In that initial quiet state, the simulator exposes Path status as "The path is quiet," Time as "0 seconds," and Distance as "0 meters."
+- The UI assertion measures the active-session Pause and End controls at 44 points or larger. This is simulator evidence, not a physical-device reachability or ergonomics claim.
+
+### Code-Inspected Behavior
+
+- Elapsed time and distance retain their compact visible formats while exposing singular/plural VoiceOver values.
+- All pursuit states have distinct human pressure descriptions in source, and Path status is their sole semantic owner; the presence element does not duplicate behavior or pressure speech.
+- Active-session Pause, Resume, and End control labels have source-level minimum dimensions of 48 by 48 points.
+- Pressure changes the outer-ring thickness as well as color, providing a presentation-only non-color distinction.
+- The view consults SwiftUI's Reduce Motion environment when selecting its bounded animation. Live setting changes have not been verified on hardware.
+- Located and waiting map states have coordinate-free semantic descriptions in code. The located-marker state has not been exercised as physical runtime evidence.
+
+### NOT_COMPUTABLE Until Direct Device Evidence
+
+- VoiceOver speech quality, navigation, and announcement timing on physical devices.
+- Physical-device Dynamic Type fit, control ergonomics, and interaction with other accessibility settings.
+- Live hardware Reduce Motion toggling during an active session.
+- Located-marker accessibility behavior during a physical walk.
+
 ## Deferred Product Scope
 
 - Walking is the MVP focus.

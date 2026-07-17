@@ -113,6 +113,8 @@ final class WaykinSmokeTests: XCTestCase {
         let presence = app.descendants(matching: .any).matching(identifier: "waykin.session.presence").firstMatch
         let phrase = app.staticTexts.matching(identifier: "waykin.session.phrase").firstMatch
         let pathStatus = app.descendants(matching: .any).matching(identifier: "waykin.session.pressure").firstMatch
+        let elapsed = app.descendants(matching: .any).matching(identifier: "waykin.session.elapsed").firstMatch
+        let distance = app.descendants(matching: .any).matching(identifier: "waykin.session.distance").firstMatch
         let pause = app.buttons.matching(identifier: "waykin.session.pause").firstMatch
         let end = app.buttons.matching(identifier: "waykin.session.end").firstMatch
         let map = app.descendants(matching: .any).matching(identifier: "waykin.session.map").firstMatch
@@ -120,6 +122,8 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertTrue(presence.waitForExistence(timeout: 5))
         XCTAssertTrue(phrase.exists)
         XCTAssertTrue(pathStatus.exists)
+        XCTAssertTrue(elapsed.exists)
+        XCTAssertTrue(distance.exists)
         XCTAssertTrue(pause.exists)
         XCTAssertTrue(end.exists)
         XCTAssertTrue(map.exists)
@@ -133,7 +137,11 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertTrue((presence.value as? String ?? "").isEmpty)
         XCTAssertEqual(phrase.label, "Lira is listening.")
         XCTAssertEqual(pathStatus.label, "Path status")
-        XCTAssertEqual(pathStatus.value as? String, "Path quiet")
+        XCTAssertEqual(pathStatus.value as? String, "The path is quiet.")
+        XCTAssertEqual(elapsed.label, "Time")
+        XCTAssertEqual(elapsed.value as? String, "0 seconds")
+        XCTAssertEqual(distance.label, "Distance")
+        XCTAssertEqual(distance.value as? String, "0 meters")
 
         let accessibilityIdentifiers = app.descendants(matching: .any)
             .allElementsBoundByAccessibilityElement
