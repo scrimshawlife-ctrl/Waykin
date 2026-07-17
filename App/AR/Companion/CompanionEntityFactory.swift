@@ -59,7 +59,9 @@ enum CompanionEntityFactory {
         indicator.position = [0, config.groundOffsetMeters + config.companionHeightMeters * 0.9, 0]
         indicator.isEnabled = false
 
-        [shadow, body, head, tail, glow, indicator].forEach(root.addChild)
+        for child in [shadow, body, head, tail, glow, indicator] {
+            root.addChild(child)
+        }
         return root
     }
 
