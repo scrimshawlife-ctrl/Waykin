@@ -8,16 +8,17 @@ struct ARCompanionRuntimeAdapter {
 
     func companionCommand(
         runtime: CompanionRuntime,
+        event: WorldEvent?,
         replacingExisting: Bool
     ) -> ARWorldCommand {
         let presentation = CompanionPresentation(
             id: Self.companionID,
             name: "Lira",
-            behavior: presentationState(for: runtime.state).rawValue,
+            behavior: presentationState(runtime: runtime, event: event).rawValue,
             spatialIntent: SpatialIntent(
                 placement: .groundPlane,
                 distanceBand: distanceBand(for: runtime.relativeDistance),
-                bearing: bearing(for: runtime.state),
+                bearing: bearing(for: runtime.state, event: event),
                 scaleClass: .companion,
                 persistence: .session
             )
@@ -54,6 +55,25 @@ struct ARCompanionRuntimeAdapter {
         }
     }
 
+    func presentationState(
+        runtime: CompanionRuntime,
+        event: WorldEvent?
+    ) -> CompanionPresentationState {
+        guard let event else { return presentationState(for: runtime.state) }
+        switch event.kind {
+        case .companionObserves, .familiarPlaceStirs, .quietInterval, .distantPresence:
+            return .investigate
+        case .companionDrawsNear:
+            return .alert
+        case .companionMovesAhead, .pursuitFades:
+            return .follow
+        case .pursuitBegins, .pursuitIntensifies:
+            return .alert
+        case .bondMoment:
+            return .celebrate
+        }
+    }
+
     private func distanceBand(for relativeDistance: Double) -> SpatialDistanceBand {
         switch relativeDistance {
         case ..<1.5: return .immediate
@@ -63,7 +83,10 @@ struct ARCompanionRuntimeAdapter {
         }
     }
 
-    private func bearing(for state: CompanionBehaviorState) -> SpatialBearingIntent {
+    private func bearing(for state: CompanionBehaviorState, event: WorldEvent?) -> SpatialBearingIntent {
+        if event?.kind == .pursuitBegins || event?.kind == .pursuitIntensifies {
+            return .ahead
+        }
         switch state {
         case .lead: return .ahead
         case .drawNear: return .beside
