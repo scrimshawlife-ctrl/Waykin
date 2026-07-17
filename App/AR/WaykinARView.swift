@@ -1,94 +1,118 @@
-import ARKit
 import RealityKit
 import SwiftUI
 import WaykinCore
 
 @MainActor
 struct WaykinARView: UIViewRepresentable {
-    @Binding var capabilityState: ARCapabilityState
-    let sessionCoordinator: ARSessionCoordinator
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
+    let controller: ARLabController
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
-        arView.session = sessionCoordinator.session
-
-        context.coordinator.attach(to: arView)
-        sessionCoordinator.onCapabilityStateChange = { state in
-            capabilityState = state
-        }
-
-        Task {
-            await sessionCoordinator.start()
-        }
+        controller.attach(to: arView)
+        Task { await controller.start() }
         return arView
     }
 
     func updateUIView(_ arView: ARView, context: Context) {}
 
-    static func dismantleUIView(_ arView: ARView, coordinator: Coordinator) {
-        coordinator.clear()
+    static func dismantleUIView(_ arView: ARView, coordinator: Void) {
         arView.session.pause()
-    }
-
-    @MainActor
-    final class Coordinator: NSObject {
-        private let registry = AREntityRegistry()
-        private lazy var placementResolver = ARPlacementResolver(registry: registry)
-        private weak var arView: ARView?
-
-        func attach(to arView: ARView) {
-            self.arView = arView
-            let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
-            arView.addGestureRecognizer(tap)
-        }
-
-        @objc private func handleTap() {
-            guard let arView else { return }
-            let intent = SpatialIntent(
-                placement: .groundPlane,
-                distanceBand: .near,
-                bearing: .ahead,
-                scaleClass: .discovery,
-                persistence: .transient
-            )
-            _ = placementResolver.placePlaceholder(id: "ar1.placeholder", intent: intent, in: arView)
-        }
-
-        func clear() {
-            placementResolver.clear()
-        }
     }
 }
 
 @MainActor
 struct ARSessionShellView: View {
-    @State private var capabilityState: ARCapabilityState = .checking
-    @State private var sessionCoordinator = ARSessionCoordinator()
+    @StateObject private var controller = ARLabController()
+    @State private var controlsExpanded = true
 
     var body: some View {
         ZStack(alignment: .top) {
-            WaykinARView(
-                capabilityState: $capabilityState,
-                sessionCoordinator: sessionCoordinator
-            )
-            .ignoresSafeArea()
+            WaykinARView(controller: controller)
+                .ignoresSafeArea()
 
-            Text(statusText)
-                .font(.callout.weight(.semibold))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: Capsule())
-                .padding(.top, 12)
-                .accessibilityIdentifier("waykin.ar.capabilityState")
+            VStack(spacing: 10) {
+                statusHeader
+                if controlsExpanded {
+                    controlPanel
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
         }
+        .onDisappear { controller.stop() }
+    }
+
+    private var statusHeader: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(statusText)
+                    .font(.callout.weight(.semibold))
+                Text("Lira: \(controller.companionState.rawValue) • Entities: \(controller.registryCount) • \(controller.lastCommandResult)")
+                    .font(.caption2)
+            }
+            Spacer()
+            Button(controlsExpanded ? "Hide" : "Controls") {
+                controlsExpanded.toggle()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityIdentifier("waykin.ar.currentState")
+    }
+
+    private var controlPanel: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Button("Place Lira") { controller.placeCompanion() }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("waykin.ar.placeCompanion")
+                Button("Remove") { controller.removeCompanion() }
+                    .buttonStyle(.bordered)
+                Button("Reset") { Task { await controller.resetTracking() } }
+                    .buttonStyle(.bordered)
+            }
+
+            HStack {
+                stateButton("Idle", .idle, "waykin.ar.state.idle")
+                stateButton("Follow", .follow, "waykin.ar.state.follow")
+                stateButton("Investigate", .investigate, "waykin.ar.state.investigate")
+            }
+
+            HStack {
+                stateButton("Alert", .alert, "waykin.ar.state.alert")
+                stateButton("Celebrate", .celebrate, "waykin.ar.state.celebrate")
+                Button("Clear") { controller.clear() }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("waykin.ar.clear")
+            }
+
+            HStack {
+                Button("Discovery") { controller.spawnDiscovery() }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("waykin.ar.spawnDiscovery")
+                Button("Threat") { controller.spawnThreat() }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("waykin.ar.spawnThreat")
+            }
+        }
+        .font(.caption)
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func stateButton(
+        _ title: String,
+        _ state: CompanionPresentationState,
+        _ identifier: String
+    ) -> some View {
+        Button(title) { controller.setCompanionState(state) }
+            .buttonStyle(controller.companionState == state ? .borderedProminent : .bordered)
+            .accessibilityIdentifier(identifier)
     }
 
     private var statusText: String {
-        switch capabilityState {
+        switch controller.capabilityState {
         case .checking:
             return "Checking AR capability…"
         case .available:
@@ -100,7 +124,7 @@ struct ARSessionShellView: View {
         case .trackingLimited:
             return "Move slowly while tracking recovers"
         case .active:
-            return "Tap a detected surface to place a marker"
+            return "Place Lira on a detected surface"
         }
     }
 }
