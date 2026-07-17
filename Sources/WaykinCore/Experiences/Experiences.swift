@@ -197,7 +197,8 @@ public struct CompanionWalkExperience: WaykinExperience {
     }
 }
 
-// MARK: - Orc Pursuit (typed state skeleton, time-based logic to be expanded)
+// MARK: - Deprecated Proof-of-Concept Experiences
+@available(*, deprecated, message: "Legacy proof-of-concept runtime. Use CompanionWalkExperience with bounded PursuitState pressure.")
 public struct OrcPursuitExperience: WaykinExperience {
     public var definition: ExperienceDefinition {
         ExperienceDefinition(
@@ -258,7 +259,7 @@ public struct OrcPursuitExperience: WaykinExperience {
     }
 }
 
-// MARK: - Future Self (typed state skeleton)
+@available(*, deprecated, message: "Legacy proof-of-concept runtime. Use CompanionWalkExperience with companion lead behavior.")
 public struct FutureSelfExperience: WaykinExperience {
     public var definition: ExperienceDefinition {
         ExperienceDefinition(

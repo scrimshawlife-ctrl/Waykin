@@ -14,7 +14,9 @@
 - Outdoor route accuracy.
 - Battery behavior during real walks.
 - Physical audio playback behavior.
-- Headphone or spatial-audio behavior.
+- Headphone and Bluetooth routing behavior.
+- Interaction with podcasts, music, route changes, lock screen, and background execution.
+- Outdoor audibility, playback latency, and audio-related battery impact.
 - Physical-device interruption behavior.
 
 No physical walk receipt has been filled in this repository. Do not mark these as PASS from simulator or package evidence.
@@ -23,7 +25,8 @@ No physical walk receipt has been filled in this repository. Do not mark these a
 
 - Walking is the MVP focus.
 - Event variety is intentionally bounded.
-- Production audio assets may remain incomplete.
+- Bundled WAV files are deterministic engineering placeholders, not production sound design.
+- No advanced spatial audio is implemented; the adapter uses only restrained stereo pan.
 - There is no AR implementation.
 - There is no multiplayer.
 - There is no backend.
@@ -34,4 +37,4 @@ No physical walk receipt has been filled in this repository. Do not mark these a
 
 ## Compatibility Debt
 
-Some earlier proof-of-concept code for Orc Pursuit and Future Self remains. It should not be expanded or advertised as current product scope unless the solo MVP expansion gate is satisfied.
+Deprecated proof-of-concept runtime types for Orc Pursuit and Future Self remain only for temporary source/API compatibility. They are not returned by recommendations, Demo Mode, variants, or primary UI, and should not be expanded unless the solo MVP expansion gate is satisfied.

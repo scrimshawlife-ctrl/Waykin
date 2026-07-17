@@ -1,4 +1,4 @@
-# Waykin Brand Guide (MPOC)
+# Waykin Brand Guide
 
 **Core Theme:** Outdoor movement + living companion + soft spatial computing + mythic discovery + modern engineering.
 
@@ -11,15 +11,15 @@
 - Sunrise Gold #F4B860 (companionship/memory)
 - Mist White #F5F7F3 (clarity)
 - Stone #89938D
-- Twilight Violet #7168A6 (night/Future Self)
-- Threat Ember #C7613A (Orc Pursuit tension)
+- Twilight Violet #7168A6 (night)
+- Threat Ember #C7613A (bounded pursuit pressure)
 
 **Typography (visual assets):** Clean geometric sans-serif, slightly rounded, strong titles, high legibility. README uses standard Markdown.
 
 **Companion Design (concept):** Original, species-neutral, friendly but mysterious, luminous presence. Capable of transformation. Not a dog, Pokémon, or franchise creature.
 
 **Asset Categories:**
-- CONCEPT VISUAL: Hero, experience cards, movement-to-memory, social preview.
+- CONCEPT VISUAL: Hero, companion walk card, movement-to-memory, social preview.
 - ENGINEERING DIAGRAM: Architecture, validation pipeline.
 - BRAND ASSET: Wordmark, mark, lockup, app icon concept.
 - REAL: None captured in this pass (see screenshots/README.md).

@@ -44,7 +44,7 @@ Implemented systems:
 
 ## C. Product Scope
 
-The product surface is consolidated around Companion Walk as the MVP walking loop. Pursuit is represented as occasional pressure inside that world. Future Self and Orc Pursuit code remains only as proof-of-concept compatibility and is not advertised as validated MVP scope.
+The product surface is consolidated around Companion Walk as the MVP walking loop. Pursuit is represented as occasional pressure inside that world. Future Self and Orc Pursuit runtime types are deprecated proof-of-concept compatibility surfaces and are not returned by recommendations, Demo Mode, variants, or the primary UI.
 
 ## D. Validation Status
 

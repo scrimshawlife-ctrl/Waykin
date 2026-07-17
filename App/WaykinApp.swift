@@ -2,9 +2,9 @@ import SwiftUI
 import WaykinCore
 import MapKit
 import SwiftData
+import AVFoundation
 
 enum AppRoute: Hashable {
-    case demoList
     case activeSession(DemoScenarioID)
     case summary(UUID)
     case memoryHistory
@@ -16,6 +16,7 @@ enum PersistenceLoadState: String, Equatable {
 
 @main
 struct WaykinApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     let container: ModelContainer
     @State private var appModel: WaykinAppModel
 
@@ -56,8 +57,6 @@ struct WaykinApp: App {
                 HomeView()
                     .navigationDestination(for: AppRoute.self) { route in
                         switch route {
-                        case .demoList:
-                            DemoScenarioListView()
                         case .activeSession(let scenario):
                             ActiveSessionView(scenario: scenario)
                         case .summary(let id):
@@ -72,6 +71,12 @@ struct WaykinApp: App {
                     }
             }
             .environment(appModel)
+            .onChange(of: scenePhase) { _, phase in
+                appModel.handleScenePhase(phase)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
+                appModel.handleAudioSessionInterruption(notification)
+            }
         }
         .modelContainer(container)
     }
@@ -84,6 +89,7 @@ final class WaykinAppModel {
     let persistenceStore: PersistenceStore
     let recommendationEngine = RecommendationEngine()
     let demoController: DemoSessionController
+    let audioPlayer: any AudioCuePlaying
 
     let realLocationProvider = RealLocationProvider()
 
@@ -106,12 +112,14 @@ final class WaykinAppModel {
     var liveSignalState: LiveLocationSignalState = .waitingForAuthorization
     var liveAcceptedCount: Int = 0
     var liveRejectedCount: Int = 0
+    private var realExperienceState: ExperienceSessionState?
+    private var realExperienceContext: ExperienceContext?
 
-    init(persistenceStore: PersistenceStore) {
+    init(persistenceStore: PersistenceStore, audioPlayer: (any AudioCuePlaying)? = nil) {
         self.persistenceStore = persistenceStore
         self.demoController = DemoSessionController(movementEngine: movementEngine)
+        self.audioPlayer = audioPlayer ?? AppAudioCuePlayer()
 
-        let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
         var shouldReset = false
         let args = ProcessInfo.processInfo.arguments
         if let idx = args.firstIndex(of: "-WAYKIN_RESET_STATE"), idx + 1 < args.count {
@@ -149,6 +157,7 @@ final class WaykinAppModel {
 
     func startDemo(_ scenario: DemoScenarioID) {
         do {
+            audioPlayer.stopAll(fadeOut: false)
             try demoController.start(scenarioID: scenario)
             demoMessage = "Walking with Lira..."
             path.append(AppRoute.activeSession(scenario))
@@ -157,12 +166,32 @@ final class WaykinAppModel {
         }
     }
 
-    func pauseDemo() { demoController.pause() }
-    func resumeDemo() { demoController.resume() }
-    func advanceDemo() { demoController.advanceOneTick() }
-    func runDemoToEnd() { demoController.runToEnd() }
+    func pauseDemo() {
+        demoController.pause()
+        audioPlayer.pauseAll()
+    }
+
+    func resumeDemo() {
+        demoController.resume()
+        audioPlayer.resumeAll()
+    }
+
+    func advanceDemo() {
+        demoController.advanceOneTick()
+        if let cue = demoController.currentAudioCue {
+            audioPlayer.handle([cue])
+        }
+    }
+
+    func runDemoToEnd() {
+        guard let scenario = demoController.currentScenario else { return }
+        while demoController.tickIndex < scenario.ticks.count {
+            advanceDemo()
+        }
+    }
 
     func endDemo() {
+        audioPlayer.stopAll(fadeOut: true)
         let (_, result, summary) = demoController.end()
         guard let result = result, let summary = summary else { return }
 
@@ -196,9 +225,24 @@ final class WaykinAppModel {
 
         realLocationProvider.onLocationUpdate = { [weak self] point in
             guard let self = self, self.isLiveSessionActive else { return }
-            // Only ingest if engine is in moving state
+            let previousDistance = self.movementEngine.currentSession?.distanceMeters ?? 0
             self.movementEngine.ingestRealLocation(point)
             self.liveAcceptedCount += 1
+            guard
+                let session = self.movementEngine.currentSession,
+                let state = self.realExperienceState,
+                let context = self.realExperienceContext
+            else { return }
+
+            let snapshot = MovementSnapshot(
+                timestamp: point.timestamp,
+                speed: point.speed,
+                distanceDelta: max(0, session.distanceMeters - previousDistance),
+                isMoving: point.speed > 0.1
+            )
+            let update = CompanionWalkExperience().update(previousState: state, movement: snapshot, context: context)
+            self.realExperienceState = update.state
+            self.audioPlayer.handle(update.semanticAudioCues)
         }
         realLocationProvider.onSignalStateChange = { [weak self] state in
             self?.liveSignalState = state
@@ -210,6 +254,7 @@ final class WaykinAppModel {
         }
 
         do {
+            audioPlayer.stopAll(fadeOut: false)
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
             // Set moving state through public API (resume does this)
             try? movementEngine.resumeSession()
@@ -218,6 +263,13 @@ final class WaykinAppModel {
             liveSignalState = .waitingForFirstFix
             liveAcceptedCount = 0
             liveRejectedCount = 0
+            let context = ExperienceContext(
+                timeOfDay: selectedTimeContext,
+                activity: .walk,
+                bondLevel: companion.bondLevel
+            )
+            realExperienceContext = context
+            realExperienceState = CompanionWalkExperience().start(context: context)
             path.append(AppRoute.activeSession(.calmDayWalk))
         } catch {
             demoMessage = "Failed to start real session: \(error)"
@@ -228,6 +280,7 @@ final class WaykinAppModel {
         guard isLiveSessionActive else { return }
         try? movementEngine.pauseSession()
         realLocationProvider.stopUpdatingLocation()
+        audioPlayer.pauseAll()
     }
 
     func resumeRealSession() {
@@ -236,14 +289,18 @@ final class WaykinAppModel {
         // In real provider, lastAcceptedPoint will serve as new baseline to avoid large jumps
         realLocationProvider.startUpdatingLocation()
         liveSignalState = .waitingForFirstFix
+        audioPlayer.resumeAll()
     }
 
     func endRealSession() {
         guard isLiveSessionActive else { return }
         realLocationProvider.stopUpdatingLocation()
+        audioPlayer.stopAll(fadeOut: true)
         do {
             let ended = try movementEngine.endSession()
             isLiveSessionActive = false
+            realExperienceState = nil
+            realExperienceContext = nil
 
             // Create minimal summary + memory for proof
             let summary = SessionSummary(
@@ -272,6 +329,45 @@ final class WaykinAppModel {
         } catch {
             demoMessage = "Real session end failed: \(error)"
         }
+    }
+
+    func handleScenePhase(_ phase: ScenePhase) {
+        switch phase {
+        case .active:
+            if shouldResumeAudio {
+                audioPlayer.resumeAll()
+            }
+        case .inactive, .background:
+            audioPlayer.pauseAll()
+        @unknown default:
+            audioPlayer.pauseAll()
+        }
+    }
+
+    func handleAudioSessionInterruption(_ notification: Notification) {
+        guard
+            let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+            let type = AVAudioSession.InterruptionType(rawValue: rawType)
+        else { return }
+
+        switch type {
+        case .began:
+            audioPlayer.pauseAll()
+        case .ended:
+            let rawOptions = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let options = AVAudioSession.InterruptionOptions(rawValue: rawOptions)
+            if options.contains(.shouldResume), shouldResumeAudio {
+                audioPlayer.resumeAll()
+            }
+        @unknown default:
+            audioPlayer.pauseAll()
+        }
+    }
+
+    private var shouldResumeAudio: Bool {
+        let demoIsMoving = demoController.isRunning && !demoController.isPaused
+        let realIsMoving = isLiveSessionActive && movementEngine.currentSession?.movementState == .moving
+        return demoIsMoving || realIsMoving
     }
 }
 
@@ -336,20 +432,6 @@ struct HomeView: View {
                     Text("MemCount: \(appModel.persistenceMemoryCount)").accessibilityIdentifier("waykin.persistence.queryMemoryCount")
                     Text("PathHash: \(appModel.persistenceStorePathHash)").accessibilityIdentifier("waykin.persistence.storePathHash")
                 }.font(.caption2)
-            }
-        }.padding()
-    }
-}
-
-struct DemoScenarioListView: View {
-    @Environment(WaykinAppModel.self) private var appModel
-
-    var body: some View {
-        VStack {
-            Text("Demo Scenarios").font(.title).accessibilityIdentifier("waykin.demo.screen")
-            ForEach(DemoScenarioID.allCases, id: \.self) { scenario in
-                Button(scenario.rawValue) { appModel.startDemo(scenario) }
-                    .accessibilityIdentifier("waykin.demo.scenario.\(scenario.rawValue)")
             }
         }.padding()
     }

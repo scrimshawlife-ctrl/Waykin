@@ -49,7 +49,7 @@ AudioCue
 SessionMemory + Bond
 ```
 
-The core package emits semantic state and semantic audio cues. SwiftUI, MapKit, persistence, and future playback adapters consume that state without owning gameplay rules.
+The core package emits semantic state and semantic audio cues. SwiftUI, MapKit, persistence, and the app-target audio adapter consume that state without owning gameplay rules or filenames.
 
 ## Implemented Scope
 
@@ -58,12 +58,12 @@ The core package emits semantic state and semantic audio cues. SwiftUI, MapKit, 
 - Bond is the persistent progression measure.
 - Pursuit is a bounded pressure state, not a separate enemy system.
 - Event generation is deterministic, seeded, cooldown-aware, and test-covered.
-- Audio is represented as semantic cues; production audio assets are not required for tests.
+- Seven semantic audio cues map through an `AVAudioPlayer` app adapter to restrained bundled placeholder WAV files or safe silence.
 - SwiftData persists companion Bond and session memories.
 - Demo Mode is deterministic and package-testable.
 - Physical-device walking is wired through When-In-Use Core Location, but field behavior remains unverified until manually tested.
 
-Existing run, cycle, hike, climb, Orc Pursuit, and Future Self code may still exist as compatibility surface from the earlier proof of concept. They are not advertised as validated MVP capabilities.
+Existing run, cycle, hike, and climb model values may still exist for compatibility. Deprecated Orc Pursuit and Future Self runtime types remain only as temporary source/API compatibility and are not returned by recommendations, Demo Mode, variants, or the primary UI.
 
 ## Explicit Non-Goals
 
@@ -86,6 +86,7 @@ Observed on July 16, 2026:
 |---|---|---|
 | Package build | `make build` | PASS |
 | Package tests | `make test` | PASS, 25 tests |
+| App audio adapter | focused `xcodebuild test` | PASS, 7 tests |
 | Canonical harness | `make validate` | PASS, including native app build |
 | Simulator UI | `make validate-simulator` | PASS, 6 UI tests |
 | Physical GPS walk | Manual protocol | NOT_COMPUTABLE |
@@ -99,6 +100,7 @@ Do not mark physical GPS, audio-device, battery, or outdoor usability behavior a
 - Known limitations: `KNOWN_LIMITATIONS.md`
 - Solo MVP scope contract: `docs/SOLO_MVP_SCOPE.md`
 - Physical-device manual protocol: `docs/PHYSICAL_DEVICE_WALK_VALIDATION.md`
+- Audio asset contract: `docs/AUDIO_ASSET_CONTRACT.md`
 
 ## License
 

@@ -57,6 +57,8 @@ Persistence may support these systems by storing Bond, companion identity, and c
 
 No major system may be added until repeated physical-device sessions demonstrate that the existing loop creates return intent and the current limitation cannot be solved through configuration, audio, tuning, or simplification.
 
+Legacy Orc Pursuit and Future Self compatibility models may be deleted only after no repository references remain outside their declarations, no persisted production data depends on their Codable representation, and migration or versioning behavior is explicitly tested. Until then, they remain inert compatibility state.
+
 ## Deletion Or Simplification Rule
 
 Before adding or retaining a feature, ask:

@@ -217,7 +217,9 @@ public struct MovementSession: Codable, Identifiable {
 // MARK: - Typed Experience State
 public enum ExperienceRuntimeState: Codable, Equatable {
     case companionWalk(CompanionWalkState)
+    @available(*, deprecated, message: "Legacy proof-of-concept state retained only for temporary Codable compatibility.")
     case orcPursuit(OrcPursuitState)
+    @available(*, deprecated, message: "Legacy proof-of-concept state retained only for temporary Codable compatibility.")
     case futureSelf(FutureSelfState)
 }
 
@@ -252,6 +254,7 @@ public struct CompanionWalkState: Codable, Equatable {
     }
 }
 
+@available(*, deprecated, message: "Legacy proof-of-concept state retained only for temporary Codable compatibility.")
 public struct OrcPursuitState: Codable, Equatable {
     public var pursuerDistanceMeters: Double
     public var threatLevel: Double
@@ -261,6 +264,7 @@ public struct OrcPursuitState: Codable, Equatable {
     public var elapsedSeconds: TimeInterval
 }
 
+@available(*, deprecated, message: "Legacy proof-of-concept state retained only for temporary Codable compatibility.")
 public struct FutureSelfState: Codable, Equatable {
     public var targetSpeedMetersPerSecond: Double
     public var leadMeters: Double
@@ -364,12 +368,7 @@ public enum TimeContext: String, Codable, CaseIterable, Sendable {
 }
 
 public enum ExperienceVariantID: String, Codable, CaseIterable {
-    // Companion Walk
     case daylightExplorer, twilightLantern, nighttimeGuardian
-    // Orc Pursuit
-    case daylightRaiders, twilightTorchPursuit, nighttimeShadowPursuit
-    // Future Self
-    case daylightRival, twilightEcho, nighttimeGhost
 }
 
 public struct ExperienceVariantDefinition {
@@ -384,8 +383,6 @@ public struct ExperienceVariantDefinition {
 // MARK: - Demo Scenarios
 public enum DemoScenarioID: String, Codable, CaseIterable {
     case calmDayWalk
-    case nightOrcPursuit
-    case futureSelfInterval
 }
 
 public struct DemoScenario {

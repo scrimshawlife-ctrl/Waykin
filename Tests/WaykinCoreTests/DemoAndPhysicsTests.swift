@@ -18,16 +18,12 @@ final class DemoAndPhysicsTests: XCTestCase {
         }
     }
 
-    func testOrcPursuitTimeIndependence() {
-        let slowSpeed = 1.0
-        let pursuerAdjustment = 2.0
+    func testDemoModeOnlyOffersCanonicalCompanionWalk() {
+        let movement = MovementEngine()
+        let controller = DemoSessionController(movementEngine: movement)
 
-        let tenTicksDist = (0..<10).reduce(120.0) { dist, _ in
-            dist + (slowSpeed - pursuerAdjustment) * 1.0
-        }
-
-        let oneTickDist = 120.0 + (slowSpeed - pursuerAdjustment) * 10.0
-
-        XCTAssertEqual(tenTicksDist, oneTickDist, accuracy: 0.1)
+        let scenarios = controller.availableScenarios()
+        XCTAssertEqual(scenarios.map(\.id), [.calmDayWalk])
+        XCTAssertEqual(scenarios.map(\.experienceID), ["companion_walk"])
     }
 }

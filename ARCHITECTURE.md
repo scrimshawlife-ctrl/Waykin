@@ -17,6 +17,10 @@ CompanionRuntime / PursuitState
       ↓
 AudioCue
       ↓
+AppAudioCuePlayer
+      ↓
+Local bundled audio asset or safe silence
+      ↓
 SessionMemory + Bond
 ```
 
@@ -27,6 +31,7 @@ SessionMemory + Bond
 - Event Generator: emits zero or one deterministic semantic event per tick using a seeded, weighted, cooldown-aware configuration.
 - Companion Runtime: maps events and commands into a small behavior vocabulary for Lira.
 - Audio Experience Layer: maps semantic events to semantic audio cues with priority and cooldown handling.
+- App Audio Adapter: maps the seven canonical cue kinds to bundled local assets, enforces a two-channel playback bound, and owns Apple audio-session lifecycle behavior.
 
 Persistence supports Bond and concise memories. It is not a generalized backend or content platform.
 
@@ -34,16 +39,16 @@ Persistence supports Bond and concise memories. It is not a generalized backend 
 
 SwiftUI and MapKit consume state from the core. They do not own gameplay rules.
 
-Production audio playback is intentionally behind the semantic `AudioCue` boundary. Package tests do not require bundled audio assets.
+Production-capable playback remains behind the semantic `AudioCue` boundary. The core knows no filenames; `AppAudioCuePlayer` uses `AVAudioPlayer` and a centralized app-target catalog to resolve local assets or fail to silence safely.
 
 ## Retained Compatibility
 
-The repository still contains earlier proof-of-concept types for Orc Pursuit and Future Self. They are retained to avoid risky churn, but the current product surface and recommendation path are consolidated around Companion Walk as the MVP experience. Future deletion or migration should follow `docs/SOLO_MVP_SCOPE.md`.
+The repository still contains deprecated proof-of-concept runtime types for Orc Pursuit and Future Self. They are retained only as temporary source/API compatibility while the current product surface, recommendations, Demo Mode, variants, and tests are consolidated around Companion Walk. Future deletion or migration should follow `docs/SOLO_MVP_SCOPE.md`.
 
 ## Deferred Seams
 
-- Production audio asset mapping.
 - Manual physical-device GPS and audio validation.
+- Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
 

@@ -1,9 +1,9 @@
 # Real Application Screenshots
 
-**Status (this pass):** No high-fidelity simulator screenshots captured.
+**Status:** No high-fidelity simulator screenshots captured.
 
-The current MPOC UI is a functional but minimal SwiftUI shell focused on:
-- Home entry for Demo Scenarios and Real Walk (COMPANION_WALK)
+The current Solo MVP UI is a functional but minimal SwiftUI shell focused on:
+- Home entry for Begin Walk and Real Walk validation
 - Basic ActiveSessionView with MapKit
 - Memory history via SwiftData @Query
 
