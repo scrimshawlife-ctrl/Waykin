@@ -71,16 +71,24 @@ Production-capable playback remains behind the semantic `AudioCue` boundary. The
 `ARWorldCommand` carries immutable spawn, update, removal, and session-clear intents across the core-to-app boundary. The app-target AR adapter owns tracking, anchors, entity construction, animation playback, occlusion, and graceful capability fallback. It may realize or defer commands, but it must not mutate movement, world, event, companion, pursuit, Bond, or persistence state.
 
 ```text
-WaykinCore semantic state
+WaykinCore semantic state / AR Lab scenario
       ↓
 SpatialIntent / ARWorldCommand
       ↓
-App-target AR adapter
+ARPresentationController
+      ↓
+ARWorldCommandRenderer
+      ↓
+Procedural Lira / discovery / threat entity
+      ↓
+ARPlacementResolver + AREntityRegistry
       ↓
 ARKit + RealityKit presentation
 ```
 
-AR-1 adds an isolated physical-device shell with capability monitoring, session lifecycle handling, validated horizontal raycasts, and a bounded entity registry. The normal walking application remains available as `WaykinApp` for regression testing. During AR-1 validation, both the `Waykin` and `WaykinARLab` schemes intentionally launch the `WaykinARLab` executable so the test surface cannot be confused with the existing walking UI.
+AR-1 adds an isolated physical-device shell with capability monitoring, session lifecycle handling, validated horizontal raycasts, and a bounded entity registry. AR-2 adds a replaceable procedural Lira hierarchy, deterministic idle/follow/investigate/alert/celebrate presentation states, complete command routing, engineering discovery and threat placeholders, a development control panel, privacy-bounded diagnostics, and a deterministic locomotion policy.
+
+The procedural companion is not final art. Stable semantic child names allow a future USDZ asset to replace it without changing `ARWorldCommand` routing. AR-2 locomotion remains presentation-only and is not yet driven by GPS or `MovementEngine`.
 
 The contract is intentionally presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth.
 
@@ -96,7 +104,8 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
-- Connection of AR commands to Lira, movement, events, and pursuit.
-- Physical-device validation of AR placement, tracking loss, interruption recovery, and battery impact.
+- Connection of real CompanionRuntime events and accepted movement snapshots to AR commands.
+- Physical-device validation of procedural Lira scale, state readability, tracking loss, interruption recovery, and battery impact.
+- Final asset loading, skeletal animation, pursuit locomotion, and outdoor route anchoring.
 
 The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, generative AI, wearables, and generalized narrative infrastructure.
