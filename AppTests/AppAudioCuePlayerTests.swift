@@ -83,7 +83,8 @@ final class AppAudioCuePlayerTests: XCTestCase {
         let spy = AudioCuePlayerSpy()
         let model = WaykinAppModel(
             persistenceStore: PersistenceStore(modelContainer: container),
-            audioPlayer: spy
+            audioPlayer: spy,
+            fieldTestReceiptStore: nil
         )
 
         model.startDemo(.calmDayWalk)
@@ -103,7 +104,8 @@ final class AppAudioCuePlayerTests: XCTestCase {
         let spy = AudioCuePlayerSpy()
         let model = WaykinAppModel(
             persistenceStore: PersistenceStore(modelContainer: container),
-            audioPlayer: spy
+            audioPlayer: spy,
+            fieldTestReceiptStore: nil
         )
         model.startDemo(.calmDayWalk)
 

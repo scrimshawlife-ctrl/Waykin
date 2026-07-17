@@ -16,6 +16,8 @@ The first release should make a user finish a walk and want to go out again tomo
 
 Persistence may support these systems by storing Bond, companion identity, and concise memories. It must not become a generalized platform.
 
+Local field-test receipts may observe existing runtime signals for bounded engineering evidence. They may not evolve into generalized telemetry, remote analytics, or route history without a separate evidence-based scope decision.
+
 ## Allowed MVP Content
 
 - One primary activity: walking.

@@ -24,6 +24,8 @@
 
 No physical walk receipt has been filled in this repository. Do not mark these as PASS from simulator or package evidence.
 
+The local field-test receipt is engineering evidence only. It has no remote analytics or automatic upload, and receipt creation does not validate physical behavior. Timestamps may reveal session timing when a receipt is shared, field-test ratings remain manual, and receipt-related battery impact is unverified.
+
 The recorded route is measurement support for the active Companion Walk only. It is not navigation-grade, does not provide route planning or guidance, and has no background-location guarantee. Battery impact is not characterized.
 
 ## Deferred Product Scope
@@ -38,6 +40,7 @@ The recorded route is measurement support for the active Companion Walk only. It
 - There are no accounts or authentication.
 - There is no marketplace or creator SDK.
 - There is no generalized narrative engine or generative AI.
+- There is no generalized telemetry or analytics platform.
 - Run, cycle, hike, and climb model values may exist for compatibility, but they are not validated MVP capabilities.
 
 ## Compatibility Debt

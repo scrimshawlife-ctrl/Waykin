@@ -76,6 +76,7 @@ Waykin currently does not include multiplayer, social graphs, accounts, backend 
 - Demo Mode requires no location permission.
 - Pause and stop behavior are preserved.
 - Session memories are concise deterministic facts, not precise historical route archives.
+- Local field-test receipts contain privacy-filtered aggregates and sparse semantic events, retain at most 20 files, and never upload automatically.
 - Pursuit pressure must never instruct unsafe movement or continued exertion through distress.
 
 ## Validation Status
@@ -85,8 +86,8 @@ Observed on July 16, 2026:
 | Layer | Command | Status |
 |---|---|---|
 | Package build | `make build` | PASS |
-| Package tests | `make test` | PASS, 25 tests |
-| App audio adapter | focused `xcodebuild test` | PASS, 7 tests |
+| Package tests | `make test` | PASS, 40 tests |
+| Native app tests | focused `xcodebuild test` | PASS, 58 tests |
 | Canonical harness | `make validate` | PASS, including native app build |
 | Simulator UI | `make validate-simulator` | PASS, 6 UI tests |
 | Physical GPS walk | Manual protocol | NOT_COMPUTABLE |
@@ -100,6 +101,7 @@ Do not mark physical GPS, audio-device, battery, or outdoor usability behavior a
 - Known limitations: `KNOWN_LIMITATIONS.md`
 - Solo MVP scope contract: `docs/SOLO_MVP_SCOPE.md`
 - Physical-device manual protocol: `docs/PHYSICAL_DEVICE_WALK_VALIDATION.md`
+- Local field-test receipt protocol: `docs/FIELD_TEST_PROTOCOL.md`
 - Audio asset contract: `docs/AUDIO_ASSET_CONTRACT.md`
 
 ## License

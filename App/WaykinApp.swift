@@ -100,6 +100,8 @@ final class WaykinAppModel {
     let recommendationEngine = RecommendationEngine()
     let demoController: DemoSessionController
     let audioPlayer: any AudioCuePlaying
+    let fieldTestReceiptStore: (any FieldTestReceiptStoring)?
+    let fieldTestNow: @MainActor () -> Date
 
     let realLocationProvider: any RealLocationProviding
 
@@ -116,6 +118,8 @@ final class WaykinAppModel {
     var persistenceMemoryCount: Int = 0
     var lastSavedMemoryID: String = ""
     var persistenceStorePathHash: String = ""
+    private(set) var latestFieldTestReceiptURL: URL?
+    private(set) var fieldTestReceiptError: FieldTestReceiptStoreError?
 
     // Live real-session state (physical device)
     private(set) var realWalkState: RealWalkSessionState = .idle
@@ -126,18 +130,24 @@ final class WaykinAppModel {
     private var realExperienceState: ExperienceSessionState?
     private var realExperienceContext: ExperienceContext?
     private var lifecycleSuspendedRealWalk = false
+    private var activeFieldTestReceipt: FieldTestReceiptBuilder?
+    private var lastObservedMovementState: MovementState = .idle
 
     init(
         persistenceStore: PersistenceStore,
         audioPlayer: (any AudioCuePlaying)? = nil,
         movementEngine: MovementEngine = MovementEngine(),
-        realLocationProvider: any RealLocationProviding = RealLocationProvider()
+        realLocationProvider: any RealLocationProviding = RealLocationProvider(),
+        fieldTestReceiptStore: (any FieldTestReceiptStoring)? = FileFieldTestReceiptStore.applicationSupport(),
+        fieldTestNow: @escaping @MainActor () -> Date = Date.init
     ) {
         self.persistenceStore = persistenceStore
         self.movementEngine = movementEngine
         self.demoController = DemoSessionController(movementEngine: movementEngine)
         self.audioPlayer = audioPlayer ?? AppAudioCuePlayer()
         self.realLocationProvider = realLocationProvider
+        self.fieldTestReceiptStore = fieldTestReceiptStore
+        self.fieldTestNow = fieldTestNow
 
         var shouldReset = false
         let args = ProcessInfo.processInfo.arguments
@@ -179,6 +189,17 @@ final class WaykinAppModel {
         do {
             audioPlayer.stopAll(fadeOut: false)
             try demoController.start(scenarioID: scenario)
+            if let session = movementEngine.currentSession, fieldTestReceiptStore != nil {
+                let builder = FieldTestReceiptBuilder(
+                    sessionID: session.id,
+                    mode: .demo,
+                    startedAt: session.startedAt,
+                    startingBond: companion.bondLevel
+                )
+                builder.recordSessionTransition(from: .idle, to: .active, at: session.startedAt)
+                activeFieldTestReceipt = builder
+                lastObservedMovementState = session.movementState
+            }
             demoMessage = "Walking with Lira..."
             path.append(AppRoute.activeSession(scenario))
         } catch {
@@ -187,18 +208,51 @@ final class WaykinAppModel {
     }
 
     func pauseDemo() {
+        let wasRunning = demoController.isRunning && !demoController.isPaused
         demoController.pause()
         audioPlayer.pauseAll()
+        if wasRunning {
+            let now = fieldTestNow()
+            activeFieldTestReceipt?.recordSessionTransition(from: .active, to: .paused, at: now)
+            activeFieldTestReceipt?.recordAudioLifecycle("pause", at: now)
+        }
     }
 
     func resumeDemo() {
+        let wasPaused = demoController.isRunning && demoController.isPaused
         demoController.resume()
         audioPlayer.resumeAll()
+        if wasPaused {
+            let now = fieldTestNow()
+            activeFieldTestReceipt?.recordSessionTransition(from: .paused, to: .active, at: now)
+            activeFieldTestReceipt?.recordAudioLifecycle("resume", at: now)
+        }
     }
 
     func advanceDemo() {
+        let scenario = demoController.currentScenario
+        let tickIndex = demoController.tickIndex
         demoController.advanceOneTick()
+        if let scenario, tickIndex < scenario.ticks.count {
+            let tick = scenario.ticks[tickIndex]
+            let timestamp = movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
+            let snapshot = MovementSnapshot(
+                timestamp: timestamp,
+                speed: tick.speed,
+                distanceDelta: max(0, tick.speed * tick.delta),
+                isMoving: tick.speed > 0.1
+            )
+            activeFieldTestReceipt?.recordMovementSnapshot(snapshot)
+            recordObservedMovementState(snapshot.isMoving ? .moving : .paused, at: timestamp)
+        }
+        if let event = demoController.currentEvent {
+            activeFieldTestReceipt?.recordWorldEvent(event)
+        }
         if let cue = demoController.currentAudioCue {
+            activeFieldTestReceipt?.recordAudioCue(
+                cue,
+                at: movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
+            )
             audioPlayer.handle([cue])
         }
     }
@@ -211,9 +265,25 @@ final class WaykinAppModel {
     }
 
     func endDemo() {
+        let endedAt = fieldTestNow()
+        let didCompleteScenario = demoController.currentScenario.map {
+            demoController.tickIndex >= $0.ticks.count
+        } ?? false
         audioPlayer.stopAll(fadeOut: true)
-        let (_, result, summary) = demoController.end()
-        guard let result = result, let summary = summary else { return }
+        activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
+        let (session, result, summary) = demoController.end()
+        guard let result = result, let summary = summary else {
+            finishFieldTestReceipt(
+                session: session,
+                outcome: .invalidState,
+                endingBond: companion.bondLevel,
+                memoryWritten: false,
+                persistence: .notAttempted,
+                errorCategory: .invalidState,
+                endedAt: endedAt
+            )
+            return
+        }
 
         var updated = companion
         updated.bondLevel += result.bondDelta
@@ -230,9 +300,26 @@ final class WaykinAppModel {
             persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
             refreshRecommendation()
             path.append(AppRoute.summary(summary.id))
+            finishFieldTestReceipt(
+                session: session,
+                outcome: didCompleteScenario ? .completed : .userEnded,
+                endingBond: updated.bondLevel,
+                memoryWritten: true,
+                persistence: .succeeded,
+                endedAt: endedAt
+            )
         } catch {
             demoMessage = "Persistence failed: \(error)"
             persistenceLoadState = .failed
+            finishFieldTestReceipt(
+                session: session,
+                outcome: .persistenceFailed,
+                endingBond: companion.bondLevel,
+                memoryWritten: false,
+                persistence: .failed,
+                errorCategory: .persistence,
+                endedAt: endedAt
+            )
         }
     }
 
@@ -244,8 +331,20 @@ final class WaykinAppModel {
             demoMessage = "A walk is already in progress."
             return
         }
+        if fieldTestReceiptStore != nil {
+            activeFieldTestReceipt = FieldTestReceiptBuilder(
+                sessionID: UUID(),
+                mode: .physical,
+                startedAt: fieldTestNow(),
+                startingBond: companion.bondLevel
+            )
+        }
         guard realLocationProvider.locationServicesEnabled else {
-            failRealWalk(message: "Location Services are unavailable. Demo Walk is still available.")
+            failRealWalk(
+                message: "Location Services are unavailable. Demo Walk is still available.",
+                outcome: .providerFailed,
+                errorCategory: .locationServicesDisabled
+            )
             return
         }
 
@@ -254,12 +353,26 @@ final class WaykinAppModel {
             beginAuthorizedRealWalk()
         case .notDetermined:
             realWalkState = .requestingPermission
+            activeFieldTestReceipt?.recordSessionTransition(from: .idle, to: .requestingPermission, at: fieldTestNow())
+            activeFieldTestReceipt?.recordPermission("notDetermined", at: fieldTestNow())
             liveSignalState = .waitingForAuthorization
             realLocationProvider.requestAuthorization()
         case .denied, .restricted:
-            failRealWalk(message: "Location access is required for a real walk. Demo Walk is still available.")
+            activeFieldTestReceipt?.recordPermission(
+                realLocationProvider.authorizationStatus == .denied ? "denied" : "restricted",
+                at: fieldTestNow()
+            )
+            failRealWalk(
+                message: "Location access is required for a real walk. Demo Walk is still available.",
+                outcome: .permissionDenied,
+                errorCategory: .permissionDenied
+            )
         @unknown default:
-            failRealWalk(message: "Location authorization is unavailable. Demo Walk is still available.")
+            failRealWalk(
+                message: "Location authorization is unavailable. Demo Walk is still available.",
+                outcome: .invalidState,
+                errorCategory: .invalidState
+            )
         }
     }
 
@@ -269,6 +382,15 @@ final class WaykinAppModel {
             audioPlayer.stopAll(fadeOut: false)
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
             try movementEngine.resumeSession()
+            if let session = movementEngine.currentSession {
+                activeFieldTestReceipt?.attachSessionID(session.id)
+                activeFieldTestReceipt?.recordSessionTransition(
+                    from: realWalkState == .requestingPermission ? .requestingPermission : .idle,
+                    to: .active,
+                    at: session.startedAt
+                )
+                lastObservedMovementState = .idle
+            }
             realLocationProvider.startUpdatingLocation()
             realWalkState = .active
             lifecycleSuspendedRealWalk = false
@@ -285,7 +407,11 @@ final class WaykinAppModel {
             demoMessage = "Waiting for a reliable location fix..."
             path.append(AppRoute.activeSession(.calmDayWalk))
         } catch {
-            failRealWalk(message: "The real walk could not start. Demo Walk is still available.")
+            failRealWalk(
+                message: "The real walk could not start. Demo Walk is still available.",
+                outcome: .invalidState,
+                errorCategory: .invalidState
+            )
         }
     }
 
@@ -295,10 +421,13 @@ final class WaykinAppModel {
             try movementEngine.pauseSession()
             realLocationProvider.stopUpdatingLocation()
             audioPlayer.pauseAll()
+            let now = fieldTestNow()
+            activeFieldTestReceipt?.recordSessionTransition(from: .active, to: .paused, at: now)
+            activeFieldTestReceipt?.recordAudioLifecycle("pause", at: now)
             realWalkState = .paused
             lifecycleSuspendedRealWalk = false
         } catch {
-            failRealWalk(message: "The real walk could not be paused safely.")
+            failRealWalk(message: "The real walk could not be paused safely.", outcome: .invalidState, errorCategory: .invalidState)
         }
     }
 
@@ -309,27 +438,42 @@ final class WaykinAppModel {
             realLocationProvider.startUpdatingLocation()
             liveSignalState = .waitingForFirstFix
             audioPlayer.resumeAll()
+            let now = fieldTestNow()
+            activeFieldTestReceipt?.recordSessionTransition(from: .paused, to: .active, at: now)
+            activeFieldTestReceipt?.recordAudioLifecycle("resume", at: now)
             realWalkState = .active
             lifecycleSuspendedRealWalk = false
         } catch {
-            failRealWalk(message: "The real walk could not resume safely.")
+            failRealWalk(message: "The real walk could not resume safely.", outcome: .invalidState, errorCategory: .invalidState)
         }
     }
 
     func endRealSession() {
         guard isLiveSessionActive else { return }
+        let endedAt = fieldTestNow()
+        activeFieldTestReceipt?.recordSessionTransition(from: fieldTestState(for: realWalkState), to: .ending, at: endedAt)
         realWalkState = .ending
         realLocationProvider.stopUpdatingLocation()
         audioPlayer.stopAll(fadeOut: true)
+        activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
+        let ended: MovementSession
         do {
-            let ended = try movementEngine.endSession()
-            realWalkState = .completed
-            lifecycleSuspendedRealWalk = false
-            realExperienceState = nil
-            realExperienceContext = nil
+            ended = try movementEngine.endSession()
+        } catch {
+            failRealWalk(
+                message: "The real walk could not end cleanly.",
+                outcome: .invalidState,
+                errorCategory: .invalidState
+            )
+            return
+        }
 
-            // Create minimal summary + memory for proof
-            let summary = SessionSummary(
+        realWalkState = .completed
+        lifecycleSuspendedRealWalk = false
+        realExperienceState = nil
+        realExperienceContext = nil
+
+        let summary = SessionSummary(
                 id: UUID(),
                 sessionID: ended.id,
                 activity: ended.activityType,
@@ -342,22 +486,41 @@ final class WaykinAppModel {
                 outcome: "COMPLETED",
                 bondDelta: 1,
                 memory: SessionMemory(sessionID: ended.id, text: "Lira stayed close during a real walk. Physical GPS and audio behavior remain unverified.")
-            )
-            lastSummary = summary
+        )
+        lastSummary = summary
 
-            let memText = summary.memory.text
-            let mem = SessionMemory(sessionID: summary.sessionID, text: memText)
+        let mem = SessionMemory(sessionID: summary.sessionID, text: summary.memory.text)
+        do {
             let receipt = try persistenceStore.saveMemory(mem)
             lastSavedMemoryID = receipt.recordID.uuidString
             persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
 
             path.append(AppRoute.summary(summary.id))
+            finishFieldTestReceipt(
+                session: ended,
+                outcome: .userEnded,
+                endingBond: companion.bondLevel,
+                memoryWritten: true,
+                persistence: .succeeded,
+                endedAt: endedAt
+            )
         } catch {
-            failRealWalk(message: "The real walk could not end cleanly.")
+            demoMessage = "The walk ended, but its memory could not be saved."
+            persistenceLoadState = .failed
+            finishFieldTestReceipt(
+                session: ended,
+                outcome: .persistenceFailed,
+                endingBond: companion.bondLevel,
+                memoryWritten: false,
+                persistence: .failed,
+                errorCategory: .persistence,
+                endedAt: endedAt
+            )
         }
     }
 
     func handleScenePhase(_ phase: ScenePhase) {
+        activeFieldTestReceipt?.recordLifecycle(String(describing: phase), at: fieldTestNow())
         switch phase {
         case .active:
             if lifecycleSuspendedRealWalk && realWalkState == .paused {
@@ -388,11 +551,15 @@ final class WaykinAppModel {
 
         switch type {
         case .began:
+            activeFieldTestReceipt?.recordInterruption("audioInterruptionBegan", at: fieldTestNow())
+            activeFieldTestReceipt?.recordAudioLifecycle("pause", at: fieldTestNow())
             audioPlayer.pauseAll()
         case .ended:
+            activeFieldTestReceipt?.recordInterruption("audioInterruptionEnded", at: fieldTestNow())
             let rawOptions = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
             let options = AVAudioSession.InterruptionOptions(rawValue: rawOptions)
             if options.contains(.shouldResume), shouldResumeAudio {
+                activeFieldTestReceipt?.recordAudioLifecycle("resume", at: fieldTestNow())
                 audioPlayer.resumeAll()
             }
         @unknown default:
@@ -410,6 +577,7 @@ final class WaykinAppModel {
         realLocationProvider.onLocationSample = { [weak self] sample in
             guard let self, self.realWalkState == .active else { return }
             let result = self.movementEngine.ingestRealLocationSample(sample)
+            self.activeFieldTestReceipt?.recordMovement(result.diagnostic)
             self.liveAcceptedCount = self.movementEngine.acceptedSampleCount
             self.liveRejectedCount = self.movementEngine.rejectedSampleCount
 
@@ -425,11 +593,20 @@ final class WaykinAppModel {
                 context: context
             )
             self.realExperienceState = update.state
+            self.recordObservedMovementState(snapshot.isMoving ? .moving : .paused, at: snapshot.timestamp)
+            if case .companionWalk(let walkState) = update.state.runtimeState,
+               let event = walkState.lastEvent {
+                self.activeFieldTestReceipt?.recordWorldEvent(event)
+            }
+            update.semanticAudioCues.forEach {
+                self.activeFieldTestReceipt?.recordAudioCue($0, at: snapshot.timestamp)
+            }
             self.audioPlayer.handle(update.semanticAudioCues)
         }
 
         realLocationProvider.onAuthorizationChange = { [weak self] status in
             guard let self else { return }
+            self.activeFieldTestReceipt?.recordPermission(String(describing: status), at: self.fieldTestNow())
             switch status {
             case .authorizedWhenInUse, .authorizedAlways:
                 if self.realWalkState == .requestingPermission {
@@ -437,12 +614,20 @@ final class WaykinAppModel {
                 }
             case .denied, .restricted:
                 if self.realWalkState == .requestingPermission || self.isLiveSessionActive {
-                    self.failRealWalk(message: "Location access is required for a real walk. Demo Walk is still available.")
+                    self.failRealWalk(
+                        message: "Location access is required for a real walk. Demo Walk is still available.",
+                        outcome: .permissionDenied,
+                        errorCategory: .permissionDenied
+                    )
                 }
             case .notDetermined:
                 break
             @unknown default:
-                self.failRealWalk(message: "Location authorization is unavailable. Demo Walk is still available.")
+                self.failRealWalk(
+                    message: "Location authorization is unavailable. Demo Walk is still available.",
+                    outcome: .invalidState,
+                    errorCategory: .invalidState
+                )
             }
         }
 
@@ -451,10 +636,20 @@ final class WaykinAppModel {
             self.liveSignalState = state
             switch state {
             case .failed:
-                self.failRealWalk(message: "Location became unavailable. The walk was stopped safely.")
+                self.activeFieldTestReceipt?.recordProviderFailure(.providerUnavailable, at: self.fieldTestNow())
+                self.failRealWalk(
+                    message: "Location became unavailable. The walk was stopped safely.",
+                    outcome: .providerFailed,
+                    errorCategory: .providerUnavailable
+                )
             case .unavailable:
                 if self.isLiveSessionActive {
-                    self.failRealWalk(message: "Location access is unavailable. The walk was stopped safely.")
+                    self.activeFieldTestReceipt?.recordProviderFailure(.providerUnavailable, at: self.fieldTestNow())
+                    self.failRealWalk(
+                        message: "Location access is unavailable. The walk was stopped safely.",
+                        outcome: .providerFailed,
+                        errorCategory: .providerUnavailable
+                    )
                 }
             case .degraded:
                 self.demoMessage = "Location signal is temporarily weak."
@@ -470,24 +665,103 @@ final class WaykinAppModel {
             try movementEngine.pauseSession()
             realLocationProvider.stopUpdatingLocation()
             audioPlayer.pauseAll()
+            let now = fieldTestNow()
+            activeFieldTestReceipt?.recordSessionTransition(from: .active, to: .paused, at: now)
+            activeFieldTestReceipt?.recordAudioLifecycle("pause", at: now)
             realWalkState = .paused
             lifecycleSuspendedRealWalk = true
         } catch {
-            failRealWalk(message: "The real walk was stopped safely after an interruption.")
+            failRealWalk(
+                message: "The real walk was stopped safely after an interruption.",
+                outcome: .interrupted,
+                errorCategory: .invalidState
+            )
         }
     }
 
-    private func failRealWalk(message: String) {
+    private func failRealWalk(
+        message: String,
+        outcome: FieldTestOutcome,
+        errorCategory: FieldTestErrorCategory
+    ) {
+        let endedAt = fieldTestNow()
+        let priorState = realWalkState
         realLocationProvider.stopUpdatingLocation()
         audioPlayer.stopAll(fadeOut: false)
+        activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
+        activeFieldTestReceipt?.recordSessionTransition(from: fieldTestState(for: priorState), to: .failed, at: endedAt)
+        let endedSession: MovementSession?
         if movementEngine.currentSession != nil {
-            _ = try? movementEngine.endSession()
+            endedSession = try? movementEngine.endSession()
+        } else {
+            endedSession = nil
         }
         realExperienceState = nil
         realExperienceContext = nil
         lifecycleSuspendedRealWalk = false
         realWalkState = .failed
         demoMessage = message
+        finishFieldTestReceipt(
+            session: endedSession,
+            outcome: outcome,
+            endingBond: companion.bondLevel,
+            memoryWritten: false,
+            persistence: .notAttempted,
+            errorCategory: errorCategory,
+            endedAt: endedAt
+        )
+    }
+
+    private func recordObservedMovementState(_ state: MovementState, at timestamp: Date) {
+        activeFieldTestReceipt?.recordMovementStateTransition(
+            from: lastObservedMovementState,
+            to: state,
+            at: timestamp
+        )
+        lastObservedMovementState = state
+    }
+
+    private func finishFieldTestReceipt(
+        session: MovementSession?,
+        outcome: FieldTestOutcome,
+        endingBond: Int,
+        memoryWritten: Bool,
+        persistence: FieldTestPersistenceResult,
+        errorCategory: FieldTestErrorCategory? = nil,
+        endedAt: Date
+    ) {
+        guard let builder = activeFieldTestReceipt else { return }
+        activeFieldTestReceipt = nil
+        let receipt = builder.finish(
+            session: session,
+            outcome: outcome,
+            endingBond: endingBond,
+            memoryWritten: memoryWritten,
+            persistence: persistence,
+            errorCategory: errorCategory,
+            endedAt: endedAt
+        )
+        guard let fieldTestReceiptStore else { return }
+        do {
+            latestFieldTestReceiptURL = try fieldTestReceiptStore.save(receipt)
+            fieldTestReceiptError = nil
+        } catch let error as FieldTestReceiptStoreError {
+            fieldTestReceiptError = error
+        } catch {
+            fieldTestReceiptError = .writeFailed
+        }
+    }
+
+    private func fieldTestState(for state: RealWalkSessionState) -> FieldTestSessionState {
+        switch state {
+        case .idle: .idle
+        case .requestingPermission: .requestingPermission
+        case .active: .active
+        case .paused: .paused
+        case .ending: .ending
+        case .completed: .completed
+        case .failed: .failed
+        }
     }
 }
 

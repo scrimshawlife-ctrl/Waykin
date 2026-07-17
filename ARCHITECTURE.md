@@ -42,6 +42,20 @@ SessionMemory + Bond
 
 Persistence supports Bond and concise memories. It is not a generalized backend or content platform.
 
+## Local Field Receipt
+
+```text
+Existing runtime signals
+      ↓
+Local receipt observer
+      ↓
+Privacy-filtered JSON receipt
+```
+
+`FieldTestReceiptBuilder` observes existing session, movement-integrity, event, audio, lifecycle, permission, and persistence seams. It aggregates high-frequency accepted samples and records a sparse semantic timeline without coordinates, route geometry, provider error strings, or personal memory text. The observer does not select events, request cues, calculate movement, change Bond, or write normal memories.
+
+`FileFieldTestReceiptStore` writes atomically to the app's Application Support directory, retains at most 20 receipts, and never transfers them over a network. Receipt storage is separate from SwiftData session-memory persistence.
+
 ## Presentation Boundaries
 
 SwiftUI and MapKit consume state from the core. They do not own gameplay rules.
@@ -57,6 +71,7 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 ## Deferred Seams
 
 - Manual physical-device GPS and audio validation.
+- Review of local field receipts against manual subjective notes.
 - Device-specific calibration of the conservative walking integrity thresholds.
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.

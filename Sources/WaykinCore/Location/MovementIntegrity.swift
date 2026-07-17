@@ -65,14 +65,14 @@ public struct LocationSample: Equatable, Sendable {
     }
 }
 
-public enum MovementAccuracyBucket: String, Equatable, Sendable {
+public enum MovementAccuracyBucket: String, Codable, Equatable, Sendable {
     case invalid
     case precise
     case usable
     case poor
 }
 
-public enum MovementSampleDisposition: String, Equatable, Sendable {
+public enum MovementSampleDisposition: String, Codable, Equatable, Sendable {
     case accepted
     case awaitingFreshAnchor
     case rejectedInvalid

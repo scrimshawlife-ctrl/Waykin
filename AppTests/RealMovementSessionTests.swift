@@ -135,7 +135,8 @@ final class RealMovementSessionTests: XCTestCase {
             movementEngine: MovementEngine(
                 integrityConfiguration: MovementIntegrityConfiguration(speedWindowSize: 1)
             ),
-            realLocationProvider: provider
+            realLocationProvider: provider,
+            fieldTestReceiptStore: nil
         )
     }
 

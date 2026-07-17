@@ -7,6 +7,7 @@
 | `ARCHITECTURE.md` | High-level engine boundaries and data flow |
 | `KNOWN_LIMITATIONS.md` | Explicitly classified validated / partial / NOT_COMPUTABLE gates |
 | `docs/PHYSICAL_DEVICE_WALK_VALIDATION.md` | Preflight checklist and manual 5–10 minute COMPANION_WALK protocol for physical iPhone |
+| `docs/FIELD_TEST_PROTOCOL.md` | First five-walk evidence gate, receipt extraction, subjective notes, and stop conditions |
 | `docs/assets/BRAND_GUIDE.md` | Visual identity, palette, provenance, and asset usage rules |
 | `docs/assets/screenshots/README.md` | Note on current lack of real screenshots vs concept visuals |
 | `WAYKIN_MPOC_IMPLEMENTATION_RECEIPT.md` | Historical MPOC implementation snapshot |
