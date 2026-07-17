@@ -52,11 +52,13 @@ struct CompanionEntityFactory {
         let indicator = model(
             name: "StatusIndicator",
             mesh: .generateSphere(radius: 0.025),
-            color: .white
+            color: UIColor.white
         )
         indicator.position = [0, configuration.groundOffsetMeters + 0.77, 0]
 
-        [shadow, body, head, leftEar, rightEar, tail, core, indicator].forEach(root.addChild)
+        [shadow, body, head, leftEar, rightEar, tail, core, indicator].forEach {
+            root.addChild($0)
+        }
         root.scale = SIMD3<Float>(repeating: configuration.companionHeightMeters / 0.72)
         return root
     }
