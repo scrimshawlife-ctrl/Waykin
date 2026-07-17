@@ -107,7 +107,8 @@ struct ARSessionShellView: View {
         _ identifier: String
     ) -> some View {
         Button(title) { controller.setCompanionState(state) }
-            .buttonStyle(controller.companionState == state ? .borderedProminent : .bordered)
+            .buttonStyle(.bordered)
+            .tint(controller.companionState == state ? .accentColor : .secondary)
             .accessibilityIdentifier(identifier)
     }
 
