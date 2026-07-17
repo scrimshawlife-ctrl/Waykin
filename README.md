@@ -25,7 +25,7 @@ Waykin/
 │   │   ├── Diagnostics/        SessionReceipt — field-test diagnostics per session
 │   │   └── Recommendation/     RecommendationEngine (time/weather/history scoring)
 │   └── WaykinSim/              waykin-sim: the 2-day demo scenario on macOS
-├── Tests/WaykinCoreTests/      23 unit tests incl. the modularity proof
+├── Tests/WaykinCoreTests/      29 unit tests incl. the modularity proof
 ├── Makefile                    make build / test / demo / ios / ui-test
 ├── ci/ci.yml                   package tests + demo + iOS build + UI tests
 └── App/                        iOS app (SwiftUI · RealityKit · ARKit · SwiftData)
@@ -50,7 +50,7 @@ User → Movement Engine → Experience Engine → Companion Intelligence → Me
 Requires Swift 5.9+ (any Mac with Xcode 15+).
 
 ```bash
-swift test          # 23 tests across all five pillars
+swift test          # 29 tests across all five pillars
 swift run waykin-sim
 ```
 

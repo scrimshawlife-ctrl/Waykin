@@ -33,13 +33,18 @@ public struct ExperienceContext {
     public var locationName: String
     public var timeOfDay: TimeOfDay
     public var weather: Weather
+    /// 0…1 — how well the companion knows this place (from LocationMemory
+    /// visit history; ~3 visits saturates it).
+    public var placeFamiliarity: Double
 
     public init(companion: Companion, locationName: String,
-                timeOfDay: TimeOfDay = .afternoon, weather: Weather = .clear) {
+                timeOfDay: TimeOfDay = .afternoon, weather: Weather = .clear,
+                placeFamiliarity: Double = 0) {
         self.companion = companion
         self.locationName = locationName
         self.timeOfDay = timeOfDay
         self.weather = weather
+        self.placeFamiliarity = min(1, max(0, placeFamiliarity))
     }
 }
 

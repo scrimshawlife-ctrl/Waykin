@@ -172,7 +172,7 @@ final class ExperienceTests: XCTestCase {
                         summary: "Reach the overlook before the sun dips.",
                         difficulty: .moderate) { SunsetChaseExperience() }
 
-        XCTAssertEqual(engine.available.count, 4)
+        XCTAssertEqual(engine.available.count, 5)
         let experience = try! XCTUnwrap(engine.makeExperience(id: "sunset-chase"))
         let runner = ExperienceRunner(experience: experience, context: makeContext())
         _ = runner.begin()

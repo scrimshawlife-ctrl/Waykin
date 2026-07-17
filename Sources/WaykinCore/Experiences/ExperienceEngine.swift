@@ -41,6 +41,10 @@ public final class ExperienceEngine {
                         name: "Future Self",
                         summary: "A ghost of a slightly better you stays ahead. Catch it.",
                         difficulty: .moderate) { FutureSelfExperience() }
+        engine.register(id: WanderingPathsExperience.experienceID,
+                        name: "Wandering Paths",
+                        summary: "An open walk where the world stirs around you.",
+                        difficulty: .relaxed) { WanderingPathsExperience() }
         return engine
     }
 

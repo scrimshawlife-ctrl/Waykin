@@ -127,12 +127,14 @@ struct SessionView: View {
               let brain = appState.companionEngine else { return }
         registration = reg
         let hour = Calendar.current.component(.hour, from: Date())
+        let visits = appState.memoryEngine.locationMemory(named: locationService.locationName)?.visitCount ?? 0
         runner = ExperienceRunner(
             experience: experience,
             context: ExperienceContext(companion: brain.companion,
                                        locationName: locationService.locationName,
                                        timeOfDay: .from(hour: hour),
-                                       weather: .clear))
+                                       weather: .clear,
+                                       placeFamiliarity: min(1, Double(visits) / 3)))
     }
 
     private func start() {
