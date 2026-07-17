@@ -77,7 +77,9 @@ struct CompanionEntityFactory {
         indicator.name = "StatusIndicator"
         indicator.position = [0, 0.76, 0]
 
-        [shadow, body, head, leftEar, rightEar, tail, core, indicator].forEach(root.addChild)
+        for child in [shadow, body, head, leftEar, rightEar, tail, core, indicator] {
+            root.addChild(child)
+        }
         return root
     }
 }
