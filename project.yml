@@ -28,6 +28,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.waykin.arlab
+        PRODUCT_NAME: "Waykin AR Lab"
+        INFOPLIST_KEY_CFBundleDisplayName: "Waykin AR Lab"
         INFOPLIST_KEY_NSCameraUsageDescription: "Waykin AR Lab uses the camera to validate augmented-reality tracking and placement."
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
@@ -65,16 +67,19 @@ schemes:
   Waykin:
     build:
       targets:
-        WaykinApp: all
+        WaykinARLab: all
+        WaykinApp: [test]
     test:
       targets:
         - WaykinTests
         - WaykinUITests
     run:
       config: Debug
+      executable: WaykinARLab
   WaykinARLab:
     build:
       targets:
         WaykinARLab: all
     run:
       config: Debug
+      executable: WaykinARLab
