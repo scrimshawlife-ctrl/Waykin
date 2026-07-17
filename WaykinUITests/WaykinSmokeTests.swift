@@ -75,6 +75,55 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertEqual(app.staticTexts.matching(identifier: "waykin.summary.receiptWrite").firstMatch.label, "WRITTEN")
     }
 
+    /// Fable accessibility pass: the active session must be understandable
+    /// through VoiceOver semantics alone — human presence description,
+    /// naturally-read metrics, stable control names, End always available,
+    /// no back navigation — without changing what the runtime does.
+    func testActiveSessionAccessibilitySemantics() {
+        launch(reset: true)
+
+        let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 5))
+        begin.tap()
+
+        // Companion presence: one element, human-worded value, no raw enums.
+        let presence = app.descendants(matching: .any).matching(identifier: "waykin.session.presence").firstMatch
+        XCTAssertTrue(presence.waitForExistence(timeout: 5))
+        let presenceValue = (presence.value as? String) ?? ""
+        XCTAssertTrue(presenceValue.contains("Lira"), "presence should name the companion: \(presenceValue)")
+        for rawToken in ["drawNear", "inactive", "rawValue"] {
+            XCTAssertFalse(presenceValue.contains(rawToken), "raw token in VoiceOver value: \(presenceValue)")
+        }
+
+        // Phrase and metrics are accessible and read naturally.
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.session.phrase").firstMatch.exists)
+        let elapsed = app.descendants(matching: .any).matching(identifier: "waykin.session.elapsed").firstMatch
+        let distance = app.descendants(matching: .any).matching(identifier: "waykin.session.distance").firstMatch
+        XCTAssertTrue(elapsed.exists)
+        XCTAssertTrue(distance.exists)
+        XCTAssertTrue(elapsed.label.hasPrefix("Elapsed time,"), "unexpected elapsed label: \(elapsed.label)")
+        XCTAssertTrue(distance.label.hasPrefix("Distance,"), "unexpected distance label: \(distance.label)")
+
+        // Controls: stable names, Pause becomes Resume, End stays available
+        // while paused, and back navigation stays unavailable.
+        let pause = app.buttons.matching(identifier: "waykin.session.pause").firstMatch
+        let end = app.buttons.matching(identifier: "waykin.session.end").firstMatch
+        XCTAssertTrue(pause.exists)
+        XCTAssertTrue(end.exists)
+        XCTAssertEqual(app.navigationBars.buttons.count, 0, "back must be unavailable mid-session")
+        pause.tap()
+        let resume = app.buttons.matching(identifier: "waykin.session.resume").firstMatch
+        XCTAssertTrue(resume.waitForExistence(timeout: 5))
+        XCTAssertTrue(end.exists, "End must remain available while paused")
+        resume.tap()
+
+        // Ending still reaches the summary with the memory intact.
+        app.buttons.matching(identifier: "waykin.session.runToEnd").firstMatch.tap()
+        end.tap()
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.screen").firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.summary.memory").firstMatch.exists)
+    }
+
     func testActiveSessionPrioritizesCompanionPresenceBeforeMovement() {
         launch(reset: true)
         let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch

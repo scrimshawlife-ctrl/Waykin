@@ -28,6 +28,26 @@ The local field-test receipt is engineering evidence only. It has no remote anal
 
 The recorded route is measurement support for the active Companion Walk only. It is not navigation-grade, does not provide route planning or guidance, and has no background-location guarantee. Battery impact is not characterized.
 
+## Accessibility (Active Session)
+
+Code-implemented and covered by presentation/UI tests (OBSERVED in simulator):
+
+- The companion presence exposes a human-worded VoiceOver value derived from existing state (no raw enum names, event IDs, numeric pressure values, or debug labels).
+- Pressure states are distinguishable without color: ring thickness (geometry), the status text, and the VoiceOver description all change with pursuit state.
+- Elapsed time and distance expose natural-language VoiceOver labels ("Elapsed time, 4 minutes 12 seconds").
+- VoiceOver order within the presence surface is: companion identity → presence → world phrase → metrics → status.
+- With Reduce Motion enabled, the continuous presence pulse is disabled at the presentation layer; state changes remain perceptible through scale, text, and VoiceOver values. Pause/resume never resets semantic state.
+- Metric and status rows reflow vertically instead of overflowing at large Dynamic Type sizes; the world phrase cannot be silently truncated. The session screen scrolls.
+- The compact map is a single inert VoiceOver element describing its limited role; it exposes no coordinates or marker children.
+
+INFERRED only (no physical evidence yet):
+
+- Outdoor glanceability, contrast under sunlight, and real-device VoiceOver/Dynamic Type behavior remain unverified until a physical outdoor pass. Do not mark these PASS from simulator evidence.
+
+DEFERRED_DUE_TO_ACTIVE_CODEX_OWNERSHIP:
+
+- Enlarging the Pause/Resume/End hit targets to a guaranteed ~44×44 pt (requires `App/WaykinApp.swift`, actively owned by Codex). Current bordered buttons with icon+text labels are close to, but not verified at, that threshold.
+
 ## Deferred Product Scope
 
 - Walking is the MVP focus.

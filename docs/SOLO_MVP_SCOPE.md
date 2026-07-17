@@ -30,6 +30,7 @@ Local field-test receipts may observe existing runtime signals for bounded engin
 - One deterministic Demo Mode.
 - One physical-device walk path.
 - Minimal session, summary, and memory UI.
+- Baseline active-session accessibility: state-derived VoiceOver descriptions, reduced-motion static presentation, Dynamic Type reflow, and non-color state channels are part of the MVP presentation quality bar — they present existing runtime state and never add gameplay.
 
 ## Explicit Non-Goals
 

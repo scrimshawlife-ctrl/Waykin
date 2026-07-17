@@ -101,6 +101,67 @@ struct CompanionPresencePresentation {
     var pressureLabel: String { pursuitState == .inactive ? "Path quiet" : "Pressure \(pursuitState.rawValue)" }
     var audioLabel: String { audioCueKind == nil ? "Sound quiet" : "Sound active" }
     var animationKey: String { "\(behavior.rawValue)-\(pursuitState.rawValue)-\(eventKind?.rawValue ?? "none")" }
+
+    // MARK: Accessibility presentation (VoiceOver-only; never alters the
+    // visible phrases or any runtime state mapping)
+
+    /// Human wording for the current companion behavior. Raw enum names must
+    /// never reach VoiceOver.
+    var behaviorAccessibilityDescription: String {
+        switch behavior {
+        case .idle: "waiting quietly"
+        case .follow: "staying close"
+        case .lead: "moving ahead"
+        case .celebrate: "celebrating with you"
+        case .observe: "watching the path"
+        case .drawNear: "drawing near"
+        case .rest: "resting beside you"
+        }
+    }
+
+    /// Pressure category as a short sentence. No numeric values, no enum names.
+    var pressureAccessibilityDescription: String {
+        switch pursuitState {
+        case .inactive: "The path is calm."
+        case .noticed: "Something has changed on the path."
+        case .approaching: "The pressure is building."
+        case .close: "The pressure is very close."
+        case .fading: "The pressure is fading."
+        }
+    }
+
+    /// Combined description for the presence visualization, e.g.
+    /// "Lira, staying close. The path is calm."
+    var presenceAccessibilityValue: String {
+        if isOpening { return "\(companionName) is listening." }
+        return "\(companionName), \(behaviorAccessibilityDescription). \(pressureAccessibilityDescription)"
+    }
+
+    var audioAccessibilityLabel: String {
+        audioCueKind == nil ? "Sound, quiet" : "Sound, active"
+    }
+
+    /// "Elapsed time, 4 minutes 12 seconds" — avoids VoiceOver reading "4:12"
+    /// as bare digits and punctuation.
+    var elapsedAccessibilityValue: String {
+        let total = max(0, Int(elapsedSeconds))
+        let minutes = total / 60
+        let seconds = total % 60
+        let secondsPart = "\(seconds) second\(seconds == 1 ? "" : "s")"
+        if minutes == 0 { return "Elapsed time, \(secondsPart)" }
+        return "Elapsed time, \(minutes) minute\(minutes == 1 ? "" : "s") \(secondsPart)"
+    }
+
+    var distanceAccessibilityValue: String {
+        let meters = max(0, Int(distanceMeters))
+        return "Distance, \(meters) meter\(meters == 1 ? "" : "s")"
+    }
+
+    /// Geometry channel for pressure so the state never depends on color
+    /// alone: the outer ring thickens as pressure rises.
+    var pressureStrokeWidth: CGFloat {
+        2 + pressureIntensity * 4
+    }
 }
 
 enum CompanionPresenceStyle {
@@ -128,20 +189,24 @@ struct CompanionPresenceView: View {
                     Text(presentation.companionName)
                         .font(.title2.bold())
                         .accessibilityIdentifier("waykin.session.companionName")
+                        .accessibilitySortPriority(100)
                     Text("Companion Walk")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("waykin.session.screen")
+                        .accessibilitySortPriority(99)
                 }
                 Spacer()
                 Text("Bond \(presentation.bondLevel)")
                     .font(.headline)
                     .accessibilityIdentifier("waykin.session.bond")
+                    .accessibilitySortPriority(98)
             }
 
             ZStack {
                 Circle()
-                    .stroke(Color.white.opacity(0.16 + presentation.pressureIntensity * 0.28), lineWidth: 2)
+                    .stroke(Color.white.opacity(0.16 + presentation.pressureIntensity * 0.28),
+                            lineWidth: presentation.pressureStrokeWidth)
                     .frame(width: 176, height: 176)
                 Circle()
                     .stroke(Color(red: 0.42, green: 0.82, blue: 0.78).opacity(0.48), lineWidth: 5)
@@ -157,26 +222,29 @@ struct CompanionPresenceView: View {
             .frame(height: 190)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(presentation.companionName) presence")
-            .accessibilityValue("\(presentation.behavior.rawValue), \(presentation.pressureLabel.lowercased())")
+            .accessibilityValue(presentation.presenceAccessibilityValue)
             .accessibilityIdentifier("waykin.session.presence")
+            .accessibilitySortPriority(90)
 
             Text(presentation.phrase)
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 48)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("waykin.session.phrase")
+                .accessibilitySortPriority(80)
 
-            HStack(spacing: 24) {
-                Label(presentation.pressureLabel, systemImage: "circle.dotted")
-                    .accessibilityIdentifier("waykin.session.pressure")
-                Label(presentation.audioLabel, systemImage: presentation.audioCueKind == nil ? "speaker.slash" : "speaker.wave.2")
-                    .accessibilityIdentifier("waykin.session.audioCue")
+            // Metrics before status for VoiceOver (identity → phrase →
+            // metrics → status); visual order is unchanged below.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 24) { statusLabels }
+                VStack(alignment: .leading, spacing: 8) { statusLabels }
             }
             .font(.callout)
 
-            HStack(spacing: 48) {
-                metric(value: presentation.elapsedText, label: "Time", identifier: "waykin.session.elapsed")
-                metric(value: presentation.distanceText, label: "Distance", identifier: "waykin.session.distance")
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 48) { metrics }
+                VStack(spacing: 12) { metrics }
             }
         }
         .foregroundStyle(.white)
@@ -192,14 +260,38 @@ struct CompanionPresenceView: View {
         }
     }
 
-    private func metric(value: String, label: String, identifier: String) -> some View {
+    @ViewBuilder private var statusLabels: some View {
+        Label(presentation.pressureLabel, systemImage: "circle.dotted")
+            .accessibilityLabel(presentation.pressureAccessibilityDescription)
+            .accessibilityIdentifier("waykin.session.pressure")
+            .accessibilitySortPriority(60)
+        Label(presentation.audioLabel, systemImage: presentation.audioCueKind == nil ? "speaker.slash" : "speaker.wave.2")
+            .accessibilityLabel(presentation.audioAccessibilityLabel)
+            .accessibilityIdentifier("waykin.session.audioCue")
+            .accessibilitySortPriority(59)
+    }
+
+    @ViewBuilder private var metrics: some View {
+        metric(value: presentation.elapsedText, label: "Time",
+               identifier: "waykin.session.elapsed",
+               accessibilityLabel: presentation.elapsedAccessibilityValue,
+               sortPriority: 70)
+        metric(value: presentation.distanceText, label: "Distance",
+               identifier: "waykin.session.distance",
+               accessibilityLabel: presentation.distanceAccessibilityValue,
+               sortPriority: 69)
+    }
+
+    private func metric(value: String, label: String, identifier: String,
+                        accessibilityLabel: String, sortPriority: Double) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.title2.monospacedDigit().bold())
             Text(label).font(.caption).foregroundStyle(.secondary)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label), \(value)")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityIdentifier(identifier)
+        .accessibilitySortPriority(sortPriority)
     }
 
     private func animatePresence() {
@@ -238,7 +330,12 @@ struct CompactSessionMap: View {
             .id("\(latitude ?? 0)-\(longitude ?? 0)")
             .frame(height: 76)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-            .accessibilityLabel(latitude == nil ? "Map waiting for location" : "Map showing current location context")
+            // One inert element: VoiceOver gets the role description only —
+            // no marker child, no coordinates, no focus trap inside MapKit.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(latitude == nil
+                ? "Map, waiting for location. Decorative context only."
+                : "Map, general area context. Decorative context only.")
             .accessibilityIdentifier("waykin.session.map")
         }
     }

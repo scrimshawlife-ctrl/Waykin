@@ -64,12 +64,108 @@ final class CompanionPresencePresentationTests: XCTestCase {
         XCTAssertEqual(makePresentation(event: .bondMoment).closingPhrase, "The path remembers.")
     }
 
+    // MARK: - Accessibility hardening (Fable active-session pass)
+
+    func testPresenceAccessibilityValueCoversEveryBehaviorWithHumanWording() {
+        let expected: [CompanionBehaviorState: String] = [
+            .idle: "Lira, waiting quietly. The path is calm.",
+            .follow: "Lira, staying close. The path is calm.",
+            .lead: "Lira, moving ahead. The path is calm.",
+            .celebrate: "Lira, celebrating with you. The path is calm.",
+            .observe: "Lira, watching the path. The path is calm.",
+            .drawNear: "Lira, drawing near. The path is calm.",
+            .rest: "Lira, resting beside you. The path is calm."
+        ]
+        for (behavior, value) in expected {
+            XCTAssertEqual(makePresentation(behavior: behavior).presenceAccessibilityValue, value)
+        }
+    }
+
+    func testPressureAccessibilityDescriptionCoversEveryPursuitStateDistinctly() {
+        let states: [PursuitState] = [.inactive, .noticed, .approaching, .close, .fading]
+        let descriptions = states.map { makePresentation(pursuit: $0).pressureAccessibilityDescription }
+        XCTAssertEqual(Set(descriptions).count, states.count, "every pursuit state must be distinguishable")
+        for description in descriptions {
+            XCTAssertFalse(description.isEmpty)
+            XCTAssertTrue(description.hasSuffix("."), "should read as a sentence: \(description)")
+        }
+    }
+
+    func testAccessibilityValuesExposeNoRawEnumOrDebugTerminology() {
+        let rawTokens = ["drawNear", "inactive", "quietInterval", "pursuitBegins",
+                         "pursuitIntensifies", "bondMoment", "waykin.", "_", "rawValue"]
+        for behavior in [CompanionBehaviorState.idle, .follow, .lead, .celebrate, .observe, .drawNear, .rest] {
+            for pursuit in [PursuitState.inactive, .noticed, .approaching, .close, .fading] {
+                let presentation = makePresentation(behavior: behavior, pursuit: pursuit)
+                let value = presentation.presenceAccessibilityValue
+                for token in rawTokens {
+                    XCTAssertFalse(value.contains(token), "raw token '\(token)' leaked into: \(value)")
+                }
+                XCTAssertNil(value.rangeOfCharacter(from: .decimalDigits),
+                             "numeric pressure must not be exposed: \(value)")
+            }
+        }
+    }
+
+    func testOpeningStateHasValidAccessibilityDescription() {
+        let opening = makePresentation(isOpening: true)
+        XCTAssertEqual(opening.presenceAccessibilityValue, "Lira is listening.")
+        XCTAssertEqual(opening.elapsedAccessibilityValue, "Elapsed time, 0 seconds")
+        XCTAssertEqual(opening.distanceAccessibilityValue, "Distance, 0 meters")
+    }
+
+    func testMetricAccessibilityValuesReadNaturally() {
+        let mid = makePresentation(elapsedSeconds: 252, distanceMeters: 380.9)
+        XCTAssertEqual(mid.elapsedAccessibilityValue, "Elapsed time, 4 minutes 12 seconds")
+        XCTAssertEqual(mid.distanceAccessibilityValue, "Distance, 380 meters")
+
+        let singular = makePresentation(elapsedSeconds: 61, distanceMeters: 1)
+        XCTAssertEqual(singular.elapsedAccessibilityValue, "Elapsed time, 1 minute 1 second")
+        XCTAssertEqual(singular.distanceAccessibilityValue, "Distance, 1 meter")
+
+        let underMinute = makePresentation(elapsedSeconds: 42, distanceMeters: 0)
+        XCTAssertEqual(underMinute.elapsedAccessibilityValue, "Elapsed time, 42 seconds")
+    }
+
+    func testCalmAndPressureStatesDistinguishableWithoutColor() {
+        let calm = makePresentation(pursuit: .inactive)
+        let close = makePresentation(pursuit: .close)
+        // Geometry channel: ring thickness grows with pressure.
+        XCTAssertGreaterThan(close.pressureStrokeWidth, calm.pressureStrokeWidth)
+        // Text channels: status label and VoiceOver description both differ.
+        XCTAssertNotEqual(close.pressureLabel, calm.pressureLabel)
+        XCTAssertNotEqual(close.pressureAccessibilityDescription, calm.pressureAccessibilityDescription)
+    }
+
+    func testReducedMotionIsStaticForEveryBehaviorAndPauseKeepsSemantics() {
+        for behavior in [CompanionBehaviorState.idle, .follow, .lead, .celebrate, .observe, .drawNear, .rest] {
+            XCTAssertNil(makePresentation(behavior: behavior).animationDuration(reduceMotion: true),
+                         "reduced motion must remove continuous animation for \(behavior.rawValue)")
+        }
+        // Pausing never resets what the state means, with or without motion.
+        let active = makePresentation(behavior: .drawNear, pursuit: .approaching)
+        let paused = makePresentation(behavior: .drawNear, pursuit: .approaching, isPaused: true)
+        XCTAssertEqual(paused.presenceAccessibilityValue, active.presenceAccessibilityValue)
+        XCTAssertEqual(paused.phrase, active.phrase)
+        XCTAssertNil(paused.animationDuration(reduceMotion: false))
+        XCTAssertNil(paused.animationDuration(reduceMotion: true))
+    }
+
+    func testClosingAccessibilityReflectsOnlyActualFinalState() {
+        XCTAssertEqual(makePresentation(pursuit: .fading).closingPhrase, "The presence faded.")
+        XCTAssertEqual(makePresentation().closingPhrase, "Lira stayed with you.")
+        // The closing line never invents an event that did not occur.
+        XCTAssertEqual(makePresentation(event: nil).closingPhrase, "Lira stayed with you.")
+    }
+
     private func makePresentation(
         behavior: CompanionBehaviorState = .follow,
         pursuit: PursuitState = .inactive,
         event: WorldEventKind? = nil,
         isOpening: Bool = false,
-        isPaused: Bool = false
+        isPaused: Bool = false,
+        elapsedSeconds: TimeInterval = 0,
+        distanceMeters: Double = 0
     ) -> CompanionPresencePresentation {
         CompanionPresencePresentation(
             companionName: "Lira",
@@ -78,8 +174,8 @@ final class CompanionPresencePresentationTests: XCTestCase {
             pursuitState: pursuit,
             eventKind: event,
             audioCueKind: nil,
-            elapsedSeconds: 0,
-            distanceMeters: 0,
+            elapsedSeconds: elapsedSeconds,
+            distanceMeters: distanceMeters,
             isPaused: isPaused,
             isOpening: isOpening,
             latitude: nil,
