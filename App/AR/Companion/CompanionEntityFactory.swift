@@ -49,13 +49,15 @@ struct CompanionEntityFactory {
         head.scale = [1.0, 0.92, 1.0]
         head.position = [0, 0.49, -0.055]
 
-        let leftEar = ModelEntity(mesh: .generateCone(height: 0.18, radius: 0.065), materials: [accentMaterial])
+        let leftEar = ModelEntity(mesh: .generateSphere(radius: 0.07), materials: [accentMaterial])
         leftEar.name = "LeftEar"
+        leftEar.scale = [0.7, 1.8, 0.55]
         leftEar.position = [-0.075, 0.64, -0.04]
         leftEar.orientation = simd_quatf(angle: -.12, axis: [0, 0, 1])
 
-        let rightEar = ModelEntity(mesh: .generateCone(height: 0.18, radius: 0.065), materials: [accentMaterial])
+        let rightEar = ModelEntity(mesh: .generateSphere(radius: 0.07), materials: [accentMaterial])
         rightEar.name = "RightEar"
+        rightEar.scale = [0.7, 1.8, 0.55]
         rightEar.position = [0.075, 0.64, -0.04]
         rightEar.orientation = simd_quatf(angle: .12, axis: [0, 0, 1])
 
