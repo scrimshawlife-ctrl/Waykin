@@ -7,9 +7,10 @@ import WaykinCore
 struct WaykinARView: UIViewRepresentable {
     @Binding var capabilityState: ARCapabilityState
     let sessionCoordinator: ARSessionCoordinator
+    let presentationController: ARPresentationController
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(presentationController: presentationController)
     }
 
     func makeUIView(context: Context) -> ARView {
@@ -36,30 +37,24 @@ struct WaykinARView: UIViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject {
-        private let registry = AREntityRegistry()
-        private lazy var placementResolver = ARPlacementResolver(registry: registry)
-        private weak var arView: ARView?
+        private let presentationController: ARPresentationController
+
+        init(presentationController: ARPresentationController) {
+            self.presentationController = presentationController
+        }
 
         func attach(to arView: ARView) {
-            self.arView = arView
+            presentationController.attach(to: arView)
             let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             arView.addGestureRecognizer(tap)
         }
 
         @objc private func handleTap() {
-            guard let arView else { return }
-            let intent = SpatialIntent(
-                placement: .groundPlane,
-                distanceBand: .near,
-                bearing: .ahead,
-                scaleClass: .discovery,
-                persistence: .transient
-            )
-            _ = placementResolver.placePlaceholder(id: "ar1.placeholder", intent: intent, in: arView)
+            presentationController.placeCompanion()
         }
 
         func clear() {
-            placementResolver.clear()
+            presentationController.clear()
         }
     }
 }
@@ -68,39 +63,95 @@ struct WaykinARView: UIViewRepresentable {
 struct ARSessionShellView: View {
     @State private var capabilityState: ARCapabilityState = .checking
     @State private var sessionCoordinator = ARSessionCoordinator()
+    @State private var presentationController = ARPresentationController()
+    @State private var controlsExpanded = true
 
     var body: some View {
         ZStack(alignment: .top) {
             WaykinARView(
                 capabilityState: $capabilityState,
-                sessionCoordinator: sessionCoordinator
+                sessionCoordinator: sessionCoordinator,
+                presentationController: presentationController
             )
             .ignoresSafeArea()
 
-            Text(statusText)
-                .font(.callout.weight(.semibold))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: Capsule())
-                .padding(.top, 12)
-                .accessibilityIdentifier("waykin.ar.capabilityState")
+            VStack(spacing: 8) {
+                Text(statusText)
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .accessibilityIdentifier("waykin.ar.capabilityState")
+
+                if controlsExpanded {
+                    controlPanel
+                } else {
+                    Button("Show Controls") { controlsExpanded = true }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+            .padding(.top, 12)
+            .padding(.horizontal, 10)
         }
+    }
+
+    private var controlPanel: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Button("Place Lira") { presentationController.placeCompanion() }
+                    .accessibilityIdentifier("waykin.ar.placeCompanion")
+                Button("Clear") { presentationController.clear() }
+                    .accessibilityIdentifier("waykin.ar.clear")
+                Button("Hide") { controlsExpanded = false }
+            }
+            .buttonStyle(.borderedProminent)
+
+            HStack {
+                stateButton(.idle)
+                stateButton(.follow)
+                stateButton(.investigate)
+            }
+            HStack {
+                stateButton(.alert)
+                stateButton(.celebrate)
+                Button("Discovery") { presentationController.spawnDiscovery() }
+                    .accessibilityIdentifier("waykin.ar.spawnDiscovery")
+                Button("Threat") { presentationController.spawnThreat() }
+                    .accessibilityIdentifier("waykin.ar.spawnThreat")
+            }
+            .buttonStyle(.bordered)
+
+            Text("Entities: \(presentationController.registryCount) • State: \(presentationController.currentCompanionState.rawValue) • Result: \(presentationController.lastCommandResult?.rawValue ?? "none")")
+                .font(.caption2.monospaced())
+                .lineLimit(2)
+                .accessibilityIdentifier("waykin.ar.diagnostics")
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func stateButton(_ state: CompanionPresentationState) -> some View {
+        Button(state.rawValue.capitalized) {
+            presentationController.setCompanionState(state)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityIdentifier("waykin.ar.state.\(state.rawValue)")
     }
 
     private var statusText: String {
         switch capabilityState {
         case .checking:
-            return "Checking AR capability…"
+            "Checking AR capability…"
         case .available:
-            return "AR ready"
+            "AR ready"
         case .unsupported:
-            return "AR is not supported on this device"
+            "AR is not supported on this device"
         case .cameraDenied:
-            return "Camera access is required for AR"
+            "Camera access is required for AR"
         case .trackingLimited:
-            return "Move slowly while tracking recovers"
+            "Move slowly while tracking recovers"
         case .active:
-            return "Tap a detected surface to place a marker"
+            "Tap a surface or use Place Lira"
         }
     }
 }
