@@ -23,6 +23,6 @@ The current files are deterministic mono 16-bit PCM engineering tones at 22.05 k
 
 ## Failure And Replacement
 
-Missing or invalid files produce safe silence, one bounded debug diagnostic per asset name, and no session failure. The adapter does not repeatedly attempt a failed asset during the same app lifetime.
+Missing or invalid files produce safe silence, one bounded diagnostic per asset name, and no session failure. The adapter does not repeatedly attempt a failed asset during the same app lifetime. Adapter diagnostics may record planner, asset, session, player, route, interruption, and playback-request outcomes, but never prove that a person heard a cue. Stop and fade diagnostics record requests; `playbackStopped` is reserved for an observed player stop.
 
 To replace a cue, preserve its basename and `.wav` extension, verify ownership and licensing, keep duration and loudness within this contract, then run the focused audio tests and full validation suite. Adding cue kinds, channels, remote delivery, streaming, procedural audio, or environment packs is outside this contract and requires a separate scoped decision.

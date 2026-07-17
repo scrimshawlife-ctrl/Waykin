@@ -49,6 +49,7 @@ public enum FieldTestEntryCategory: String, Codable, Equatable, Sendable {
     case audioCueRequested
     case audioCueSuppressed
     case audioLifecycleAction
+    case audioDiagnostic
     case appLifecycleTransition
     case permissionTransition
     case providerFailure
@@ -64,6 +65,14 @@ public struct FieldTestEntry: Codable, Equatable, Sendable {
     public let accuracyBucket: MovementAccuracyBucket?
     public let stabilizedSpeedMetersPerSecond: Double?
     public let accumulatedDistance: Bool?
+    public let audioDiagnosticKind: AudioPlaybackDiagnosticKind?
+    public let audioCueKind: AudioCueKind?
+    public let audioDiagnosticReasonCode: AudioPlaybackReasonCode?
+    public let audioDiagnosticChannel: AudioDiagnosticChannel?
+    public let audioRouteCategory: AudioOutputRouteCategory?
+    public let audioRouteChangeReason: AudioRouteChangeReasonCode?
+    public let audioInterruptionResumeDisposition: AudioInterruptionResumeDisposition?
+    public let audioSessionPolicy: AudioSessionPolicyIdentifier?
 
     public init(
         timestamp: Date,
@@ -72,7 +81,15 @@ public struct FieldTestEntry: Codable, Equatable, Sendable {
         disposition: MovementSampleDisposition? = nil,
         accuracyBucket: MovementAccuracyBucket? = nil,
         stabilizedSpeedMetersPerSecond: Double? = nil,
-        accumulatedDistance: Bool? = nil
+        accumulatedDistance: Bool? = nil,
+        audioDiagnosticKind: AudioPlaybackDiagnosticKind? = nil,
+        audioCueKind: AudioCueKind? = nil,
+        audioDiagnosticReasonCode: AudioPlaybackReasonCode? = nil,
+        audioDiagnosticChannel: AudioDiagnosticChannel? = nil,
+        audioRouteCategory: AudioOutputRouteCategory? = nil,
+        audioRouteChangeReason: AudioRouteChangeReasonCode? = nil,
+        audioInterruptionResumeDisposition: AudioInterruptionResumeDisposition? = nil,
+        audioSessionPolicy: AudioSessionPolicyIdentifier? = nil
     ) {
         self.timestamp = timestamp
         self.category = category
@@ -85,6 +102,44 @@ public struct FieldTestEntry: Codable, Equatable, Sendable {
             self.stabilizedSpeedMetersPerSecond = nil
         }
         self.accumulatedDistance = accumulatedDistance
+        self.audioDiagnosticKind = audioDiagnosticKind
+        self.audioCueKind = audioCueKind
+        self.audioDiagnosticReasonCode = audioDiagnosticReasonCode
+        self.audioDiagnosticChannel = audioDiagnosticChannel
+        self.audioRouteCategory = audioRouteCategory
+        self.audioRouteChangeReason = audioRouteChangeReason
+        self.audioInterruptionResumeDisposition = audioInterruptionResumeDisposition
+        self.audioSessionPolicy = audioSessionPolicy
+    }
+}
+
+public struct FieldTestAudioDiagnosticSummary: Codable, Equatable, Sendable {
+    public var cueReceiptCounts: [String: Int]
+    public var plannerAcceptedCueCounts: [String: Int]
+    public var suppressionReasonCounts: [String: Int]
+    public var assetLifecycleCounts: [String: Int]
+    public var audioSessionLifecycleCounts: [String: Int]
+    public var playerLifecycleCounts: [String: Int]
+    public var playbackLifecycleCounts: [String: Int]
+    public var interruptionEventCounts: [String: Int]
+    public var routeChangeReasonCounts: [String: Int]
+    public var stopCount: Int
+    public var fadeCount: Int
+    public var lastRouteCategory: AudioOutputRouteCategory?
+
+    public init() {
+        cueReceiptCounts = [:]
+        plannerAcceptedCueCounts = [:]
+        suppressionReasonCounts = [:]
+        assetLifecycleCounts = [:]
+        audioSessionLifecycleCounts = [:]
+        playerLifecycleCounts = [:]
+        playbackLifecycleCounts = [:]
+        interruptionEventCounts = [:]
+        routeChangeReasonCounts = [:]
+        stopCount = 0
+        fadeCount = 0
+        lastRouteCategory = nil
     }
 }
 
@@ -110,6 +165,7 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
     public var bondDelta: Int
     public var memoryWritten: Bool
     public var finalErrorCategory: FieldTestErrorCategory?
+    public var audioDiagnostics: FieldTestAudioDiagnosticSummary
 
     public init(startingBond: Int) {
         durationSeconds = 0
@@ -133,11 +189,66 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         bondDelta = 0
         memoryWritten = false
         finalErrorCategory = nil
+        audioDiagnostics = FieldTestAudioDiagnosticSummary()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case durationSeconds
+        case activeDurationSeconds
+        case pausedDurationSeconds
+        case acceptedSampleCount
+        case rejectedSampleCount
+        case rejectionCounts
+        case accumulatedDistanceMeters
+        case finalMovementState
+        case maximumStabilizedSpeedMetersPerSecond
+        case averageStabilizedSpeedMetersPerSecond
+        case freshAnchorResetCount
+        case worldEventCounts
+        case semanticAudioCueCounts
+        case audioSuppressionCount
+        case interruptionCount
+        case lifecycleTransitionCount
+        case startingBond
+        case endingBond
+        case bondDelta
+        case memoryWritten
+        case finalErrorCategory
+        case audioDiagnostics
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        durationSeconds = try container.decode(TimeInterval.self, forKey: .durationSeconds)
+        activeDurationSeconds = try container.decode(TimeInterval.self, forKey: .activeDurationSeconds)
+        pausedDurationSeconds = try container.decode(TimeInterval.self, forKey: .pausedDurationSeconds)
+        acceptedSampleCount = try container.decode(Int.self, forKey: .acceptedSampleCount)
+        rejectedSampleCount = try container.decode(Int.self, forKey: .rejectedSampleCount)
+        rejectionCounts = try container.decode([String: Int].self, forKey: .rejectionCounts)
+        accumulatedDistanceMeters = try container.decode(Double.self, forKey: .accumulatedDistanceMeters)
+        finalMovementState = try container.decode(MovementState.self, forKey: .finalMovementState)
+        maximumStabilizedSpeedMetersPerSecond = try container.decode(Double.self, forKey: .maximumStabilizedSpeedMetersPerSecond)
+        averageStabilizedSpeedMetersPerSecond = try container.decode(Double.self, forKey: .averageStabilizedSpeedMetersPerSecond)
+        freshAnchorResetCount = try container.decode(Int.self, forKey: .freshAnchorResetCount)
+        worldEventCounts = try container.decode([String: Int].self, forKey: .worldEventCounts)
+        semanticAudioCueCounts = try container.decode([String: Int].self, forKey: .semanticAudioCueCounts)
+        audioSuppressionCount = try container.decode(Int.self, forKey: .audioSuppressionCount)
+        interruptionCount = try container.decode(Int.self, forKey: .interruptionCount)
+        lifecycleTransitionCount = try container.decode(Int.self, forKey: .lifecycleTransitionCount)
+        startingBond = try container.decode(Int.self, forKey: .startingBond)
+        endingBond = try container.decode(Int.self, forKey: .endingBond)
+        bondDelta = try container.decode(Int.self, forKey: .bondDelta)
+        memoryWritten = try container.decode(Bool.self, forKey: .memoryWritten)
+        finalErrorCategory = try container.decodeIfPresent(FieldTestErrorCategory.self, forKey: .finalErrorCategory)
+        audioDiagnostics = try container.decodeIfPresent(
+            FieldTestAudioDiagnosticSummary.self,
+            forKey: .audioDiagnostics
+        ) ?? FieldTestAudioDiagnosticSummary()
     }
 }
 
 public struct FieldTestReceipt: Codable, Equatable, Sendable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var receiptID: UUID
@@ -184,6 +295,7 @@ public final class FieldTestReceiptBuilder {
     private var pausedAt: Date?
     private var accumulatedPausedDuration: TimeInterval = 0
     private var lastWorldEventKey: String?
+    private var recordedSparseAudioEvidence: Set<String> = []
 
     public init(
         receiptID: UUID = UUID(),
@@ -291,6 +403,49 @@ public final class FieldTestReceiptBuilder {
         code == "stop" ? appendRequired(entry) : append(entry)
     }
 
+    public func recordAudioDiagnostic(_ diagnostic: AudioPlaybackDiagnostic) {
+        summarizeAudioDiagnostic(diagnostic)
+        let entry = FieldTestEntry(
+            timestamp: diagnostic.timestamp,
+            category: .audioDiagnostic,
+            code: diagnostic.kind.rawValue,
+            audioDiagnosticKind: diagnostic.kind,
+            audioCueKind: diagnostic.cueKind,
+            audioDiagnosticReasonCode: diagnostic.reasonCode,
+            audioDiagnosticChannel: diagnostic.channel,
+            audioRouteCategory: diagnostic.routeCategory,
+            audioRouteChangeReason: diagnostic.routeChangeReason,
+            audioInterruptionResumeDisposition: diagnostic.interruptionResumeDisposition,
+            audioSessionPolicy: diagnostic.sessionPolicy
+        )
+        switch diagnostic.kind {
+        case .playbackStopRequested, .playbackFadeRequested, .playbackStopped:
+            appendRequired(entry)
+        case .cueReceived:
+            appendSparse(entry, key: "cueReceived")
+        case .plannerSuppressed:
+            appendSparse(entry, key: "plannerSuppressed:\(diagnostic.reasonCode?.rawValue ?? "unknown")")
+        case .assetMissing,
+             .playerInitializationFailed,
+             .audioSessionConfigurationFailed,
+             .playerObservedActive,
+             .playbackDidNotStart:
+            appendSparse(entry, key: diagnostic.kind.rawValue)
+        case .playbackInterrupted, .playbackInterruptionEnded:
+            appendSparse(
+                entry,
+                key: "interruption:\(diagnostic.kind.rawValue):\(diagnostic.reasonCode?.rawValue ?? "none"):\(diagnostic.interruptionResumeDisposition?.rawValue ?? "none")"
+            )
+        case .routeChanged:
+            appendSparse(
+                entry,
+                key: "route:\(diagnostic.routeChangeReason?.rawValue ?? "unknown")"
+            )
+        default:
+            break
+        }
+    }
+
     public func recordLifecycle(_ code: String, at timestamp: Date) {
         if code == "inactive" || code == "background" {
             receipt.summary.lifecycleTransitionCount += 1
@@ -361,24 +516,97 @@ public final class FieldTestReceiptBuilder {
         )
     }
 
+    private func summarizeAudioDiagnostic(_ diagnostic: AudioPlaybackDiagnostic) {
+        if let routeCategory = diagnostic.routeCategory {
+            receipt.summary.audioDiagnostics.lastRouteCategory = routeCategory
+        }
+
+        switch diagnostic.kind {
+        case .cueReceived:
+            increment(&receipt.summary.audioDiagnostics.cueReceiptCounts, key: diagnostic.cueKind?.rawValue)
+        case .plannerAccepted:
+            increment(&receipt.summary.audioDiagnostics.plannerAcceptedCueCounts, key: diagnostic.cueKind?.rawValue)
+        case .plannerSuppressed:
+            receipt.summary.audioSuppressionCount += 1
+            increment(&receipt.summary.audioDiagnostics.suppressionReasonCounts, key: diagnostic.reasonCode?.rawValue)
+        case .assetLookupStarted, .assetResolved, .assetMissing:
+            increment(&receipt.summary.audioDiagnostics.assetLifecycleCounts, key: diagnostic.kind.rawValue)
+        case .audioSessionConfigurationStarted, .audioSessionConfigured, .audioSessionConfigurationFailed:
+            increment(&receipt.summary.audioDiagnostics.audioSessionLifecycleCounts, key: diagnostic.kind.rawValue)
+        case .playerInitialized, .playerInitializationFailed:
+            increment(&receipt.summary.audioDiagnostics.playerLifecycleCounts, key: diagnostic.kind.rawValue)
+        case .playbackRequested,
+             .playRequestAccepted,
+             .playbackDidNotStart,
+             .playerObservedActive,
+             .playbackFinished,
+             .playbackDecodeError,
+             .playbackSuspended,
+             .playbackResumed,
+             .playbackStopRequested,
+             .playbackFadeRequested,
+             .playbackStopped:
+            increment(&receipt.summary.audioDiagnostics.playbackLifecycleCounts, key: diagnostic.kind.rawValue)
+            if diagnostic.kind == .playbackStopRequested {
+                receipt.summary.audioDiagnostics.stopCount += 1
+            } else if diagnostic.kind == .playbackFadeRequested {
+                receipt.summary.audioDiagnostics.fadeCount += 1
+            }
+        case .playbackInterrupted, .playbackInterruptionEnded:
+            increment(&receipt.summary.audioDiagnostics.interruptionEventCounts, key: diagnostic.kind.rawValue)
+        case .routeChanged:
+            increment(&receipt.summary.audioDiagnostics.routeChangeReasonCounts, key: diagnostic.routeChangeReason?.rawValue)
+        }
+    }
+
     private func append(_ entry: FieldTestEntry) {
         guard receipt.timeline.count < Self.maximumTimelineEntries else { return }
         receipt.timeline.append(entry)
     }
 
+    private func appendSparse(_ entry: FieldTestEntry, key: String) {
+        guard recordedSparseAudioEvidence.insert(key).inserted else { return }
+        append(entry)
+    }
+
     private func appendRequired(_ entry: FieldTestEntry) {
         if receipt.timeline.count == Self.maximumTimelineEntries {
+            let isTerminalEntry = entry.category == .memoryWriteResult || entry.category == .sessionCompleted
             let removableIndex = receipt.timeline.lastIndex {
-                $0.category != .memoryWriteResult
+                return $0.category != .memoryWriteResult
                     && $0.category != .sessionCompleted
                     && !($0.category == .audioLifecycleAction && $0.code == "stop")
-            } ?? receipt.timeline.startIndex
-            receipt.timeline.remove(at: removableIndex)
+                    && !($0.category == .audioDiagnostic && isRequiredAudioDiagnostic($0.audioDiagnosticKind))
+            }
+            if let removableIndex {
+                receipt.timeline.remove(at: removableIndex)
+            } else if isTerminalEntry {
+                let fallbackIndex = receipt.timeline.lastIndex {
+                    $0.category != .memoryWriteResult && $0.category != .sessionCompleted
+                }
+                if let fallbackIndex {
+                    receipt.timeline.remove(at: fallbackIndex)
+                }
+            }
         }
         receipt.timeline.append(entry)
     }
 
+    private func isRequiredAudioDiagnostic(_ kind: AudioPlaybackDiagnosticKind?) -> Bool {
+        switch kind {
+        case .playbackStopRequested, .playbackFadeRequested, .playbackStopped:
+            true
+        default:
+            false
+        }
+    }
+
     private func finiteNonnegative(_ value: Double) -> Double {
         max(0, value.isFinite ? value : 0)
+    }
+
+    private func increment(_ counts: inout [String: Int], key: String?) {
+        guard let key else { return }
+        counts[key, default: 0] += 1
     }
 }

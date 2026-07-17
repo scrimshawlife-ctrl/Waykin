@@ -26,6 +26,8 @@ No physical walk receipt has been filled in this repository. Do not mark these a
 
 The local field-test receipt is engineering evidence only. It has no remote analytics or automatic upload, and receipt creation does not validate physical behavior. Timestamps may reveal session timing when a receipt is shared, field-test ratings remain manual, and receipt-related battery impact is unverified.
 
+Receipt schema v2 can now distinguish semantic cue requests from software-stage playback diagnostics such as planner acceptance or suppression, asset lookup, audio-session setup, player activity, interruptions, stop or fade requests, observed player stops, and coarse output-route categories. That added detail still does not prove human audibility, accessory behavior, or perceived loudness, and it intentionally omits asset paths, raw error payloads, device or accessory names, port labels, coordinates, volume, and related identifiers.
+
 The recorded route is measurement support for the active Companion Walk only. It is not navigation-grade, does not provide route planning or guidance, and has no background-location guarantee. Battery impact is not characterized.
 
 ## Accessibility Evidence

@@ -36,6 +36,8 @@ Do not put these ratings into analytics infrastructure. The core product questio
 3. Select the latest `field-test-<started-milliseconds>-<receipt-uuid>.json` file.
 4. Confirm `mode` is `physical`, `outcome` is expected, persistence is recorded, and the timeline ends with completion.
 5. Review the file before sharing it. Receipts omit route geometry and personal text, but timestamps reveal session timing.
+6. Treat audio fields as software-stage evidence only:
+   semantic cue requests, planner outcomes, asset lookup, session setup, player activity, interruptions, and coarse route categories can show where playback stopped progressing, but they do not prove that a human heard sound. Receipt stop and fade counts represent adapter requests; a delayed fade completion may not be present after the session receipt is finalized.
 
 Waykin never uploads receipts. At most 20 are retained; the oldest receipt is removed first. Diagnostic rotation does not affect normal session memories.
 

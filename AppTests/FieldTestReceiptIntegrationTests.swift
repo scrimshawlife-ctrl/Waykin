@@ -79,6 +79,79 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertTrue(receipt.timeline.contains { $0.category == .audioLifecycleAction && $0.code == "stop" })
     }
 
+    func testConcreteAudioDiagnosticsRelayIntoDemoReceiptWithoutChangingGameplay() throws {
+        let enabledStore = ReceiptCaptureStore()
+        let enabledClock = ReceiptTestClock(now: Date(timeIntervalSince1970: 1_250))
+        let disabledClock = ReceiptTestClock(now: enabledClock.now)
+        let enabled = try makeModel(
+            clock: enabledClock,
+            audio: makeConcreteAudioPlayer(),
+            receiptStore: enabledStore
+        )
+        let disabled = try makeModel(
+            clock: disabledClock,
+            audio: ReceiptAudioSpy(),
+            receiptStore: nil
+        )
+
+        enabled.startDemo(.calmDayWalk)
+        disabled.startDemo(.calmDayWalk)
+        enabled.runDemoToEnd()
+        disabled.runDemoToEnd()
+        enabled.endDemo()
+        disabled.endDemo()
+
+        XCTAssertEqual(enabled.lastSummary?.duration, disabled.lastSummary?.duration)
+        XCTAssertEqual(enabled.lastSummary?.activeTime, disabled.lastSummary?.activeTime)
+        XCTAssertEqual(enabled.lastSummary?.distanceMeters, disabled.lastSummary?.distanceMeters)
+        XCTAssertEqual(enabled.lastSummary?.outcome, disabled.lastSummary?.outcome)
+        XCTAssertEqual(enabled.lastSummary?.bondDelta, disabled.lastSummary?.bondDelta)
+        XCTAssertEqual(enabled.lastSummary?.memory.text, disabled.lastSummary?.memory.text)
+        XCTAssertEqual(enabled.persistenceMemoryCount, disabled.persistenceMemoryCount)
+
+        let receipt = try XCTUnwrap(enabledStore.receipts.single)
+        let semanticCueKinds = receipt.timeline
+            .filter { $0.category == .audioCueRequested }
+            .map(\.code)
+        let receivedCueKinds = receipt.timeline
+            .filter { $0.category == .audioDiagnostic && $0.audioDiagnosticKind == .cueReceived }
+            .compactMap { $0.audioCueKind?.rawValue }
+        let acceptedCueKinds = receipt.timeline
+            .filter { $0.category == .audioDiagnostic && $0.audioDiagnosticKind == .plannerAccepted }
+            .compactMap { $0.audioCueKind?.rawValue }
+
+        XCTAssertFalse(semanticCueKinds.isEmpty)
+        XCTAssertEqual(receivedCueKinds, [AudioCueKind.quietShift.rawValue])
+        XCTAssertTrue(acceptedCueKinds.isEmpty)
+        XCTAssertEqual(receipt.summary.audioDiagnostics.cueReceiptCounts.values.reduce(0, +), semanticCueKinds.count)
+        XCTAssertEqual(
+            receipt.summary.audioDiagnostics.plannerAcceptedCueCounts.values.reduce(0, +),
+            5
+        )
+        XCTAssertEqual(receipt.summary.audioDiagnostics.fadeCount, 1)
+        XCTAssertEqual(
+            receipt.timeline.filter { $0.category == .audioLifecycleAction && $0.code == "stop" }.count,
+            1
+        )
+        XCTAssertEqual(
+            receipt.timeline.filter { $0.category == .audioDiagnostic && $0.audioDiagnosticKind == .playbackFadeRequested }.count,
+            1
+        )
+        XCTAssertEqual(
+            receipt.timeline.filter { $0.category == .audioDiagnostic && $0.audioDiagnosticKind == .playbackStopRequested }.count,
+            1
+        )
+        XCTAssertEqual(
+            receipt.timeline.filter { $0.category == .audioDiagnostic && $0.audioDiagnosticKind == .playbackStopped }.count,
+            0
+        )
+        XCTAssertEqual(enabledStore.receipts.count, 1)
+
+        enabled.endDemo()
+        XCTAssertEqual(enabledStore.receipts.count, 1)
+        XCTAssertEqual(enabled.persistenceMemoryCount, 1)
+    }
+
     func testDemoAndPhysicalPathsExposeTheSamePresenceContract() throws {
         let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 1_500))
         let demo = try makeModel(clock: clock, receiptStore: nil)
@@ -159,7 +232,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
 
     private func makeModel(
         clock: ReceiptTestClock,
-        audio: ReceiptAudioSpy? = nil,
+        audio: (any AudioCuePlaying)? = nil,
         provider: ReceiptLocationProvider = ReceiptLocationProvider(status: .authorizedWhenInUse),
         receiptStore: (any FieldTestReceiptStoring)?
     ) throws -> WaykinAppModel {
@@ -176,6 +249,16 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
             realLocationProvider: provider,
             fieldTestReceiptStore: receiptStore,
             fieldTestNow: { clock.now }
+        )
+    }
+
+    private func makeConcreteAudioPlayer() -> AppAudioCuePlayer {
+        AppAudioCuePlayer(
+            audioSession: IntegrationAudioSession(),
+            assetLocator: IntegrationAssetLocator(),
+            playerFactory: IntegrationAudioPlayerFactory(),
+            diagnostic: { _ in },
+            notificationCenter: NotificationCenter()
         )
     }
 
@@ -242,6 +325,56 @@ private final class ReceiptAudioSpy: AudioCuePlaying {
     func pauseAll() {}
     func resumeAll() {}
     func stopAll(fadeOut: Bool) {}
+}
+
+@MainActor
+private final class IntegrationAudioSession: AudioSessionControlling {
+    var currentRouteCategory: AudioOutputRouteCategory = .builtInSpeaker
+
+    func configureAmbientMixing() throws {}
+    func activate() throws {}
+    func deactivate() throws {}
+}
+
+@MainActor
+private final class IntegrationAudioPlayerFactory: AudioPlayerMaking {
+    let player = IntegrationAudioPlayer()
+
+    func makePlayer(contentsOf url: URL) throws -> any AudioPlayerControlling {
+        player
+    }
+}
+
+@MainActor
+private final class IntegrationAudioPlayer: AudioPlayerControlling {
+    var isPlaying = false
+    var numberOfLoops = 0
+    var volume: Float = 1
+    var pan: Float = 0
+
+    func prepareToPlay() {}
+
+    func play() -> Bool {
+        isPlaying = true
+        return true
+    }
+
+    func pause() { isPlaying = false }
+    func stop() { isPlaying = false }
+    func setVolume(_ volume: Float, fadeDuration: TimeInterval) {
+        self.volume = volume
+    }
+
+    func setPlaybackCallbacks(
+        onFinished: @escaping @MainActor (Bool) -> Void,
+        onDecodeError: @escaping @MainActor () -> Void
+    ) {}
+}
+
+private struct IntegrationAssetLocator: AudioAssetLocating {
+    func url(for descriptor: AudioAssetDescriptor) -> URL? {
+        URL(fileURLWithPath: "/tmp/\(descriptor.assetName).\(descriptor.fileExtension)")
+    }
 }
 
 private extension Array {

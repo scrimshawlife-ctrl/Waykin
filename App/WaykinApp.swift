@@ -196,6 +196,11 @@ final class WaykinAppModel {
         }
         persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
         persistenceStorePathHash = String((try? PersistenceConfiguration.persistentStoreURL().path.hashValue) ?? 0)
+        if let appAudioPlayer = self.audioPlayer as? AppAudioCuePlayer {
+            appAudioPlayer.setDiagnosticHandler { [weak self] diagnostic in
+                self?.activeFieldTestReceipt?.recordAudioDiagnostic(diagnostic)
+            }
+        }
         configureRealLocationCallbacks()
         refreshRecommendation()
     }
