@@ -1,5 +1,12 @@
-# Default ownership. Add the remote collaborator's GitHub username after access is confirmed.
+# Default ownership
 * @scrimshawlife-ctrl
+
+# Shared app-layer, AR, UI, test, and general documentation review
+/App/ @scrimshawlife-ctrl @prabu-openclaw
+/ARLab/ @scrimshawlife-ctrl @prabu-openclaw
+/AppTests/ @scrimshawlife-ctrl @prabu-openclaw
+/WaykinUITests/ @scrimshawlife-ctrl @prabu-openclaw
+/docs/ @scrimshawlife-ctrl @prabu-openclaw
 
 # Binding product and architecture authority
 /WAYKIN_SPEC.md @scrimshawlife-ctrl
@@ -7,12 +14,14 @@
 /AGENTS.md @scrimshawlife-ctrl
 /docs/governance/ @scrimshawlife-ctrl
 /docs/decisions/ @scrimshawlife-ctrl
+/docs/canonical/ @scrimshawlife-ctrl
 
 # Core gameplay truth and persistence-sensitive surfaces
 /Sources/WaykinCore/ @scrimshawlife-ctrl
 /App/Persistence/ @scrimshawlife-ctrl
 /App/Audio/ @scrimshawlife-ctrl
+/App/Resources/Audio/ @scrimshawlife-ctrl
 
-# Collaboration and repository automation
-/.github/ @scrimshawlife-ctrl
-/docs/collaboration/ @scrimshawlife-ctrl
+# Collaboration and repository automation remain jointly reviewed
+/.github/ @scrimshawlife-ctrl @prabu-openclaw
+/docs/collaboration/ @scrimshawlife-ctrl @prabu-openclaw
