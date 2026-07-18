@@ -30,20 +30,25 @@ Lira should read as an original, species-neutral, friendly but mysterious lumino
 ## Asset Classes
 
 - **CONCEPT VISUAL** — Hero art, companion walk scenes, movement-to-memory scenes, and social previews.
-- **ENGINEERING DIAGRAM** — Architecture, runtime, validation, and evidence flows.
+- **ENGINEERING DIAGRAM** — Architecture, runtime, validation, evidence, and collaboration flows.
 - **BRAND ASSET** — Wordmark, symbol, lockup, and app-icon concepts.
 - **REAL** — Captured simulator or physical-device output. None is implied by a concept asset.
 
-## Current README Hero
+## Current Repository Assets
+
+| Path | Class | Purpose | Product claims |
+|---|---|---|---|
+| `docs/assets/waykin-hero.svg` | CONCEPT VISUAL | README hero and product-direction artwork | None |
+| `docs/assets/runtime-architecture.svg` | ENGINEERING DIAGRAM | Semantic runtime and platform-adapter boundary | Must remain aligned with `ARCHITECTURE.md` |
+| `docs/assets/contributor-flow.svg` | ENGINEERING DIAGRAM | Issue-scoped delivery workflow | Must remain aligned with `CONTRIBUTING.md` |
+
+### Hero Details
 
 | Field | Value |
 |---|---|
-| Path | `docs/assets/waykin-hero.svg` |
-| Class | `CONCEPT VISUAL` |
 | Format | Accessible SVG |
 | Canvas | `2400 × 900` |
 | Subject | Walker, mountain valley, dawn light, and luminous companion |
-| Product claims | None; directional artwork only |
 | Source | Generated specifically for the Waykin repository and refined into a repository-native vector asset |
 
 The hero includes an accessible title and description and is designed to remain legible on GitHub in both light and dark interfaces.
@@ -60,6 +65,14 @@ Generated art must be reviewed for:
 - Light/dark README readability
 - Correct classification as concept, engineering, brand, or real evidence
 
+## Accessibility
+
+- Every SVG must include a meaningful `<title>` and `<desc>`.
+- README and documentation embeddings must include useful alt text.
+- Do not place essential instructions only inside an image.
+- Preserve sufficient contrast between text, paths, nodes, and backgrounds.
+- Keep diagrams understandable from surrounding prose when images do not load.
+
 ## Labeling Rule
 
 Every README visual must disclose its evidence class. Concept visuals and engineering diagrams are not proof of implemented application functionality, validation status, or physical-device behavior.
@@ -73,4 +86,5 @@ Replace or supplement concept visuals with real simulator screenshots and physic
 - Optimize assets for repository rendering and review performance.
 - Prefer SVG for diagrams and brand-forward artwork when practical.
 - Keep semantic text in surrounding Markdown rather than embedding essential documentation in an image.
+- Keep engineering diagrams synchronized with their canonical source documents.
 - Do not use an artwork-derived claim to update the capability matrix or validation status.
