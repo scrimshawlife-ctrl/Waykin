@@ -1,0 +1,48 @@
+name: Feature
+description: Propose an issue-scoped Waykin capability
+title: "feat: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: User-visible outcome
+    validations:
+      required: true
+  - type: textarea
+    id: authority
+    attributes:
+      label: Current authority documents
+      description: List the canonical documents governing this work.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: allowed
+    attributes:
+      label: Systems allowed to change
+    validations:
+      required: true
+  - type: textarea
+    id: frozen
+    attributes:
+      label: Frozen systems
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Required tests and device evidence
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Explicit non-goals
+    validations:
+      required: true
