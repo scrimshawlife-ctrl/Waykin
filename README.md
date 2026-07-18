@@ -3,6 +3,22 @@
 </p>
 
 <p align="center">
+  <a href="docs/README.md"><img alt="Documentation" src="https://img.shields.io/badge/Documentation-Browse-43C7B8"></a>
+  <a href="ARCHITECTURE.md"><img alt="Architecture" src="https://img.shields.io/badge/Architecture-Explore-14372F"></a>
+  <a href="WAYKIN_SPEC.md"><img alt="Product specification" src="https://img.shields.io/badge/Product_Spec-Read-F4B860"></a>
+  <a href="#quick-start"><img alt="Quick start" src="https://img.shields.io/badge/Quick_Start-Build-0A84FF"></a>
+  <a href="docs/canonical/CURRENT_CAPABILITY_MATRIX.md"><img alt="Capability matrix" src="https://img.shields.io/badge/Capability_Matrix-View-7168A6"></a>
+</p>
+
+<p align="center">
+  <a href="docs/PHYSICAL_DEVICE_WALK_VALIDATION.md"><img alt="Validation" src="https://img.shields.io/badge/Validation-Protocols-C7613A"></a>
+  <a href="CONTRIBUTING.md"><img alt="Contributing" src="https://img.shields.io/badge/Contributing-Guide-F4B860"></a>
+  <a href="AGENTS.md"><img alt="Agent guide" src="https://img.shields.io/badge/Agent_Guide-Read-7168A6"></a>
+  <a href="ROADMAP.md"><img alt="Roadmap" src="https://img.shields.io/badge/Roadmap-Explore-89938D"></a>
+  <a href="docs/governance/DOCUMENT_AUTHORITY.md"><img alt="Document authority" src="https://img.shields.io/badge/Authority-Resolve-0B1020"></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/validate.yml"><img alt="Canonical validation" src="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/validate.yml/badge.svg?branch=main"></a>
   <a href="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/waykin-ci.yml"><img alt="Waykin CI" src="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/waykin-ci.yml/badge.svg?branch=main"></a>
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white">
@@ -15,24 +31,32 @@
   You move. Lira moves with you. The world responds. Bond grows.
 </p>
 
-<p align="center">
-  <a href="#quick-start">Quick Start</a> ·
-  <a href="WAYKIN_SPEC.md">Product Contract</a> ·
-  <a href="ARCHITECTURE.md">Architecture</a> ·
-  <a href="docs/README.md">Documentation</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a> ·
-  <a href="AGENTS.md">Agent Guide</a>
-</p>
-
-> **Concept visual.** The hero artwork communicates product direction and is not evidence of implemented application graphics or AR functionality. See [`docs/assets/BRAND_GUIDE.md`](docs/assets/BRAND_GUIDE.md).
+> **Concept visual.** The hero communicates product direction and is not evidence of implemented application graphics or AR functionality. See [`docs/assets/BRAND_GUIDE.md`](docs/assets/BRAND_GUIDE.md).
 
 ---
 
-## What Is Waykin?
+## Why Waykin?
 
-Waykin turns a real-world walk into a small, responsive journey shared with a persistent companion named **Lira**.
+Waykin transforms an ordinary walk into a shared journey with a persistent digital companion. Rather than reducing movement to scores or competition, it focuses on **presence, relationship, discovery, tension, and memory**.
 
-The current product is deliberately constrained around one coherent loop:
+A walk produces semantic world state. That state generates bounded events. Events shape Lira, pursuit pressure, audio cues, session memories, and Bond—without requiring a backend or generative-AI runtime.
+
+The launch product remains intentionally small enough for one developer to understand, test, and ship.
+
+## Core Experience
+
+| | Pillar | Current contract |
+|---|---|---|
+| 🚶 | **Real movement** | Walking is the launch activity and primary gameplay input. |
+| ✨ | **Persistent companion** | Lira is the single companion and responds through a bounded behavior vocabulary. |
+| 🌎 | **Adaptive world** | Seeded events emerge from movement, context, familiarity, energy, and pressure. |
+| 🎧 | **Semantic audio** | Audio communicates presence, discovery, pressure, transition, and Bond. |
+| 🏃 | **Bounded pursuit** | Tension exists without punishment, coercion, or an enemy-platform expansion. |
+| ❤️ | **Bond** | One persistent progression measure represents the relationship with Lira. |
+
+The binding product contract is [`WAYKIN_SPEC.md`](WAYKIN_SPEC.md). Future-state documents do not authorize implementation unless promoted through the repository’s governance process.
+
+## Current Product Loop
 
 ```text
 Home
@@ -42,20 +66,24 @@ Home
   → Memory
 ```
 
-Movement becomes semantic world state. World state produces bounded events. Events shape Lira, pursuit pressure, audio cues, memories, and Bond—without requiring a backend or generative-AI runtime.
+Demo Mode runs the same deterministic loop without physical movement or location permission.
 
-### MVP Pillars
+## Current MVP
 
-| Pillar | Current contract |
-|---|---|
-| **Real-world movement** | Walking is the launch activity and gameplay input. |
-| **One companion** | Lira is the single persistent companion. |
-| **Bounded pressure** | Pursuit creates tension without becoming an enemy platform. |
-| **One progression metric** | Bond represents the evolving relationship with Lira. |
-| **Audio first** | Semantic audio carries presence, discovery, pressure, and memory. |
-| **Local and deterministic** | Core behavior is seeded, testable, and locally persisted. |
+| Capability | State | Evidence boundary |
+|---|---|---|
+| Walking session loop | ✅ Implemented | Package and native tests |
+| Lira companion runtime | ✅ Implemented | Deterministic runtime tests |
+| Bond progression | ✅ Implemented | Local persistence tests |
+| Semantic audio cues | ✅ Implemented | Device playback still requires direct evidence |
+| Deterministic Demo Mode | ✅ Implemented | Package-testable |
+| Local session memories | ✅ Implemented | Concise, privacy-bounded facts |
+| Real-walk Core Location wiring | 🟡 Validation | Outdoor behavior requires device receipts |
+| AR presentation contracts | 🟡 In progress | AR device behavior remains evidence-gated |
+| Multiplayer, marketplace, LiveOps | 🔒 Deferred | Outside current scope |
+| Generalized AI Director | 🔒 Future reference | Not current implementation authority |
 
-The binding scope is defined in [`WAYKIN_SPEC.md`](WAYKIN_SPEC.md). Broader design documents are not implementation authority unless promoted through the repository’s documented process.
+See the complete [`Current Capability Matrix`](docs/canonical/CURRENT_CAPABILITY_MATRIX.md).
 
 ## Quick Start
 
@@ -78,7 +106,7 @@ make validate
 make validate-simulator
 ```
 
-`make validate-simulator` targets `iPhone 17 Pro` by default. Override the simulator with:
+`make validate-simulator` targets `iPhone 17 Pro` by default. Override it with:
 
 ```bash
 WAYKIN_SIMULATOR_NAME="iPhone 17 Pro" make validate-simulator
@@ -90,43 +118,23 @@ WAYKIN_SIMULATOR_NAME="iPhone 17 Pro" make validate-simulator
 make demo
 ```
 
-Demo Mode exercises the same bounded walking loop without location permission or physical movement.
-
 ## Runtime Architecture
 
-```text
-Core Location sample / deterministic Demo tick
-      ↓
-MovementIntegrityProcessor
-      ↓
-MovementEngine
-      ↓
-MovementSnapshot
-      ↓
-WorldState
-      ↓
-WorldEventGenerator
-      ↓
-WorldEvent
-      ↓
-CompanionRuntime / PursuitState
-      ↓
-AudioCue
-      ↓
-AppAudioCuePlayer
-      ↓
-SessionMemory + Bond
-```
+<p align="center">
+  <img src="docs/assets/runtime-architecture.svg" alt="Waykin runtime architecture from movement through world state, events, Lira, audio, memory, and Bond" width="100%">
+</p>
 
-`WaykinCore` owns semantic gameplay state. SwiftUI, MapKit, SwiftData, Core Location, AVFoundation, ARKit, and RealityKit remain adapter or presentation concerns and must not become alternate sources of gameplay truth.
+`WaykinCore` owns semantic gameplay truth. SwiftUI, MapKit, SwiftData, Core Location, AVFoundation, ARKit, and RealityKit remain adapters or presentation concerns.
 
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) for system ownership, dependency direction, AR boundaries, and deferred seams.
+The core knows semantic state and semantic audio cue kinds. It does not know UI layout, asset filenames, route-provider details, AR entities, or platform persistence implementation.
+
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for ownership, dependency direction, AR boundaries, and deferred seams.
 
 ## Implemented Surface
 
 - Deterministic walking-session state machine
 - Real-sample movement integrity processing
-- Seeded, cooldown-aware event generation
+- Seeded, weighted, cooldown-aware event generation
 - Lira companion runtime
 - Bounded pursuit state
 - Seven semantic audio cue kinds
@@ -135,9 +143,9 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for system ownership, dependency direct
 - Deterministic Demo Mode
 - When-In-Use Core Location wiring for physical-device walks
 - Privacy-filtered local field-test receipts
-- Platform-neutral AR presentation contracts and app-side AR work in progress
+- Platform-neutral AR presentation contracts
 
-Compatibility values for running, cycling, hiking, and climbing may remain in the model, but **walking is the only current product activity**.
+Compatibility values for running, cycling, hiking, and climbing may remain in source models, but **walking is the only current product activity**.
 
 ## Scope Boundaries
 
@@ -153,21 +161,21 @@ Waykin does **not** currently include:
 - AR-glasses dependence
 - Live weather integration
 
-Future-state documentation is reference material until explicitly promoted through an accepted issue, architecture review, and—when necessary—an ADR. See [`docs/governance/DOCUMENT_AUTHORITY.md`](docs/governance/DOCUMENT_AUTHORITY.md).
+Future-state specifications are reference material until promoted through an accepted issue, architecture review, and—when necessary—an ADR. See [`DOCUMENT_AUTHORITY.md`](docs/governance/DOCUMENT_AUTHORITY.md) and [`SPEC_PROMOTION_PROCESS.md`](docs/governance/SPEC_PROMOTION_PROCESS.md).
 
 ## Safety and Privacy
 
 - Waykin is not safety equipment.
-- Location is requested only for an active real walk.
+- Location is requested only during an active real walk.
 - Demo Mode requires no location permission.
 - Pause and stop behavior remain available.
 - Pursuit must never pressure a user to continue through distress or unsafe conditions.
 - Memories are concise deterministic facts, not precise route archives.
-- Local field receipts exclude coordinates and personal memory text, retain at most 20 files, and never upload automatically.
+- Field receipts exclude coordinates and personal memory text, retain at most 20 files, and never upload automatically.
 
 ## Validation Status
 
-The following results were recorded on **July 16, 2026** and apply to the tested repository state at that time:
+The following results were recorded on **July 16, 2026** and apply only to the tested repository state:
 
 | Layer | Command or protocol | Recorded result |
 |---|---|---|
@@ -179,28 +187,68 @@ The following results were recorded on **July 16, 2026** and apply to the tested
 | Physical GPS walk | Manual protocol | `NOT_COMPUTABLE` in that receipt |
 | Physical audio playback | Manual protocol | `NOT_COMPUTABLE` in that receipt |
 
-Workflow badges above report the current `main` branch state. A badge can be unknown or failing until GitHub Actions has run successfully for that workflow. Dated validation claims are historical evidence, not permanent guarantees. Do not mark GPS, device audio, battery, outdoor usability, or AR behavior as validated without direct device evidence.
+Workflow badges report the current `main` branch state. Dated validation claims are historical evidence, not permanent guarantees. Do not claim GPS, device audio, battery, thermal, outdoor usability, interruption recovery, or AR behavior without direct device evidence.
 
-## Documentation Map
+## Roadmap
 
-| Area | Document |
+Waykin progresses by proving one bounded layer before promoting the next:
+
+1. **Physical loop proof** — repeated outdoor movement and audio evidence.
+2. **AR presentation** — app-target rendering without moving gameplay truth out of `WaykinCore`.
+3. **Experience tuning** — sound design, event tuning, and refined Lira presentation.
+4. **Future systems** — considered only through explicit promotion after MVP evidence gates.
+
+See [`ROADMAP.md`](ROADMAP.md) for milestones, status labels, and promotion gates.
+
+## Repository Guide
+
+```text
+Waykin/
+├── App/                  iOS presentation and platform adapters
+├── AppTests/             Native app tests
+├── Sources/WaykinCore/   Platform-neutral semantic runtime
+├── Tests/                Swift package tests
+├── docs/                 Documentation, evidence, governance, and assets
+├── scripts/              Canonical validation harnesses
+├── WAYKIN_SPEC.md        Binding product contract
+├── ARCHITECTURE.md       System ownership and dependency direction
+├── AGENTS.md             Coding-agent operating contract
+├── CONTRIBUTING.md       Human collaboration workflow
+└── ROADMAP.md            Evidence-gated product progression
+```
+
+### Where to Start
+
+1. Read [`WAYKIN_SPEC.md`](WAYKIN_SPEC.md).
+2. Read [`ARCHITECTURE.md`](ARCHITECTURE.md).
+3. Open the [`Documentation Portal`](docs/README.md).
+4. Contributors read [`CONTRIBUTING.md`](CONTRIBUTING.md).
+5. Coding agents also read [`AGENTS.md`](AGENTS.md).
+
+## Contributor Flow
+
+<p align="center">
+  <img src="docs/assets/contributor-flow.svg" alt="Waykin contributor workflow from issue through branch, implementation, validation, draft pull request, review, and merge" width="100%">
+</p>
+
+Every pull request states its authority context, allowed and frozen systems, validation evidence, device-evidence status, risk, and rollback path.
+
+## Documentation Portal
+
+| Area | Start here |
 |---|---|
-| Binding product scope | [`WAYKIN_SPEC.md`](WAYKIN_SPEC.md) |
-| Architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
-| Agent operating contract | [`AGENTS.md`](AGENTS.md) |
-| Contribution workflow | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| Documentation index | [`docs/README.md`](docs/README.md) |
-| Current capability matrix | [`docs/canonical/CURRENT_CAPABILITY_MATRIX.md`](docs/canonical/CURRENT_CAPABILITY_MATRIX.md) |
-| Document authority | [`docs/governance/DOCUMENT_AUTHORITY.md`](docs/governance/DOCUMENT_AUTHORITY.md) |
-| Known limitations | [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) |
-| Solo MVP scope | [`docs/SOLO_MVP_SCOPE.md`](docs/SOLO_MVP_SCOPE.md) |
-| Physical walk validation | [`docs/PHYSICAL_DEVICE_WALK_VALIDATION.md`](docs/PHYSICAL_DEVICE_WALK_VALIDATION.md) |
-| Field-test protocol | [`docs/FIELD_TEST_PROTOCOL.md`](docs/FIELD_TEST_PROTOCOL.md) |
-| Audio contract | [`docs/AUDIO_ASSET_CONTRACT.md`](docs/AUDIO_ASSET_CONTRACT.md) |
+| Product | [`WAYKIN_SPEC.md`](WAYKIN_SPEC.md) · [`SOLO_MVP_SCOPE.md`](docs/SOLO_MVP_SCOPE.md) · [`ROADMAP.md`](ROADMAP.md) |
+| Engineering | [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`CURRENT_CAPABILITY_MATRIX.md`](docs/canonical/CURRENT_CAPABILITY_MATRIX.md) |
+| Validation | [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) · [`PHYSICAL_DEVICE_WALK_VALIDATION.md`](docs/PHYSICAL_DEVICE_WALK_VALIDATION.md) · [`FIELD_TEST_PROTOCOL.md`](docs/FIELD_TEST_PROTOCOL.md) |
+| Collaboration | [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`AGENTS.md`](AGENTS.md) |
+| Governance | [`DOCUMENT_AUTHORITY.md`](docs/governance/DOCUMENT_AUTHORITY.md) · [`SPEC_PROMOTION_PROCESS.md`](docs/governance/SPEC_PROMOTION_PROCESS.md) · [`MASTER_PACK_INDEX.md`](docs/governance/MASTER_PACK_INDEX.md) |
+| Visual identity | [`BRAND_GUIDE.md`](docs/assets/BRAND_GUIDE.md) |
+
+Browse the complete [`Waykin Documentation Portal`](docs/README.md).
 
 ## Contributing
 
-Waykin uses issue-scoped branches, draft pull requests, explicit scope boundaries, and evidence-backed validation.
+Waykin uses issue-scoped branches, small draft pull requests, explicit scope boundaries, and evidence-backed validation.
 
 Start with [`CONTRIBUTING.md`](CONTRIBUTING.md). Coding agents must also read [`AGENTS.md`](AGENTS.md) before modifying the repository.
 
