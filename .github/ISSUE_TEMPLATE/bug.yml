@@ -1,0 +1,34 @@
+name: Bug
+description: Report reproducible incorrect Waykin behavior
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: OBSERVED behavior
+      description: Include exact steps, environment, and evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Suspected systems and frozen systems
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Reproduction and validation commands
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy or safety considerations
