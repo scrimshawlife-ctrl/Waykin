@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="360" viewBox="0 0 1600 360" role="img" aria-labelledby="title desc">
+  <title id="title">Waykin runtime architecture</title>
+  <desc id="desc">Movement samples pass through integrity processing, the movement engine, world state, event generation, companion and pursuit runtime, semantic audio, and local memory and Bond.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0B1020"/><stop offset="1" stop-color="#14372F"/></linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#43C7B8"/></marker>
+    <style>.box{fill:#111827;stroke:#43C7B8;stroke-width:2}.t{fill:#F5F7F3;font:600 22px system-ui,sans-serif;text-anchor:middle}.s{fill:#B8C2BD;font:16px system-ui,sans-serif;text-anchor:middle}.line{stroke:#43C7B8;stroke-width:4;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1600" height="360" rx="28" fill="url(#bg)"/>
+  <g transform="translate(45 105)">
+    <g><rect class="box" width="190" height="120" rx="18"/><text class="t" x="95" y="48">Movement</text><text class="s" x="95" y="78">GPS or demo tick</text></g>
+    <line class="line" x1="205" y1="60" x2="250" y2="60"/>
+    <g transform="translate(265)"><rect class="box" width="210" height="120" rx="18"/><text class="t" x="105" y="42">Integrity</text><text class="s" x="105" y="72">Validate and stabilize</text></g>
+    <line class="line" x1="490" y1="60" x2="535" y2="60"/>
+    <g transform="translate(550)"><rect class="box" width="190" height="120" rx="18"/><text class="t" x="95" y="48">World State</text><text class="s" x="95" y="78">Semantic context</text></g>
+    <line class="line" x1="755" y1="60" x2="800" y2="60"/>
+    <g transform="translate(815)"><rect class="box" width="210" height="120" rx="18"/><text class="t" x="105" y="42">Event Generator</text><text class="s" x="105" y="72">Seeded and bounded</text></g>
+    <line class="line" x1="1040" y1="60" x2="1085" y2="60"/>
+    <g transform="translate(1100)"><rect class="box" width="210" height="120" rx="18"/><text class="t" x="105" y="42">Lira + Pursuit</text><text class="s" x="105" y="72">Behavior and pressure</text></g>
+    <line class="line" x1="1325" y1="60" x2="1370" y2="60"/>
+    <g transform="translate(1385)"><rect class="box" width="170" height="120" rx="18"/><text class="t" x="85" y="42">Audio</text><text class="s" x="85" y="72">Memory + Bond</text></g>
+  </g>
+  <text x="800" y="55" fill="#F5F7F3" font-family="system-ui,sans-serif" font-size="30" font-weight="700" text-anchor="middle">Semantic core → platform adapters</text>
+  <text x="800" y="320" fill="#B8C2BD" font-family="system-ui,sans-serif" font-size="18" text-anchor="middle">SwiftUI, MapKit, SwiftData, AVFoundation, ARKit, and RealityKit consume state; they do not own gameplay truth.</text>
+</svg>
