@@ -73,6 +73,10 @@ A green build does not validate GPS, device audio, battery, thermal behavior, ou
 |---|---|
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Branch, test, review, and merge workflow |
 | [`../AGENTS.md`](../AGENTS.md) | Scope and evidence rules for coding agents |
+| [`collaboration/REMOTE_COLLABORATOR_GUIDE.md`](collaboration/REMOTE_COLLABORATOR_GUIDE.md) | Remote setup, issue selection, agent use, validation, and handoff |
+| [`collaboration/AGENT_TASK_PACKET_TEMPLATE.md`](collaboration/AGENT_TASK_PACKET_TEMPLATE.md) | Deterministic task packet for Fable, Claude Code, Codex, Hermes, or other agents |
+| [`collaboration/ACTIVE_WORK.md`](collaboration/ACTIVE_WORK.md) | Human- and agent-readable ownership and dependency ledger |
+| [`../.github/CODEOWNERS`](../.github/CODEOWNERS) | Default review ownership and protected authority surfaces |
 | [`../.github/pull_request_template.md`](../.github/pull_request_template.md) | Required PR authority, evidence, risk, and dependency fields |
 | [Feature issue form](../.github/ISSUE_TEMPLATE/feature.yml) | Defines outcome, authority, allowed systems, frozen systems, and tests |
 | [Bug issue form](../.github/ISSUE_TEMPLATE/bug.yml) | Captures reproducible observed behavior and expected behavior |
@@ -122,3 +126,4 @@ Visuals clarify direction and architecture. They are not proof of implemented ap
 6. Keep diagrams aligned with `ARCHITECTURE.md` and the current capability matrix.
 7. Label concept visuals and engineering diagrams explicitly.
 8. Update this portal whenever a canonical document or major evidence protocol is added, moved, or retired.
+9. Keep `collaboration/ACTIVE_WORK.md` aligned with active issues and PR dependencies.

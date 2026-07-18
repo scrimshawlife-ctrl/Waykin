@@ -1,0 +1,18 @@
+# Default ownership. Add the remote collaborator's GitHub username after access is confirmed.
+* @scrimshawlife-ctrl
+
+# Binding product and architecture authority
+/WAYKIN_SPEC.md @scrimshawlife-ctrl
+/ARCHITECTURE.md @scrimshawlife-ctrl
+/AGENTS.md @scrimshawlife-ctrl
+/docs/governance/ @scrimshawlife-ctrl
+/docs/decisions/ @scrimshawlife-ctrl
+
+# Core gameplay truth and persistence-sensitive surfaces
+/Sources/WaykinCore/ @scrimshawlife-ctrl
+/App/Persistence/ @scrimshawlife-ctrl
+/App/Audio/ @scrimshawlife-ctrl
+
+# Collaboration and repository automation
+/.github/ @scrimshawlife-ctrl
+/docs/collaboration/ @scrimshawlife-ctrl
