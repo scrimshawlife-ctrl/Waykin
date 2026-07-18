@@ -1,0 +1,70 @@
+import ARKit
+import RealityKit
+import UIKit
+import WaykinCore
+
+@MainActor
+final class ARPlacementResolver {
+    private let registry: AREntityRegistry
+
+    init(registry: AREntityRegistry) {
+        self.registry = registry
+    }
+
+    @discardableResult
+    func place(
+        id: String,
+        intent: SpatialIntent,
+        entity: Entity,
+        in arView: ARView,
+        screenPoint: CGPoint? = nil
+    ) -> Bool {
+        guard intent.placement == .groundPlane else { return false }
+        let point = screenPoint ?? CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        guard let query = arView.makeRaycastQuery(
+            from: point,
+            allowing: .estimatedPlane,
+            alignment: .horizontal
+        ), let result = arView.session.raycast(query).first else {
+            return false
+        }
+
+        let anchor = AnchorEntity(raycastResult: result)
+        anchor.addChild(entity)
+        arView.scene.addAnchor(anchor)
+        registry.register(anchor, for: id)
+        return true
+    }
+
+    @discardableResult
+    func placePlaceholder(
+        id: String,
+        intent: SpatialIntent,
+        in arView: ARView,
+        screenPoint: CGPoint? = nil
+    ) -> Bool {
+        let radius = placeholderRadius(for: intent.scaleClass)
+        let mesh = MeshResource.generateSphere(radius: radius)
+        let material = SimpleMaterial(color: .systemTeal, isMetallic: false)
+        let marker = ModelEntity(mesh: mesh, materials: [material])
+        marker.position.y = radius
+        return place(id: id, intent: intent, entity: marker, in: arView, screenPoint: screenPoint)
+    }
+
+    func remove(id: String) {
+        registry.remove(id)
+    }
+
+    func clear() {
+        registry.clear()
+    }
+
+    private func placeholderRadius(for scaleClass: SpatialScaleClass) -> Float {
+        switch scaleClass {
+        case .companion: 0.12
+        case .discovery: 0.08
+        case .threat: 0.18
+        case .environmental: 0.24
+        }
+    }
+}

@@ -66,9 +66,9 @@ Production-capable playback remains behind the semantic `AudioCue` boundary. The
 
 ### AR Presentation Contract
 
-`WaykinCore` now defines platform-neutral AR presentation values under `Sources/WaykinCore/Presentation/`. `SpatialIntent` describes the semantic placement role of a companion, discovery, threat, or environmental object without importing ARKit, RealityKit, or renderer-specific coordinates.
+`WaykinCore` defines platform-neutral AR presentation values under `Sources/WaykinCore/Presentation/`. `SpatialIntent` describes the semantic placement role of a companion, discovery, threat, or environmental object without importing ARKit, RealityKit, or renderer-specific coordinates.
 
-`ARWorldCommand` carries immutable spawn, update, removal, and session-clear intents across the core-to-app boundary. The future app-target AR adapter owns tracking, anchors, entity construction, animation playback, occlusion, and graceful capability fallback. It may realize or defer commands, but it must not mutate movement, world, event, companion, pursuit, Bond, or persistence state.
+`ARWorldCommand` carries immutable spawn, update, removal, and session-clear intents across the core-to-app boundary. The app-target AR adapter owns tracking, anchors, entity construction, animation playback, occlusion, diagnostics, and graceful capability fallback. It may realize or defer commands, but it must not mutate movement, world, event, companion, pursuit, Bond, or persistence state.
 
 ```text
 WaykinCore semantic state
@@ -80,7 +80,9 @@ App-target AR adapter
 ARKit + RealityKit presentation
 ```
 
-The contract is intentionally presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth.
+The reconstructed AR baseline adds an isolated `WaykinARLab` target with camera authorization, capability monitoring, session lifecycle handling, horizontal raycast placement, bounded entity registration, procedural Lira presentation, deterministic presentation states, and privacy-filtered diagnostics. The normal `Waykin` scheme continues to launch `WaykinApp`; the AR Lab is a separate engineering surface.
+
+The contract remains presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth. Physical walking and the production Companion Walk loop are not connected to AR in this baseline.
 
 ## Retained Compatibility
 
@@ -94,7 +96,7 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
-- App-target ARKit and RealityKit session implementation.
+- Connection of AR presentation commands to Lira, movement, events, and pursuit.
 - Physical-device validation of AR placement, tracking loss, interruption recovery, and battery impact.
 
 The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, generative AI, wearables, and generalized narrative infrastructure.
