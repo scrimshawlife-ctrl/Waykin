@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="900" viewBox="0 0 2400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Waykin concept hero</title>
+  <desc id="desc">A lone walker and luminous companion moving through a mountain valley at dawn.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08101f"/>
+      <stop offset="0.48" stop-color="#173c49"/>
+      <stop offset="1" stop-color="#f4b860"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14372f"/>
+      <stop offset="1" stop-color="#07100f"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#819b91" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#f5f7f3" stop-opacity="0.12"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#9cf9ee" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#43c7b8" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#43c7b8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="smallGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+
+  <rect width="2400" height="900" fill="url(#sky)"/>
+  <circle cx="2050" cy="170" r="155" fill="#ffe1a6" opacity="0.35"/>
+  <circle cx="2050" cy="170" r="92" fill="#fff5dc" opacity="0.55"/>
+
+  <path d="M0 470 L300 160 L570 440 L860 115 L1190 475 L1470 230 L1750 460 L2020 210 L2400 455 L2400 900 L0 900 Z" fill="#0b1823" opacity="0.82"/>
+  <path d="M0 560 L350 330 L640 535 L930 295 L1260 570 L1540 360 L1840 550 L2135 340 L2400 545 L2400 900 L0 900 Z" fill="#14372f" opacity="0.88"/>
+  <path d="M0 650 C430 560 690 645 1000 600 C1280 560 1590 580 2400 505 L2400 900 L0 900 Z" fill="url(#ground)"/>
+
+  <path d="M1280 900 C1295 795 1360 720 1490 655 C1620 590 1755 550 1910 515 C1770 585 1650 655 1590 730 C1530 805 1510 855 1500 900 Z" fill="url(#trail)"/>
+
+  <g opacity="0.6">
+    <circle cx="360" cy="610" r="7" fill="#43c7b8" filter="url(#smallGlow)"/>
+    <circle cx="520" cy="548" r="5" fill="#43c7b8" filter="url(#smallGlow)"/>
+    <circle cx="820" cy="650" r="6" fill="#43c7b8" filter="url(#smallGlow)"/>
+    <circle cx="1030" cy="530" r="5" fill="#f4b860" filter="url(#smallGlow)"/>
+    <circle cx="1820" cy="425" r="7" fill="#43c7b8" filter="url(#smallGlow)"/>
+  </g>
+
+  <g transform="translate(1560 520)">
+    <ellipse cx="0" cy="185" rx="72" ry="22" fill="#030706" opacity="0.45"/>
+    <circle cx="0" cy="-38" r="38" fill="#101a21"/>
+    <path d="M-25 -5 C-48 70 -43 122 -25 178 L-2 178 L8 72 L24 178 L47 178 C55 105 48 38 27 -5 Z" fill="#101a21"/>
+    <path d="M-20 178 L-48 275 L-18 275 L5 190 Z" fill="#0a1116"/>
+    <path d="M24 178 L12 275 L42 275 L50 184 Z" fill="#0a1116"/>
+    <path d="M-32 15 L-88 118 L-65 130 L-10 65 Z" fill="#101a21"/>
+    <path d="M34 16 L83 116 L62 129 L11 67 Z" fill="#101a21"/>
+    <path d="M-34 18 Q0 48 35 18 L28 104 Q0 126 -29 103 Z" fill="#22384a"/>
+  </g>
+
+  <g transform="translate(1760 678)">
+    <circle cx="0" cy="0" r="118" fill="url(#glow)" filter="url(#softGlow)"/>
+    <path d="M-44 24 C-75 -18 -50 -78 -8 -74 C-2 -101 16 -121 28 -91 C44 -112 67 -99 61 -70 C91 -46 84 3 48 23 C38 59 13 85 -18 75 C-47 70 -66 52 -44 24 Z" fill="none" stroke="#9cf9ee" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M-14 75 L-24 126 M33 68 L47 118 M-39 4 L-84 -17 M57 7 L101 -5" stroke="#9cf9ee" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="-4" cy="-31" r="5" fill="#f5f7f3"/>
+    <circle cx="33" cy="-29" r="5" fill="#f5f7f3"/>
+  </g>
+
+  <g transform="translate(130 130)">
+    <circle cx="55" cy="55" r="50" fill="none" stroke="#43c7b8" stroke-width="8"/>
+    <path d="M55 18 C73 38 83 55 55 86 C27 55 37 38 55 18 Z" fill="none" stroke="#9cf9ee" stroke-width="8" stroke-linejoin="round"/>
+    <text x="135" y="78" fill="#f5f7f3" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="92" font-weight="650" letter-spacing="1">Waykin</text>
+    <text x="5" y="170" fill="#f5f7f3" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="38" font-weight="450">A walking adventure that walks with you.</text>
+    <text x="5" y="242" fill="#b9d9d3" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="28">One step. One companion. One bond.</text>
+    <text x="5" y="286" fill="#b9d9d3" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="28">The world responds to how you move.</text>
+  </g>
+
+  <rect x="0" y="0" width="2400" height="900" fill="none" stroke="#43c7b8" stroke-opacity="0.25" stroke-width="4"/>
+</svg>
