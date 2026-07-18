@@ -1,0 +1,13 @@
+# WaykinCore framework-isolation baseline (ratchet).
+#
+# Each entry grandfathers ONE pre-existing, architecture-documented
+# platform import inside Sources/WaykinCore. Paths are relative to
+# Sources/WaykinCore. Format: <path>|<framework>
+#
+# These are the only sanctioned exceptions (see ARCHITECTURE.md:
+# RealLocationProvider is a foreground Core Location adapter; session
+# memories persist via SwiftData). Do NOT add entries without explicit
+# architecture review — the goal is for this file to shrink, not grow.
+Location/MovementIntegrity.swift|CoreLocation
+Location/RealLocationProvider.swift|CoreLocation
+Persistence/PersistenceStore.swift|SwiftData

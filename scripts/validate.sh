@@ -42,6 +42,15 @@ git status --short || true
 EXIT_CODE=0
 
 echo ""
+echo "--- Structural guard: WaykinCore framework isolation ---"
+if "${SCRIPT_DIR}/check_core_framework_isolation.sh"; then
+  echo "core framework isolation: PASS"
+else
+  echo "core framework isolation: FAIL"
+  EXIT_CODE=1
+fi
+
+echo ""
 echo "--- Regenerate project ---"
 rm -rf Waykin.xcodeproj || true
 if xcodegen generate; then

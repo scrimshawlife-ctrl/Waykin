@@ -1,7 +1,7 @@
 # Waykin Validation Makefile
 # Canonical targets for build, test, and validation.
 
-.PHONY: generate build test demo validate validate-simulator clean-generated
+.PHONY: generate build test demo validate validate-simulator clean-generated check-core-isolation test-core-isolation
 
 generate:
 	@rm -rf Waykin.xcodeproj
@@ -15,6 +15,12 @@ test:
 
 demo:
 	swift run WaykinDemo
+
+check-core-isolation:
+	@./scripts/check_core_framework_isolation.sh
+
+test-core-isolation:
+	@./scripts/test_check_core_framework_isolation.sh
 
 validate:
 	@./scripts/validate.sh

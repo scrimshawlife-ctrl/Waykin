@@ -46,6 +46,15 @@ make validate
 git diff --check
 ```
 
+`make validate` includes the WaykinCore framework-isolation guard
+(`make check-core-isolation`): platform frameworks (ARKit, RealityKit,
+SwiftUI, MapKit, SwiftData, AVFoundation, CoreLocation, UIKit, AppKit)
+must not be imported under `Sources/WaykinCore`. The only sanctioned
+exceptions are the reviewed entries in
+`scripts/core_isolation_baseline.txt`; do not add entries without
+explicit architecture review. Guard self-tests run via
+`make test-core-isolation`.
+
 Use `make validate-simulator` and physical-device protocols when relevant.
 
 ## Merge Discipline
