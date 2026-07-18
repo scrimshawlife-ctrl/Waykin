@@ -179,7 +179,7 @@ The following results were recorded on **July 16, 2026** and apply to the tested
 | Physical GPS walk | Manual protocol | `NOT_COMPUTABLE` in that receipt |
 | Physical audio playback | Manual protocol | `NOT_COMPUTABLE` in that receipt |
 
-Workflow badges above report the current `main` branch state. Dated validation claims are historical evidence, not permanent guarantees. Do not mark GPS, device audio, battery, outdoor usability, or AR behavior as validated without direct device evidence.
+Workflow badges above report the current `main` branch state. A badge can be unknown or failing until GitHub Actions has run successfully for that workflow. Dated validation claims are historical evidence, not permanent guarantees. Do not mark GPS, device audio, battery, outdoor usability, or AR behavior as validated without direct device evidence.
 
 ## Documentation Map
 
