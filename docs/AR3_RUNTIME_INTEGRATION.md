@@ -22,7 +22,7 @@ Procedural Lira / discovery / threat placeholders
 
 ## Canonical demo arc
 
-1. `companionObserves` → Lira investigates; discovery placeholder appears.
+1. `companionObserves` → Lira investigates.
 2. `companionDrawsNear` → Lira becomes alert and draws near semantically.
 3. `distantPresence` → Lira investigates; distant threat placeholder appears.
 4. `pursuitBegins` → Lira becomes alert; stable threat identity remains active.
@@ -70,6 +70,8 @@ grep -RInE '^[[:space:]]*import[[:space:]]+(ARKit|RealityKit)' Sources/WaykinCor
 
 No matches are allowed.
 
-## Physical validation target
+## Physical validation
 
-Place Lira using **Start Arc**, then press **Next Event** seven times and confirm the displayed event and Lira state follow the canonical sequence. Confirm discovery creation, threat creation/intensification/removal, final celebration, stable entity counts, and scene cleanup.
+Place Lira using **Start Arc**, then press **Next Event** seven times and confirm the displayed event and Lira state follow the canonical sequence. Confirm the manual discovery renderer, threat creation/in-place intensification/removal, final celebration, stable entity counts, scene cleanup, and that the demo session ends after the seventh event.
+
+This bounded indoor protocol passed on an iPhone 17 Pro, including repaired background/foreground recovery and fresh placement after reopen. Outdoor-device and measured performance gates remain open. See `docs/AR3_PHYSICAL_DEVICE_VALIDATION.md` for the evidence and explicit exclusions.

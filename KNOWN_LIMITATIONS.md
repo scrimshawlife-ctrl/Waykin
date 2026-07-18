@@ -9,6 +9,7 @@
 - The app exposes one primary Begin Walk path.
 - Real walking sessions use foreground When-In-Use location only and pause when the app becomes inactive or enters the background.
 - Real samples pass through conservative accuracy, age, ordering, displacement, and walking-speed checks before affecting session state.
+- The AR-1 device run observed camera tracking, marker placement and replacement, and background recovery on an iPhone 17 Pro. The later AR-3 run also confirmed repaired background/foreground recovery and fresh placement after reopen.
 
 ## NOT_COMPUTABLE Until Direct Device Evidence
 
@@ -60,7 +61,9 @@ The recorded route is measurement support for the active Companion Walk only. It
 - Event variety is intentionally bounded.
 - Bundled WAV files are deterministic engineering placeholders, not production sound design.
 - No advanced spatial audio is implemented; the adapter uses only restrained stereo pan.
-- There is no AR implementation.
+- Procedural Lira, the deterministic AR-3 arc, and explicit AR Lab background/foreground recovery are validated indoors on the tested device; the outdoor-device and measured performance gates remain open.
+- AR surface detection, marker placement, and same-ID replacement function on the tested device, but detection and placement still need calibration. AR interruption recovery, battery use, and thermal behavior remain unverified.
+- Camera-relative locomotion, eye contact, contextual animation, discovery interaction, and complete threat/escape gameplay are not implemented.
 - There is no multiplayer.
 - There is no backend.
 - There are no accounts or authentication.

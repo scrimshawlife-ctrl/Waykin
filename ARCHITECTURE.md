@@ -80,7 +80,9 @@ App-target AR adapter
 ARKit + RealityKit presentation
 ```
 
-AR-1 adds an isolated physical-device shell with capability monitoring, session lifecycle handling, validated horizontal raycasts, and a bounded entity registry. The normal walking application remains available as `WaykinApp` for regression testing. During AR-1 validation, both the `Waykin` and `WaykinARLab` schemes intentionally launch the `WaykinARLab` executable so the test surface cannot be confused with the existing walking UI.
+AR-1 adds an isolated physical-device shell with capability monitoring, session lifecycle handling, horizontal raycasts, and a bounded entity registry. Camera tracking, marker placement, surface detection, replacement, and background recovery have been observed on an iPhone 17 Pro; placement and detection calibration remain open. The normal `Waykin` scheme launches `WaykinApp`, while the dedicated `WaykinARLab` scheme launches the isolated AR validation surface.
+
+AR-2 adds procedural Lira embodiment, direct presentation-state controls, and privacy-filtered diagnostics. AR-3 adapts the existing deterministic demo arc and CompanionRuntime state into AR commands without changing core scheduling or progression. Lira embodiment, the deterministic indoor arc, and repaired background/foreground recovery are validated indoors on the tested device. Outdoor-device and measured performance gates remain open; M4 locomotion, orientation, eye contact, and contextual behavior remain separate work.
 
 The contract is intentionally presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth.
 
@@ -96,7 +98,7 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 - Replacement of deterministic engineering tones with production sound design.
 - Richer tuning of event weights.
 - Optional migration of old proof-of-concept experience code after the walking loop is proven.
-- Connection of AR commands to Lira, movement, events, and pursuit.
-- Physical-device validation of AR placement, tracking loss, interruption recovery, and battery impact.
+- Camera-relative companion locomotion, target-facing orientation, and contextual animation.
+- Physical-device calibration of AR surface detection and placement, tracking-loss and interruption recovery, and battery impact.
 
 The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, generative AI, wearables, and generalized narrative infrastructure.

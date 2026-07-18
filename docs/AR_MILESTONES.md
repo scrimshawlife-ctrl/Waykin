@@ -4,18 +4,18 @@
 |---|---|---|
 | M0 | Repository and deterministic walking foundation | Complete |
 | M1 | AR runtime foundation: camera, tracking, placement, replacement | Physically validated |
-| M2 | Procedural companion rendering and direct state controls | Implementation merged; pending physical validation |
-| M3 | Companion locomotion and orientation under camera motion | Planned |
-| M4 | Runtime-driven companion state mapping | Implemented in AR-3; pending validation |
-| M5 | Existing Companion Walk demo arc rendered in AR | Implemented in AR-3; pending validation |
-| M6 | Discovery-object interaction | Planned |
-| M7 | Threat/pursuit presentation | Placeholder lifecycle only |
-| M8 | Complete indoor vertical slice | Planned |
-| M9 | First outdoor alpha | Planned |
+| M2 | Companion embodiment: procedural Lira, direct state controls, diagnostics, placeholders | Indoor device validated; outdoor gate pending |
+| M3 | Runtime integration: CompanionRuntime adapter, DemoSession bridge, seven-event arc, discovery and threat renderers | Indoor device validated; outdoor gate pending |
+| M4 | Companion intelligence: locomotion, orientation, eye contact, and contextual behaviors | Planned |
+| M5 | One discovery interaction with completion, Bond, and memory | Planned |
+| M6 | One threat presentation with escalation and escape completion | Planned |
+| M7 | Complete Companion Walk AR loop | Planned |
+| M8 | Outdoor alpha and field characterization | Planned |
+| M9 | Experience-pack system | Future; outside the current MVP scope |
 
-## Current phase: AR-3 runtime integration
+## Current phase: M3 outdoor evidence gate
 
-AR-3 connects the existing `DemoSessionController`, `CompanionRuntime`, and `WorldEvent` sequence to procedural Lira through `ARWorldCommand`. It does not add new gameplay rules.
+AR-3 connects the existing `DemoSessionController`, `CompanionRuntime`, and `WorldEvent` sequence to procedural Lira through `ARWorldCommand`. It does not add new gameplay rules. Its deterministic indoor device gate is complete; outdoor-device and measured performance evidence remain required before merge or M4 work.
 
 ## AR-3 physical exit evidence
 
@@ -23,13 +23,13 @@ AR-3 connects the existing `DemoSessionController`, `CompanionRuntime`, and `Wor
 - Next Event advances the existing seven-event deterministic sequence.
 - UI event text matches the core event kind.
 - Lira visibly transitions through investigate, alert, follow, and celebrate.
-- discovery placeholder appears during observation.
-- stable threat identity appears, intensifies, and is removed when pursuit fades.
+- the manual Discovery control places a discovery placeholder without inventing new event semantics.
+- stable threat identity appears, intensifies in place, and is removed when pursuit fades.
 - Run Arc reaches the final Bond moment without duplicate companion entities.
 - Clear removes all registered entities.
 - background/foreground behavior is recorded.
 - no regression claim is made for the walking product without running its suite.
 
-## Deferred M3 evidence
+## M4 boundary
 
-Real follow locomotion, camera-relative repositioning, target-facing orientation, and yaw smoothing remain deferred until AR-3 state/event integration is physically validated.
+Real follow locomotion, camera-relative repositioning, target-facing orientation, eye contact, contextual idle behavior, and yaw smoothing remain M4 work and are not implied by AR-3 validation.
