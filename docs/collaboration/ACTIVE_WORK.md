@@ -12,22 +12,38 @@ Last updated: 2026-07-18
 - Do not run parallel tasks that require the same file.
 - Update this ledger when work starts, blocks, transfers, or completes.
 - Remove completed entries after the corresponding PR merges or closes.
+- Local WIP branches are preservation surfaces, not merge authority.
 
 ## Active
 
-| Issue / PR | Owner | Branch | Allowed paths | Status | Dependency |
+| Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| PR #19 — AR-1 integration | Daniel | `agent/ar1-realitykit-session-shell` | `App/AR/**`, AR tests and docs | Review / integration | Current main |
-| PR #24 — AR-3 runtime integration | Unassigned pending reconciliation | `ar3-runtime-integration` | AR adapter, AR tests and docs | Draft / blocked | PR #19 integration chain |
-| Remote collaboration hardening | Daniel | `agent/remote-collaboration-hardening` | Collaboration docs and GitHub ownership | Implementation | Current main |
+| PR #31 — reconciled AR baseline | Daniel | `agent/ar-reconciliation-main` | Reconciled AR baseline, focused tests, `project.yml`, AR docs | Draft / hosted native build failing | Clean local repair and full validation |
+| Issue #38 — preserve AR-3 work and isolate PR #31 repair | Daniel | local `wip/ar3-local-preservation`; clean worktree `Waykin-pr31-repair` | Preservation: current mixed AR-3 set. Repair: minimum files proven by compiler diagnostic | Active recovery | PR #31 |
+| PR #34 — collaborator ownership | Daniel + `prabu-openclaw` | `chore/28-collaborator-ownership` | `.github/CODEOWNERS` | Ready / awaiting Prabu review | Issue #28 |
+| Issue #29 — CI and structural guards | `prabu-openclaw` for first bounded task | `chore/29-core-framework-isolation` when started | scripts, Makefile, focused tests, CI docs | Assigned / not yet evidenced | No collision with PR #31 |
 
 ## Blocked or Pending
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Friend CODEOWNERS assignment | GitHub username not recorded in repository context | Add collaborator username and update `.github/CODEOWNERS` |
-| AR-3 retarget to `main` | AR-1/AR-2 integration chain is not yet reconciled into `main` | Merge or reconstruct current AR baseline, then rebase AR-3 |
-| Physical AR claims | Requires direct iPhone evidence | Execute the relevant physical-device protocol |
+| Issue #35 — living-companion presentation | PR #31 has not merged and local validation is incomplete | Repair and validate PR #31, merge it, then branch Issue #35 from current `main` |
+| Issue #27 — AR reconciliation closure | PR #31 native target still fails hosted build | Complete Issue #38 repair lane and attach exact local results |
+| Issue #28 — collaborator onboarding closure | First collaborator-authored branch and draft PR not yet supplied | Prabu reviews PR #34 and completes the Issue #29 bounded task |
+| Physical AR claims | Requires direct iPhone evidence | Execute the relevant physical-device protocol and attach receipts |
+
+## Exclusive Ownership Boundaries
+
+### Daniel — AR recovery
+
+- Owns the local AR-3 preservation branch.
+- Owns the clean PR #31 repair worktree.
+- Must not fold the preserved AR-3 validation set into PR #31.
+
+### `prabu-openclaw` — infrastructure onboarding task
+
+- May work only on the Issue #29 framework-isolation guard and its declared files.
+- Must not modify `App/AR/**`, `ARLab/**`, `AppTests/AR*`, `project.yml`, `ARCHITECTURE.md`, or AR validation documents while Issue #38 is active.
 
 ## Handoff Entry Template
 
