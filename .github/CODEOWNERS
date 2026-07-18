@@ -20,6 +20,7 @@
 /Sources/WaykinCore/ @scrimshawlife-ctrl
 /App/Persistence/ @scrimshawlife-ctrl
 /App/Audio/ @scrimshawlife-ctrl
+/App/Resources/Audio/ @scrimshawlife-ctrl
 
 # Collaboration and repository automation remain jointly reviewed
 /.github/ @scrimshawlife-ctrl @prabu-openclaw
