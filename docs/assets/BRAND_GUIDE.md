@@ -62,7 +62,7 @@ Generated art must be reviewed for:
 
 ## Labeling Rule
 
-Every README visual must disclose its evidence class. Concept visuals and engineering diagrams are not proof of implemented application functionality.
+Every README visual must disclose its evidence class. Concept visuals and engineering diagrams are not proof of implemented application functionality, validation status, or physical-device behavior.
 
 ## Replacement Plan
 
