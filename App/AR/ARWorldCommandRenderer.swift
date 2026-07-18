@@ -23,12 +23,12 @@ final class ARWorldCommandRenderer {
     init(
         registry: AREntityRegistry,
         diagnostics: ARDiagnosticRecorder,
-        companionFactory: CompanionEntityFactory = CompanionEntityFactory()
+        companionFactory: CompanionEntityFactory? = nil
     ) {
         self.registry = registry
         self.placementResolver = ARPlacementResolver(registry: registry)
         self.diagnostics = diagnostics
-        self.companionFactory = companionFactory
+        self.companionFactory = companionFactory ?? CompanionEntityFactory()
     }
 
     func render(_ command: ARWorldCommand, in arView: ARView) -> ARCommandResult {
