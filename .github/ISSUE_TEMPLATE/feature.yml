@@ -1,5 +1,6 @@
 name: Feature
-about: Propose an issue-scoped Waykin capability
+description: Propose an issue-scoped Waykin capability
+title: "feat: "
 labels: ["feature"]
 body:
   - type: textarea
