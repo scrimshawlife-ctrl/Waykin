@@ -133,7 +133,27 @@ run_guard "$RATCHET" "$BASELINE_FILE" 1
 check "strict mode fails even baselined imports" "$([ "$STATUS" -eq 1 ]; echo $?)"
 check "strict mode reports the baselined framework" "$(printf '%s' "$OUTPUT" | grep -q "'CoreLocation'"; echo $?)"
 
-# --- Case 8: the real repository baseline holds on the real core ---------
+# --- Case 8: multiple violations produce deterministic ordering ----------
+MULTI="$TMP_ROOT/multi/Core"
+mkdir -p "$MULTI/Engines" "$MULTI/Views"
+cat > "$MULTI/Engines/Alpha.swift" <<'EOF'
+import Foundation
+import SwiftUI
+import MapKit
+EOF
+cat > "$MULTI/Views/Beta.swift" <<'EOF'
+import ARKit
+EOF
+run_guard "$MULTI"
+FIRST_RUN="$OUTPUT"
+run_guard "$MULTI"
+check "multiple violations exit nonzero" "$([ "$STATUS" -eq 1 ]; echo $?)"
+check "all three violations are reported" "$([ "$(printf '%s\n' "$OUTPUT" | grep -c '^VIOLATION:')" -eq 3 ]; echo $?)"
+check "repeated runs produce byte-identical output" "$([ "$FIRST_RUN" = "$OUTPUT" ]; echo $?)"
+check "files are reported in sorted order (Alpha before Beta)" \
+  "$([ "$(printf '%s\n' "$OUTPUT" | grep '^VIOLATION:' | head -1 | grep -c 'Engines/Alpha.swift')" -eq 1 ]; echo $?)"
+
+# --- Case 9: the real repository baseline holds on the real core ---------
 set +e
 OUTPUT="$("$GUARD" 2>&1)"
 STATUS=$?
