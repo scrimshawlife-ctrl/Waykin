@@ -7,6 +7,15 @@ import WaykinCore
 final class ARPlacementResolver {
     private let registry: AREntityRegistry
 
+    @MainActor
+    private enum PlaceholderResources {
+        static let companionMesh = MeshResource.generateSphere(radius: 0.12)
+        static let discoveryMesh = MeshResource.generateSphere(radius: 0.08)
+        static let threatMesh = MeshResource.generateSphere(radius: 0.18)
+        static let environmentalMesh = MeshResource.generateSphere(radius: 0.24)
+        static let material = SimpleMaterial(color: .systemTeal, isMetallic: false)
+    }
+
     init(registry: AREntityRegistry) {
         self.registry = registry
     }
@@ -44,9 +53,10 @@ final class ARPlacementResolver {
         screenPoint: CGPoint? = nil
     ) -> Bool {
         let radius = placeholderRadius(for: intent.scaleClass)
-        let mesh = MeshResource.generateSphere(radius: radius)
-        let material = SimpleMaterial(color: .systemTeal, isMetallic: false)
-        let marker = ModelEntity(mesh: mesh, materials: [material])
+        let marker = ModelEntity(
+            mesh: placeholderMesh(for: intent.scaleClass),
+            materials: [PlaceholderResources.material]
+        )
         marker.position.y = radius
         return place(id: id, intent: intent, entity: marker, in: arView, screenPoint: screenPoint)
     }
@@ -65,6 +75,15 @@ final class ARPlacementResolver {
         case .discovery: 0.08
         case .threat: 0.18
         case .environmental: 0.24
+        }
+    }
+
+    private func placeholderMesh(for scaleClass: SpatialScaleClass) -> MeshResource {
+        switch scaleClass {
+        case .companion: PlaceholderResources.companionMesh
+        case .discovery: PlaceholderResources.discoveryMesh
+        case .threat: PlaceholderResources.threatMesh
+        case .environmental: PlaceholderResources.environmentalMesh
         }
     }
 }

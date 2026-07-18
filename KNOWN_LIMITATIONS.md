@@ -61,8 +61,8 @@ The recorded route is measurement support for the active Companion Walk only. It
 - Event variety is intentionally bounded.
 - Bundled WAV files are deterministic engineering placeholders, not production sound design.
 - No advanced spatial audio is implemented; the adapter uses only restrained stereo pan.
-- Procedural Lira, the deterministic AR-3 arc, and explicit AR Lab background/foreground recovery are validated indoors on the tested device; the outdoor-device and measured performance gates remain open.
-- AR surface detection, marker placement, and same-ID replacement function on the tested device, but detection and placement still need calibration. AR interruption recovery, battery use, and thermal behavior remain unverified.
+- Procedural Lira, the deterministic AR-3 arc, anchor stability, and explicit AR Lab background/foreground recovery passed bounded indoor and outdoor runs on the tested device before the allocation repair. The final repaired executable passes indoor behavior, the operator-confirmed post-warm-up retained-memory gate, and the predeclared 90-second frame-pacing gate, but its bounded outdoor regression remains open. Absolute production memory, leak freedom, allocation rate, performance beyond the measured workload, and sustained allocation behavior remain unproven.
+- AR surface detection, marker placement, and same-ID replacement function on the tested device, but broader calibration remains open. Sunlight readability was not reported, and AR interruption recovery, battery use, and sustained thermal behavior remain unverified.
 - Camera-relative locomotion, eye contact, contextual animation, discovery interaction, and complete threat/escape gameplay are not implemented.
 - There is no multiplayer.
 - There is no backend.

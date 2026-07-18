@@ -5,22 +5,69 @@ import UIKit
 struct CompanionEntityFactory {
     static let rootName = "LiraRoot"
 
+    @MainActor
+    private enum Resources {
+        static let bodyMesh = MeshResource.generateSphere(radius: 0.18)
+        static let headMesh = MeshResource.generateSphere(radius: 0.14)
+        static let earMesh = MeshResource.generateSphere(radius: 0.065)
+        static let tailMesh = MeshResource.generateSphere(radius: 0.08)
+        static let coreMesh = MeshResource.generateSphere(radius: 0.055)
+        static let shadowMesh = MeshResource.generateSphere(radius: 0.20)
+        static let indicatorMesh = MeshResource.generateSphere(radius: 0.025)
+
+        static let bodyMaterial = SimpleMaterial(
+            color: UIColor(red: 0.30, green: 0.72, blue: 0.92, alpha: 1),
+            roughness: 0.35,
+            isMetallic: false
+        )
+        static let headMaterial = SimpleMaterial(
+            color: UIColor(red: 0.42, green: 0.86, blue: 1.0, alpha: 1),
+            roughness: 0.35,
+            isMetallic: false
+        )
+        static let earMaterial = SimpleMaterial(
+            color: UIColor(red: 0.34, green: 0.76, blue: 0.96, alpha: 1),
+            roughness: 0.35,
+            isMetallic: false
+        )
+        static let tailMaterial = SimpleMaterial(
+            color: UIColor(red: 0.25, green: 0.64, blue: 0.90, alpha: 1),
+            roughness: 0.35,
+            isMetallic: false
+        )
+        static let coreMaterial = SimpleMaterial(
+            color: UIColor(red: 0.92, green: 0.98, blue: 1.0, alpha: 1),
+            roughness: 0.35,
+            isMetallic: false
+        )
+        static let shadowMaterial = SimpleMaterial(
+            color: UIColor(white: 0.05, alpha: 0.65),
+            roughness: 0.35,
+            isMetallic: false
+        )
+        static let indicatorMaterial = SimpleMaterial(
+            color: .white,
+            roughness: 0.35,
+            isMetallic: false
+        )
+    }
+
     func makeLira(configuration: CompanionVisualConfiguration = .liraPlaceholder) -> Entity {
         let root = Entity()
         root.name = Self.rootName
 
         let body = model(
             name: "Body",
-            mesh: .generateSphere(radius: 0.18),
-            color: UIColor(red: 0.30, green: 0.72, blue: 0.92, alpha: 1)
+            mesh: Resources.bodyMesh,
+            material: Resources.bodyMaterial
         )
         body.scale = SIMD3<Float>(0.9, 1.35, 0.72)
         body.position = [0, configuration.groundOffsetMeters + 0.28, 0]
 
         let head = model(
             name: "Head",
-            mesh: .generateSphere(radius: 0.14),
-            color: UIColor(red: 0.42, green: 0.86, blue: 1.0, alpha: 1)
+            mesh: Resources.headMesh,
+            material: Resources.headMaterial
         )
         head.position = [0, configuration.groundOffsetMeters + 0.54, 0.03]
 
@@ -29,8 +76,8 @@ struct CompanionEntityFactory {
 
         let tail = model(
             name: "Tail",
-            mesh: .generateSphere(radius: 0.08),
-            color: UIColor(red: 0.25, green: 0.64, blue: 0.90, alpha: 1)
+            mesh: Resources.tailMesh,
+            material: Resources.tailMaterial
         )
         tail.scale = SIMD3<Float>(0.55, 1.75, 0.55)
         tail.position = [0, configuration.groundOffsetMeters + 0.30, -0.21]
@@ -38,8 +85,8 @@ struct CompanionEntityFactory {
 
         let core = model(
             name: "CoreGlow",
-            mesh: .generateSphere(radius: 0.055),
-            color: UIColor(red: 0.92, green: 0.98, blue: 1.0, alpha: 1)
+            mesh: Resources.coreMesh,
+            material: Resources.coreMaterial
         )
         let glowScale = Float(0.75 + (configuration.glowIntensity * 0.5))
         core.scale = SIMD3<Float>(repeating: glowScale)
@@ -47,16 +94,16 @@ struct CompanionEntityFactory {
 
         let shadow = model(
             name: "GroundShadow",
-            mesh: .generateSphere(radius: 0.20),
-            color: UIColor(white: 0.05, alpha: 0.65)
+            mesh: Resources.shadowMesh,
+            material: Resources.shadowMaterial
         )
         shadow.scale = SIMD3<Float>(1, 0.02, 1)
         shadow.position = [0, configuration.groundOffsetMeters, 0]
 
         let indicator = model(
             name: "StatusIndicator",
-            mesh: .generateSphere(radius: 0.025),
-            color: UIColor.white
+            mesh: Resources.indicatorMesh,
+            material: Resources.indicatorMaterial
         )
         indicator.position = [0, configuration.groundOffsetMeters + 0.77, 0]
 
@@ -70,16 +117,19 @@ struct CompanionEntityFactory {
     private func ear(name: String, x: Float, y: Float) -> ModelEntity {
         let entity = model(
             name: name,
-            mesh: .generateSphere(radius: 0.065),
-            color: UIColor(red: 0.34, green: 0.76, blue: 0.96, alpha: 1)
+            mesh: Resources.earMesh,
+            material: Resources.earMaterial
         )
         entity.scale = SIMD3<Float>(0.8, 1.45, 0.7)
         entity.position = [x, y, 0]
         return entity
     }
 
-    private func model(name: String, mesh: MeshResource, color: UIColor) -> ModelEntity {
-        let material = SimpleMaterial(color: color, roughness: 0.35, isMetallic: false)
+    private func model(
+        name: String,
+        mesh: MeshResource,
+        material: SimpleMaterial
+    ) -> ModelEntity {
         let entity = ModelEntity(mesh: mesh, materials: [material])
         entity.name = name
         return entity

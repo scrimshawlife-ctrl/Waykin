@@ -68,6 +68,16 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: WaykinApp
+  WaykinARLabUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - WaykinARLabUITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: WaykinARLab
 packages:
   Waykin:
     path: .
@@ -90,3 +100,6 @@ schemes:
     run:
       config: Debug
       executable: WaykinARLab
+    test:
+      targets:
+        - WaykinARLabUITests

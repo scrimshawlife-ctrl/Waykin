@@ -38,7 +38,6 @@ final class ARSessionCoordinator: NSObject {
 
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
-        configuration.environmentTexturing = .automatic
 
         var options: ARSession.RunOptions = []
         if resetTracking {

@@ -1,7 +1,7 @@
 # Waykin Validation Makefile
 # Canonical targets for build, test, and validation.
 
-.PHONY: generate build test demo validate validate-simulator clean-generated
+.PHONY: generate build test demo validate validate-simulator validate-ar3-frame-pacing clean-generated
 
 generate:
 	@rm -rf Waykin.xcodeproj
@@ -21,6 +21,9 @@ validate:
 
 validate-simulator:
 	@./scripts/validate_simulator.sh $(WAYKIN_SIMULATOR_NAME)
+
+validate-ar3-frame-pacing:
+	@./scripts/run_ar3_frame_pacing_capture.sh
 
 clean-generated:
 	rm -rf Waykin.xcodeproj

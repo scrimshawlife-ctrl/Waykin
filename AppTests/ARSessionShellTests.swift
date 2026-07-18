@@ -79,6 +79,26 @@ final class ARSessionShellTests: XCTestCase {
         XCTAssertNil(second.parent)
     }
 
+    func testEntityRegistryClearRemovesRegisteredAnchorsFromScene() {
+        let registry = AREntityRegistry()
+        let arView = ARView(frame: .zero)
+        let first = AnchorEntity()
+        let second = AnchorEntity()
+        arView.scene.addAnchor(first)
+        arView.scene.addAnchor(second)
+        registry.register(first, for: "first")
+        registry.register(second, for: "second")
+
+        XCTAssertEqual(arView.scene.anchors.count, 2)
+
+        registry.clear()
+
+        XCTAssertEqual(registry.count, 0)
+        XCTAssertTrue(arView.scene.anchors.isEmpty)
+        XCTAssertNil(first.parent)
+        XCTAssertNil(second.parent)
+    }
+
     func testBackgroundPauseThenTrackingResetStartRestoresActiveSession() async {
         let monitor = ARCapabilityMonitor(
             currentState: { .available },

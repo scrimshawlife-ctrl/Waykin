@@ -24,6 +24,8 @@ DerivedData/
 *.dylib
 *.exe
 *.out
+__pycache__/
+*.pyc
 
 # IDE
 .idea/

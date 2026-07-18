@@ -36,6 +36,21 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertFalse(first === second)
         XCTAssertNil(first.parent)
         XCTAssertNil(second.parent)
+
+        for name in [
+            "Body", "Head", "LeftEar", "RightEar", "Tail",
+            "CoreGlow", "GroundShadow", "StatusIndicator"
+        ] {
+            let firstChild = first.findEntity(named: name)
+            let secondChild = second.findEntity(named: name)
+            XCTAssertNotNil(firstChild, "Missing first \(name)")
+            XCTAssertNotNil(secondChild, "Missing second \(name)")
+            XCTAssertFalse(firstChild === secondChild, "Reused mutable entity \(name)")
+        }
+
+        let secondBodyPosition = second.findEntity(named: "Body")?.position
+        first.findEntity(named: "Body")?.position.x += 1
+        XCTAssertEqual(second.findEntity(named: "Body")?.position, secondBodyPosition)
     }
 
     func testGlowIntensityChangesCorePresentation() {
