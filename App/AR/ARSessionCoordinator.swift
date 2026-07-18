@@ -14,6 +14,7 @@ final class ARSessionCoordinator: NSObject {
     }
 
     var onCapabilityStateChange: ((ARCapabilityState) -> Void)?
+    var onSessionReset: (() -> Void)?
 
     init(
         session: ARSession = ARSession(),
@@ -26,11 +27,13 @@ final class ARSessionCoordinator: NSObject {
         capabilityState = capabilityMonitor.currentState()
     }
 
-    func start(resetTracking: Bool = false) async {
+    @discardableResult
+    func start(resetTracking: Bool = false) async -> Bool {
         let authorizationState = await capabilityMonitor.requestCameraAccess()
+        guard !Task.isCancelled else { return false }
         guard authorizationState == .available else {
             capabilityState = authorizationState
-            return
+            return false
         }
 
         let configuration = ARWorldTrackingConfiguration()
@@ -39,11 +42,13 @@ final class ARSessionCoordinator: NSObject {
 
         var options: ARSession.RunOptions = []
         if resetTracking {
+            prepareForTrackingReset()
             options.formUnion([.resetTracking, .removeExistingAnchors])
         }
 
         session.run(configuration, options: options)
         capabilityState = .active
+        return true
     }
 
     func pause() {
@@ -56,6 +61,10 @@ final class ARSessionCoordinator: NSObject {
     func stopAndReset() {
         session.pause()
         capabilityState = capabilityMonitor.currentState()
+    }
+
+    func prepareForTrackingReset() {
+        onSessionReset?()
     }
 }
 

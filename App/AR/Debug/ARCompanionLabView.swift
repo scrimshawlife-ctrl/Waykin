@@ -6,10 +6,11 @@ import WaykinCore
 @MainActor
 @Observable
 final class ARCompanionLabRuntime {
-    private let registry = AREntityRegistry()
-    private let diagnostics = ARDiagnosticRecorder()
-    private let sessionCoordinator = ARSessionCoordinator()
-    private let demoBridge = ARDemoRuntimeBridge()
+    private let registry: AREntityRegistry
+    private let diagnostics: ARDiagnosticRecorder
+    private let sessionCoordinator: ARSessionCoordinator
+    private let demoBridge: ARDemoRuntimeBridge
+    @ObservationIgnored
     private lazy var renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
 
     private(set) var capabilityState: ARCapabilityState = .checking
@@ -19,13 +20,34 @@ final class ARCompanionLabRuntime {
     private(set) var demoTickText = "Demo not started"
     private(set) var demoEventText = "No event"
     private weak var arView: ARView?
+    private var wasBackgrounded = false
+    private var hasAttachedView = false
+    private var sessionTask: Task<Void, Never>?
 
     var registryCount: Int { registry.count }
     var receipt: ARValidationReceipt { diagnostics.summary }
     var isDemoRunning: Bool { demoBridge.isRunning }
 
+    init(
+        registry: AREntityRegistry? = nil,
+        diagnostics: ARDiagnosticRecorder? = nil,
+        sessionCoordinator: ARSessionCoordinator? = nil,
+        demoBridge: ARDemoRuntimeBridge? = nil
+    ) {
+        self.registry = registry ?? AREntityRegistry()
+        self.diagnostics = diagnostics ?? ARDiagnosticRecorder()
+        self.sessionCoordinator = sessionCoordinator ?? ARSessionCoordinator()
+        self.demoBridge = demoBridge ?? ARDemoRuntimeBridge()
+    }
+
     func attach(_ arView: ARView) {
+        let isReplacement = hasAttachedView && (self.arView.map { $0 !== arView } ?? true)
+        if isReplacement {
+            wasBackgrounded = true
+            pause()
+        }
         self.arView = arView
+        hasAttachedView = true
         arView.session = sessionCoordinator.session
         sessionCoordinator.onCapabilityStateChange = { [weak self] state in
             self?.capabilityState = state
@@ -34,8 +56,11 @@ final class ARCompanionLabRuntime {
                 self?.diagnostics.record(.trackingNormal)
             }
         }
+        sessionCoordinator.onSessionReset = { [weak self] in
+            self?.clearRenderedContent(resetDemo: true)
+        }
         diagnostics.record(.sessionStarted)
-        Task { await sessionCoordinator.start() }
+        scheduleSessionStart(resetTracking: wasBackgrounded)
     }
 
     func placeLira() {
@@ -55,14 +80,22 @@ final class ARCompanionLabRuntime {
     }
 
     func startDemoArc() {
-        guard let arView else { return }
+        _ = beginDemoArc()
+    }
+
+    private func beginDemoArc() -> Bool {
+        guard let arView else { return false }
         do {
             clearRenderedContent(resetDemo: false)
             let frame = try demoBridge.start()
-            render(frame, in: arView)
-            lastResult = "Demo arc started"
+            let rendered = render(frame, in: arView)
+            if rendered {
+                lastResult = "Demo arc started"
+            }
+            return rendered
         } catch {
             lastResult = "Demo start failed"
+            return false
         }
     }
 
@@ -77,13 +110,13 @@ final class ARCompanionLabRuntime {
 
     func runDemoArcToEnd() {
         guard let arView else { return }
-        if !demoBridge.isRunning {
-            startDemoArc()
+        if !demoBridge.isRunning, !beginDemoArc() {
+            return
         }
-        for frame in demoBridge.runRemaining() {
-            render(frame, in: arView)
+        while demoBridge.isRunning {
+            guard let frame = demoBridge.advance() else { break }
+            guard render(frame, in: arView) else { return }
         }
-        lastResult = "Demo arc complete"
     }
 
     func spawnDiscovery() {
@@ -124,8 +157,53 @@ final class ARCompanionLabRuntime {
     }
 
     func pause() {
+        sessionTask?.cancel()
+        sessionTask = nil
         clearRenderedContent(resetDemo: true)
         sessionCoordinator.pause()
+    }
+
+    func viewDidDisappear() {
+        wasBackgrounded = true
+        pause()
+    }
+
+    func handleScenePhase(_ phase: ScenePhase) {
+        switch phase {
+        case .active:
+            guard wasBackgrounded, arView != nil else { return }
+            scheduleSessionStart(resetTracking: true)
+        case .background:
+            wasBackgrounded = true
+            guard arView != nil else { return }
+            pause()
+            trackingText = "Paused"
+            lastResult = "AR session paused; scene cleared"
+        case .inactive:
+            break
+        @unknown default:
+            break
+        }
+    }
+
+    func resumeAfterBackground() async {
+        guard wasBackgrounded, arView != nil else { return }
+        lastResult = "Resuming AR session"
+        if await sessionCoordinator.start(resetTracking: true) {
+            wasBackgrounded = false
+        }
+    }
+
+    private func scheduleSessionStart(resetTracking: Bool) {
+        sessionTask?.cancel()
+        sessionTask = Task { [weak self] in
+            guard let self else { return }
+            if resetTracking {
+                await self.resumeAfterBackground()
+            } else {
+                await self.sessionCoordinator.start()
+            }
+        }
     }
 
     private func clearRenderedContent(resetDemo: Bool) {
@@ -139,16 +217,43 @@ final class ARCompanionLabRuntime {
         }
     }
 
-    private func render(_ frame: ARDemoFrame, in arView: ARView) {
+    @discardableResult
+    private func render(_ frame: ARDemoFrame, in arView: ARView) -> Bool {
+        var deferredDetail: String?
         for command in frame.commands {
-            report(renderer.render(command, in: arView))
+            let result = renderer.render(command, in: arView)
+            switch (command, result) {
+            case (.spawnCompanion, .accepted):
+                demoBridge.markCompanionPlaced()
+            case (.updateCompanion, .deferred):
+                demoBridge.markCompanionMissing()
+            case (.spawnThreat, .accepted):
+                demoBridge.markThreatPlaced()
+            case (.updateThreat, .deferred):
+                demoBridge.markThreatMissing()
+            case (.removeEntity(let id), .removed) where id == ARCompanionRuntimeAdapter.threatID:
+                demoBridge.markThreatMissing()
+            default:
+                break
+            }
+            if case .deferred(let detail) = result {
+                deferredDetail = deferredDetail ?? detail
+            } else if deferredDetail == nil {
+                report(result)
+            }
         }
         currentState = frame.companionState
-        demoTickText = "Tick \(frame.tickIndex)/\(demoBridge.totalTicks) • distance \(String(format: "%.1f", frame.relativeDistance))m"
+        demoTickText = "Tick \(frame.tickIndex)/\(frame.totalTicks) • distance \(String(format: "%.1f", frame.relativeDistance))m"
         demoEventText = frame.eventKind?.rawValue ?? "Opening"
+        if let deferredDetail {
+            lastResult = "Deferred: \(deferredDetail)"
+            return false
+        }
+        demoBridge.acknowledgeRenderedFrame()
         if frame.isComplete {
             lastResult = "Demo arc complete"
         }
+        return true
     }
 
     private var companionIntent: SpatialIntent {
@@ -173,6 +278,7 @@ final class ARCompanionLabRuntime {
 
 @MainActor
 struct ARCompanionLabView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var runtime = ARCompanionLabRuntime()
     @State private var controlsExpanded = true
 
@@ -204,6 +310,15 @@ struct ARCompanionLabView: View {
                         .font(.caption2)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("waykin.ar.demo.event")
+
+                    Text(
+                        "Checks: placed \(runtime.receipt.companionPlaced ? "yes" : "no") "
+                            + "• deferred \(runtime.receipt.placementFailureCount) "
+                            + "• replaced \(runtime.receipt.replacementCount)"
+                    )
+                    .font(.caption2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("waykin.ar.diagnostics")
 
                     if controlsExpanded {
                         HStack {
@@ -253,7 +368,10 @@ struct ARCompanionLabView: View {
         }
         .navigationTitle("Waykin AR Lab")
         .navigationBarTitleDisplayMode(.inline)
-        .onDisappear { runtime.pause() }
+        .onChange(of: scenePhase) { _, phase in
+            runtime.handleScenePhase(phase)
+        }
+        .onDisappear { runtime.viewDidDisappear() }
     }
 
     private func stateButton(_ state: CompanionPresentationState) -> some View {

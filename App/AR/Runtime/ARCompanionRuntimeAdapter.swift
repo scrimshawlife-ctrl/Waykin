@@ -26,13 +26,14 @@ struct ARCompanionRuntimeAdapter {
         return replacingExisting ? .updateCompanion(presentation) : .spawnCompanion(presentation)
     }
 
-    func eventCommands(for event: WorldEvent?) -> [ARWorldCommand] {
+    func eventCommands(for event: WorldEvent?, threatExists: Bool = false) -> [ARWorldCommand] {
         guard let event else { return [] }
         switch event.kind {
         case .companionObserves, .familiarPlaceStirs, .quietInterval:
-            return [.spawnDiscovery(discoveryPresentation(kind: event.kind.rawValue))]
+            return []
         case .distantPresence, .pursuitBegins, .pursuitIntensifies:
-            return [.spawnThreat(threatPresentation(for: event.kind))]
+            let presentation = threatPresentation(for: event.kind)
+            return [threatExists ? .updateThreat(presentation) : .spawnThreat(presentation)]
         case .pursuitFades:
             return [.removeEntity(Self.threatID)]
         case .companionDrawsNear, .companionMovesAhead, .bondMoment:
@@ -92,20 +93,6 @@ struct ARCompanionRuntimeAdapter {
         case .drawNear: return .beside
         case .idle, .follow, .celebrate, .observe, .rest: return .contextual
         }
-    }
-
-    private func discoveryPresentation(kind: String) -> DiscoveryPresentation {
-        DiscoveryPresentation(
-            id: Self.discoveryID,
-            kind: kind,
-            spatialIntent: SpatialIntent(
-                placement: .groundPlane,
-                distanceBand: .near,
-                bearing: .contextual,
-                scaleClass: .discovery,
-                persistence: .encounter
-            )
-        )
     }
 
     private func threatPresentation(for kind: WorldEventKind) -> ThreatPresentation {

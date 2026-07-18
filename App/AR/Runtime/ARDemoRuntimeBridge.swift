@@ -3,6 +3,7 @@ import WaykinCore
 
 struct ARDemoFrame {
     let tickIndex: Int
+    let totalTicks: Int
     let eventKind: WorldEventKind?
     let companionState: CompanionPresentationState
     let relativeDistance: Double
@@ -16,6 +17,8 @@ final class ARDemoRuntimeBridge {
     private let adapter: ARCompanionRuntimeAdapter
     private(set) var controller: DemoSessionController
     private(set) var hasSpawnedCompanion = false
+    private(set) var hasSpawnedThreat = false
+    private var pendingFrame: ARDemoFrame?
 
     init(
         movementEngine: MovementEngine = MovementEngine(),
@@ -36,24 +39,34 @@ final class ARDemoRuntimeBridge {
         }
         try controller.start(scenarioID: .calmDayWalk)
         hasSpawnedCompanion = false
-        return makeFrame(event: nil)
+        hasSpawnedThreat = false
+        let frame = makeFrame(event: nil)
+        pendingFrame = frame
+        return frame
     }
 
     func advance() -> ARDemoFrame? {
         guard controller.isRunning else { return nil }
+        if pendingFrame != nil {
+            let frame = makeFrame(event: controller.currentEvent)
+            pendingFrame = frame
+            return frame
+        }
         let priorTick = controller.tickIndex
         controller.advanceOneTick()
-        guard controller.tickIndex != priorTick else { return makeFrame(event: controller.currentEvent) }
-        return makeFrame(event: controller.currentEvent)
+        let frame = makeFrame(event: controller.currentEvent)
+        if controller.tickIndex != priorTick {
+            pendingFrame = frame
+        }
+        return frame
     }
 
-    func runRemaining() -> [ARDemoFrame] {
-        var frames: [ARDemoFrame] = []
-        while controller.isRunning, controller.tickIndex < totalTicks {
-            guard let frame = advance() else { break }
-            frames.append(frame)
+    func acknowledgeRenderedFrame() {
+        guard let frame = pendingFrame else { return }
+        pendingFrame = nil
+        if frame.isComplete {
+            _ = controller.end()
         }
-        return frames
     }
 
     func reset() {
@@ -62,7 +75,14 @@ final class ARDemoRuntimeBridge {
         }
         controller = DemoSessionController(movementEngine: movementEngine)
         hasSpawnedCompanion = false
+        hasSpawnedThreat = false
+        pendingFrame = nil
     }
+
+    func markCompanionPlaced() { hasSpawnedCompanion = true }
+    func markCompanionMissing() { hasSpawnedCompanion = false }
+    func markThreatPlaced() { hasSpawnedThreat = true }
+    func markThreatMissing() { hasSpawnedThreat = false }
 
     private func makeFrame(event: WorldEvent?) -> ARDemoFrame {
         let runtime = controller.companionRuntime
@@ -71,11 +91,13 @@ final class ARDemoRuntimeBridge {
             event: event,
             replacingExisting: hasSpawnedCompanion
         )
-        hasSpawnedCompanion = true
-
-        let commands = [companionCommand] + adapter.eventCommands(for: event)
+        let commands = [companionCommand] + adapter.eventCommands(
+            for: event,
+            threatExists: hasSpawnedThreat
+        )
         return ARDemoFrame(
             tickIndex: controller.tickIndex,
+            totalTicks: controller.currentScenario?.ticks.count ?? 0,
             eventKind: event?.kind,
             companionState: adapter.presentationState(runtime: runtime, event: event),
             relativeDistance: runtime.relativeDistance,

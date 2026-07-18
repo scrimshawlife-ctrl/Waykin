@@ -38,6 +38,18 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertNil(second.parent)
     }
 
+    func testGlowIntensityChangesCorePresentation() {
+        let factory = CompanionEntityFactory()
+        let dim = factory.makeLira(configuration: CompanionVisualConfiguration(glowIntensity: 0))
+        let bright = factory.makeLira(configuration: CompanionVisualConfiguration(glowIntensity: 1))
+
+        let dimCore = dim.findEntity(named: "CoreGlow")
+        let brightCore = bright.findEntity(named: "CoreGlow")
+        XCTAssertNotNil(dimCore)
+        XCTAssertNotNil(brightCore)
+        XCTAssertGreaterThan(brightCore?.scale.x ?? 0, dimCore?.scale.x ?? 0)
+    }
+
     func testReducerMapsKnownAndUnknownBehaviorsDeterministically() {
         XCTAssertEqual(CompanionStateReducer.state(for: "follow"), .follow)
         XCTAssertEqual(CompanionStateReducer.state(for: "observe"), .investigate)

@@ -78,4 +78,148 @@ final class ARSessionShellTests: XCTestCase {
         XCTAssertNil(first.parent)
         XCTAssertNil(second.parent)
     }
+
+    func testBackgroundPauseThenTrackingResetStartRestoresActiveSession() async {
+        let monitor = ARCapabilityMonitor(
+            currentState: { .available },
+            requestCameraAccess: { .available }
+        )
+        let coordinator = ARSessionCoordinator(capabilityMonitor: monitor)
+        var resetCount = 0
+        coordinator.onSessionReset = { resetCount += 1 }
+
+        await coordinator.start()
+        coordinator.pause()
+
+        XCTAssertEqual(coordinator.capabilityState, .available)
+        XCTAssertEqual(resetCount, 0)
+
+        await coordinator.start(resetTracking: true)
+
+        XCTAssertEqual(resetCount, 1)
+        XCTAssertEqual(coordinator.capabilityState, .active)
+    }
+
+    func testARLabBackgroundClearsEntitiesAndStopsDemoBeforeResume() async throws {
+        let registry = AREntityRegistry()
+        let coordinator = availableCoordinator()
+        let bridge = ARDemoRuntimeBridge()
+        let runtime = ARCompanionLabRuntime(
+            registry: registry,
+            sessionCoordinator: coordinator,
+            demoBridge: bridge
+        )
+        let arView = ARView(frame: .zero)
+        runtime.attach(arView)
+        let entity = Entity()
+        registry.register(entity, for: "stale")
+        _ = try bridge.start()
+
+        runtime.handleScenePhase(.background)
+
+        XCTAssertEqual(runtime.registryCount, 0)
+        XCTAssertFalse(runtime.isDemoRunning)
+        XCTAssertEqual(runtime.trackingText, "Paused")
+
+        registry.register(Entity(), for: "between-phases")
+        await runtime.resumeAfterBackground()
+
+        XCTAssertEqual(runtime.registryCount, 0)
+        XCTAssertEqual(coordinator.capabilityState, .active)
+    }
+
+    func testARLabConsumesPendingBackgroundResetWhenViewAttaches() async throws {
+        let registry = AREntityRegistry()
+        let coordinator = availableCoordinator()
+        let bridge = ARDemoRuntimeBridge()
+        let runtime = ARCompanionLabRuntime(
+            registry: registry,
+            sessionCoordinator: coordinator,
+            demoBridge: bridge
+        )
+        registry.register(Entity(), for: "pre-attachment")
+        _ = try bridge.start()
+        let arView = ARView(frame: .zero)
+
+        runtime.handleScenePhase(.background)
+        runtime.attach(arView)
+
+        for _ in 0..<100 where runtime.registryCount != 0 || runtime.isDemoRunning {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+
+        XCTAssertEqual(runtime.registryCount, 0)
+        XCTAssertFalse(runtime.isDemoRunning)
+    }
+
+    func testARLabBackgroundCancelsAnInFlightSessionStart() async {
+        let monitor = ARCapabilityMonitor(
+            currentState: { .available },
+            requestCameraAccess: {
+                try? await Task.sleep(for: .milliseconds(100))
+                return .available
+            }
+        )
+        let coordinator = ARSessionCoordinator(capabilityMonitor: monitor)
+        let runtime = ARCompanionLabRuntime(sessionCoordinator: coordinator)
+        let arView = ARView(frame: .zero)
+
+        runtime.attach(arView)
+        runtime.handleScenePhase(.background)
+        try? await Task.sleep(for: .milliseconds(150))
+
+        XCTAssertEqual(coordinator.capabilityState, .available)
+        XCTAssertEqual(runtime.trackingText, "Paused")
+    }
+
+    func testARLabRetainsPendingResetUntilAuthorizationAllowsRecovery() async {
+        var authorization: ARCapabilityState = .cameraDenied
+        let monitor = ARCapabilityMonitor(
+            currentState: { authorization },
+            requestCameraAccess: { authorization }
+        )
+        let coordinator = ARSessionCoordinator(capabilityMonitor: monitor)
+        let registry = AREntityRegistry()
+        let runtime = ARCompanionLabRuntime(
+            registry: registry,
+            sessionCoordinator: coordinator
+        )
+        let arView = ARView(frame: .zero)
+        registry.register(Entity(), for: "pending-authorization")
+
+        runtime.handleScenePhase(.background)
+        runtime.attach(arView)
+        try? await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(runtime.registryCount, 1)
+
+        authorization = .available
+        await runtime.resumeAfterBackground()
+
+        XCTAssertEqual(runtime.registryCount, 0)
+    }
+
+    func testARLabReplacingActiveViewClearsOldSceneState() {
+        let registry = AREntityRegistry()
+        let runtime = ARCompanionLabRuntime(
+            registry: registry,
+            sessionCoordinator: availableCoordinator()
+        )
+        let firstView = ARView(frame: .zero)
+        let secondView = ARView(frame: .zero)
+        runtime.attach(firstView)
+        registry.register(Entity(), for: "old-view")
+
+        runtime.attach(secondView)
+
+        XCTAssertEqual(runtime.registryCount, 0)
+    }
+
+    private func availableCoordinator() -> ARSessionCoordinator {
+        ARSessionCoordinator(
+            capabilityMonitor: ARCapabilityMonitor(
+                currentState: { .available },
+                requestCameraAccess: { .available }
+            )
+        )
+    }
 }

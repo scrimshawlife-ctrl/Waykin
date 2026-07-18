@@ -3,14 +3,33 @@ import AVFoundation
 import WaykinCore
 
 struct ARCapabilityMonitor {
+    private let currentStateProvider: () -> ARCapabilityState
+    private let requestCameraAccessProvider: () async -> ARCapabilityState
+
+    init(
+        currentState: @escaping () -> ARCapabilityState = {
+            Self.resolve(
+                isWorldTrackingSupported: ARWorldTrackingConfiguration.isSupported,
+                cameraAuthorizationStatus: AVCaptureDevice.authorizationStatus(for: .video)
+            )
+        },
+        requestCameraAccess: @escaping () async -> ARCapabilityState = {
+            await Self.requestSystemCameraAccess()
+        }
+    ) {
+        currentStateProvider = currentState
+        requestCameraAccessProvider = requestCameraAccess
+    }
+
     func currentState() -> ARCapabilityState {
-        Self.resolve(
-            isWorldTrackingSupported: ARWorldTrackingConfiguration.isSupported,
-            cameraAuthorizationStatus: AVCaptureDevice.authorizationStatus(for: .video)
-        )
+        currentStateProvider()
     }
 
     func requestCameraAccess() async -> ARCapabilityState {
+        await requestCameraAccessProvider()
+    }
+
+    private static func requestSystemCameraAccess() async -> ARCapabilityState {
         guard ARWorldTrackingConfiguration.isSupported else { return .unsupported }
 
         switch AVCaptureDevice.authorizationStatus(for: .video) {
