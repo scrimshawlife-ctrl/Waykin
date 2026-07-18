@@ -34,6 +34,7 @@ struct CompanionEntityFactory {
         )
         tail.scale = SIMD3<Float>(0.32, 1, 0.32)
         tail.position = [0, configuration.groundOffsetMeters + 0.30, -0.21]
+        tail.scale = SIMD3<Float>(0.32, 1, 0.32)
         tail.orientation = simd_quatf(angle: .pi / 3, axis: [1, 0, 0])
 
         let core = model(
@@ -50,6 +51,7 @@ struct CompanionEntityFactory {
         )
         shadow.scale = SIMD3<Float>(1, 0.01, 1)
         shadow.position = [0, configuration.groundOffsetMeters, 0]
+        shadow.scale = SIMD3<Float>(1, 0.01, 1)
 
         let indicator = model(
             name: "StatusIndicator",
@@ -73,6 +75,7 @@ struct CompanionEntityFactory {
         )
         entity.scale = SIMD3<Float>(0.65, 1, 0.45)
         entity.position = [x, y, 0]
+        entity.scale = SIMD3<Float>(0.65, 1, 0.45)
         return entity
     }
 
