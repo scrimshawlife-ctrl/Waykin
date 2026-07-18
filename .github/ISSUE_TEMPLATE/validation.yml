@@ -1,0 +1,41 @@
+name: Validation
+description: Validate a simulator or physical-device claim
+title: "test: "
+labels: ["validation"]
+body:
+  - type: textarea
+    id: claim
+    attributes:
+      label: Claim being tested
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment or device
+    validations:
+      required: true
+  - type: textarea
+    id: protocol
+    attributes:
+      label: Reproduction protocol
+    validations:
+      required: true
+  - type: textarea
+    id: artifact
+    attributes:
+      label: Evidence artifact location
+    validations:
+      required: true
+  - type: textarea
+    id: threshold
+    attributes:
+      label: Pass/fail threshold
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy constraints
+    validations:
+      required: true
