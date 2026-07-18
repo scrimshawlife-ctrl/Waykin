@@ -6,10 +6,10 @@ import WaykinCore
 @MainActor
 @Observable
 final class ARCompanionLabRuntime {
-    private let registry = AREntityRegistry()
-    private let diagnostics = ARDiagnosticRecorder()
-    private let sessionCoordinator = ARSessionCoordinator()
-    private lazy var renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
+    private let registry: AREntityRegistry
+    private let diagnostics: ARDiagnosticRecorder
+    private let sessionCoordinator: ARSessionCoordinator
+    private let renderer: ARWorldCommandRenderer
 
     private(set) var capabilityState: ARCapabilityState = .checking
     private(set) var lastResult = "Waiting for AR session"
@@ -19,6 +19,15 @@ final class ARCompanionLabRuntime {
 
     var registryCount: Int { registry.count }
     var receipt: ARValidationReceipt { diagnostics.summary }
+
+    init() {
+        let registry = AREntityRegistry()
+        let diagnostics = ARDiagnosticRecorder()
+        self.registry = registry
+        self.diagnostics = diagnostics
+        self.sessionCoordinator = ARSessionCoordinator()
+        self.renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
+    }
 
     func attach(_ arView: ARView) {
         self.arView = arView

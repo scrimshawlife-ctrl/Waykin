@@ -29,9 +29,10 @@ struct CompanionEntityFactory {
 
         let tail = model(
             name: "Tail",
-            mesh: .generateCapsule(height: 0.28, radius: 0.045),
+            mesh: .generateSphere(radius: 0.14),
             color: UIColor(red: 0.25, green: 0.64, blue: 0.90, alpha: 1)
         )
+        tail.scale = SIMD3<Float>(0.32, 1, 0.32)
         tail.position = [0, configuration.groundOffsetMeters + 0.30, -0.21]
         tail.orientation = simd_quatf(angle: .pi / 3, axis: [1, 0, 0])
 
@@ -44,9 +45,10 @@ struct CompanionEntityFactory {
 
         let shadow = model(
             name: "GroundShadow",
-            mesh: .generateCylinder(height: 0.004, radius: 0.20),
+            mesh: .generateSphere(radius: 0.20),
             color: UIColor(white: 0.05, alpha: 0.65)
         )
+        shadow.scale = SIMD3<Float>(1, 0.01, 1)
         shadow.position = [0, configuration.groundOffsetMeters, 0]
 
         let indicator = model(
@@ -66,9 +68,10 @@ struct CompanionEntityFactory {
     private func ear(name: String, x: Float, y: Float) -> ModelEntity {
         let entity = model(
             name: name,
-            mesh: .generateCone(height: 0.17, radius: 0.065),
+            mesh: .generateSphere(radius: 0.085),
             color: UIColor(red: 0.34, green: 0.76, blue: 0.96, alpha: 1)
         )
+        entity.scale = SIMD3<Float>(0.65, 1, 0.45)
         entity.position = [x, y, 0]
         return entity
     }
