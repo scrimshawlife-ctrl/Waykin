@@ -18,8 +18,8 @@ Last updated: 2026-07-18
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| PR #31 — reconciled AR baseline | Daniel | `agent/ar-reconciliation-main` | Reconciled AR baseline, focused tests, `project.yml`, AR docs | Draft / hosted native build failing | Clean local repair and full validation |
-| Issue #38 — preserve AR-3 work and isolate PR #31 repair | Daniel | local `wip/ar3-local-preservation`; clean worktree `Waykin-pr31-repair` | Preservation: current mixed AR-3 set. Repair: minimum files proven by compiler diagnostic | Active recovery | PR #31 |
+| PR #31 — reconciled AR baseline | Daniel | `agent/ar-reconciliation-main` | Reconciled AR baseline, focused tests, `project.yml`, AR docs | Merged to main at 5f42981; native build repaired and validated (PRs #31/#37/#32) | — |
+| Issue #38 — preserve AR-3 work and isolate PR #31 repair | Daniel | local `wip/ar3-local-preservation` (846c42d); clean worktree `Waykin-pr31-repair` | Preservation: current mixed AR-3 set. Repair: minimum files proven by compiler diagnostic | Completed — recovery topology executed; AR-3 preserved on wip/ar3-local-preservation (do not fold into main per ownership) | — |
 | PR #34 — collaborator ownership | Daniel + `prabu-openclaw` | `chore/28-collaborator-ownership` | `.github/CODEOWNERS` | Ready / awaiting Prabu review | Issue #28 |
 | Issue #29 — CI and structural guards | `prabu-openclaw` for first bounded task | `chore/29-core-framework-isolation` when started | scripts, Makefile, focused tests, CI docs | Assigned / not yet evidenced | No collision with PR #31 |
 
@@ -27,10 +27,14 @@ Last updated: 2026-07-18
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Issue #35 — living-companion presentation | PR #31 has not merged and local validation is incomplete | Repair and validate PR #31, merge it, then branch Issue #35 from current `main` |
-| Issue #27 — AR reconciliation closure | PR #31 native target still fails hosted build | Complete Issue #38 repair lane and attach exact local results |
+| Issue #35 — living-companion presentation | Ready to start from fresh main | Branch from current main (5f42981); respect exclusive ownership (no App/AR/**, no preserved AR-3 paths, no AR3 docs) |
+| Issue #27 — AR reconciliation closure | Completed via PR #31 merge | — |
 | Issue #28 — collaborator onboarding closure | First collaborator-authored branch and draft PR not yet supplied | Prabu reviews PR #34 and completes the Issue #29 bounded task |
-| Physical AR claims | Requires direct iPhone evidence | Execute the relevant physical-device protocol and attach receipts |
+| Physical AR claims | Requires direct iPhone evidence | Execute the relevant physical-device protocol and attach receipts (NOT_COMPUTABLE in simulator) |
+
+## Handoff Note (post-Issue #38)
+
+Recovery topology (Issue #38) complete. Main @ 5f429813617f74233971b984c7b61ebffa6fdfe2 incorporates repaired AR reconciliation. Preservation branch `wip/ar3-local-preservation` remains isolated per rules. Next: Issue #35 (Daniel) or handoff Issue #29 to Prabu. All claims OBSERVED from git history + validation receipts only.
 
 ## Exclusive Ownership Boundaries
 
