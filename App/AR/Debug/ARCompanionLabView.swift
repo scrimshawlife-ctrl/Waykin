@@ -197,8 +197,12 @@ struct ARCompanionLabView: View {
             VStack(spacing: 8) {
                 HStack {
                     Text("AR: \(runtime.trackingText)")
+                        .accessibilityLabel("AR tracking status")
+                        .accessibilityValue(runtime.trackingText)
                     Spacer()
                     Text("Entities: \(runtime.registryCount)")
+                        .accessibilityLabel("Placed entity count")
+                        .accessibilityValue("\(runtime.registryCount)")
                         .accessibilityIdentifier("waykin.ar.registryCount")
                 }
                 .font(.caption.weight(.semibold))
@@ -206,13 +210,19 @@ struct ARCompanionLabView: View {
                 Text(runtime.lastResult)
                     .font(.caption2)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("Last AR command result")
+                    .accessibilityValue(runtime.lastResult)
                     .accessibilityIdentifier("waykin.ar.lastCommand")
 
                 HStack {
                     Text("State: \(runtime.currentState.rawValue.capitalized)")
+                        .accessibilityLabel("Lira presentation state")
+                        .accessibilityValue(runtime.currentState.rawValue)
                         .accessibilityIdentifier("waykin.ar.currentState")
                     Spacer()
                     Text(runtime.transitionResult)
+                        .accessibilityLabel("Last transition result")
+                        .accessibilityValue(runtime.transitionResult)
                         .accessibilityIdentifier("waykin.ar.transitionResult")
                 }
                 .font(.caption2)
@@ -220,6 +230,7 @@ struct ARCompanionLabView: View {
                 if controlsExpanded {
                     Button("Place Lira") { runtime.placeLira() }
                         .buttonStyle(.borderedProminent)
+                        .accessibilityLabel("Place Lira in the scene")
                         .accessibilityIdentifier("waykin.ar.placeCompanion")
 
                     HStack {
@@ -233,10 +244,13 @@ struct ARCompanionLabView: View {
                     }
                     HStack {
                         Button("Discovery") { runtime.spawnDiscovery() }
+                            .accessibilityLabel("Spawn engineering discovery marker")
                             .accessibilityIdentifier("waykin.ar.spawnDiscovery")
                         Button("Threat") { runtime.spawnThreat() }
+                            .accessibilityLabel("Spawn engineering threat marker")
                             .accessibilityIdentifier("waykin.ar.spawnThreat")
                         Button("Clear", role: .destructive) { runtime.clear() }
+                            .accessibilityLabel("Clear the AR session")
                             .accessibilityIdentifier("waykin.ar.clear")
                     }
                     .buttonStyle(.bordered)
@@ -260,7 +274,17 @@ struct ARCompanionLabView: View {
         Button(state.rawValue.capitalized) { runtime.setState(state) }
             .buttonStyle(.bordered)
             .tint(runtime.currentState == state ? .accentColor : .secondary)
+            .accessibilityLabel(state.labControlAccessibilityLabel)
+            .accessibilityAddTraits(runtime.currentState == state ? .isSelected : [])
             .accessibilityIdentifier("waykin.ar.state.\(state.rawValue)")
+    }
+}
+
+extension CompanionPresentationState {
+    /// VoiceOver action label for the AR Lab state controls. Presentation
+    /// vocabulary only — never raw identifiers or debug wording.
+    var labControlAccessibilityLabel: String {
+        "Set Lira to \(rawValue)"
     }
 }
 
