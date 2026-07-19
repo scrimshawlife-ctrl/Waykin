@@ -150,7 +150,9 @@ set_text_value() {
     return
   fi
   current="$(item_value "$item_id" "$field")"
-  [[ "$current" == "$expected" ]] && return
+  # Project values advance through the live workflow. Bootstrap blanks without
+  # resetting a populated owner, status, dependency, handoff, or evidence field.
+  [[ -n "$current" ]] && return
   if [[ "$MODE" == "apply" ]]; then
     fid="$(field_id "$field")"
     [[ -n "$fid" ]] || { record_drift "cannot set missing field: $field"; return; }
@@ -166,7 +168,7 @@ set_select_value() {
   local item_id="$1" field="$2" expected="$3" current fid oid
   [[ -n "$item_id" ]] || return
   current="$(item_value "$item_id" "$field")"
-  [[ "$current" == "$expected" ]] && return
+  [[ -n "$current" ]] && return
   if [[ "$MODE" == "apply" ]]; then
     fid="$(field_id "$field")"
     oid="$(option_id "$field" "$expected")"

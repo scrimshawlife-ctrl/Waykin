@@ -81,4 +81,4 @@ In Project #1, manually create these views: **Execution Board** (board by Execut
 
 ## Drift Recovery
 
-Run `./scripts/sync_github_project.sh --check`. Review every reported mismatch and confirm Project #1 and Issue #47 before mutation. Run `--apply` to create missing fields, add missing initial items, and restore expected initial values without deleting unrelated data or blanking SHAs. Run `--check` again and attach its dated receipt to Issue #47. If select options drift, do not create a duplicate field: repair options manually in Project settings, then rerun check.
+Run `./scripts/sync_github_project.sh --check`. Review every reported mismatch and confirm Project #1 and Issue #47 before mutation. Run `--apply` to create missing fields, add missing initial items, and fill blank bootstrap values without overwriting populated live workflow state, deleting unrelated data, or blanking SHAs. Run `--check` again and attach its dated receipt to Issue #47. If select options drift, do not create a duplicate field: repair options manually in Project settings, then rerun check.

@@ -39,6 +39,7 @@ Closes #
 | `make build` | | |
 | `make test` | | |
 | `make validate` | | |
+| `make validate-simulator` (when simulator-visible behavior changes) | | |
 | `git diff --check` | | N/A |
 
 ## Evidence
