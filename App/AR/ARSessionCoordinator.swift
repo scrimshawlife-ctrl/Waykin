@@ -5,6 +5,7 @@ import WaykinCore
 final class ARSessionCoordinator: NSObject {
     let session: ARSession
     private let capabilityMonitor: ARCapabilityMonitor
+    private let requestCameraAccess: () async -> ARCapabilityState
 
     private(set) var capabilityState: ARCapabilityState = .checking {
         didSet {
@@ -17,17 +18,22 @@ final class ARSessionCoordinator: NSObject {
 
     init(
         session: ARSession = ARSession(),
-        capabilityMonitor: ARCapabilityMonitor = ARCapabilityMonitor()
+        capabilityMonitor: ARCapabilityMonitor = ARCapabilityMonitor(),
+        requestCameraAccess: (() async -> ARCapabilityState)? = nil
     ) {
         self.session = session
         self.capabilityMonitor = capabilityMonitor
+        self.requestCameraAccess = requestCameraAccess ?? {
+            await capabilityMonitor.requestCameraAccess()
+        }
         super.init()
         session.delegate = self
         capabilityState = capabilityMonitor.currentState()
     }
 
     func start(resetTracking: Bool = false) async {
-        let authorizationState = await capabilityMonitor.requestCameraAccess()
+        guard !Task.isCancelled else { return }
+        let authorizationState = await requestCameraAccess()
         guard !Task.isCancelled else { return }
         guard authorizationState == .available else {
             capabilityState = authorizationState
