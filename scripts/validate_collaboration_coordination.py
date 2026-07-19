@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -143,6 +144,85 @@ def validate_sync_script(errors: list[str]) -> None:
         "set_text_value", "set_select_value", '"--check"', '"--apply"',
     ):
         require(errors, token in text, f"sync script missing required behavior: {token}")
+    require(
+        errors,
+        'REPOSITORY="scrimshawlife-ctrl/Waykin"' in text,
+        "sync script repository identity drifted",
+    )
+
+
+def run_sync_fixture(name: str, body: str, errors: list[str]) -> None:
+    script = ROOT / "scripts/sync_github_project.sh"
+    command = f"source {shlex.quote(str(script))}\nset +e\n{body}"
+    result = subprocess.run(
+        ["bash", "-c", command], text=True, capture_output=True, check=False
+    )
+    require(
+        errors,
+        result.returncode == 0,
+        f"sync behavior fixture failed ({name}): {(result.stderr or result.stdout).strip()}",
+    )
+
+
+def validate_sync_behavior(errors: list[str]) -> None:
+    run_sync_fixture(
+        "repository identity and duplicates",
+        r'''
+ITEMS_JSON='{"items":[{"id":"foreign","content":{"url":"https://github.com/other/repo/issues/47"}},{"id":"waykin","content":{"url":"https://github.com/scrimshawlife-ctrl/Waykin/issues/47"}}]}'
+DRIFT=0
+find_project_item Issue 47
+[[ "$ITEM_ID" == "waykin" && "$DRIFT" -eq 0 ]] || exit 1
+ITEMS_JSON='{"items":[{"id":"one","content":{"url":"https://github.com/scrimshawlife-ctrl/Waykin/issues/47"}},{"id":"two","content":{"url":"https://github.com/scrimshawlife-ctrl/Waykin/issues/47"}}]}'
+DRIFT=0
+if find_project_item Issue 47; then exit 1; fi
+[[ -z "$ITEM_ID" && "$DRIFT" -eq 1 ]] || exit 1
+''',
+        errors,
+    )
+    run_sync_fixture(
+        "populated values are non-destructive",
+        r'''
+ITEMS_JSON='{"items":[{"id":"waykin","agent":"Human"}]}'
+gh() { return 99; }
+MODE=check
+DRIFT=0
+CHANGES=0
+set_text_value waykin Agent Bootstrap
+[[ "$DRIFT" -eq 0 && "$CHANGES" -eq 0 ]] || exit 1
+MODE=apply
+set_text_value waykin Agent Bootstrap
+[[ "$DRIFT" -eq 0 && "$CHANGES" -eq 0 ]] || exit 1
+''',
+        errors,
+    )
+    run_sync_fixture(
+        "post-add inventory drift stops further mutation",
+        r'''
+MODE=apply
+DRIFT=0
+CHANGES=0
+ITEM_ADD_CALLS=0
+PROJECT_MUTATION_CALLS=0
+ITEMS_JSON='{"items":[],"totalCount":0}'
+gh() {
+  if [[ "$1" == "pr" && "$2" == "view" ]]; then
+    echo 5a939d470aa2b35e52aa51527dfcc71a48f392a7
+  elif [[ "$1" == "project" && "$2" == "item-add" ]]; then
+    ITEM_ADD_CALLS=$((ITEM_ADD_CALLS + 1))
+    PROJECT_MUTATION_CALLS=$((PROJECT_MUTATION_CALLS + 1))
+  elif [[ "$1" == "project" && "$2" == "item-edit" ]]; then
+    PROJECT_MUTATION_CALLS=$((PROJECT_MUTATION_CALLS + 1))
+  elif [[ "$1" == "project" && "$2" == "item-list" ]]; then
+    echo '{"items":[],"totalCount":1001}'
+  else
+    return 99
+  fi
+}
+sync_initial_items
+[[ "$ITEM_ADD_CALLS" -eq 1 && "$PROJECT_MUTATION_CALLS" -eq 1 && "$DRIFT" -gt 0 ]] || exit 1
+''',
+        errors,
+    )
 
 
 def authorization_is_negated(line: str, phrase: str) -> bool:
@@ -170,6 +250,11 @@ def main() -> int:
             "Issue #47 URL is missing")
     require(errors, PROJECT_URL in texts["AGENTS.md"], "AGENTS.md missing Project #1 contract")
     require(errors, ISSUE_URL in texts["AGENTS.md"], "AGENTS.md missing Issue #47 contract")
+    require(
+        errors,
+        "sole live workflow-state authority" in doc,
+        "coordination doc no longer makes Project #1 the sole live-state authority",
+    )
 
     required_template_ids = {
         ".github/ISSUE_TEMPLATE/agent-task.yml": [
@@ -215,6 +300,7 @@ def main() -> int:
         require(errors, key in pr, f"pull request template missing: {key}")
 
     validate_sync_script(errors)
+    validate_sync_behavior(errors)
 
     lowered = combined.lower()
     for phrase in PROHIBITED_AUTHORIZATIONS:

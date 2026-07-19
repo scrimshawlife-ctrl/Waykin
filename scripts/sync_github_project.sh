@@ -214,6 +214,9 @@ sync_item() {
   local type="$1" number="$2" status="$3" workstream="$4" agent="$5" lane="$6"
   local priority="$7" risk="$8" dependency="$9" handoff="${10}" evidence="${11}"
   local base_sha="${12:-}" head_sha="${13:-}" item_id
+  if [[ "$MODE" == "apply" && "$DRIFT" -ne 0 ]]; then
+    return
+  fi
   ensure_project_item "$type" "$number"
   item_id="$ITEM_ID"
   set_select_value "$item_id" "Execution Status" "$status"
