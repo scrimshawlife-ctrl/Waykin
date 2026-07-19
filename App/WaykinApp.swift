@@ -131,6 +131,8 @@ final class WaykinAppModel {
     private var realExperienceState: ExperienceSessionState?
     private var realExperienceContext: ExperienceContext?
     private(set) var realCompanionRuntime = CompanionRuntime()
+    @ObservationIgnored private var arWorldCommandHandler: (([ARWorldCommand]) -> Void)?
+    @ObservationIgnored private var arWorldCommandHandlerOwner: UUID?
     private var lifecycleSuspendedRealWalk = false
     private var activeFieldTestReceipt: FieldTestReceiptBuilder?
     private var lastObservedMovementState: MovementState = .idle
@@ -223,6 +225,9 @@ final class WaykinAppModel {
             lastClosingPhrase = ""
             audioPlayer.stopAll(fadeOut: false)
             try demoController.start(scenarioID: scenario)
+            emitARWorldCommands(arCommandMapper.spawn(
+                companionRuntime: demoController.companionRuntime
+            ))
             if let session = movementEngine.currentSession, fieldTestReceiptStore != nil {
                 let builder = FieldTestReceiptBuilder(
                     sessionID: session.id,
@@ -289,6 +294,12 @@ final class WaykinAppModel {
             )
             audioPlayer.handle([cue])
         }
+        if let scenario, tickIndex < scenario.ticks.count {
+            emitARWorldCommands(arCommandMapper.update(
+                companionRuntime: demoController.companionRuntime,
+                event: demoController.currentEvent
+            ))
+        }
     }
 
     func runDemoToEnd() {
@@ -299,6 +310,7 @@ final class WaykinAppModel {
     }
 
     func endDemo() {
+        emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
         let didCompleteScenario = demoController.currentScenario.map {
@@ -440,6 +452,7 @@ final class WaykinAppModel {
             realExperienceContext = context
             realExperienceState = CompanionWalkExperience().start(context: context)
             realCompanionRuntime = CompanionRuntime()
+            emitARWorldCommands(arCommandMapper.spawn(companionRuntime: realCompanionRuntime))
             lastClosingPhrase = ""
             demoMessage = "Waiting for a reliable location fix..."
             path.append(AppRoute.activeSession(.calmDayWalk))
@@ -487,6 +500,7 @@ final class WaykinAppModel {
 
     func endRealSession() {
         guard isLiveSessionActive else { return }
+        emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
         activeFieldTestReceipt?.recordSessionTransition(from: fieldTestState(for: realWalkState), to: .ending, at: endedAt)
@@ -650,6 +664,10 @@ final class WaykinAppModel {
                 if let event {
                     self.activeFieldTestReceipt?.recordWorldEvent(event)
                 }
+                self.emitARWorldCommands(self.arCommandMapper.update(
+                    companionRuntime: self.realCompanionRuntime,
+                    event: event
+                ))
             }
             update.semanticAudioCues.forEach {
                 self.activeFieldTestReceipt?.recordAudioCue($0, at: snapshot.timestamp)
@@ -737,6 +755,7 @@ final class WaykinAppModel {
         outcome: FieldTestOutcome,
         errorCategory: FieldTestErrorCategory
     ) {
+        emitARWorldCommands(arCommandMapper.clear())
         let endedAt = fieldTestNow()
         let priorState = realWalkState
         realLocationProvider.stopUpdatingLocation()
@@ -763,6 +782,50 @@ final class WaykinAppModel {
             errorCategory: errorCategory,
             endedAt: endedAt
         )
+    }
+
+    private var arCommandMapper: CanonicalARWorldCommandMapper {
+        CanonicalARWorldCommandMapper(
+            companionID: companion.id,
+            companionName: companion.name
+        )
+    }
+
+    @discardableResult
+    func attachARWorldCommandHandler(_ handler: @escaping ([ARWorldCommand]) -> Void) -> UUID {
+        let owner = UUID()
+        arWorldCommandHandlerOwner = owner
+        arWorldCommandHandler = handler
+        if isLiveSessionActive {
+            let walkState: CompanionWalkState? = if case .companionWalk(let state) = realExperienceState?.runtimeState {
+                state
+            } else {
+                nil
+            }
+            handler(arCommandMapper.snapshot(
+                companionRuntime: realCompanionRuntime,
+                pursuitState: walkState?.pursuitState ?? .inactive,
+                lastEvent: walkState?.lastEvent
+            ))
+        } else if demoController.isRunning {
+            handler(arCommandMapper.snapshot(
+                companionRuntime: demoController.companionRuntime,
+                pursuitState: demoController.companionWalkState?.pursuitState ?? .inactive,
+                lastEvent: demoController.currentEvent
+            ))
+        }
+        return owner
+    }
+
+    func detachARWorldCommandHandler(owner: UUID) {
+        guard arWorldCommandHandlerOwner == owner else { return }
+        arWorldCommandHandlerOwner = nil
+        arWorldCommandHandler = nil
+    }
+
+    private func emitARWorldCommands(_ commands: [ARWorldCommand]) {
+        guard !commands.isEmpty else { return }
+        arWorldCommandHandler?(commands)
     }
 
     private func recordObservedMovementState(_ state: MovementState, at timestamp: Date) {
@@ -894,6 +957,7 @@ struct HomeView: View {
 struct ActiveSessionView: View {
     @Environment(WaykinAppModel.self) private var appModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var showsARCompanion = false
     let scenario: DemoScenarioID
 
     var body: some View {
@@ -968,6 +1032,15 @@ struct ActiveSessionView: View {
                         latitude: presentation.latitude,
                         longitude: presentation.longitude
                     )
+
+                    Button {
+                        showsARCompanion = true
+                    } label: {
+                        Label("AR Companion", systemImage: "viewfinder")
+                            .frame(minWidth: 48, minHeight: 48)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("waykin.session.openARCompanion")
                 }
                 .padding(.horizontal, CompanionPresenceStyle.horizontalPadding)
                 .padding(.vertical, 12)
@@ -975,6 +1048,9 @@ struct ActiveSessionView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(appModel.demoController.isRunning || appModel.isLiveSessionActive)
+        .sheet(isPresented: $showsARCompanion) {
+            CanonicalARSessionView()
+        }
     }
 }
 
