@@ -74,7 +74,8 @@ Outdoor walk / outdoor receipts / Issue #41 physical AR stay **out of scope** un
 2. **C2 / A2** AR breath + sway — **done**
 3. **C3 / A3** hunter echo (session + AR) — **done**
 4. **C4 / A4** spawn coalesce — **done** (presentation root still snaps; coalesce is scale factor)
-5. Next indoor (optional): polish, USDZ sculpt when ready, or more still UX
+5. Still UX polish (bond orbit + manifesting fade) — **this train**
+6. Next indoor (optional): further presence polish or pause until outdoor
 
 ## Non-goals while indoor-focused
 

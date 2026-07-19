@@ -18,6 +18,10 @@ struct LiraSessionFigure: View {
     @State private var previousStillName: String?
     /// 0 = fully previous, 1 = fully displayed.
     @State private var stillBlend: Double = 1
+    /// Bond orbit rotation in degrees (spins while pose == bond).
+    @State private var bondOrbitAngle: Double = LiraSessionMotion.bondOrbitRestDegrees
+    /// Manifesting settle scale (0.92 → 1).
+    @State private var manifestScale: CGFloat = 1
 
     private var pose: LiraSessionPose { LiraSessionPose.resolve(from: presentation) }
     private var skin: LiraSkin { skinOverride ?? environmentSkin }
@@ -38,6 +42,7 @@ struct LiraSessionFigure: View {
             pressureRing
             bondOrbit
             stillOrFigure
+                .scaleEffect(manifestScale)
         }
         .frame(height: 190)
         .scaleEffect(
@@ -55,19 +60,34 @@ struct LiraSessionFigure: View {
             displayedStillName = targetStillName
             previousStillName = nil
             stillBlend = 1
+            manifestScale = 1
+            updateBondOrbit(for: pose)
+            if pose == .manifesting {
+                runManifestingSettle()
+            }
             runPulse()
         }
         .onChange(of: stillIdentity) { _, _ in
             transitionStill(to: targetStillName)
+            if pose == .manifesting {
+                runManifestingSettle()
+            } else {
+                manifestScale = 1
+            }
+        }
+        .onChange(of: pose) { _, newPose in
+            updateBondOrbit(for: newPose)
         }
         .onChange(of: presentation.animationKey) { _, _ in runPulse() }
         .onChange(of: reduceMotion) { _, _ in
             if reduceMotion {
-                // Snap any in-flight crossfade and kill pulse loops.
+                // Snap any in-flight crossfade and kill pulse / orbit loops.
                 previousStillName = nil
                 stillBlend = 1
                 pulse = false
+                manifestScale = 1
             }
+            updateBondOrbit(for: pose)
             runPulse()
         }
     }
@@ -109,7 +129,10 @@ struct LiraSessionFigure: View {
     }
 
     private func transitionStill(to newName: String?) {
-        let duration = LiraSessionMotion.poseCrossfadeDuration(reduceMotion: reduceMotion)
+        let duration = LiraSessionMotion.poseCrossfadeDuration(
+            reduceMotion: reduceMotion,
+            incomingPose: pose
+        )
         if reduceMotion || displayedStillName == nil || displayedStillName == newName {
             var transaction = Transaction()
             transaction.disablesAnimations = reduceMotion
@@ -123,8 +146,48 @@ struct LiraSessionFigure: View {
         previousStillName = displayedStillName
         displayedStillName = newName
         stillBlend = 0
-        withAnimation(.easeInOut(duration: duration)) {
+        // Manifesting uses longer ease-out coalesce; other poses ease-in-out.
+        let animation: Animation = pose == .manifesting
+            ? .easeOut(duration: duration)
+            : .easeInOut(duration: duration)
+        withAnimation(animation) {
             stillBlend = 1
+        }
+    }
+
+    private func runManifestingSettle() {
+        let duration = LiraSessionMotion.manifestingFadeDuration(reduceMotion: reduceMotion)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            manifestScale = LiraSessionMotion.manifestingStartScale
+        }
+        withAnimation(.easeOut(duration: duration)) {
+            manifestScale = 1
+        }
+    }
+
+    private func updateBondOrbit(for pose: LiraSessionPose) {
+        if pose == .bond {
+            let base = LiraSessionMotion.bondOrbitBondBaseDegrees
+            if let period = LiraSessionMotion.bondOrbitPeriod(reduceMotion: reduceMotion) {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { bondOrbitAngle = base }
+                withAnimation(.linear(duration: period).repeatForever(autoreverses: false)) {
+                    bondOrbitAngle = base + 360
+                }
+            } else {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { bondOrbitAngle = base }
+            }
+        } else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                bondOrbitAngle = LiraSessionMotion.bondOrbitRestDegrees
+            }
         }
     }
 
@@ -138,14 +201,20 @@ struct LiraSessionFigure: View {
     }
 
     private var bondOrbit: some View {
-        Circle()
-            .trim(from: pose == .bond ? 0.02 : 0.08, to: pose == .bond ? 0.92 : 0.82)
+        let trim = LiraSessionMotion.bondOrbitTrim(pose: pose)
+        return Circle()
+            .trim(from: trim.from, to: trim.to)
             .stroke(
-                (pose == .bond ? theme.bond : theme.guide).opacity(0.55),
-                style: StrokeStyle(lineWidth: pose == .bond ? 6 : 5, lineCap: .round)
+                (pose == .bond ? theme.bond : theme.guide).opacity(pose == .bond ? 0.7 : 0.55),
+                style: StrokeStyle(
+                    lineWidth: LiraSessionMotion.bondOrbitLineWidth(pose: pose),
+                    lineCap: .round
+                )
             )
-            .rotationEffect(.degrees(pose == .bond ? -10 : -40))
+            .rotationEffect(.degrees(bondOrbitAngle))
             .frame(width: 126, height: 126)
+            .opacity(pose == .bond || pose == .guide || pose == .manifesting ? 1 : 0.35)
+            .accessibilityHidden(true)
     }
 
     private var figure: some View {

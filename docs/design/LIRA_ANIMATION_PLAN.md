@@ -57,9 +57,9 @@ This plan binds animation to existing state machines:
 | `S_pose_crossfade` | Pose change | Opacity crossfade between stills | 180–280ms | Hard cut or 80ms |
 | `S_core_pulse` | Idle / bond | A2-scale 1.0↔1.06 on still or orbit | 1.6s loop | Static |
 | `S_filament_drift` | Guide / follow | Subtle offset of filament via Canvas overlay only if still lacks motion | 2.4s loop | Off |
-| `S_manifest` | Opening / manifesting | Opacity 0→1 + scale 0.92→1 | 700ms | ≤120ms fade |
-| `S_hunter_echo` | Pursuit close | Delayed second silhouette 40–80ms, cool fringe | While pressure | Static hunter still |
-| `S_bond_orbit` | Bond event | Existing bond ring spin | 1.2s | Static ring |
+| `S_manifest` | Opening / manifesting | Opacity 0→1 + scale 0.92→1 | 700ms | ≤120ms fade | **Shipped** |
+| `S_hunter_echo` | Pursuit close | Delayed second silhouette, cool fringe | While pressure | Static hunter still | **Shipped** |
+| `S_bond_orbit` | Bond event | Bond ring continuous spin 1.2s | Loop while bond | Static ring | **Shipped** |
 
 ### Implementation notes
 
