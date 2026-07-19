@@ -240,13 +240,25 @@ struct CompanionPresenceView: View {
             AnyLayout(dynamicTypeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
                 : AnyLayout(HStackLayout(spacing: 24))) {
-                Label(presentation.pressureLabel, systemImage: "circle.dotted")
+                Label {
+                    Text(presentation.pressureLabel)
+                } icon: {
+                    WKIconView(
+                        icon: presentation.pressureIntensity >= 0.45 ? .companionBehind : .companionAhead,
+                        size: 18
+                    )
+                }
                     .foregroundStyle(pressureTint)
                     .accessibilityLabel("Path status")
                     .accessibilityValue(presentation.pressureAccessibilityValue)
                     .accessibilitySortPriority(4.6)
                     .accessibilityIdentifier("waykin.session.pressure")
-                Label(presentation.audioLabel, systemImage: presentation.audioCueKind == nil ? "speaker.slash" : "speaker.wave.2")
+                Label {
+                    Text(presentation.audioLabel)
+                } icon: {
+                    WKIconView(icon: .audio, size: 18)
+                        .opacity(presentation.audioCueKind == nil ? 0.45 : 1)
+                }
                     .foregroundStyle(theme.textSecondary)
                     .accessibilityLabel("Sound status")
                     .accessibilityValue(presentation.audioLabel)
