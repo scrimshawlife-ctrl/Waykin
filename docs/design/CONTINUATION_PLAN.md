@@ -44,7 +44,7 @@ audio_first: true
 
 | ID | Work | Exit |
 | -- | ---- | ---- |
-| **C5** | Drop sculpted `Lira_AR_Base.usdz` with A1–A3 names | Loader `source == .usdz` in sim |
+| **C5** | Package `Lira_AR_Base.usdz` mid-LOD (Living Familiar anchors) | **Done** (procedural fallback remains) |
 | **C6 / A5** | Optional AnimationLibrary clips on USDZ | Mapped from `CompanionPresentationState` |
 | **C7** | Keep procedural as permanent debug fallback | Already designed |
 
@@ -82,7 +82,7 @@ Outdoor walk / outdoor receipts / Issue #41 physical AR stay **out of scope** un
 | Priority | Work | When |
 | -------- | ---- | ---- |
 | **Pause indoor** | No further presentation work required for MVP indoor | Now |
-| Optional | Artist `Lira_AR_Base.usdz` drop-in | When mesh exists |
+| Optional | Higher-fidelity sculpted USDZ replace | When artist mesh exists |
 | Deferred | Outdoor walk + receipts (C8–C10) | When you have a device walk |
 | Optional | Hand-painted still pass (C11) | Art direction only |
 

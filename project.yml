@@ -8,7 +8,14 @@ targets:
     type: application
     platform: iOS
     sources:
-      - App
+      - path: App
+        excludes:
+          - "**/*.md"
+          - "Resources/Lira_AR_Base.usdz"
+          - "Resources/Companion/**"
+      - path: App/Resources/Lira_AR_Base.usdz
+        type: file
+        buildPhase: resources
     settings:
       base:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Waykin uses your location during an active movement session to measure distance, pace, and route progress."

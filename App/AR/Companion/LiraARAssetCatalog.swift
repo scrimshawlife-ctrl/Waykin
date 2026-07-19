@@ -12,11 +12,18 @@ enum LiraARAssetCatalog {
 
     /// Bundle URL for artist USDZ if present in the app package.
     static var baseUSDZURL: URL? {
+        // Prefer nested path, then bundle root (xcodegen packages root Resources reliably).
         Bundle.main.url(
             forResource: baseUSDZName,
             withExtension: "usdz",
             subdirectory: resourceSubdirectory
-        ) ?? Bundle.main.url(forResource: baseUSDZName, withExtension: "usdz")
+        )
+            ?? Bundle.main.url(forResource: baseUSDZName, withExtension: "usdz")
+            ?? Bundle.main.url(
+                forResource: baseUSDZName,
+                withExtension: "usdz",
+                subdirectory: "Companion/Lira"
+            )
     }
 
     /// Whether a production USDZ file is packaged (load may still fail validation).
