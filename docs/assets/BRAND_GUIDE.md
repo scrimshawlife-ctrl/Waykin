@@ -2,37 +2,57 @@
 
 ## Brand Foundation
 
-**Core theme:** Outdoor movement + living companion + soft spatial computing + mythic discovery + modern engineering.
+**Core theme:** Outdoor movement + living companion (Lira) + soft spectral presence + mythic discovery + modern engineering.
 
 **Emotional tone:** Movement, Bond, Discovery, Adaptation, Presence, Memory, and day/night transformation.
 
-## Palette
+**Visual climate (locked):** **Echo** — cool mist day, indigo-earth night, guide teal, bond gold, hunter violet.
+**Product companion name:** **Lira** (Living Familiar structural family under Echo materials).
 
-| Token | Hex | Intended use |
-|---|---|---|
-| Midnight | `#0B1020` | Foundations and deep background |
-| Deep Forest | `#14372F` | Ground, landscape, and natural depth |
-| Trail Teal | `#43C7B8` | Movement, semantic signal, and Lira glow |
-| Sunrise Gold | `#F4B860` | Companionship, memory, and warmth |
-| Mist White | `#F5F7F3` | Clarity and primary text |
-| Stone | `#89938D` | Secondary information |
-| Twilight Violet | `#7168A6` | Night and liminal states |
-| Threat Ember | `#C7613A` | Bounded pursuit pressure |
+**Token source:** App presentation uses `WK_TOKENS_v0.2` (`App/Theme/WKTokens.swift`). Night is **not** an invert of day.
+
+## Palette (Echo climate)
+
+| Token | Day hex | Night hex | Intended use |
+|---|---|---|---|
+| Foundation | `#E4E8EC` cool mist | `#12151C` indigo-earth | App backgrounds |
+| Surface | `#F7F5F2` | `#1E2430` | Cards / sheets |
+| Ink / text | `#141820` | `#E6EAF0` | Primary text |
+| Secondary text | `#4A535E` | `#9AA3B0` | Supporting copy |
+| Guide teal | `#3F8F8A` | `#4A9E98` | Trail invitation, primary actions |
+| Bond gold | `#D4A45A` | `#B8894A` | Relationship, chest mark, bond UI |
+| Rival copper | `#D17A4A` | `#C46B3A` | Cadence / challenge accents |
+| Hunter violet | `#5C4E7A` | `#6A5A8A` | Pressure presence (never color alone) |
+| Sanctuary moss | `#A8C4B5` / `#5F7F72` | `#5F7F72` | Safety / resolve |
+| Caution amber | `#E0B040` | `#E0B040` | Route uncertainty + icon + text |
+
+### Retired as primary UI tokens
+
+The previous concept palette (Midnight `#0B1020`, Deep Forest `#14372F`, Trail Teal `#43C7B8`, Sunrise Gold `#F4B860`, Mist White `#F5F7F3`) remains historical for older concept art. **Do not** use it for new App chrome.
 
 ## Typography
 
-Visual assets should use a clean geometric sans-serif with slightly rounded forms, strong titles, and high legibility. Repository documentation remains standard Markdown and system typography.
+Prefer a clean geometric sans-serif (DM Sans / Source Sans 3 / system). Strong titles, high outdoor legibility. Repository documentation remains standard Markdown and system typography.
 
 ## Companion Direction
 
-Lira should read as an original, species-neutral, friendly but mysterious luminous presence. The design must not imitate a dog, Pokémon, or recognizable franchise creature.
+**Lira** should read as an original, species-neutral, friendly but slightly uncanny luminous presence (Living Familiar). The design must not imitate a dog, Pokémon, or recognizable franchise creature.
+
+Identity anchors (visual production):
+
+1. Tapered non-canid head
+2. Amber chest bond mark
+3. Trailing filament / plume
+
+Hunter language: distortion, delayed echo, asymmetry — not gore.
 
 ## Asset Classes
 
 - **CONCEPT VISUAL** — Hero art, companion walk scenes, movement-to-memory scenes, and social previews.
 - **ENGINEERING DIAGRAM** — Architecture, runtime, validation, evidence, and collaboration flows.
-- **BRAND ASSET** — Wordmark, symbol, lockup, and app-icon concepts.
+- **BRAND ASSET** — Wordmark, Bond Filament symbol, lockup, and app-icon concepts.
 - **REAL** — Captured simulator or physical-device output. None is implied by a concept asset.
+- **PRODUCTION CANDIDATE** — Tokens and marks imported into App presentation; not proof of outdoor QA.
 
 ## Current Repository Assets
 
@@ -41,21 +61,12 @@ Lira should read as an original, species-neutral, friendly but mysterious lumino
 | `docs/assets/waykin-hero.svg` | CONCEPT VISUAL | README hero and product-direction artwork | None |
 | `docs/assets/runtime-architecture.svg` | ENGINEERING DIAGRAM | Semantic runtime and platform-adapter boundary | Must remain aligned with `ARCHITECTURE.md` |
 | `docs/assets/contributor-flow.svg` | ENGINEERING DIAGRAM | Issue-scoped delivery workflow | Must remain aligned with `CONTRIBUTING.md` |
-
-### Hero Details
-
-| Field | Value |
-|---|---|
-| Format | Accessible SVG |
-| Canvas | `2400 × 900` |
-| Subject | Walker, mountain valley, dawn light, and luminous companion |
-| Source | Generated specifically for the Waykin repository and refined into a repository-native vector asset |
-
-The hero includes an accessible title and description and is designed to remain legible on GitHub in both light and dark interfaces.
+| `App/Theme/WKTokens.swift` | PRODUCTION CANDIDATE | Echo day/night theme for App UI | Presentation only |
+| `docs/assets/brand/*` | BRAND / CONCEPT | Historical and interim lockups | Replace with Bond Filament production mark over time |
 
 ## Provenance
 
-Visual concepts are project-owned placeholders generated specifically for Waykin using available creative tools. No external stock imagery or third-party licensed artwork is incorporated.
+Visual concepts are project-owned placeholders generated specifically for Waykin. Echo tokens originate from the isolated Waykin-Design package (CANDIDATE_v0.2) under a direction lock accepting Echo + Lira.
 
 Generated art must be reviewed for:
 
@@ -63,7 +74,7 @@ Generated art must be reviewed for:
 - Product-scope accuracy
 - Accessibility text
 - Light/dark README readability
-- Correct classification as concept, engineering, brand, or real evidence
+- Correct classification as concept, engineering, brand, real, or production candidate
 
 ## Accessibility
 
@@ -71,7 +82,8 @@ Generated art must be reviewed for:
 - README and documentation embeddings must include useful alt text.
 - Do not place essential instructions only inside an image.
 - Preserve sufficient contrast between text, paths, nodes, and backgrounds.
-- Keep diagrams understandable from surrounding prose when images do not load.
+- **Never use color alone** for hunter, caution, pause, or tracking-loss states (pair with icon/shape/text).
+- Outdoor device contrast remains **NOT_COMPUTABLE** until a physical walk validates tokens.
 
 ## Labeling Rule
 
@@ -79,7 +91,11 @@ Every README visual must disclose its evidence class. Concept visuals and engine
 
 ## Replacement Plan
 
-Replace or supplement concept visuals with real simulator screenshots and physical-device captures after those surfaces are validated. Preserve earlier concept assets as historical design-direction references where useful.
+1. Tokens in App (this guide + `WKTokens`) — **started**
+2. Bond Filament production mark + app icon sizes
+3. Core icon set
+4. Lira production rig art
+5. Replace concept hero with real simulator/device captures after validation
 
 ## Usage
 

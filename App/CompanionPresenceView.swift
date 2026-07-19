@@ -145,15 +145,17 @@ struct CompanionPresencePresentation {
 }
 
 enum CompanionPresenceStyle {
-    static let horizontalPadding: CGFloat = 20
+    static let horizontalPadding: CGFloat = 24
     static let sectionSpacing: CGFloat = 18
 
+    /// Echo session field: pressure wash on day mist / night indigo (theme-aware).
+    static func background(for pressure: Double, theme: WKTheme) -> Color {
+        theme.sessionBackground(pressure: pressure)
+    }
+
+    /// Legacy fallback when theme is unavailable (tests / previews).
     static func background(for pressure: Double) -> Color {
-        Color(
-            red: 0.04 + pressure * 0.12,
-            green: 0.10 - pressure * 0.035,
-            blue: 0.11 - pressure * 0.025
-        )
+        WKTheme(colorScheme: .dark).sessionBackground(pressure: pressure)
     }
 }
 
@@ -161,6 +163,7 @@ struct CompanionPresenceView: View {
     let presentation: CompanionPresencePresentation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.wkTheme) private var theme
     @State private var expanded = false
 
     var body: some View {
@@ -171,18 +174,20 @@ struct CompanionPresenceView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(presentation.companionName)
                         .font(.title2.bold())
+                        .foregroundStyle(theme.textPrimary)
                         .accessibilityAddTraits(.isHeader)
                         .accessibilitySortPriority(6)
                         .accessibilityIdentifier("waykin.session.companionName")
                     Text("Companion Walk")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                         .accessibilitySortPriority(5.9)
                         .accessibilityIdentifier("waykin.session.screen")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Text("Bond \(presentation.bondLevel)")
                     .font(.headline)
+                    .foregroundStyle(theme.bondText)
                     .accessibilityLabel("Bond level")
                     .accessibilityValue("\(presentation.bondLevel)")
                     .accessibilitySortPriority(5.8)
@@ -191,19 +196,27 @@ struct CompanionPresenceView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             ZStack {
+                // Outer pressure ring — geometry + opacity change with pursuit (not color alone)
                 Circle()
                     .stroke(
-                        Color.white.opacity(0.16 + presentation.pressureIntensity * 0.28),
+                        theme.hunterFilament.opacity(0.22 + presentation.pressureIntensity * 0.45),
                         lineWidth: presentation.pressureStrokeWidth
                     )
                     .frame(width: 176, height: 176)
+                // Bond incomplete orbital (Echo mark language)
                 Circle()
-                    .stroke(Color(red: 0.42, green: 0.82, blue: 0.78).opacity(0.48), lineWidth: 5)
+                    .trim(from: 0.08, to: 0.82)
+                    .stroke(theme.guide.opacity(0.55), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .rotationEffect(.degrees(-40))
                     .frame(width: 126, height: 126)
                 Circle()
                     .fill(presenceColor)
                     .frame(width: 76, height: 76)
-                    .overlay(Circle().fill(Color.white.opacity(0.25)).frame(width: 24, height: 24))
+                    .overlay(
+                        Circle()
+                            .fill(theme.bond)
+                            .frame(width: 18, height: 18)
+                    )
             }
             .scaleEffect(presentation.presenceScale * (expanded ? 1.035 : 1))
             .opacity(presentation.presenceOpacity)
@@ -216,6 +229,7 @@ struct CompanionPresenceView: View {
 
             Text(presentation.phrase)
                 .font(.title3.weight(.semibold))
+                .foregroundStyle(theme.textPrimary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .fixedSize(horizontal: false, vertical: true)
@@ -227,11 +241,13 @@ struct CompanionPresenceView: View {
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
                 : AnyLayout(HStackLayout(spacing: 24))) {
                 Label(presentation.pressureLabel, systemImage: "circle.dotted")
+                    .foregroundStyle(pressureTint)
                     .accessibilityLabel("Path status")
                     .accessibilityValue(presentation.pressureAccessibilityValue)
                     .accessibilitySortPriority(4.6)
                     .accessibilityIdentifier("waykin.session.pressure")
                 Label(presentation.audioLabel, systemImage: presentation.audioCueKind == nil ? "speaker.slash" : "speaker.wave.2")
+                    .foregroundStyle(theme.textSecondary)
                     .accessibilityLabel("Sound status")
                     .accessibilityValue(presentation.audioLabel)
                     .accessibilitySortPriority(4.5)
@@ -258,24 +274,36 @@ struct CompanionPresenceView: View {
             }
             .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
         }
-        .foregroundStyle(.white)
         .onAppear(perform: animatePresence)
         .onChange(of: presentation.animationKey) { _, _ in animatePresence() }
         .onChange(of: reduceMotion) { _, _ in animatePresence() }
     }
 
+    /// Presence body color: guide default; bond warmth on celebrate/drawNear; sanctuary on rest; hunter filament under pursuit pressure.
     private var presenceColor: Color {
-        switch presentation.behavior {
-        case .drawNear, .celebrate: Color(red: 0.95, green: 0.69, blue: 0.31)
-        case .rest: Color(red: 0.48, green: 0.65, blue: 0.72)
-        default: Color(red: 0.34, green: 0.82, blue: 0.76)
+        if presentation.pressureIntensity >= 0.45 {
+            return theme.hunter
         }
+        switch presentation.behavior {
+        case .drawNear, .celebrate: return theme.bond
+        case .rest: return theme.sanctuary
+        case .lead: return theme.guide
+        default: return theme.guide
+        }
+    }
+
+    private var pressureTint: Color {
+        presentation.pressureIntensity >= 0.45 ? theme.hunter : theme.textSecondary
     }
 
     private func metric(value: String, accessibilityValue: String, label: String, identifier: String) -> some View {
         VStack(spacing: 2) {
-            Text(value).font(.title2.monospacedDigit().bold())
-            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value)
+                .font(.title2.monospacedDigit().bold())
+                .foregroundStyle(theme.textPrimary)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(theme.textSecondary)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(label)
@@ -300,6 +328,7 @@ struct CompanionPresenceView: View {
 struct CompactSessionMap: View {
     let latitude: Double?
     let longitude: Double?
+    @Environment(\.wkTheme) private var theme
 
     var locationAccessibilityValue: String {
         latitude == nil || longitude == nil
@@ -315,7 +344,7 @@ struct CompactSessionMap: View {
         VStack(alignment: .leading, spacing: 6) {
             Label("Location context", systemImage: "map")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.82))
+                .foregroundStyle(theme.textSecondary)
                 .accessibilityHidden(true)
             ZStack {
                 Map(
