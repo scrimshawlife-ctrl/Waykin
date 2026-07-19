@@ -896,24 +896,8 @@ struct HomeView: View {
             theme.background.ignoresSafeArea()
 
             VStack(spacing: 16) {
-                // Echo bond-filament mark (simple construction; full SVG import is a later PR)
-                ZStack {
-                    Circle()
-                        .trim(from: 0.12, to: 0.88)
-                        .stroke(theme.textPrimary, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-25))
-                    Circle()
-                        .fill(theme.guide)
-                        .frame(width: 14, height: 14)
-                        .offset(x: 6, y: -2)
-                    Circle()
-                        .fill(theme.bond)
-                        .frame(width: 8, height: 8)
-                        .offset(x: 6, y: -2)
-                }
-                .accessibilityHidden(true)
-                .padding(.top, 8)
+                WKBondFilamentMark(size: 56)
+                    .padding(.top, 8)
 
                 Text("Waykin")
                     .font(.largeTitle.bold())
@@ -940,10 +924,14 @@ struct HomeView: View {
                         .accessibilityIdentifier("waykin.status")
                 }
 
-                Button("Begin Walk") { appModel.startDemo(.calmDayWalk) }
+                Button {
+                    appModel.startDemo(.calmDayWalk)
+                } label: {
+                    WKIconLabel(title: "Begin Walk", icon: .beginSession)
+                        .frame(minWidth: 48, minHeight: 48)
+                }
                     .buttonStyle(.borderedProminent)
                     .tint(theme.guide)
-                    .frame(minHeight: 48)
                     .accessibilityIdentifier("waykin.beginWalk")
 
                 if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
@@ -1028,7 +1016,7 @@ struct ActiveSessionView: View {
                             Button {
                                 appModel.isLiveSessionActive ? appModel.resumeRealSession() : appModel.resumeDemo()
                             } label: {
-                                Label("Resume", systemImage: "play.fill")
+                                WKIconLabel(title: "Resume", icon: .resume)
                                     .frame(minWidth: 48, minHeight: 48)
                             }
                             .buttonStyle(.borderedProminent)
@@ -1040,7 +1028,7 @@ struct ActiveSessionView: View {
                             Button {
                                 appModel.isLiveSessionActive ? appModel.pauseRealSession() : appModel.pauseDemo()
                             } label: {
-                                Label("Pause", systemImage: "pause.fill")
+                                WKIconLabel(title: "Pause", icon: .pause)
                                     .frame(minWidth: 48, minHeight: 48)
                             }
                             .buttonStyle(.bordered)
@@ -1054,7 +1042,7 @@ struct ActiveSessionView: View {
                         Button {
                             appModel.isLiveSessionActive ? appModel.endRealSession() : appModel.endDemo()
                         } label: {
-                            Label("End", systemImage: "stop.fill")
+                            WKIconLabel(title: "End", icon: .stop)
                                 .frame(minWidth: 48, minHeight: 48)
                         }
                         .buttonStyle(.bordered)
