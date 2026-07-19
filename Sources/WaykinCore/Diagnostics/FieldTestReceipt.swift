@@ -166,6 +166,17 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
     public var memoryWritten: Bool
     public var finalErrorCategory: FieldTestErrorCategory?
     public var audioDiagnostics: FieldTestAudioDiagnosticSummary
+    /// Semantic path relation at session end (`PathRelation.rawValue`); nil on legacy receipts.
+    public var pathRelation: String?
+    /// Meters along semantic path (no coordinates).
+    public var pathMetersAlongPath: Double
+    /// Final integrity pressure 0…1.
+    public var pathIntegrityPressure: Double
+    /// Path engine accepted-sample count.
+    public var pathAcceptedSampleCount: Int
+    /// Coarse HealthKit cadence band only — never sample UUIDs.
+    public var activityStepCadenceBand: String?
+    public var activityAuthorizationDenied: Bool
 
     public init(startingBond: Int) {
         durationSeconds = 0
@@ -190,6 +201,12 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         memoryWritten = false
         finalErrorCategory = nil
         audioDiagnostics = FieldTestAudioDiagnosticSummary()
+        pathRelation = nil
+        pathMetersAlongPath = 0
+        pathIntegrityPressure = 0
+        pathAcceptedSampleCount = 0
+        activityStepCadenceBand = nil
+        activityAuthorizationDenied = false
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -215,6 +232,12 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         case memoryWritten
         case finalErrorCategory
         case audioDiagnostics
+        case pathRelation
+        case pathMetersAlongPath
+        case pathIntegrityPressure
+        case pathAcceptedSampleCount
+        case activityStepCadenceBand
+        case activityAuthorizationDenied
     }
 
     public init(from decoder: Decoder) throws {
@@ -244,11 +267,18 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
             FieldTestAudioDiagnosticSummary.self,
             forKey: .audioDiagnostics
         ) ?? FieldTestAudioDiagnosticSummary()
+        pathRelation = try container.decodeIfPresent(String.self, forKey: .pathRelation)
+        pathMetersAlongPath = try container.decodeIfPresent(Double.self, forKey: .pathMetersAlongPath) ?? 0
+        pathIntegrityPressure = try container.decodeIfPresent(Double.self, forKey: .pathIntegrityPressure) ?? 0
+        pathAcceptedSampleCount = try container.decodeIfPresent(Int.self, forKey: .pathAcceptedSampleCount) ?? 0
+        activityStepCadenceBand = try container.decodeIfPresent(String.self, forKey: .activityStepCadenceBand)
+        activityAuthorizationDenied = try container.decodeIfPresent(Bool.self, forKey: .activityAuthorizationDenied) ?? false
     }
 }
 
 public struct FieldTestReceipt: Codable, Equatable, Sendable {
-    public static let currentSchemaVersion = 2
+    /// Schema 3 adds optional path-progress + activity-band summary fields (privacy-safe).
+    public static let currentSchemaVersion = 3
 
     public var schemaVersion: Int
     public var receiptID: UUID
@@ -476,7 +506,9 @@ public final class FieldTestReceiptBuilder {
         memoryWritten: Bool,
         persistence: FieldTestPersistenceResult,
         errorCategory: FieldTestErrorCategory? = nil,
-        endedAt: Date
+        endedAt: Date,
+        pathProgress: PathProgressSnapshot? = nil,
+        activityEnrichment: ActivityEnrichment? = nil
     ) -> FieldTestReceipt {
         if let pauseStart = pausedAt {
             accumulatedPausedDuration += max(0, endedAt.timeIntervalSince(pauseStart))
@@ -501,6 +533,17 @@ public final class FieldTestReceiptBuilder {
         receipt.summary.bondDelta = receipt.summary.endingBond - receipt.summary.startingBond
         receipt.summary.memoryWritten = memoryWritten
         receipt.summary.finalErrorCategory = errorCategory ?? receipt.summary.finalErrorCategory
+        if let pathProgress {
+            receipt.summary.pathRelation = pathProgress.relation.rawValue
+            receipt.summary.pathMetersAlongPath = finiteNonnegative(pathProgress.metersAlongPath)
+            receipt.summary.pathIntegrityPressure = pathProgress.integrityPressure.clamped01
+            receipt.summary.pathAcceptedSampleCount = max(0, pathProgress.acceptedSampleCount)
+        }
+        if let activityEnrichment {
+            // Bands only — never raw step totals or HealthKit sample identifiers.
+            receipt.summary.activityStepCadenceBand = activityEnrichment.stepCadenceBand.rawValue
+            receipt.summary.activityAuthorizationDenied = activityEnrichment.authorizationDenied
+        }
         appendRequired(FieldTestEntry(timestamp: endedAt, category: .memoryWriteResult, code: persistence.rawValue))
         appendRequired(FieldTestEntry(timestamp: endedAt, category: .sessionCompleted, code: outcome.rawValue))
         return receipt

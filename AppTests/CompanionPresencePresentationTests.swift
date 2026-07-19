@@ -144,6 +144,50 @@ final class CompanionPresencePresentationTests: XCTestCase {
         XCTAssertEqual(makePresentation(event: .bondMoment).closingPhrase, "The path remembers.")
     }
 
+    func testPathRelationPhrasesWhenPursuitInactive() {
+        XCTAssertEqual(
+            makePresentation(pathRelation: .onPath).phrase,
+            "Lira walks with you."
+        )
+        XCTAssertEqual(
+            makePresentation(pathRelation: .onPath, energyHint: 0.2).phrase,
+            "Lira matches your pace."
+        )
+        XCTAssertEqual(makePresentation(pathRelation: .strained).phrase, "The path feels strained.")
+        XCTAssertEqual(makePresentation(pathRelation: .offPath).phrase, "The path has slipped.")
+        XCTAssertEqual(
+            makePresentation(pathRelation: .recovered).phrase,
+            "The path is finding you again."
+        )
+        // World event still wins over path.
+        XCTAssertEqual(
+            makePresentation(event: .bondMoment, pathRelation: .strained).phrase,
+            "Lira shares the moment."
+        )
+        // Pursuit still wins over path.
+        XCTAssertEqual(
+            makePresentation(pursuit: .close, pathRelation: .onPath).phrase,
+            "The pressure is close."
+        )
+    }
+
+    func testPathIntegrityBlendsIntoInactivePressure() {
+        let quiet = makePresentation(pathRelation: .establishing, pathIntegrityPressure: 0)
+        let strained = makePresentation(pathRelation: .strained, pathIntegrityPressure: 0.5)
+        XCTAssertEqual(quiet.pressureIntensity, 0, accuracy: 0.001)
+        XCTAssertGreaterThan(strained.pressureIntensity, 0.3)
+        XCTAssertEqual(strained.pressureLabel, "Path strained")
+        XCTAssertEqual(strained.pressureAccessibilityValue, "The path feels strained.")
+    }
+
+    func testEnergyHintLiftsPresenceOpacitySlightly() {
+        let base = makePresentation(behavior: .idle, energyHint: 0)
+        let lifted = makePresentation(behavior: .idle, energyHint: 0.2)
+        XCTAssertEqual(base.presenceOpacity, 0.64, accuracy: 0.001)
+        XCTAssertGreaterThan(lifted.presenceOpacity, base.presenceOpacity)
+        XCTAssertLessThanOrEqual(lifted.presenceOpacity, 1)
+    }
+
     private func makePresentation(
         behavior: CompanionBehaviorState = .follow,
         pursuit: PursuitState = .inactive,
@@ -151,7 +195,10 @@ final class CompanionPresencePresentationTests: XCTestCase {
         isOpening: Bool = false,
         isPaused: Bool = false,
         elapsedSeconds: TimeInterval = 0,
-        distanceMeters: Double = 0
+        distanceMeters: Double = 0,
+        pathRelation: PathRelation = .establishing,
+        pathIntegrityPressure: Double = 0,
+        energyHint: Double = 0
     ) -> CompanionPresencePresentation {
         CompanionPresencePresentation(
             companionName: "Lira",
@@ -165,7 +212,10 @@ final class CompanionPresencePresentationTests: XCTestCase {
             isPaused: isPaused,
             isOpening: isOpening,
             latitude: nil,
-            longitude: nil
+            longitude: nil,
+            pathRelation: pathRelation,
+            pathIntegrityPressure: pathIntegrityPressure,
+            energyHint: energyHint
         )
     }
 }

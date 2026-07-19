@@ -23,6 +23,80 @@ final class FieldTestReceiptTests: XCTestCase {
         XCTAssertTrue(json.contains("\"persistence\":\"succeeded\""))
     }
 
+    func testPathAndActivitySummaryFieldsRoundTripWithoutCoordinates() throws {
+        let builder = makeBuilder()
+        let path = PathProgressSnapshot(
+            metersAlongPath: 42.5,
+            relation: .onPath,
+            integrityPressure: 0.12,
+            acceptedSampleCount: 17,
+            rejectedStreak: 0,
+            isDemo: true
+        )
+        let enrichment = ActivityEnrichment(
+            stepCadenceBand: .moderate,
+            stepCountWindow: 900,
+            walkingDistanceMetersWindow: 1_200,
+            authorizationDenied: false
+        )
+        let receipt = builder.finish(
+            session: session(),
+            outcome: .completed,
+            endingBond: 13,
+            memoryWritten: true,
+            persistence: .succeeded,
+            endedAt: startedAt.addingTimeInterval(20),
+            pathProgress: path,
+            activityEnrichment: enrichment
+        )
+
+        XCTAssertEqual(receipt.summary.pathRelation, PathRelation.onPath.rawValue)
+        XCTAssertEqual(receipt.summary.pathMetersAlongPath, 42.5, accuracy: 0.001)
+        XCTAssertEqual(receipt.summary.pathIntegrityPressure, 0.12, accuracy: 0.001)
+        XCTAssertEqual(receipt.summary.pathAcceptedSampleCount, 17)
+        XCTAssertEqual(receipt.summary.activityStepCadenceBand, StepCadenceBand.moderate.rawValue)
+        XCTAssertFalse(receipt.summary.activityAuthorizationDenied)
+
+        let data = try JSONEncoder().encode(receipt)
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8)).lowercased()
+        XCTAssertTrue(json.contains("pathrelation"))
+        XCTAssertTrue(json.contains("activitystepcadenceband"))
+        // Must not persist raw step windows or coordinates.
+        XCTAssertFalse(json.contains("stepcountwindow"))
+        XCTAssertFalse(json.contains("latitude"))
+        XCTAssertFalse(json.contains("longitude"))
+
+        let decoded = try JSONDecoder().decode(FieldTestReceipt.self, from: data)
+        XCTAssertEqual(decoded.summary.pathRelation, receipt.summary.pathRelation)
+        XCTAssertEqual(decoded.summary.activityStepCadenceBand, receipt.summary.activityStepCadenceBand)
+    }
+
+    func testLegacyReceiptWithoutPathFieldsDecodesWithDefaults() throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: try encoder.encode(completedReceipt()),
+            options: []
+        ) as? [String: Any])
+        object["schemaVersion"] = 2
+        var summary = try XCTUnwrap(object["summary"] as? [String: Any])
+        for key in [
+            "pathRelation", "pathMetersAlongPath", "pathIntegrityPressure",
+            "pathAcceptedSampleCount", "activityStepCadenceBand", "activityAuthorizationDenied"
+        ] {
+            summary.removeValue(forKey: key)
+        }
+        object["summary"] = summary
+        let legacyData = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(FieldTestReceipt.self, from: legacyData)
+        XCTAssertNil(decoded.summary.pathRelation)
+        XCTAssertEqual(decoded.summary.pathMetersAlongPath, 0)
+        XCTAssertEqual(decoded.summary.pathAcceptedSampleCount, 0)
+        XCTAssertFalse(decoded.summary.activityAuthorizationDenied)
+    }
+
     func testSchema1ReceiptDecodesWithEmptyAudioDiagnosticDefaults() throws {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601

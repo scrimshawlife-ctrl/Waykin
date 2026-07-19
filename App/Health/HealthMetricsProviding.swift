@@ -37,3 +37,38 @@ final class NullHealthMetricsProvider: HealthMetricsProviding {
         return .empty
     }
 }
+
+/// Deterministic enrichment for app tests — never talks to HealthKit.
+@MainActor
+final class FakeHealthMetricsProvider: HealthMetricsProviding {
+    private(set) var authorizationState: HealthAuthorizationState
+    var enrichment: ActivityEnrichment
+    private(set) var authorizationRequestCount = 0
+    private(set) var refreshCount = 0
+
+    init(
+        authorizationState: HealthAuthorizationState = .authorized,
+        enrichment: ActivityEnrichment = ActivityEnrichment(stepCadenceBand: .moderate, stepCountWindow: 800)
+    ) {
+        self.authorizationState = authorizationState
+        self.enrichment = enrichment
+    }
+
+    func requestAuthorizationIfNeeded() async {
+        authorizationRequestCount += 1
+        if authorizationState == .notDetermined {
+            authorizationState = .authorized
+        }
+    }
+
+    func refreshEnrichment() async -> ActivityEnrichment {
+        refreshCount += 1
+        if authorizationState == .denied {
+            return ActivityEnrichment(authorizationDenied: true)
+        }
+        if authorizationState == .unavailable {
+            return .empty
+        }
+        return enrichment
+    }
+}
