@@ -81,6 +81,7 @@ struct WaykinApp: App {
                     }
             }
             .environment(appModel)
+            .wkThemed()
             .onChange(of: scenePhase) { _, phase in
                 appModel.handleScenePhase(phase)
             }
@@ -886,77 +887,126 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
 struct HomeView: View {
     @Environment(WaykinAppModel.self) private var appModel
+    @Environment(\.wkTheme) private var theme
     @Query(sort: \SessionMemoryRecord.createdAt, order: .reverse)
     private var memoryRecords: [SessionMemoryRecord]
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Waykin").font(.largeTitle.bold()).accessibilityIdentifier("waykin.home")
-            Text("Companion: \(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
+        ZStack {
+            theme.background.ignoresSafeArea()
 
-            if let lastMemory = memoryRecords.first {
-                Text(lastMemory.text)
-                    .font(.callout)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("waykin.memory.latest")
-            }
-
-            if !appModel.demoMessage.isEmpty {
-                Text(appModel.demoMessage)
-                    .font(.callout)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("waykin.status")
-            }
-
-            Button("Begin Walk") { appModel.startDemo(.calmDayWalk) }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("waykin.beginWalk")
-
-            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
-                Text("Demo Mode")
-                    .font(.caption)
-                    .accessibilityIdentifier("waykin.demo.mode")
-            }
-
-            Button("Memory History") { appModel.path.append(AppRoute.memoryHistory) }
-                .accessibilityIdentifier("waykin.memory.open")
-
-            // Real device entry point for physical validation (COMPANION_WALK)
-            Button("Start Real Walk") {
-                appModel.startRealCompanionWalk()
-            }
-            .accessibilityIdentifier("waykin.real.open")
-            .accessibilityIdentifier("waykin.real.activity.walk")
-            .accessibilityIdentifier("waykin.real.experience.companionWalk")
-
-            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Location: \(appModel.realLocationProvider.authorizationStatus).description)")
-                        .accessibilityIdentifier("waykin.location.authorization")
-                    Text("Signal: \(appModel.liveSignalState).description)").accessibilityIdentifier("waykin.location.status")
-                    Text("Live: \(appModel.isLiveSessionActive)").accessibilityIdentifier("waykin.session.live")
-                        .accessibilityIdentifier("waykin.location.signalState")
-                    Text("Accepted: \(appModel.liveAcceptedCount) Rejected: \(appModel.liveRejectedCount)")
-                        .accessibilityIdentifier("waykin.location.acceptedCount")
+            VStack(spacing: 16) {
+                // Echo bond-filament mark (simple construction; full SVG import is a later PR)
+                ZStack {
+                    Circle()
+                        .trim(from: 0.12, to: 0.88)
+                        .stroke(theme.textPrimary, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 44, height: 44)
+                        .rotationEffect(.degrees(-25))
+                    Circle()
+                        .fill(theme.guide)
+                        .frame(width: 14, height: 14)
+                        .offset(x: 6, y: -2)
+                    Circle()
+                        .fill(theme.bond)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 6, y: -2)
                 }
-                .font(.caption2)
-            }
+                .accessibilityHidden(true)
+                .padding(.top, 8)
 
-            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
-                VStack {
-                    Text("Persistence: \(appModel.persistenceMode)").accessibilityIdentifier("waykin.persistence.mode")
-                    Text("State: \(appModel.persistenceLoadState).description)").accessibilityIdentifier("waykin.persistence.state")
-                    Text("MemCount: \(appModel.persistenceMemoryCount)").accessibilityIdentifier("waykin.persistence.queryMemoryCount")
-                    Text("PathHash: \(appModel.persistenceStorePathHash)").accessibilityIdentifier("waykin.persistence.storePathHash")
-                }.font(.caption2)
+                Text("Waykin")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(theme.textPrimary)
+                    .accessibilityIdentifier("waykin.home")
+
+                Text("\(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
+                    .foregroundStyle(theme.bondText)
+                    .accessibilityLabel("Companion \(appModel.companion.name), Bond \(appModel.companion.bondLevel)")
+
+                if let lastMemory = memoryRecords.first {
+                    Text(lastMemory.text)
+                        .font(.callout)
+                        .foregroundStyle(theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("waykin.memory.latest")
+                }
+
+                if !appModel.demoMessage.isEmpty {
+                    Text(appModel.demoMessage)
+                        .font(.callout)
+                        .foregroundStyle(theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("waykin.status")
+                }
+
+                Button("Begin Walk") { appModel.startDemo(.calmDayWalk) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(theme.guide)
+                    .frame(minHeight: 48)
+                    .accessibilityIdentifier("waykin.beginWalk")
+
+                if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                    Text("Demo Mode")
+                        .font(.caption)
+                        .foregroundStyle(theme.textTertiary)
+                        .accessibilityIdentifier("waykin.demo.mode")
+                }
+
+                Button("Memory History") { appModel.path.append(AppRoute.memoryHistory) }
+                    .foregroundStyle(theme.guideText)
+                    .frame(minHeight: 48)
+                    .accessibilityIdentifier("waykin.memory.open")
+
+                // Real device entry point for physical validation (COMPANION_WALK)
+                Button("Start Real Walk") {
+                    appModel.startRealCompanionWalk()
+                }
+                .frame(minHeight: 48)
+                .accessibilityIdentifier("waykin.real.open")
+                .accessibilityIdentifier("waykin.real.activity.walk")
+                .accessibilityIdentifier("waykin.real.experience.companionWalk")
+
+                if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Location: \(String(describing: appModel.realLocationProvider.authorizationStatus))")
+                            .accessibilityIdentifier("waykin.location.authorization")
+                        Text("Signal: \(String(describing: appModel.liveSignalState))")
+                            .accessibilityIdentifier("waykin.location.status")
+                        Text("Live: \(appModel.isLiveSessionActive)")
+                            .accessibilityIdentifier("waykin.session.live")
+                            .accessibilityIdentifier("waykin.location.signalState")
+                        Text("Accepted: \(appModel.liveAcceptedCount) Rejected: \(appModel.liveRejectedCount)")
+                            .accessibilityIdentifier("waykin.location.acceptedCount")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(theme.textTertiary)
+                }
+
+                if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                    VStack {
+                        Text("Persistence: \(appModel.persistenceMode)")
+                            .accessibilityIdentifier("waykin.persistence.mode")
+                        Text("State: \(appModel.persistenceLoadState.rawValue)")
+                            .accessibilityIdentifier("waykin.persistence.state")
+                        Text("MemCount: \(appModel.persistenceMemoryCount)")
+                            .accessibilityIdentifier("waykin.persistence.queryMemoryCount")
+                        Text("PathHash: \(appModel.persistenceStorePathHash)")
+                            .accessibilityIdentifier("waykin.persistence.storePathHash")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(theme.textTertiary)
+                }
             }
-        }.padding()
+            .padding(24)
+        }
     }
 }
 
 struct ActiveSessionView: View {
     @Environment(WaykinAppModel.self) private var appModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.wkTheme) private var theme
     @State private var showsARCompanion = false
     let scenario: DemoScenarioID
 
@@ -964,7 +1014,7 @@ struct ActiveSessionView: View {
         let presentation = appModel.activePresencePresentation
 
         ZStack {
-            CompanionPresenceStyle.background(for: presentation.pressureIntensity)
+            CompanionPresenceStyle.background(for: presentation.pressureIntensity, theme: theme)
                 .ignoresSafeArea()
 
             ScrollView {
@@ -982,6 +1032,7 @@ struct ActiveSessionView: View {
                                     .frame(minWidth: 48, minHeight: 48)
                             }
                             .buttonStyle(.borderedProminent)
+                            .tint(theme.guide)
                             .accessibilityLabel("Resume walk")
                             .accessibilitySortPriority(2)
                             .accessibilityIdentifier("waykin.session.resume")
@@ -993,18 +1044,21 @@ struct ActiveSessionView: View {
                                     .frame(minWidth: 48, minHeight: 48)
                             }
                             .buttonStyle(.bordered)
+                            .tint(theme.pause)
                             .accessibilityLabel("Pause walk")
                             .accessibilitySortPriority(2)
                             .accessibilityIdentifier("waykin.session.pause")
                         }
 
-                        Button(role: .destructive) {
+                        // End is calm/neutral — never alarm red (design: stop is always okay)
+                        Button {
                             appModel.isLiveSessionActive ? appModel.endRealSession() : appModel.endDemo()
                         } label: {
                             Label("End", systemImage: "stop.fill")
                                 .frame(minWidth: 48, minHeight: 48)
                         }
                         .buttonStyle(.bordered)
+                        .tint(theme.textSecondary)
                         .accessibilityLabel("End walk")
                         .accessibilitySortPriority(1.9)
                         .accessibilityIdentifier("waykin.session.end")
@@ -1017,12 +1071,13 @@ struct ActiveSessionView: View {
                                 .frame(minWidth: 48, minHeight: 48)
                         }
                         .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
                         .accessibilitySortPriority(1)
                         .accessibilityIdentifier("waykin.session.runToEnd")
                     } else {
-                        Text("Signal: \(appModel.liveSignalState).description)")
+                        Text("Signal: \(String(describing: appModel.liveSignalState))")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilitySortPriority(1)
                             .accessibilityIdentifier("waykin.session.liveSignal")
@@ -1040,6 +1095,7 @@ struct ActiveSessionView: View {
                             .frame(minWidth: 48, minHeight: 48)
                     }
                     .buttonStyle(.bordered)
+                    .tint(theme.guide)
                     .accessibilityIdentifier("waykin.session.openARCompanion")
                 }
                 .padding(.horizontal, CompanionPresenceStyle.horizontalPadding)
@@ -1057,26 +1113,42 @@ struct ActiveSessionView: View {
 struct SessionSummaryView: View {
     let summary: SessionSummary
     @Environment(WaykinAppModel.self) private var appModel
+    @Environment(\.wkTheme) private var theme
 
     var body: some View {
-        VStack {
-            Text("Session Summary").font(.title).accessibilityIdentifier("waykin.summary.screen")
-            if !appModel.lastClosingPhrase.isEmpty {
-                Text(appModel.lastClosingPhrase)
-                    .font(.headline)
-                    .accessibilityIdentifier("waykin.session.closing")
+        ZStack {
+            theme.backgroundWarm.ignoresSafeArea()
+            VStack(spacing: 16) {
+                Text("Session Summary")
+                    .font(.title)
+                    .foregroundStyle(theme.textPrimary)
+                    .accessibilityIdentifier("waykin.summary.screen")
+                if !appModel.lastClosingPhrase.isEmpty {
+                    Text(appModel.lastClosingPhrase)
+                        .font(.headline)
+                        .foregroundStyle(theme.bondText)
+                        .accessibilityIdentifier("waykin.session.closing")
+                }
+                Text(summary.memory.text)
+                    .foregroundStyle(theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("waykin.summary.memory")
+                if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                    Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
+                        .accessibilityIdentifier("waykin.summary.memoryWrite")
+                    Text(appModel.latestFieldTestReceiptURL.map {
+                        FileManager.default.fileExists(atPath: $0.path) ? "WRITTEN" : "MISSING"
+                    } ?? "MISSING")
+                    .accessibilityIdentifier("waykin.summary.receiptWrite")
+                }
+                Button("Back to Home") { appModel.returnHome() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(theme.guide)
+                    .frame(minHeight: 48)
+                    .accessibilityIdentifier("waykin.summary.home")
             }
-            Text(summary.memory.text).accessibilityIdentifier("waykin.summary.memory")
-            if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
-                Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
-                    .accessibilityIdentifier("waykin.summary.memoryWrite")
-                Text(appModel.latestFieldTestReceiptURL.map {
-                    FileManager.default.fileExists(atPath: $0.path) ? "WRITTEN" : "MISSING"
-                } ?? "MISSING")
-                .accessibilityIdentifier("waykin.summary.receiptWrite")
-            }
-            Button("Back to Home") { appModel.returnHome() }.accessibilityIdentifier("waykin.summary.home")
-        }.padding()
+            .padding(24)
+        }
     }
 }
 
