@@ -57,17 +57,21 @@ final class RealMovementSessionTests: XCTestCase {
         let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
         let audio = RealAudioSpy()
         let model = try makeModel(provider: provider, audio: audio)
+        var deliveredBatches: [[ARWorldCommand]] = []
+        model.attachARWorldCommandHandler { deliveredBatches.append($0) }
         model.startRealCompanionWalk()
         audio.handledCues.removeAll()
         let now = Date().addingTimeInterval(-10)
         provider.emit(sample(at: now))
         let pointsBefore = model.movementEngine.currentSession?.routePoints.count
+        let commandBatchCountBeforeRejection = deliveredBatches.count
 
         provider.emit(sample(at: now.addingTimeInterval(1), northMeters: 100))
 
         XCTAssertEqual(model.liveRejectedCount, 1)
         XCTAssertEqual(model.movementEngine.currentSession?.routePoints.count, pointsBefore)
         XCTAssertTrue(audio.handledCues.isEmpty)
+        XCTAssertEqual(deliveredBatches.count, commandBatchCountBeforeRejection)
     }
 
     func testBackgroundSuspendsAndForegroundResumeRequiresFreshAnchor() throws {
@@ -96,6 +100,8 @@ final class RealMovementSessionTests: XCTestCase {
         let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
         let audio = RealAudioSpy()
         let model = try makeModel(provider: provider, audio: audio)
+        var deliveredBatches: [[ARWorldCommand]] = []
+        model.attachARWorldCommandHandler { deliveredBatches.append($0) }
         model.startRealCompanionWalk()
 
         provider.emitSignal(.failed("internal detail"))
@@ -104,12 +110,15 @@ final class RealMovementSessionTests: XCTestCase {
         XCTAssertNil(model.movementEngine.currentSession)
         XCTAssertFalse(model.demoMessage.contains("internal detail"))
         XCTAssertGreaterThanOrEqual(audio.stopCalls, 1)
+        XCTAssertEqual(deliveredBatches.last, [.clearSession])
     }
 
     func testEndingRealWalkStopsAudioAndPersistsExactlyOneMemory() throws {
         let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
         let audio = RealAudioSpy()
         let model = try makeModel(provider: provider, audio: audio)
+        var deliveredBatches: [[ARWorldCommand]] = []
+        model.attachARWorldCommandHandler { deliveredBatches.append($0) }
         model.startRealCompanionWalk()
         audio.stopCalls = 0
         let startingBond = model.companion.bondLevel
@@ -124,6 +133,7 @@ final class RealMovementSessionTests: XCTestCase {
         XCTAssertEqual(model.companion.bondLevel, startingBond + 1)
         XCTAssertEqual(try model.persistenceStore.loadCompanion()?.bondLevel, startingBond + 1)
         XCTAssertFalse(model.lastSummary?.memory.text.contains("unverified") ?? true)
+        XCTAssertEqual(deliveredBatches.last, [.clearSession])
     }
 
     private func makeModel(

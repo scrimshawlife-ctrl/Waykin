@@ -116,6 +116,10 @@ final class ARWorldCommandRenderer {
         }
     }
 
+    func render(_ commands: [ARWorldCommand], in arView: ARView) -> [ARCommandResult] {
+        commands.map { render($0, in: arView) }
+    }
+
     func setCompanionState(_ state: CompanionPresentationState) -> ARCommandResult {
         guard let anchor = registry.entity(for: Self.companionID),
               let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
