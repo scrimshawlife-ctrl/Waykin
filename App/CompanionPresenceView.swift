@@ -193,8 +193,8 @@ struct CompanionPresenceView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Lira Living Familiar silhouette (Echo materials; mid-session LOD)
-            LiraPresenceSilhouette(presentation: presentation)
+            // Lira session-mid production puppet (poses + A1–A3 anchors)
+            LiraSessionFigure(presentation: presentation)
 
             Text(presentation.phrase)
                 .font(.title3.weight(.semibold))

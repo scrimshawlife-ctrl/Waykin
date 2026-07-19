@@ -29,6 +29,6 @@ final class AppIconAndLiraEchoTests: XCTestCase {
     }
 
     func testLiraSilhouetteTypeIsAvailable() {
-        XCTAssertNotNil(LiraPresenceSilhouette.self)
+        XCTAssertNotNil(LiraSessionFigure.self)
     }
 }
