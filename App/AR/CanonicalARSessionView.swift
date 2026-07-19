@@ -39,6 +39,10 @@ final class CanonicalARSessionRuntime {
         self.renderCommandOverride = renderCommand
     }
 
+    func setCompanionSkin(_ skin: LiraSkin) {
+        renderer.companionSkin = skin
+    }
+
     func attach(_ arView: ARView, appModel: any CanonicalARCommandSource) {
         if let currentView = self.arView, currentView !== arView {
             detach(currentView, appModel: appModel)
@@ -170,6 +174,7 @@ final class CanonicalARSessionRuntime {
 @MainActor
 struct CanonicalARSessionView: View {
     let appModel: any CanonicalARCommandSource
+    var liraSkin: LiraSkin = .dawn
     @Environment(\.dismiss) private var dismiss
     @State private var runtime = CanonicalARSessionRuntime()
 
@@ -182,6 +187,7 @@ struct CanonicalARSessionView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("AR: \(runtime.capabilityState.rawValue)")
                     Text("Lira: \(runtime.companionState.rawValue)")
+                    Text("Form: \(liraSkin.displayName)")
                     Text(runtime.lastResult)
                 }
                 .font(.caption.weight(.semibold))
@@ -199,6 +205,12 @@ struct CanonicalARSessionView: View {
             }
             .padding(12)
             .background(.ultraThinMaterial)
+        }
+        .onAppear {
+            runtime.setCompanionSkin(liraSkin)
+        }
+        .onChange(of: liraSkin) { _, newSkin in
+            runtime.setCompanionSkin(newSkin)
         }
     }
 }

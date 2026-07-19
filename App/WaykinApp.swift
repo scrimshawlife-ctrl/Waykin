@@ -83,6 +83,7 @@ struct WaykinApp: App {
             .environment(appModel)
             .wkThemed()
             .liraSkin(appModel.selectedLiraSkin)
+            .preferredColorScheme(appModel.appearancePreference.preferredColorScheme)
             .onChange(of: scenePhase) { _, phase in
                 appModel.handleScenePhase(phase)
             }
@@ -117,7 +118,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
     var selectedLiraSkin: LiraSkin = .dawn {
         didSet { UserDefaults.standard.set(selectedLiraSkin.rawValue, forKey: LiraSkin.storageKey) }
     }
+    /// Appearance force for Echo day/night (system default).
+    var appearancePreference: AppearancePreference = .system {
+        didSet { UserDefaults.standard.set(appearancePreference.rawValue, forKey: AppearancePreference.storageKey) }
+    }
     var path = NavigationPath()
+    var showsSettings = false
 
     // Diagnostics (UI-test only)
     var persistenceMode: String = "FILE_BACKED"
@@ -207,6 +213,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
             self.selectedLiraSkin = skin
         } else {
             self.selectedLiraSkin = .dawn
+        }
+        if let raw = UserDefaults.standard.string(forKey: AppearancePreference.storageKey),
+           let appearance = AppearancePreference(rawValue: raw) {
+            self.appearancePreference = appearance
+        } else {
+            self.appearancePreference = .system
         }
         persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
         persistenceStorePathHash = String((try? PersistenceConfiguration.persistentStoreURL().path.hashValue) ?? 0)
@@ -929,6 +941,15 @@ struct HomeView: View {
                 HStack {
                     WKBondFilamentMark(size: 40)
                     Spacer()
+                    Button {
+                        appModel.showsSettings = true
+                    } label: {
+                        WKIconView(icon: .settings, size: 22)
+                            .foregroundStyle(theme.textSecondary)
+                            .frame(minWidth: 48, minHeight: 48)
+                    }
+                    .accessibilityLabel("Settings")
+                    .accessibilityIdentifier("waykin.home.settings")
                 }
                 .padding(.top, 4)
 
@@ -1080,6 +1101,69 @@ struct HomeView: View {
             .padding(24)
             }
         }
+        .sheet(isPresented: Binding(
+            get: { appModel.showsSettings },
+            set: { appModel.showsSettings = $0 }
+        )) {
+            SettingsView()
+                .environment(appModel)
+                .wkThemed()
+                .liraSkin(appModel.selectedLiraSkin)
+                .preferredColorScheme(appModel.appearancePreference.preferredColorScheme)
+        }
+    }
+}
+
+struct SettingsView: View {
+    @Environment(WaykinAppModel.self) private var appModel
+    @Environment(\.wkTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Appearance") {
+                    ForEach(AppearancePreference.allCases) { preference in
+                        Button {
+                            appModel.appearancePreference = preference
+                        } label: {
+                            HStack {
+                                Text(preference.displayName)
+                                    .foregroundStyle(theme.textPrimary)
+                                Spacer()
+                                if appModel.appearancePreference == preference {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(theme.guide)
+                                }
+                            }
+                            .frame(minHeight: 44)
+                        }
+                        .accessibilityIdentifier("waykin.settings.appearance.\(preference.rawValue)")
+                    }
+                }
+
+                Section("Form") {
+                    Text(appModel.selectedLiraSkin.displayName)
+                        .foregroundStyle(theme.textSecondary)
+                    Text("Change Lira’s form on Home. Cosmetics only.")
+                        .font(.caption)
+                        .foregroundStyle(theme.textTertiary)
+                }
+
+                Section {
+                    Text("Day and night use Echo tokens (not a simple invert). Outdoor glare still needs a device walk.")
+                        .font(.caption)
+                        .foregroundStyle(theme.textTertiary)
+                }
+            }
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .accessibilityIdentifier("waykin.settings.done")
+                }
+            }
+        }
     }
 }
 
@@ -1186,7 +1270,7 @@ struct ActiveSessionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(appModel.demoController.isRunning || appModel.isLiveSessionActive)
         .sheet(isPresented: $showsARCompanion) {
-            CanonicalARSessionView(appModel: appModel)
+            CanonicalARSessionView(appModel: appModel, liraSkin: appModel.selectedLiraSkin)
         }
     }
 }

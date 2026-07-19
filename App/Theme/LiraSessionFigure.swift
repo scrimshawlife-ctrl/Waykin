@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Session-mid production puppet for Lira.
 /// Structured multi-pose figure with anchors A1 head, A2 chest bond, A3 filament.
@@ -19,7 +20,16 @@ struct LiraSessionFigure: View {
         ZStack {
             pressureRing
             bondOrbit
-            figure
+            if let stillName = LiraStillCatalog.imageName(pose: pose, skin: skin),
+               UIImage(named: stillName) != nil {
+                Image(stillName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 140, height: 120)
+                    .accessibilityHidden(true)
+            } else {
+                figure
+            }
         }
         .frame(height: 190)
         .scaleEffect(presentation.presenceScale * (pulse && !reduceMotion ? 1.03 : 1))

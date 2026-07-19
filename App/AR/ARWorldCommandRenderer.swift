@@ -16,12 +16,18 @@ final class ARWorldCommandRenderer {
 
     private let registry: AREntityRegistry
     private let placementResolver: ARPlacementResolver
-    private let companionFactory: CompanionEntityFactory
+    private var companionFactory: CompanionEntityFactory
     private let diagnostics: ARDiagnosticRecorder
 
     private(set) var companionState: CompanionPresentationState = .idle
     private(set) var lastCompanionTransition: CompanionStateTransition?
     private var elapsedInCompanionState: TimeInterval = 0
+
+    /// Cosmetic Lira skin applied on next spawn.
+    var companionSkin: LiraSkin {
+        get { companionFactory.skin }
+        set { companionFactory.skin = newValue }
+    }
 
     init(
         registry: AREntityRegistry,
