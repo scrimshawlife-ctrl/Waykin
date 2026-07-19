@@ -20,8 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Generated Lira spectral art pack | design-agent | `feat/70-generated-lira-art` | `App/Resources/**`, `docs/assets/companion/generated/**`, `docs/design/**` | In progress | Art pipeline |
-| Issue #68 — Veil/Rupture full still matrix | design-agent | `feat/68-veil-rupture-stills` | `App/**`, `docs/**`, `AppTests/**` | In progress | After #66 |
+| Complete Veil/Rupture AI pose matrix | design-agent | `feat/72-complete-veil-rupture-art` | `App/Resources/**`, `App/Theme/LiraStillCatalog.swift`, `docs/assets/companion/generated/**`, `docs/design/**` | In progress | After #71 |
 | Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
 | Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Merged on main | Reconciled with `main@16af4d2` |
 
@@ -45,6 +44,8 @@ Last updated: 2026-07-19
 | Issue #61 — Lira skins + Home presence | Complete | PR #62 merged |
 | Issue #63 — AR skins, appearance, stills, sim | Complete | PR #64 merged |
 | Issue #66 — Dawn stills + glyph LOD | Complete | PR #67 merged |
+| Issue #68 — Veil/Rupture still matrix (SVG) | Complete | PR #69 merged |
+| Issue #70 — spectral Lira generated art | Complete | PR #71 merged as `89f251a` |
 
 ## Preservation Boundary
 
