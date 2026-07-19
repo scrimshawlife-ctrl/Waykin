@@ -22,19 +22,19 @@ Last updated: 2026-07-18
 | Issue #38 — preserve AR-3 work and isolate PR #31 repair | Daniel | local `wip/ar3-local-preservation` (846c42d); clean worktree `Waykin-pr31-repair` | Preservation: current mixed AR-3 set. Repair: minimum files proven by compiler diagnostic | Completed — recovery topology executed; AR-3 preserved on wip/ar3-local-preservation (do not fold into main per ownership) | — |
 | PR #34 — collaborator ownership | Daniel + `prabu-openclaw` | `chore/28-collaborator-ownership` | `.github/CODEOWNERS` | Ready / awaiting Prabu review | Issue #28 |
 | Issue #29 — CI and structural guards | `prabu-openclaw` for first bounded task | `chore/29-core-framework-isolation` when started | scripts, Makefile, focused tests, CI docs | Assigned / not yet evidenced | No collision with PR #31 |
+| Issue #35 — living-companion presentation | Codex swarm | `feat/35-living-companion-presentation` from `5f41eeb176d8c4dba4f77e26cbea8399a87624f7` | `App/AR/**`, `ARLab/**`, focused `AppTests/**`, directly affected AR docs | Implemented and validated; PR #40 awaiting human review | Preserved AR-3 remains untouched |
 
 ## Blocked or Pending
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Issue #35 — living-companion presentation | Ready to start from fresh main | Branch from current main (5f42981); respect exclusive ownership (no App/AR/**, no preserved AR-3 paths, no AR3 docs) |
 | Issue #27 — AR reconciliation closure | Completed via PR #31 merge | — |
 | Issue #28 — collaborator onboarding closure | First collaborator-authored branch and draft PR not yet supplied | Prabu reviews PR #34 and completes the Issue #29 bounded task |
 | Physical AR claims | Requires direct iPhone evidence | Execute the relevant physical-device protocol and attach receipts (NOT_COMPUTABLE in simulator) |
 
 ## Handoff Note (post-Issue #38)
 
-Recovery topology (Issue #38) complete. Main @ 5f429813617f74233971b984c7b61ebffa6fdfe2 incorporates repaired AR reconciliation. Preservation branch `wip/ar3-local-preservation` remains isolated per rules. Next: Issue #35 (Daniel) or handoff Issue #29 to Prabu. All claims OBSERVED from git history + validation receipts only.
+Recovery topology (Issue #38) complete. Issue #35 is in progress from main @ 5f41eeb176d8c4dba4f77e26cbea8399a87624f7. Preservation branch `wip/ar3-local-preservation` remains isolated per rules. All claims OBSERVED from git history + validation receipts only.
 
 ## Exclusive Ownership Boundaries
 

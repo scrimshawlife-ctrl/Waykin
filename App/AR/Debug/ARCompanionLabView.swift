@@ -1,3 +1,4 @@
+import Combine
 import Observation
 import RealityKit
 import SwiftUI
@@ -10,15 +11,20 @@ final class ARCompanionLabRuntime {
     private let diagnostics: ARDiagnosticRecorder
     private let sessionCoordinator: ARSessionCoordinator
     private let renderer: ARWorldCommandRenderer
+    @ObservationIgnored private var sceneUpdateSubscription: Cancellable?
+    @ObservationIgnored private var sessionStartTask: Task<Void, Never>?
 
     private(set) var capabilityState: ARCapabilityState = .checking
     private(set) var lastResult = "Waiting for AR session"
+    private(set) var transitionResult = "No companion transition"
     private(set) var currentState: CompanionPresentationState = .idle
     private(set) var trackingText = "Checking"
     private weak var arView: ARView?
 
     var registryCount: Int { registry.count }
     var receipt: ARValidationReceipt { diagnostics.summary }
+    var isSceneUpdateAttached: Bool { arView != nil && sceneUpdateSubscription != nil }
+    var isSessionStartScheduled: Bool { sessionStartTask != nil }
 
     init() {
         let registry = AREntityRegistry()
@@ -30,8 +36,16 @@ final class ARCompanionLabRuntime {
     }
 
     func attach(_ arView: ARView) {
+        if let attachedView = self.arView, attachedView !== arView {
+            clear()
+        }
+        sceneUpdateSubscription?.cancel()
+        sessionStartTask?.cancel()
         self.arView = arView
         arView.session = sessionCoordinator.session
+        sceneUpdateSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
+            self?.advanceCompanionPresentation(by: event.deltaTime)
+        }
         sessionCoordinator.onCapabilityStateChange = { [weak self] state in
             self?.capabilityState = state
             self?.trackingText = state.rawValue
@@ -40,7 +54,22 @@ final class ARCompanionLabRuntime {
             }
         }
         diagnostics.record(.sessionStarted)
-        Task { await sessionCoordinator.start() }
+        sessionStartTask = Task { [weak self] in
+            await self?.sessionCoordinator.start()
+        }
+    }
+
+    func detach(_ arView: ARView) {
+        guard self.arView === arView else { return }
+        if registry.count > 0 || currentState != .idle {
+            clear()
+        }
+        sceneUpdateSubscription?.cancel()
+        sceneUpdateSubscription = nil
+        sessionStartTask?.cancel()
+        sessionStartTask = nil
+        sessionCoordinator.pause()
+        self.arView = nil
     }
 
     func placeLira() {
@@ -51,12 +80,15 @@ final class ARCompanionLabRuntime {
             behavior: currentState.rawValue,
             spatialIntent: companionIntent
         )
-        report(renderer.render(.spawnCompanion(presentation), in: arView))
+        let result = renderer.render(.spawnCompanion(presentation), in: arView)
+        report(result)
+        synchronizeCompanionState(after: result)
     }
 
     func setState(_ state: CompanionPresentationState) {
-        currentState = state
-        report(renderer.setCompanionState(state))
+        let result = renderer.setCompanionState(state)
+        report(result)
+        synchronizeCompanionState(after: result)
     }
 
     func spawnDiscovery() {
@@ -93,13 +125,17 @@ final class ARCompanionLabRuntime {
     }
 
     func clear() {
-        guard let arView else { return }
-        report(renderer.render(.clearSession, in: arView))
+        report(renderer.clearSession())
         currentState = .idle
+        transitionResult = "Cleared to idle"
     }
 
     func pause() {
         clear()
+        sceneUpdateSubscription?.cancel()
+        sceneUpdateSubscription = nil
+        sessionStartTask?.cancel()
+        sessionStartTask = nil
         sessionCoordinator.pause()
     }
 
@@ -120,6 +156,31 @@ final class ARCompanionLabRuntime {
         case .removed(let detail): lastResult = "Removed: \(detail)"
         case .cleared: lastResult = "Session cleared"
         }
+    }
+
+    private func synchronizeCompanionState(after result: ARCommandResult) {
+        guard case .accepted = result else {
+            if case .deferred(let detail) = result {
+                transitionResult = "Deferred: \(detail)"
+            }
+            return
+        }
+        currentState = renderer.companionState
+        report(renderer.lastCompanionTransition)
+    }
+
+    private func advanceCompanionPresentation(by delta: TimeInterval) {
+        guard let transition = renderer.advanceCompanionPresentation(by: delta) else { return }
+        currentState = transition.resolvedState
+        report(transition)
+    }
+
+    private func report(_ transition: CompanionStateTransition?) {
+        guard let transition else {
+            transitionResult = "Companion state unchanged"
+            return
+        }
+        transitionResult = "\(transition.outcome.rawValue): \(transition.resolvedState.rawValue)"
     }
 }
 
@@ -146,6 +207,15 @@ struct ARCompanionLabView: View {
                     .font(.caption2)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("waykin.ar.lastCommand")
+
+                HStack {
+                    Text("State: \(runtime.currentState.rawValue.capitalized)")
+                        .accessibilityIdentifier("waykin.ar.currentState")
+                    Spacer()
+                    Text(runtime.transitionResult)
+                        .accessibilityIdentifier("waykin.ar.transitionResult")
+                }
+                .font(.caption2)
 
                 if controlsExpanded {
                     Button("Place Lira") { runtime.placeLira() }
@@ -198,6 +268,18 @@ struct ARCompanionLabView: View {
 private struct ARCompanionCameraView: UIViewRepresentable {
     let runtime: ARCompanionLabRuntime
 
+    final class Coordinator {
+        let runtime: ARCompanionLabRuntime
+
+        init(runtime: ARCompanionLabRuntime) {
+            self.runtime = runtime
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(runtime: runtime)
+    }
+
     func makeUIView(context: Context) -> ARView {
         let view = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
         runtime.attach(view)
@@ -205,4 +287,10 @@ private struct ARCompanionCameraView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: ARView, context: Context) {}
+
+    static func dismantleUIView(_ uiView: ARView, coordinator: Coordinator) {
+        // SwiftUI may retain the runtime after removing the RealityKit view.
+        // Detaching prevents scene updates from advancing a paused presentation.
+        coordinator.runtime.detach(uiView)
+    }
 }

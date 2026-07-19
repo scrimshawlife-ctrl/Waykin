@@ -1,4 +1,5 @@
 import RealityKit
+import UIKit
 import WaykinCore
 
 @MainActor
@@ -19,6 +20,8 @@ final class ARWorldCommandRenderer {
     private let diagnostics: ARDiagnosticRecorder
 
     private(set) var companionState: CompanionPresentationState = .idle
+    private(set) var lastCompanionTransition: CompanionStateTransition?
+    private var elapsedInCompanionState: TimeInterval = 0
 
     init(
         registry: AREntityRegistry,
@@ -36,7 +39,15 @@ final class ARWorldCommandRenderer {
         case .spawnCompanion(let presentation):
             diagnostics.record(.placementAttempted, detail: "companion")
             let entity = companionFactory.makeLira()
-            apply(state: CompanionStateReducer.state(for: presentation.behavior), to: entity)
+            let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
+                ? elapsedInCompanionState
+                : 0
+            let transition = CompanionStateReducer.transition(
+                current: companionState,
+                behavior: presentation.behavior,
+                elapsed: elapsed
+            )
+            applyPresentation(for: transition.resolvedState, to: entity)
             let replacing = registry.entity(for: Self.companionID) != nil
             guard placementResolver.place(
                 id: Self.companionID,
@@ -49,6 +60,11 @@ final class ARWorldCommandRenderer {
             }
             diagnostics.record(replacing ? .entityReplaced : .entityCreated, detail: "companion")
             diagnostics.record(.placementSucceeded, detail: "companion")
+            if replacing {
+                accept(transition, elapsed: elapsed)
+            } else {
+                commit(transition, elapsed: elapsed)
+            }
             return .accepted("companion")
 
         case .updateCompanion(let presentation):
@@ -56,9 +72,21 @@ final class ARWorldCommandRenderer {
                   let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
                 return .deferred("companion missing")
             }
-            let next = CompanionStateReducer.state(for: presentation.behavior)
-            apply(state: next, to: companion)
-            return .accepted("companion:\(next.rawValue)")
+            let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
+                ? elapsedInCompanionState
+                : 0
+            let transition = CompanionStateReducer.transition(
+                current: companionState,
+                behavior: presentation.behavior,
+                elapsed: elapsed
+            )
+            if transition.outcome == .unchanged || transition.outcome == .celebrationInProgress {
+                applyPresentation(for: transition.resolvedState, to: companion)
+                accept(transition, elapsed: elapsed)
+            } else {
+                apply(transition, to: companion, elapsed: elapsed)
+            }
+            return .accepted("companion:\(transition.resolvedState.rawValue)")
 
         case .spawnDiscovery(let presentation):
             let placed = placementResolver.placePlaceholder(
@@ -84,10 +112,7 @@ final class ARWorldCommandRenderer {
             return .removed(id.uuidString)
 
         case .clearSession:
-            placementResolver.clear()
-            diagnostics.record(.sessionCleared)
-            companionState = .idle
-            return .cleared
+            return clearSession()
         }
     }
 
@@ -96,29 +121,172 @@ final class ARWorldCommandRenderer {
               let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
             return .deferred("companion missing")
         }
-        apply(state: state, to: companion)
-        return .accepted("companion:\(state.rawValue)")
+        let transition = CompanionStateReducer.transition(
+            current: companionState,
+            requested: state,
+            elapsed: state == companionState ? elapsedInCompanionState : 0
+        )
+        if transition.outcome == .unchanged || transition.outcome == .celebrationInProgress {
+            applyPresentation(for: transition.resolvedState, to: companion)
+            accept(transition, elapsed: elapsedInCompanionState)
+            return .accepted("companion:\(transition.resolvedState.rawValue)")
+        }
+        apply(transition, to: companion)
+        return .accepted("companion:\(transition.resolvedState.rawValue)")
     }
 
-    private func apply(state: CompanionPresentationState, to entity: Entity) {
-        companionState = state
-        diagnostics.record(.stateChanged, detail: state.rawValue)
+    @discardableResult
+    func clearSession() -> ARCommandResult {
+        placementResolver.clear()
+        diagnostics.record(.sessionCleared)
+        companionState = .idle
+        elapsedInCompanionState = 0
+        lastCompanionTransition = nil
+        return .cleared
+    }
+
+    @discardableResult
+    func advanceCompanionPresentation(by delta: TimeInterval) -> CompanionStateTransition? {
+        guard companionState == .celebrate else { return nil }
+        guard let anchor = registry.entity(for: Self.companionID),
+              let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
+            return nil
+        }
+
+        guard delta.isFinite, delta >= 0 else {
+            let transition = CompanionStateReducer.transition(
+                current: companionState,
+                requested: companionState,
+                elapsed: delta
+            )
+            apply(transition, to: companion)
+            return transition
+        }
+
+        let elapsed = elapsedInCompanionState + delta
+        let transition = CompanionStateReducer.transition(
+            current: companionState,
+            requested: companionState,
+            elapsed: elapsed
+        )
+
+        if transition.outcome == .celebrationInProgress {
+            lastCompanionTransition = transition
+            elapsedInCompanionState = elapsed
+            return transition
+        }
+
+        apply(transition, to: companion, elapsed: elapsed)
+        return transition
+    }
+
+    private func apply(
+        _ transition: CompanionStateTransition,
+        to entity: Entity,
+        elapsed: TimeInterval = 0
+    ) {
+        applyPresentation(for: transition.resolvedState, to: entity)
+        commit(transition, elapsed: elapsed)
+    }
+
+    private func commit(
+        _ transition: CompanionStateTransition,
+        elapsed: TimeInterval = 0
+    ) {
+        lastCompanionTransition = transition
+        companionState = transition.resolvedState
+        elapsedInCompanionState = transition.resolvedState == transition.previousState
+            && elapsed.isFinite
+            ? max(0, elapsed)
+            : 0
+        diagnostics.record(.stateChanged, detail: transition.resolvedState.rawValue)
+    }
+
+    private func accept(
+        _ transition: CompanionStateTransition,
+        elapsed: TimeInterval
+    ) {
+        guard transition.outcome == .unchanged || transition.outcome == .celebrationInProgress else {
+            commit(transition, elapsed: elapsed)
+            return
+        }
+        lastCompanionTransition = transition
+        elapsedInCompanionState = transition.resolvedState == .celebrate && elapsed.isFinite
+            ? max(0, elapsed)
+            : 0
+    }
+
+    private func applyPresentation(for state: CompanionPresentationState, to entity: Entity) {
+        let presentation = presentation(for: state)
+        entity.position = presentation.position
+        entity.scale = presentation.scale
+        entity.orientation = presentation.orientation
+
+        entity.findEntity(named: "StatusIndicator")?.isEnabled = presentation.indicatorVisible
+        entity.findEntity(named: "CoreGlow")?.isEnabled = presentation.coreVisible
+        if let indicator = entity.findEntity(named: "StatusIndicator") as? ModelEntity {
+            indicator.model?.materials = [
+                SimpleMaterial(color: presentation.indicatorColor, isMetallic: false)
+            ]
+        }
+    }
+
+    private func presentation(for state: CompanionPresentationState) -> Presentation {
         switch state {
         case .idle:
-            entity.scale = SIMD3<Float>(repeating: 1)
-            entity.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+            Presentation(
+                position: [0, 0, 0],
+                scale: SIMD3<Float>(repeating: 1),
+                orientation: simd_quatf(angle: 0, axis: [0, 1, 0]),
+                indicatorVisible: false,
+                coreVisible: true,
+                indicatorColor: .white
+            )
         case .follow:
-            entity.scale = SIMD3<Float>(1.02, 1.02, 1.02)
-            entity.orientation = simd_quatf(angle: 0.18, axis: [0, 1, 0])
+            Presentation(
+                position: [0, 0, 0.12],
+                scale: SIMD3<Float>(repeating: 1.02),
+                orientation: simd_quatf(angle: 0.18, axis: [0, 1, 0]),
+                indicatorVisible: false,
+                coreVisible: true,
+                indicatorColor: .systemBlue
+            )
         case .investigate:
-            entity.scale = SIMD3<Float>(1.0, 0.92, 1.08)
-            entity.orientation = simd_quatf(angle: -0.22, axis: [1, 0, 0])
+            Presentation(
+                position: [-0.08, 0, 0],
+                scale: SIMD3<Float>(1, 0.92, 1.08),
+                orientation: simd_quatf(angle: -0.22, axis: [1, 0, 0]),
+                indicatorVisible: true,
+                coreVisible: true,
+                indicatorColor: .systemYellow
+            )
         case .alert:
-            entity.scale = SIMD3<Float>(1.05, 1.14, 0.96)
-            entity.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+            Presentation(
+                position: [0, 0, -0.10],
+                scale: SIMD3<Float>(1.05, 1.14, 0.96),
+                orientation: simd_quatf(angle: 0, axis: [0, 1, 0]),
+                indicatorVisible: true,
+                coreVisible: true,
+                indicatorColor: .systemRed
+            )
         case .celebrate:
-            entity.scale = SIMD3<Float>(1.12, 1.12, 1.12)
-            entity.orientation = simd_quatf(angle: .pi / 5, axis: [0, 1, 0])
+            Presentation(
+                position: [0, 0.10, 0],
+                scale: SIMD3<Float>(repeating: 1.12),
+                orientation: simd_quatf(angle: .pi / 5, axis: [0, 1, 0]),
+                indicatorVisible: true,
+                coreVisible: true,
+                indicatorColor: .systemGreen
+            )
         }
+    }
+
+    private struct Presentation {
+        let position: SIMD3<Float>
+        let scale: SIMD3<Float>
+        let orientation: simd_quatf
+        let indicatorVisible: Bool
+        let coreVisible: Bool
+        let indicatorColor: UIColor
     }
 }
