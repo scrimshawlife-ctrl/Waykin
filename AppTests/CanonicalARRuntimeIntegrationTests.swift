@@ -309,7 +309,7 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
             XCTAssertLessThanOrEqual(runtime.pendingCommandSnapshot.count, 3)
         }
 
-        XCTAssertEqual(eventCommandKinds(in: runtime.pendingCommandSnapshot), ["removeDiscovery", "updateThreat"])
+        XCTAssertEqual(eventCommandKinds(in: runtime.pendingCommandSnapshot), ["updateThreat"])
         guard case .updateCompanion(let latestCompanion) = runtime.pendingCommandSnapshot.first else {
             return XCTFail("Expected latest companion projection first")
         }
@@ -355,6 +355,43 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
 
         XCTAssertEqual(renderedCommands, retainedProjection)
         XCTAssertTrue(runtime.pendingCommandSnapshot.isEmpty)
+        runtime.detach(arView, appModel: model)
+    }
+
+    func testDeferredThreatDoesNotBlockLaterCompanionProjection() throws {
+        let model = try makeAppModel()
+        var renderedCommands: [ARWorldCommand] = []
+        let runtime = CanonicalARSessionRuntime { command, _ in
+            renderedCommands.append(command)
+            if case .spawnThreat = command {
+                return .deferred("threat")
+            }
+            return .accepted("test")
+        }
+        let arView = ARView(frame: .zero, cameraMode: .nonAR, automaticallyConfigureSession: false)
+        let mapper = makeMapper()
+        var companionRuntime = CompanionRuntime()
+        runtime.attach(arView, appModel: model)
+
+        let pursuit = makeEvent(.pursuitBegins)
+        runtime.receive(mapper.update(companionRuntime: companionRuntime, event: pursuit))
+        XCTAssertEqual(runtime.pendingCommandSnapshot.count, 1)
+        guard case .spawnThreat = try XCTUnwrap(runtime.pendingCommandSnapshot.first) else {
+            return XCTFail("Expected one deferred threat")
+        }
+
+        renderedCommands.removeAll()
+        companionRuntime.apply(command: .setBehavior(CompanionBehaviorState.celebrate.rawValue))
+        runtime.receive(mapper.update(companionRuntime: companionRuntime, event: nil))
+
+        XCTAssertTrue(renderedCommands.contains { command in
+            guard case .updateCompanion(let presentation) = command else { return false }
+            return presentation.behavior == CompanionPresentationState.celebrate.rawValue
+        })
+        XCTAssertEqual(runtime.pendingCommandSnapshot.count, 1)
+        guard case .spawnThreat = try XCTUnwrap(runtime.pendingCommandSnapshot.first) else {
+            return XCTFail("Expected the deferred threat to remain queued")
+        }
         runtime.detach(arView, appModel: model)
     }
 

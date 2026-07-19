@@ -115,15 +115,24 @@ final class CanonicalARSessionRuntime {
 
     private func drainPendingCommands() {
         guard let arView else { return }
-        while let command = pendingCommands.first {
+        var index = pendingCommands.startIndex
+        while index < pendingCommands.endIndex {
+            let command = pendingCommands[index]
             let result = render(command, in: arView)
             report(result)
             guard case .deferred = result else {
-                pendingCommands.removeFirst()
+                pendingCommands.remove(at: index)
                 companionState = renderer.companionState
                 continue
             }
-            return
+
+            // Initial attachment keeps Lira first. Once that invariant is
+            // established, one deferred entity must not stall independent
+            // companion or cleanup projections behind it.
+            if case .spawnCompanion = command {
+                return
+            }
+            index = pendingCommands.index(after: index)
         }
     }
 
