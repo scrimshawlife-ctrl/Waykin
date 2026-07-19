@@ -21,6 +21,8 @@ Reconstruct the useful AR-1 and merged AR-2 implementation on top of current `ma
 - Privacy-filtered AR diagnostics and validation receipt
 - Focused app-target unit tests
 
+Issue #35 extends this isolated engineering surface with deterministic living-companion transitions, bounded RealityKit presentation changes, stable Lira identity, and explicit AR Lab state/result diagnostics. Simulator and automated validation are engineering evidence only; physical-device presentation and readability remain `NOT_COMPUTABLE`.
+
 ## Deliberately Rejected During Reconciliation
 
 The earlier branch redirected the normal `Waykin` scheme to launch the AR Lab. This reconstruction preserves the normal walking application as the `Waykin` executable and exposes the AR Lab only through the separate `WaykinARLab` scheme.

@@ -60,7 +60,8 @@ The recorded route is measurement support for the active Companion Walk only. It
 - Event variety is intentionally bounded.
 - Bundled WAV files are deterministic engineering placeholders, not production sound design.
 - No advanced spatial audio is implemented; the adapter uses only restrained stereo pan.
-- There is no AR implementation.
+- AR remains isolated to the `WaykinARLab` engineering target; its deterministic living-companion presentation is simulator-validated and is not part of the Companion Walk runtime.
+- Physical-device AR presentation, placement readability, and usability remain `NOT_COMPUTABLE` pending direct evidence.
 - There is no multiplayer.
 - There is no backend.
 - There are no accounts or authentication.
