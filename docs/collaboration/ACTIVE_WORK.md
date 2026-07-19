@@ -20,15 +20,14 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Complete Veil/Rupture AI pose matrix | design-agent | `feat/72-complete-veil-rupture-art` | `App/Resources/**`, `App/Theme/LiraStillCatalog.swift`, `docs/assets/companion/generated/**`, `docs/design/**` | In progress | After #71 |
-| Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
-| Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Merged on main | Reconciled with `main@16af4d2` |
+| Sim checklist automation (S1–S8) | design-agent | `feat/76-sim-checklist-automation` | `App/**`, `AppTests/**`, `WaykinUITests/**`, `docs/design/**`, `docs/collaboration/**` | In progress | After #75 |
 
 ## Blocked
 
 | Work | Reason | Required resolution |
 |---|---|---|
 | Issue #41 — physical AR validation | Physical device access is unavailable | Execute the evidence-only protocol on the named device and exact build; all unobserved fields remain `NOT_COMPUTABLE` |
+| Outdoor QA receipt | Device walk deferred by product owner | Fill `OUTDOOR_QA_RECEIPT_TEMPLATE.md` on named device |
 
 ## Completed
 
@@ -36,6 +35,7 @@ Last updated: 2026-07-19
 |---|---|---|
 | Issue #35 — living-companion presentation | Complete | PR #40 merged as `4c645395`; Issue #35 closed completed |
 | Issue #42 — canonical runtime AR integration | Complete | PR #45 merged as `16af4d2`; Issue #42 closed completed |
+| Issue #46 — AR command replay + soak | Complete | `ARCommandReplaySoakTests` + `docs/AR_REPLAY_VALIDATION.md` |
 | Issue #50 — Echo theme tokens | Complete | PR #51 merged as `c5f97e4` |
 | Issue #52 — Echo icons + Bond Filament | Complete | PR #53 merged as `54582c4` |
 | Issue #55 — App Icon + Lira Echo + outdoor QA | Complete | PR #56 merged as `63d632e` |
@@ -46,6 +46,8 @@ Last updated: 2026-07-19
 | Issue #66 — Dawn stills + glyph LOD | Complete | PR #67 merged |
 | Issue #68 — Veil/Rupture still matrix (SVG) | Complete | PR #69 merged |
 | Issue #70 — spectral Lira generated art | Complete | PR #71 merged as `89f251a` |
+| Issue #72 — complete Veil/Rupture AI poses | Complete | PR #73 merged as `e0f2479` |
+| Issue #74 — sim walk preflight + a11y | Complete | PR #75 merged as `fdb269e` |
 
 ## Preservation Boundary
 
@@ -61,8 +63,5 @@ branch:
 allowed_paths:
 frozen_paths:
 status:
-last_validated_commit:
-commands_run:
-blockers:
-next_action:
+notes:
 ```

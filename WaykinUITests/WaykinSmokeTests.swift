@@ -259,6 +259,98 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(identifier: "waykin.beginWalk").firstMatch.waitForExistence(timeout: 5))
     }
 
+    /// S4/S7-style home presence: Lira stage + Form skins + unlock line.
+    func testHomeLiraStageAndFormSkins() {
+        launch(reset: true)
+
+        let homeLira = app.descendants(matching: .any).matching(identifier: "waykin.home.lira").firstMatch
+        XCTAssertTrue(homeLira.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "waykin.home.bondRow").firstMatch.exists)
+
+        let selected = app.staticTexts.matching(identifier: "waykin.home.skin.selected").firstMatch
+        XCTAssertTrue(selected.waitForExistence(timeout: 5))
+        XCTAssertEqual(selected.label, "dawn")
+
+        let veil = app.buttons.matching(identifier: "waykin.home.skin.veil").firstMatch
+        XCTAssertTrue(veil.waitForExistence(timeout: 5))
+        veil.tap()
+        XCTAssertEqual(selected.label, "veil")
+        XCTAssertTrue(app.staticTexts.matching(identifier: "waykin.home.skin.line").firstMatch.label.contains("Half-seen")
+            || app.staticTexts.matching(identifier: "waykin.home.skin.line").firstMatch.label.contains("intuition"))
+
+        let rupture = app.buttons.matching(identifier: "waykin.home.skin.rupture").firstMatch
+        XCTAssertTrue(rupture.waitForExistence(timeout: 5))
+        rupture.tap()
+        XCTAssertEqual(selected.label, "rupture")
+
+        let dawn = app.buttons.matching(identifier: "waykin.home.skin.dawn").firstMatch
+        dawn.tap()
+        XCTAssertEqual(selected.label, "dawn")
+    }
+
+    /// S1/S2/S7 Settings appearance force (Day / Night / Auto).
+    func testSettingsAppearanceForce() {
+        launch(reset: true)
+
+        let settings = app.buttons.matching(identifier: "waykin.home.settings").firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        settings.tap()
+
+        let night = app.descendants(matching: .any).matching(identifier: "waykin.settings.appearance.night").firstMatch
+        XCTAssertTrue(night.waitForExistence(timeout: 5))
+        night.tap()
+
+        let done = app.buttons.matching(identifier: "waykin.settings.done").firstMatch
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        done.tap()
+
+        let appearance = app.staticTexts.matching(identifier: "waykin.home.appearance.selected").firstMatch
+        XCTAssertTrue(appearance.waitForExistence(timeout: 5))
+        XCTAssertEqual(appearance.label, "night")
+
+        settings.tap()
+        let day = app.descendants(matching: .any).matching(identifier: "waykin.settings.appearance.day").firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 5))
+        day.tap()
+        app.buttons.matching(identifier: "waykin.settings.done").firstMatch.tap()
+        XCTAssertEqual(appearance.label, "day")
+
+        settings.tap()
+        let system = app.descendants(matching: .any).matching(identifier: "waykin.settings.appearance.system").firstMatch
+        XCTAssertTrue(system.waitForExistence(timeout: 5))
+        system.tap()
+        app.buttons.matching(identifier: "waykin.settings.done").firstMatch.tap()
+        XCTAssertEqual(appearance.label, "system")
+    }
+
+    /// S8 AR Companion form label tracks selected skin.
+    func testARCompanionFormLabelTracksSkin() {
+        launch(reset: true)
+
+        app.buttons.matching(identifier: "waykin.home.skin.veil").firstMatch.tap()
+        XCTAssertEqual(
+            app.staticTexts.matching(identifier: "waykin.home.skin.selected").firstMatch.label,
+            "veil"
+        )
+
+        let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 5))
+        begin.tap()
+
+        let openAR = app.buttons.matching(identifier: "waykin.session.openARCompanion").firstMatch
+        XCTAssertTrue(openAR.waitForExistence(timeout: 5))
+        openAR.tap()
+
+        let status = app.descendants(matching: .any).matching(identifier: "waykin.ar.canonical.status").firstMatch
+        XCTAssertTrue(status.waitForExistence(timeout: 8))
+        let statusText = "\(status.label) \(status.value as? String ?? "")"
+        XCTAssertTrue(
+            statusText.localizedCaseInsensitiveContains("Form: Veil")
+                || statusText.localizedCaseInsensitiveContains("Veil"),
+            "Expected AR form Veil in status, got \(statusText)"
+        )
+    }
+
     private func runBeginWalk() {
         let begin = app.buttons.matching(identifier: "waykin.beginWalk").firstMatch
         XCTAssertTrue(begin.waitForExistence(timeout: 5)); begin.tap()
