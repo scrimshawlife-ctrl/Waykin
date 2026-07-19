@@ -5,6 +5,12 @@ import SwiftUI
 import WaykinCore
 
 @MainActor
+protocol CanonicalARCommandSource: AnyObject {
+    func attachARWorldCommandHandler(_ handler: @escaping ([ARWorldCommand]) -> Void) -> UUID
+    func detachARWorldCommandHandler(owner: UUID)
+}
+
+@MainActor
 @Observable
 final class CanonicalARSessionRuntime {
     private let registry: AREntityRegistry
@@ -33,7 +39,7 @@ final class CanonicalARSessionRuntime {
         self.renderCommandOverride = renderCommand
     }
 
-    func attach(_ arView: ARView, appModel: WaykinAppModel) {
+    func attach(_ arView: ARView, appModel: any CanonicalARCommandSource) {
         if let currentView = self.arView, currentView !== arView {
             detach(currentView, appModel: appModel)
         }
@@ -56,7 +62,7 @@ final class CanonicalARSessionRuntime {
         }
     }
 
-    func detach(_ arView: ARView, appModel: WaykinAppModel) {
+    func detach(_ arView: ARView, appModel: any CanonicalARCommandSource) {
         guard self.arView === arView else { return }
         if let commandHandlerOwner {
             appModel.detachARWorldCommandHandler(owner: commandHandlerOwner)
@@ -163,7 +169,7 @@ final class CanonicalARSessionRuntime {
 
 @MainActor
 struct CanonicalARSessionView: View {
-    @Environment(WaykinAppModel.self) private var appModel
+    let appModel: any CanonicalARCommandSource
     @Environment(\.dismiss) private var dismiss
     @State private var runtime = CanonicalARSessionRuntime()
 
@@ -200,13 +206,13 @@ struct CanonicalARSessionView: View {
 @MainActor
 private struct CanonicalARCameraView: UIViewRepresentable {
     let runtime: CanonicalARSessionRuntime
-    let appModel: WaykinAppModel
+    let appModel: any CanonicalARCommandSource
 
     final class Coordinator {
         let runtime: CanonicalARSessionRuntime
-        let appModel: WaykinAppModel
+        let appModel: any CanonicalARCommandSource
 
-        init(runtime: CanonicalARSessionRuntime, appModel: WaykinAppModel) {
+        init(runtime: CanonicalARSessionRuntime, appModel: any CanonicalARCommandSource) {
             self.runtime = runtime
             self.appModel = appModel
         }

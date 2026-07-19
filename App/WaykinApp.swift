@@ -94,7 +94,7 @@ struct WaykinApp: App {
 
 @MainActor
 @Observable
-final class WaykinAppModel {
+final class WaykinAppModel: CanonicalARCommandSource {
     let movementEngine: MovementEngine
     let persistenceStore: PersistenceStore
     let recommendationEngine = RecommendationEngine()
@@ -1049,7 +1049,7 @@ struct ActiveSessionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(appModel.demoController.isRunning || appModel.isLiveSessionActive)
         .sheet(isPresented: $showsARCompanion) {
-            CanonicalARSessionView()
+            CanonicalARSessionView(appModel: appModel)
         }
     }
 }
