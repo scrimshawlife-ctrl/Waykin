@@ -134,7 +134,8 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(end.frame.width, 44)
         XCTAssertGreaterThanOrEqual(end.frame.height, 44)
         XCTAssertEqual(presence.label, "Lira presence")
-        XCTAssertTrue((presence.value as? String ?? "").isEmpty)
+        // Pose-aware value from LiraSessionFigure (opening → manifesting).
+        XCTAssertEqual(presence.value as? String, "Lira is forming presence")
         XCTAssertEqual(phrase.label, "Lira is listening.")
         XCTAssertEqual(pathStatus.label, "Path status")
         XCTAssertEqual(pathStatus.value as? String, "The path is quiet.")
