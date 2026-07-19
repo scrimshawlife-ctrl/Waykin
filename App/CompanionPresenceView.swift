@@ -209,14 +209,30 @@ struct CompanionPresenceView: View {
                     .stroke(theme.guide.opacity(0.55), style: StrokeStyle(lineWidth: 5, lineCap: .round))
                     .rotationEffect(.degrees(-40))
                     .frame(width: 126, height: 126)
-                Circle()
-                    .fill(presenceColor)
-                    .frame(width: 76, height: 76)
-                    .overlay(
-                        Circle()
-                            .fill(theme.bond)
-                            .frame(width: 18, height: 18)
-                    )
+                // Lira silhouette (Living Familiar anchors): body, A1 head,
+                // A2 chest bond core, A3 trail filament — same 76 pt
+                // footprint; internals are ignored by VoiceOver.
+                ZStack {
+                    Circle()
+                        .fill(presenceColor)
+                        .frame(width: 62, height: 62)
+                        .offset(x: -8, y: 8)
+                    Circle()
+                        .trim(from: 0.55, to: 0.80)
+                        .stroke(theme.hunterFilament.opacity(0.9),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 58, height: 58)
+                        .offset(x: 16, y: 20)
+                    Circle()
+                        .fill(theme.guide)
+                        .frame(width: 34, height: 34)
+                        .offset(x: 20, y: -16)
+                    Circle()
+                        .fill(theme.bond)
+                        .frame(width: 14, height: 14)
+                        .offset(x: 6, y: -2)
+                }
+                .frame(width: 76, height: 76)
             }
             .scaleEffect(presentation.presenceScale * (expanded ? 1.035 : 1))
             .opacity(presentation.presenceOpacity)

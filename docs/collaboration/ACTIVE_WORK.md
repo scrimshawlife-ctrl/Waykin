@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
+| Issue #55 — app icon, Lira Echo materials, outdoor QA checklist | prabu-openclaw + Fable | `feat/55-echo-icon-materials-qa` | `App/**`, `AppTests/**`, `project.yml`, `docs/design/**`, `docs/assets/**`, this file | In review | #50/#52 merged; outdoor evidence stays NOT_COMPUTABLE (Issue #41) |
 | Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Merged on main | Reconciled with `main@16af4d2` |
 
 ## Blocked
@@ -37,6 +37,7 @@ Last updated: 2026-07-19
 | Issue #42 — canonical runtime AR integration | Complete | PR #45 merged as `16af4d2`; Issue #42 closed completed |
 | Issue #50 — Echo theme tokens | Complete | PR #51 merged as `c5f97e4` |
 | Issue #52 — Echo icons + Bond Filament | Complete | PR #53 merged as `54582c4` |
+| Issue #46 — AR command replay and soak validation | Complete | PR #49 merged as `44ffd15`; Issue #46 closed completed |
 
 ## Preservation Boundary
 
