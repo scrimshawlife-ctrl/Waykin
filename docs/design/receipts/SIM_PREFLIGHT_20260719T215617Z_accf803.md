@@ -3,8 +3,8 @@
 ```yaml
 document_id: WAYKIN-SIM-PREFLIGHT-RECEIPT
 date_utc: 2026-07-19T21:56:17Z
-git_sha: e0f24796d109bc0f61e4c6de8707d7428837300d
-git_short: e0f2479
+git_sha: accf803dd60ac550337500972e20ab9d642ef0da
+git_short: accf803
 evidence_class: OBSERVED_IN_SIMULATOR_ONLY
 outdoor_qa: NOT_COMPUTABLE
 ```
