@@ -82,6 +82,7 @@ struct WaykinApp: App {
             }
             .environment(appModel)
             .wkThemed()
+            .liraSkin(appModel.selectedLiraSkin)
             .onChange(of: scenePhase) { _, phase in
                 appModel.handleScenePhase(phase)
             }
@@ -112,6 +113,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
     var lastClosingPhrase = ""
     var demoMessage = ""
     var selectedTimeContext: String = "day"
+    /// Cosmetic Lira skin (Dawn default). Materials only — no unlock economy.
+    var selectedLiraSkin: LiraSkin = .dawn {
+        didSet { UserDefaults.standard.set(selectedLiraSkin.rawValue, forKey: LiraSkin.storageKey) }
+    }
     var path = NavigationPath()
 
     // Diagnostics (UI-test only)
@@ -197,6 +202,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
             self.companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
             _ = try? persistenceStore.saveCompanion(self.companion)
         }
+        if let raw = UserDefaults.standard.string(forKey: LiraSkin.storageKey),
+           let skin = LiraSkin(rawValue: raw) {
+            self.selectedLiraSkin = skin
+        } else {
+            self.selectedLiraSkin = .dawn
+        }
         persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
         persistenceStorePathHash = String((try? PersistenceConfiguration.persistentStoreURL().path.hashValue) ?? 0)
         if let appAudioPlayer = self.audioPlayer as? AppAudioCuePlayer {
@@ -206,6 +217,24 @@ final class WaykinAppModel: CanonicalARCommandSource {
         }
         configureRealLocationCallbacks()
         refreshRecommendation()
+    }
+
+    /// Home-stage presentation: Lira in guide pose for presence (not a live session).
+    var homePresencePresentation: CompanionPresencePresentation {
+        CompanionPresencePresentation(
+            companionName: companion.name,
+            bondLevel: companion.bondLevel,
+            behavior: .follow,
+            pursuitState: .inactive,
+            eventKind: nil,
+            audioCueKind: nil,
+            elapsedSeconds: 0,
+            distanceMeters: 0,
+            isPaused: false,
+            isOpening: false,
+            latitude: nil,
+            longitude: nil
+        )
     }
 
     func refreshRecommendation() {
@@ -895,18 +924,78 @@ struct HomeView: View {
         ZStack {
             theme.background.ignoresSafeArea()
 
+            ScrollView {
             VStack(spacing: 16) {
-                WKBondFilamentMark(size: 56)
-                    .padding(.top, 8)
+                HStack {
+                    WKBondFilamentMark(size: 40)
+                    Spacer()
+                }
+                .padding(.top, 4)
 
                 Text("Waykin")
                     .font(.largeTitle.bold())
                     .foregroundStyle(theme.textPrimary)
                     .accessibilityIdentifier("waykin.home")
 
+                // Companion presence stage
+                LiraSessionFigure(presentation: appModel.homePresencePresentation)
+                    .frame(maxHeight: 200)
+                    .accessibilityIdentifier("waykin.home.lira")
+
                 Text("\(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
                     .foregroundStyle(theme.bondText)
                     .accessibilityLabel("Companion \(appModel.companion.name), Bond \(appModel.companion.bondLevel)")
+
+                // Cosmetic skin picker (no unlock economy)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Form")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(theme.textTertiary)
+                        .accessibilityAddTraits(.isHeader)
+                    HStack(spacing: 8) {
+                        ForEach(LiraSkin.allCases) { skin in
+                            Button {
+                                appModel.selectedLiraSkin = skin
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Circle()
+                                        .fill(skin.bodyBase(theme: theme))
+                                        .frame(width: 28, height: 28)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(
+                                                    appModel.selectedLiraSkin == skin
+                                                        ? theme.focus
+                                                        : theme.textTertiary.opacity(0.35),
+                                                    lineWidth: appModel.selectedLiraSkin == skin ? 2 : 1
+                                                )
+                                        )
+                                    Text(skin.displayName)
+                                        .font(.caption2.weight(appModel.selectedLiraSkin == skin ? .semibold : .regular))
+                                        .foregroundStyle(
+                                            appModel.selectedLiraSkin == skin
+                                                ? theme.textPrimary
+                                                : theme.textSecondary
+                                        )
+                                }
+                                .frame(minWidth: 64, minHeight: 48)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("\(skin.displayName) form")
+                            .accessibilityAddTraits(appModel.selectedLiraSkin == skin ? .isSelected : [])
+                            .accessibilityIdentifier("waykin.home.skin.\(skin.rawValue)")
+                        }
+                    }
+                    Text(appModel.selectedLiraSkin.unlockLine)
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("waykin.home.skin.line")
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(theme.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                 if let lastMemory = memoryRecords.first {
                     Text(lastMemory.text)
@@ -981,12 +1070,15 @@ struct HomeView: View {
                             .accessibilityIdentifier("waykin.persistence.queryMemoryCount")
                         Text("PathHash: \(appModel.persistenceStorePathHash)")
                             .accessibilityIdentifier("waykin.persistence.storePathHash")
+                        Text(appModel.selectedLiraSkin.rawValue)
+                            .accessibilityIdentifier("waykin.home.skin.selected")
                     }
                     .font(.caption2)
                     .foregroundStyle(theme.textTertiary)
                 }
             }
             .padding(24)
+            }
         }
     }
 }
@@ -1008,6 +1100,7 @@ struct ActiveSessionView: View {
             ScrollView {
                 VStack(spacing: CompanionPresenceStyle.sectionSpacing) {
                     CompanionPresenceView(presentation: presentation)
+                        .liraSkin(appModel.selectedLiraSkin)
 
                     AnyLayout(dynamicTypeSize.isAccessibilitySize
                         ? AnyLayout(VStackLayout(spacing: 12))

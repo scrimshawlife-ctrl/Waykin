@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #59 — Lira session-mid production puppet | design-agent | `feat/59-lira-session-mid-puppet` | `App/Theme/**`, `App/CompanionPresenceView.swift`, `AppTests/**`, `docs/design/**`, `docs/collaboration/ACTIVE_WORK.md` | In progress | Art pipeline #57 |
+| Issue #61 — Lira skins + Home presence | design-agent | `feat/61-lira-skins-home-presence` | `App/**`, `AppTests/**`, `docs/design/**`, `docs/collaboration/ACTIVE_WORK.md` | In progress | After #59 |
 | Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
 | Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Merged on main | Reconciled with `main@16af4d2` |
 
@@ -40,6 +40,7 @@ Last updated: 2026-07-19
 | Issue #52 — Echo icons + Bond Filament | Complete | PR #53 merged as `54582c4` |
 | Issue #55 — App Icon + Lira Echo + outdoor QA | Complete | PR #56 merged as `63d632e` |
 | Issue #57 — Lira art pipeline + outdoor receipt | Complete | PR #58 merged |
+| Issue #59 — Lira session-mid puppet | Complete | PR #60 merged |
 
 ## Preservation Boundary
 
