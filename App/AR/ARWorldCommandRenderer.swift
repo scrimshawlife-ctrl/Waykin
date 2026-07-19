@@ -39,10 +39,13 @@ final class ARWorldCommandRenderer {
         case .spawnCompanion(let presentation):
             diagnostics.record(.placementAttempted, detail: "companion")
             let entity = companionFactory.makeLira()
+            let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
+                ? elapsedInCompanionState
+                : 0
             let transition = CompanionStateReducer.transition(
                 current: companionState,
                 behavior: presentation.behavior,
-                elapsed: 0
+                elapsed: elapsed
             )
             applyPresentation(for: transition.resolvedState, to: entity)
             let replacing = registry.entity(for: Self.companionID) != nil
@@ -57,7 +60,11 @@ final class ARWorldCommandRenderer {
             }
             diagnostics.record(replacing ? .entityReplaced : .entityCreated, detail: "companion")
             diagnostics.record(.placementSucceeded, detail: "companion")
-            commit(transition)
+            if replacing {
+                accept(transition, elapsed: elapsed)
+            } else {
+                commit(transition, elapsed: elapsed)
+            }
             return .accepted("companion")
 
         case .updateCompanion(let presentation):
@@ -65,12 +72,20 @@ final class ARWorldCommandRenderer {
                   let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
                 return .deferred("companion missing")
             }
+            let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
+                ? elapsedInCompanionState
+                : 0
             let transition = CompanionStateReducer.transition(
                 current: companionState,
                 behavior: presentation.behavior,
-                elapsed: 0
+                elapsed: elapsed
             )
-            apply(transition, to: companion)
+            if transition.outcome == .unchanged || transition.outcome == .celebrationInProgress {
+                applyPresentation(for: transition.resolvedState, to: companion)
+                accept(transition, elapsed: elapsed)
+            } else {
+                apply(transition, to: companion, elapsed: elapsed)
+            }
             return .accepted("companion:\(transition.resolvedState.rawValue)")
 
         case .spawnDiscovery(let presentation):
@@ -113,7 +128,7 @@ final class ARWorldCommandRenderer {
         )
         if transition.outcome == .unchanged || transition.outcome == .celebrationInProgress {
             applyPresentation(for: transition.resolvedState, to: companion)
-            lastCompanionTransition = transition
+            accept(transition, elapsed: elapsedInCompanionState)
             return .accepted("companion:\(transition.resolvedState.rawValue)")
         }
         apply(transition, to: companion)
@@ -185,6 +200,20 @@ final class ARWorldCommandRenderer {
             ? max(0, elapsed)
             : 0
         diagnostics.record(.stateChanged, detail: transition.resolvedState.rawValue)
+    }
+
+    private func accept(
+        _ transition: CompanionStateTransition,
+        elapsed: TimeInterval
+    ) {
+        guard transition.outcome == .unchanged || transition.outcome == .celebrationInProgress else {
+            commit(transition, elapsed: elapsed)
+            return
+        }
+        lastCompanionTransition = transition
+        elapsedInCompanionState = transition.resolvedState == .celebrate && elapsed.isFinite
+            ? max(0, elapsed)
+            : 0
     }
 
     private func applyPresentation(for state: CompanionPresentationState, to entity: Entity) {

@@ -28,6 +28,7 @@ final class ARSessionCoordinator: NSObject {
 
     func start(resetTracking: Bool = false) async {
         let authorizationState = await capabilityMonitor.requestCameraAccess()
+        guard !Task.isCancelled else { return }
         guard authorizationState == .available else {
             capabilityState = authorizationState
             return

@@ -83,24 +83,40 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         let companion = try XCTUnwrap(
             anchor.findEntity(named: CompanionEntityFactory.rootName)
         )
-        let expected: [(CompanionPresentationState, SIMD3<Float>, SIMD3<Float>, Bool)] = [
-            (.idle, [0, 0, 0], [1, 1, 1], false),
-            (.follow, [0, 0, 0.12], [1.02, 1.02, 1.02], false),
-            (.investigate, [-0.08, 0, 0], [1, 0.92, 1.08], true),
-            (.alert, [0, 0, -0.10], [1.05, 1.14, 0.96], true),
-            (.celebrate, [0, 0.10, 0], [1.12, 1.12, 1.12], true),
+        let expected: [(CompanionPresentationState, SIMD3<Float>, SIMD3<Float>, simd_quatf, Bool)] = [
+            (.idle, [0, 0, 0], [1, 1, 1], simd_quatf(angle: 0, axis: [0, 1, 0]), false),
+            (.follow, [0, 0, 0.12], [1.02, 1.02, 1.02], simd_quatf(angle: 0.18, axis: [0, 1, 0]), false),
+            (.investigate, [-0.08, 0, 0], [1, 0.92, 1.08], simd_quatf(angle: -0.22, axis: [1, 0, 0]), true),
+            (.alert, [0, 0, -0.10], [1.05, 1.14, 0.96], simd_quatf(angle: 0, axis: [0, 1, 0]), true),
+            (.celebrate, [0, 0.10, 0], [1.12, 1.12, 1.12], simd_quatf(angle: .pi / 5, axis: [0, 1, 0]), true),
         ]
 
-        for (state, position, scale, indicatorVisible) in expected {
+        for (state, position, scale, orientation, indicatorVisible) in expected {
             _ = renderer.setCompanionState(state)
             XCTAssertEqual(companion.position, position)
             XCTAssertEqual(companion.scale, scale)
+            XCTAssertEqual(companion.orientation.vector, orientation.vector)
             XCTAssertEqual(
                 companion.findEntity(named: "StatusIndicator")?.isEnabled,
                 indicatorVisible
             )
+            let indicator = try XCTUnwrap(
+                companion.findEntity(named: "StatusIndicator") as? ModelEntity
+            )
+            XCTAssertTrue(try XCTUnwrap(indicator.model?.materials.first) is SimpleMaterial)
             XCTAssertLessThanOrEqual(simd_length(companion.position), 0.12)
             XCTAssertLessThanOrEqual(max(scale.x, max(scale.y, scale.z)), 1.14)
+
+            companion.position = [4, 4, 4]
+            companion.scale = [3, 3, 3]
+            companion.orientation = simd_quatf(angle: .pi, axis: [0, 1, 0])
+            indicator.model?.materials = [UnlitMaterial(color: .black)]
+
+            _ = renderer.setCompanionState(state)
+            XCTAssertEqual(companion.position, position)
+            XCTAssertEqual(companion.scale, scale)
+            XCTAssertEqual(companion.orientation.vector, orientation.vector)
+            XCTAssertTrue(try XCTUnwrap(indicator.model?.materials.first) is SimpleMaterial)
         }
     }
 
@@ -115,6 +131,31 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(fallback, .idle)
         XCTAssertEqual(renderer.setCompanionState(fallback), .accepted("companion:idle"))
         XCTAssertEqual(renderer.companionState, .idle)
+
+        let transition = CompanionStateReducer.transition(
+            current: .alert,
+            behavior: "future-unrecognized-state",
+            elapsed: 0
+        )
+        XCTAssertEqual(transition.resolvedState, .idle)
+        XCTAssertEqual(transition.outcome, .normalizedUnknownToIdle)
+    }
+
+    func testIdenticalTransitionInputsProduceIdenticalReceipts() {
+        let inputs = (CompanionPresentationState.celebrate, CompanionPresentationState.celebrate, 1.25)
+
+        let first = CompanionStateReducer.transition(
+            current: inputs.0,
+            requested: inputs.1,
+            elapsed: inputs.2
+        )
+        let second = CompanionStateReducer.transition(
+            current: inputs.0,
+            requested: inputs.1,
+            elapsed: inputs.2
+        )
+
+        XCTAssertEqual(first, second)
     }
 
     func testCelebrateReturnsToIdleAfterBoundedDuration() {
@@ -153,11 +194,13 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         let diagnostics = ARDiagnosticRecorder()
         let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
         registerCompanion(in: registry)
-        XCTAssertEqual(renderer.setCompanionState(.alert), .accepted("companion:alert"))
+        XCTAssertEqual(renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
+        _ = renderer.advanceCompanionPresentation(by: 1)
 
         XCTAssertEqual(renderer.clearSession(), .cleared)
 
         XCTAssertEqual(renderer.companionState, .idle)
+        XCTAssertNil(renderer.advanceCompanionPresentation(by: 1))
         XCTAssertEqual(registry.count, 0)
         XCTAssertTrue(diagnostics.summary.cleanupSucceeded)
         XCTAssertEqual(diagnostics.events.last?.kind, .sessionCleared)
@@ -193,22 +236,53 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(diagnostics.summary.stateTransitions, ["celebrate", "idle"])
     }
 
-    func testInvalidInjectedDeltaNormalizesCelebrationToIdle() {
+    func testBehaviorUpdateDoesNotRestartCelebrateDeadline() {
         let registry = AREntityRegistry()
-        let renderer = ARWorldCommandRenderer(
-            registry: registry,
-            diagnostics: ARDiagnosticRecorder()
-        )
+        let diagnostics = ARDiagnosticRecorder()
+        let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
         registerCompanion(in: registry)
+        let presentation = CompanionPresentation(
+            id: UUID(),
+            name: "Lira",
+            behavior: "celebrate",
+            spatialIntent: SpatialIntent(
+                placement: .groundPlane,
+                distanceBand: .near,
+                bearing: .ahead,
+                scaleClass: .companion,
+                persistence: .session
+            )
+        )
 
-        _ = renderer.setCompanionState(.celebrate)
-        let transition = renderer.advanceCompanionPresentation(by: -0.1)
-
-        XCTAssertEqual(transition?.outcome, .invalidElapsedNormalizedToIdle)
-        XCTAssertEqual(renderer.companionState, .idle)
+        XCTAssertEqual(renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
+        _ = renderer.advanceCompanionPresentation(by: 1)
+        XCTAssertEqual(
+            renderer.render(.updateCompanion(presentation), in: ARView(frame: .zero)),
+            .accepted("companion:celebrate")
+        )
+        XCTAssertEqual(renderer.lastCompanionTransition?.outcome, .celebrationInProgress)
+        XCTAssertEqual(renderer.advanceCompanionPresentation(by: 0.5)?.resolvedState, .idle)
+        XCTAssertEqual(diagnostics.summary.stateTransitions, ["celebrate", "idle"])
     }
 
-    func testARLabDeferredStateAndDetachedClearStaySynchronized() {
+    func testInvalidInjectedDeltasNormalizeCelebrationToIdle() {
+        for delta in [-0.1, .nan, .infinity, -.infinity] {
+            let registry = AREntityRegistry()
+            let renderer = ARWorldCommandRenderer(
+                registry: registry,
+                diagnostics: ARDiagnosticRecorder()
+            )
+            registerCompanion(in: registry)
+
+            _ = renderer.setCompanionState(.celebrate)
+            let transition = renderer.advanceCompanionPresentation(by: delta)
+
+            XCTAssertEqual(transition?.outcome, .invalidElapsedNormalizedToIdle)
+            XCTAssertEqual(renderer.companionState, .idle)
+        }
+    }
+
+    func testARLabDeferredStateAndClearStaySynchronized() {
         let runtime = ARCompanionLabRuntime()
 
         runtime.setState(.alert)
@@ -219,6 +293,38 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(runtime.currentState, .idle)
         XCTAssertEqual(runtime.transitionResult, "Cleared to idle")
         XCTAssertEqual(runtime.registryCount, 0)
+    }
+
+    func testARLabDetachCancelsSceneUpdatesAndDropsView() {
+        let runtime = ARCompanionLabRuntime()
+        let arView = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
+
+        runtime.attach(arView)
+        XCTAssertTrue(runtime.isSceneUpdateAttached)
+        XCTAssertTrue(runtime.isSessionStartScheduled)
+
+        runtime.detach(arView)
+        XCTAssertFalse(runtime.isSceneUpdateAttached)
+        XCTAssertFalse(runtime.isSessionStartScheduled)
+        XCTAssertEqual(runtime.currentState, .idle)
+        XCTAssertEqual(runtime.registryCount, 0)
+    }
+
+    func testARLabReplacingAttachedViewClearsOldSceneBeforeIgnoringItsDetach() {
+        let runtime = ARCompanionLabRuntime()
+        let first = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
+        let replacement = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
+
+        runtime.attach(first)
+        runtime.attach(replacement)
+
+        XCTAssertEqual(runtime.transitionResult, "Cleared to idle")
+        XCTAssertTrue(runtime.isSceneUpdateAttached)
+        runtime.detach(first)
+        XCTAssertTrue(runtime.isSceneUpdateAttached)
+
+        runtime.detach(replacement)
+        XCTAssertFalse(runtime.isSceneUpdateAttached)
     }
 
     func testPresentationTransitionsDoNotMutateGameplayCompanion() {

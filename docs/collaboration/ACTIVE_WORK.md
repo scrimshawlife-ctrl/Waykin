@@ -22,7 +22,7 @@ Last updated: 2026-07-18
 | Issue #38 — preserve AR-3 work and isolate PR #31 repair | Daniel | local `wip/ar3-local-preservation` (846c42d); clean worktree `Waykin-pr31-repair` | Preservation: current mixed AR-3 set. Repair: minimum files proven by compiler diagnostic | Completed — recovery topology executed; AR-3 preserved on wip/ar3-local-preservation (do not fold into main per ownership) | — |
 | PR #34 — collaborator ownership | Daniel + `prabu-openclaw` | `chore/28-collaborator-ownership` | `.github/CODEOWNERS` | Ready / awaiting Prabu review | Issue #28 |
 | Issue #29 — CI and structural guards | `prabu-openclaw` for first bounded task | `chore/29-core-framework-isolation` when started | scripts, Makefile, focused tests, CI docs | Assigned / not yet evidenced | No collision with PR #31 |
-| Issue #35 — living-companion presentation | Codex swarm | `feat/35-living-companion-presentation` from `5f41eeb176d8c4dba4f77e26cbea8399a87624f7` | `App/AR/**`, `ARLab/**`, focused `AppTests/**`, directly affected AR docs | Implemented and validated; draft PR pending | Preserved AR-3 remains untouched |
+| Issue #35 — living-companion presentation | Codex swarm | `feat/35-living-companion-presentation` from `5f41eeb176d8c4dba4f77e26cbea8399a87624f7` | `App/AR/**`, `ARLab/**`, focused `AppTests/**`, directly affected AR docs | Implemented and validated; PR #40 awaiting human review | Preserved AR-3 remains untouched |
 
 ## Blocked or Pending
 

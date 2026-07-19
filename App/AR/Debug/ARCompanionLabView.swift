@@ -12,6 +12,7 @@ final class ARCompanionLabRuntime {
     private let sessionCoordinator: ARSessionCoordinator
     private let renderer: ARWorldCommandRenderer
     @ObservationIgnored private var sceneUpdateSubscription: Cancellable?
+    @ObservationIgnored private var sessionStartTask: Task<Void, Never>?
 
     private(set) var capabilityState: ARCapabilityState = .checking
     private(set) var lastResult = "Waiting for AR session"
@@ -22,6 +23,8 @@ final class ARCompanionLabRuntime {
 
     var registryCount: Int { registry.count }
     var receipt: ARValidationReceipt { diagnostics.summary }
+    var isSceneUpdateAttached: Bool { arView != nil && sceneUpdateSubscription != nil }
+    var isSessionStartScheduled: Bool { sessionStartTask != nil }
 
     init() {
         let registry = AREntityRegistry()
@@ -33,7 +36,11 @@ final class ARCompanionLabRuntime {
     }
 
     func attach(_ arView: ARView) {
+        if let attachedView = self.arView, attachedView !== arView {
+            clear()
+        }
         sceneUpdateSubscription?.cancel()
+        sessionStartTask?.cancel()
         self.arView = arView
         arView.session = sessionCoordinator.session
         sceneUpdateSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
@@ -47,7 +54,9 @@ final class ARCompanionLabRuntime {
             }
         }
         diagnostics.record(.sessionStarted)
-        Task { await sessionCoordinator.start() }
+        sessionStartTask = Task { [weak self] in
+            await self?.sessionCoordinator.start()
+        }
     }
 
     func detach(_ arView: ARView) {
@@ -57,6 +66,9 @@ final class ARCompanionLabRuntime {
         }
         sceneUpdateSubscription?.cancel()
         sceneUpdateSubscription = nil
+        sessionStartTask?.cancel()
+        sessionStartTask = nil
+        sessionCoordinator.pause()
         self.arView = nil
     }
 
@@ -122,6 +134,8 @@ final class ARCompanionLabRuntime {
         clear()
         sceneUpdateSubscription?.cancel()
         sceneUpdateSubscription = nil
+        sessionStartTask?.cancel()
+        sessionStartTask = nil
         sessionCoordinator.pause()
     }
 
@@ -146,7 +160,9 @@ final class ARCompanionLabRuntime {
 
     private func synchronizeCompanionState(after result: ARCommandResult) {
         guard case .accepted = result else {
-            transitionResult = "Deferred: companion missing"
+            if case .deferred(let detail) = result {
+                transitionResult = "Deferred: \(detail)"
+            }
             return
         }
         currentState = renderer.companionState
