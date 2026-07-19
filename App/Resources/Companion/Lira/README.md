@@ -1,52 +1,43 @@
-# Lira AR assets (drop-in)
+# Lira AR assets
 
 ```yaml
 lod: AR_mid
 companion: Lira
 rig: Living_Familiar
-skins: [Dawn, Veil, Rupture] # materials only — one mesh
+file: Lira_AR_Base.usdz
 ```
 
-## Current runtime
+## Packaged asset
 
-1. On AR attach, `LiraARAssetLoader.preloadFromBundle()` tries this folder.
-2. If `Lira_AR_Base.usdz` loads **and** required nodes validate → clones for spawn.
-3. Otherwise **procedural** Living Familiar mid-LOD (`CompanionEntityFactory`).
+Primary bundle path (copied into app): `App/Resources/Lira_AR_Base.usdz`  
+Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`
 
-Spectral 2D stills cover session UI. Animation roadmap: `docs/design/LIRA_ANIMATION_PLAN.md`.
+Mid-LOD Living Familiar with named anchors:
 
-## Artist USDZ (optional production mesh)
+| Node | Role |
+| ---- | ---- |
+| `LiraRoot` | Root |
+| `Head` | A1 tapered snout |
+| `CoreGlow` | A2 bond ember |
+| `Filament` | A3 path plume |
+| `Body`, `LeftEar`, `RightEar`, `Tail`, `GroundShadow`, `StatusIndicator` | Required hierarchy |
+| `HunterEcho` | Optional pressure ghost |
+| `Chest`, `Haunch`, `CoreHalo`, `FilamentTip` | Volume extras |
 
-Place a single shared rig file here:
+## Runtime
 
-```text
-Lira_AR_Base.usdz
+1. AR attach → `LiraARAssetLoader.preloadFromBundle()`
+2. Load + validate required nodes → clone + skin materials
+3. If load/validation fails → procedural `CompanionEntityFactory`
+
+Rebuild:
+
+```bash
+./scripts/build_lira_usdz.sh
 ```
 
-### Requirements
+Source USDA: `docs/assets/companion/ar/src/Lira_AR_Base.usda`
 
-| Rule | Detail |
-| ---- | ------ |
-| Root | Entity named `LiraRoot` (or re-root on import) |
-| A1 | Node `Head` — tapered non-canid |
-| A2 | Node `CoreGlow` — chest bond ember |
-| A3 | Node `Filament` — trailing plume |
-| Required | Also: `Body`, `LeftEar`, `RightEar`, `Tail`, `GroundShadow`, `StatusIndicator` |
-| Skins | Same mesh; materials remapped at runtime for Dawn/Veil/Rupture |
-| Scale | ~0.7 m tall at unit scale (factory height config applies) |
-| Hunter | No gore / teeth / blood geometry |
+## Skins
 
-### Masters (repo)
-
-Procedural-compatible reference USD sketch:
-
-`docs/assets/companion/ar/Lira_AR_Base.usdz`
-
-Session stills (signed direction):
-
-`docs/assets/companion/generated/`
-
-## Status
-
-- 2D spectral pack: **DIRECTION_ACCEPTED**
-- AR mesh: **PROCEDURAL_MID** until artist USDZ lands
+One mesh; Dawn / Veil / Rupture remapped at runtime.

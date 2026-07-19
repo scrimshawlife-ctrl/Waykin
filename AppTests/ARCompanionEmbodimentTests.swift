@@ -30,7 +30,7 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertNotNil(entity.findEntity(named: "Filament"))
         XCTAssertEqual(
             LiraARAssetCatalog.packagedLODHint,
-            "procedural_living_familiar_mid"
+            "packaged_usdz:Lira_AR_Base"
         )
     }
 

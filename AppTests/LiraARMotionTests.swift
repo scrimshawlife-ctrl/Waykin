@@ -73,4 +73,22 @@ final class LiraARMotionTests: XCTestCase {
         XCTAssertNotNil(echo)
         XCTAssertFalse(echo?.isEnabled ?? true)
     }
+
+    func testPackagedUSDZPreloadsWithRequiredHierarchy() async {
+        XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ)
+        let loader = LiraARAssetLoader()
+        await loader.preloadFromBundle()
+        // If RealityKit accepts the USDZ, source flips to usdz; otherwise procedural fallback is OK.
+        let entity = loader.makeLira()
+        XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
+        for name in CompanionEntityFactory.requiredNodeNames {
+            XCTAssertNotNil(
+                entity.findEntity(named: name),
+                "missing \(name) after preload (source=\(loader.activeLODDescription))"
+            )
+        }
+        if case .usdz = loader.source {
+            XCTAssertTrue(loader.activeLODDescription.contains("Lira_AR_Base"))
+        }
+    }
 }

@@ -15,8 +15,8 @@ direction: spectral_living_familiar
 | Session 2D | Spectral still matrix 7×3 | DIRECTION_ACCEPTED |
 | AR mid-LOD | Procedural Living Familiar (`CompanionEntityFactory`) | **Shipped** |
 | AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
-| AR USDZ asset | Artist drop-in `App/Resources/Companion/Lira/Lira_AR_Base.usdz` | Optional package |
-| Reference USDZ | `docs/assets/companion/ar/Lira_AR_Base.usdz` | Sketch / proportions |
+| AR USDZ asset | `App/Resources/Companion/Lira/Lira_AR_Base.usdz` | **Packaged mid-LOD** |
+| USDA source | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | Rebuild: `scripts/build_lira_usdz.sh` |
 | Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Draft |
 
 ## Anchors (required)
