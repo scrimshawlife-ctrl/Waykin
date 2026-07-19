@@ -19,13 +19,24 @@ final class AppearanceAndARSkinTests: XCTestCase {
         }
     }
 
-    func testStillCatalogCoversAllDawnPoses() {
-        for pose in LiraSessionPose.allCases {
-            let name = LiraStillCatalog.imageName(pose: pose, skin: .dawn)
-            XCTAssertNotNil(name, "Missing Dawn still for \(pose)")
-            XCTAssertTrue(name?.contains("Dawn") == true)
+    func testStillCatalogCoversFullPoseSkinMatrix() {
+        for skin in LiraSkin.allCases {
+            for pose in LiraSessionPose.allCases {
+                let name = LiraStillCatalog.imageName(pose: pose, skin: skin)
+                XCTAssertNotNil(name, "Missing still name for \(pose)/\(skin)")
+                XCTAssertTrue(name?.hasPrefix("Lira_Session_") == true)
+            }
+            let glyph = LiraStillCatalog.glyphName(for: skin)
+            XCTAssertTrue(glyph.hasPrefix("Lira_Glyph_"))
         }
-        XCTAssertEqual(LiraStillCatalog.imageName(pose: .guide, skin: .veil), "Lira_Session_Guide_Veil")
-        XCTAssertEqual(LiraStillCatalog.glyphDawn, "Lira_Glyph_Dawn")
+        XCTAssertEqual(
+            LiraStillCatalog.imageName(pose: .hunter, skin: .veil),
+            "Lira_Session_Hunter_Veil"
+        )
+        XCTAssertEqual(
+            LiraStillCatalog.imageName(pose: .bond, skin: .rupture),
+            "Lira_Session_Bond_Rupture"
+        )
+        XCTAssertEqual(LiraStillCatalog.glyphName(for: .veil), "Lira_Glyph_Veil")
     }
 }

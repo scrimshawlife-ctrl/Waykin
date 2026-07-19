@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Lira Bond Veil">
+  <title>Lira Bond Veil</title>
+  <rect width="256" height="256" fill="none"/>
+  <path d="M110 140 C70 130 40 150 28 180" fill="none" stroke="#7B8C9E" stroke-width="10" stroke-linecap="round"/>
+  <path d="M112 150 C80 160 50 175 36 200" fill="none" stroke="#7B8C9E" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="128" cy="128" r="70" fill="none" stroke="#C9897A" stroke-width="4" stroke-dasharray="12 18" opacity="0.5"/>
+  <ellipse cx="140" cy="147" rx="48" ry="30" fill="#2A2E38"/>
+  <ellipse cx="118" cy="157" rx="26" ry="20" fill="#2A2E38" opacity="0.92"/>
+  <ellipse cx="180" cy="120" rx="22" ry="18" fill="#2A2E38"/>
+  <ellipse cx="186" cy="104" rx="7" ry="12" fill="#2A2E38" opacity="0.9"/>
+  <circle cx="148" cy="144" r="11" fill="#C9897A"/>
+  <circle cx="148" cy="144" r="4" fill="#FFFFFF" opacity="0.35"/>
+</svg>

@@ -12,6 +12,7 @@ Visual system imports and production follow-ons for the app repository.
 | [LIRA_SKINS_HOME.md](LIRA_SKINS_HOME.md) | Dawn/Veil/Rupture cosmetics + Home presence |
 | [AR_SKINS_APPEARANCE_STILLS.md](AR_SKINS_APPEARANCE_STILLS.md) | AR skins, appearance force, stills, sim walk |
 | [LIRA_DAWN_STILLS_GLYPH.md](LIRA_DAWN_STILLS_GLYPH.md) | Full Dawn stills + glyph LOD |
+| [LIRA_FULL_STILL_MATRIX.md](LIRA_FULL_STILL_MATRIX.md) | Full Dawn/Veil/Rupture pose still matrix |
 | [OUTDOOR_QA_CHECKLIST.md](OUTDOOR_QA_CHECKLIST.md) | Device outdoor checks |
 | [OUTDOOR_QA_RECEIPT_TEMPLATE.md](OUTDOOR_QA_RECEIPT_TEMPLATE.md) | Fillable evidence receipt |
 | [SIMULATOR_PREFLIGHT.md](SIMULATOR_PREFLIGHT.md) | Sim-only preflight |
@@ -23,4 +24,5 @@ Visual system imports and production follow-ons for the app repository.
 2. Outdoor walk + receipt — **deferred**
 3. Production art pipeline session mid — **Dawn stills complete**
 4. Glyph LOD — **shipped**
-5. Next: Veil/Rupture full pose stills, or painted rig when art exists
+5. Veil/Rupture full pose stills — **shipped**
+6. Next: outdoor walk when ready, or painted/sculpted rig when art exists

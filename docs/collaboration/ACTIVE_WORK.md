@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #66 — Dawn stills + glyph LOD | design-agent | `feat/65-dawn-stills-glyph-lod` | `App/**`, `AppTests/**`, `docs/**` | In progress | After #63 |
+| Issue #68 — Veil/Rupture full still matrix | design-agent | `feat/68-veil-rupture-stills` | `App/**`, `docs/**`, `AppTests/**` | In progress | After #66 |
 | Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
 | Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Merged on main | Reconciled with `main@16af4d2` |
 
@@ -43,6 +43,7 @@ Last updated: 2026-07-19
 | Issue #59 — Lira session-mid puppet | Complete | PR #60 merged |
 | Issue #61 — Lira skins + Home presence | Complete | PR #62 merged |
 | Issue #63 — AR skins, appearance, stills, sim | Complete | PR #64 merged |
+| Issue #66 — Dawn stills + glyph LOD | Complete | PR #67 merged |
 
 ## Preservation Boundary
 
