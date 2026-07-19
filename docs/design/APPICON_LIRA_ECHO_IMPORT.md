@@ -8,6 +8,8 @@ depends_on: [50, 52]
 companion_name: Lira
 waykin_core_touched: false
 outdoor_qa: NOT_COMPUTABLE
+outdoor_protocol: docs/design/OUTDOOR_QA_CHECKLIST.md
+art_pipeline: docs/design/LIRA_PRODUCTION_ART_PIPELINE.md
 production_sculpted_mesh: false
 ```
 

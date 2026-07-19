@@ -12,6 +12,13 @@ companion_name: Lira
 
 This checklist is the Phase 4 outdoor validation protocol. Completing items on a physical device upgrades evidence from `NOT_COMPUTABLE` to `OBSERVED`. Do not claim outdoor contrast or glare performance from simulator alone.
 
+**Workflow**
+
+1. Optional: `SIMULATOR_PREFLIGHT.md` (sim-only OBSERVED)
+2. Device walk using tables below
+3. Fill `OUTDOOR_QA_RECEIPT_TEMPLATE.md` → save under `receipts/`
+4. Art follow-up: `LIRA_PRODUCTION_ART_PIPELINE.md`
+
 ## Preconditions
 
 - [ ] Build from a known `main` SHA: _______________
