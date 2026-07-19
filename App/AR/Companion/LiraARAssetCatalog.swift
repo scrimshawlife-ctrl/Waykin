@@ -2,10 +2,10 @@ import Foundation
 
 /// Catalog for optional artist-authored AR assets (USDZ / RealityKit).
 ///
-/// Runtime default remains the procedural Living Familiar mid-LOD from
-/// `CompanionEntityFactory`. Drop a sculpted `Lira_AR_Base.usdz` under
-/// `App/Resources/Companion/Lira/` when production mesh is ready; wire
-/// async load in a follow-up that preserves A1–A3 node names.
+/// Runtime default remains procedural Living Familiar mid-LOD.
+/// Drop sculpted `Lira_AR_Base.usdz` under `App/Resources/Companion/Lira/`;
+/// `LiraARAssetLoader.preloadFromBundle()` validates A1–A3 hierarchy and
+/// falls back to procedural if missing or invalid.
 enum LiraARAssetCatalog {
     static let baseUSDZName = "Lira_AR_Base"
     static let resourceSubdirectory = "Companion/Lira"
@@ -19,13 +19,13 @@ enum LiraARAssetCatalog {
         ) ?? Bundle.main.url(forResource: baseUSDZName, withExtension: "usdz")
     }
 
-    /// Whether a production USDZ is packaged (not yet required for MVP).
+    /// Whether a production USDZ file is packaged (load may still fail validation).
     static var hasPackagedUSDZ: Bool { baseUSDZURL != nil }
 
-    /// LOD ladder note for docs / diagnostics.
-    static var activeARLODDescription: String {
+    /// Package presence only — prefer `LiraARAssetLoader.activeLODDescription` at runtime.
+    static var packagedLODHint: String {
         if hasPackagedUSDZ {
-            "artist_usdz:\(baseUSDZName)"
+            "packaged_usdz:\(baseUSDZName)"
         } else {
             "procedural_living_familiar_mid"
         }

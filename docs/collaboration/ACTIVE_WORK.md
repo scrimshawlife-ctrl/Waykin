@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Art sign-off + AR Living Familiar mid-LOD | design-agent | `feat/78-art-signoff-ar-rig` | `App/AR/**`, `App/Resources/Companion/**`, `AppTests/**`, `docs/**` | In progress | After #77 |
+| USDZ async load + animation plan draft | design-agent | `feat/80-usdz-load-anim-plan` | `App/AR/**`, `AppTests/**`, `docs/design/**`, `docs/collaboration/**` | In progress | After #79 |
 
 ## Blocked
 

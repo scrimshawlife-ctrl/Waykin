@@ -21,8 +21,11 @@ final class AppearanceAndARSkinTests: XCTestCase {
             XCTAssertNotNil(entity.findEntity(named: "Chest"))
             XCTAssertNotNil(entity.findEntity(named: "FilamentTip"))
         }
-        XCTAssertEqual(LiraARAssetCatalog.activeARLODDescription, "procedural_living_familiar_mid")
+        XCTAssertEqual(LiraARAssetCatalog.packagedLODHint, "procedural_living_familiar_mid")
         XCTAssertFalse(LiraARAssetCatalog.hasPackagedUSDZ)
+        let loader = LiraARAssetLoader()
+        XCTAssertEqual(loader.activeLODDescription, "procedural_living_familiar_mid")
+        XCTAssertEqual(loader.makeLira().name, CompanionEntityFactory.rootName)
     }
 
     func testStillCatalogCoversFullPoseSkinMatrix() {

@@ -9,8 +9,11 @@ skins: [Dawn, Veil, Rupture] # materials only — one mesh
 
 ## Current runtime
 
-App uses **procedural Living Familiar mid-LOD** from `CompanionEntityFactory`
-(A1 Head · A2 CoreGlow · A3 Filament). Spectral 2D stills cover session UI.
+1. On AR attach, `LiraARAssetLoader.preloadFromBundle()` tries this folder.
+2. If `Lira_AR_Base.usdz` loads **and** required nodes validate → clones for spawn.
+3. Otherwise **procedural** Living Familiar mid-LOD (`CompanionEntityFactory`).
+
+Spectral 2D stills cover session UI. Animation roadmap: `docs/design/LIRA_ANIMATION_PLAN.md`.
 
 ## Artist USDZ (optional production mesh)
 

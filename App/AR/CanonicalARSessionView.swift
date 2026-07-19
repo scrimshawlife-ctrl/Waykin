@@ -16,10 +16,12 @@ final class CanonicalARSessionRuntime {
     private let registry: AREntityRegistry
     private let diagnostics: ARDiagnosticRecorder
     private let sessionCoordinator: ARSessionCoordinator
+    private let assetLoader: LiraARAssetLoader
     private let renderer: ARWorldCommandRenderer
     @ObservationIgnored private var renderCommandOverride: ((ARWorldCommand, ARView) -> ARCommandResult)?
     @ObservationIgnored private var sceneUpdateSubscription: Cancellable?
     @ObservationIgnored private var sessionStartTask: Task<Void, Never>?
+    @ObservationIgnored private var usdzPreloadTask: Task<Void, Never>?
     @ObservationIgnored private var pendingCommands: [ARWorldCommand] = []
     @ObservationIgnored private var commandHandlerOwner: UUID?
     private weak var arView: ARView?
@@ -27,15 +29,22 @@ final class CanonicalARSessionRuntime {
     private(set) var capabilityState: ARCapabilityState = .checking
     private(set) var companionState: CompanionPresentationState = .idle
     private(set) var lastResult = "Waiting for AR session"
+    private(set) var companionLODDescription = "procedural_living_familiar_mid"
     var pendingCommandSnapshot: [ARWorldCommand] { pendingCommands }
 
     init(renderCommand: ((ARWorldCommand, ARView) -> ARCommandResult)? = nil) {
         let registry = AREntityRegistry()
         let diagnostics = ARDiagnosticRecorder()
+        let assetLoader = LiraARAssetLoader()
         self.registry = registry
         self.diagnostics = diagnostics
         self.sessionCoordinator = ARSessionCoordinator()
-        self.renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
+        self.assetLoader = assetLoader
+        self.renderer = ARWorldCommandRenderer(
+            registry: registry,
+            diagnostics: diagnostics,
+            assetLoader: assetLoader
+        )
         self.renderCommandOverride = renderCommand
     }
 
@@ -49,6 +58,7 @@ final class CanonicalARSessionRuntime {
         }
         sceneUpdateSubscription?.cancel()
         sessionStartTask?.cancel()
+        usdzPreloadTask?.cancel()
         self.arView = arView
         arView.session = sessionCoordinator.session
         sceneUpdateSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
@@ -60,6 +70,12 @@ final class CanonicalARSessionRuntime {
         }
         commandHandlerOwner = appModel.attachARWorldCommandHandler { [weak self] commands in
             self?.receive(commands)
+        }
+        // Preload optional artist USDZ before / while AR session starts.
+        usdzPreloadTask = Task { [weak self] in
+            guard let self else { return }
+            await self.assetLoader.preloadFromBundle()
+            self.companionLODDescription = self.assetLoader.activeLODDescription
         }
         sessionStartTask = Task { [weak self] in
             await self?.sessionCoordinator.start()
@@ -78,6 +94,8 @@ final class CanonicalARSessionRuntime {
         sceneUpdateSubscription = nil
         sessionStartTask?.cancel()
         sessionStartTask = nil
+        usdzPreloadTask?.cancel()
+        usdzPreloadTask = nil
         sessionCoordinator.pause()
         companionState = .idle
         self.arView = nil
@@ -188,12 +206,14 @@ struct CanonicalARSessionView: View {
                     Text("AR: \(runtime.capabilityState.rawValue)")
                     Text("Lira: \(runtime.companionState.rawValue)")
                     Text("Form: \(liraSkin.displayName)")
+                    Text("LOD: \(runtime.companionLODDescription)")
+                        .accessibilityIdentifier("waykin.ar.canonical.lod")
                     Text(runtime.lastResult)
                 }
                 .font(.caption.weight(.semibold))
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(
-                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName)"
+                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName), LOD: \(runtime.companionLODDescription)"
                 )
                 .accessibilityIdentifier("waykin.ar.canonical.status")
 
