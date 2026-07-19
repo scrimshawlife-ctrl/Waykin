@@ -1,15 +1,16 @@
 # Generated Lira Art Pack
 
 ```yaml
-version: 1.2
+version: 1.3
 style: spectral_living_familiar
 anti: [pokemon, mascot, canid_clone, creature_collectible]
-status: GENERATED_CANDIDATE
+status: DIRECTION_ACCEPTED
 path: docs/assets/companion/generated/
 matrix: complete_7x3
+sign_off: docs/design/ART_DIRECTION_SIGN_OFF.md
 ```
 
-## Design direction
+## Design direction (locked)
 
 - Spectral path-born familiar, mature and slightly uncanny
 - Anchors A1 tapered head · A2 amber chest ember · A3 filament plume
@@ -42,8 +43,7 @@ Assets installed under `App/Resources/Assets.xcassets/LiraStills` (21 imagesets)
 
 `docs/assets/companion/generated/{dawn,veil,rupture,glyphs,hero}/`
 
-## Notes
+## Related
 
-- Status remains **GENERATED_CANDIDATE** until human art direction sign-off.
-- Rival/Manifesting pass may still need polish (claw emphasis, Rupture fracture intensity).
-- Outdoor QA receipt remains deferred (device walk).
+- Sign-off: [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md)
+- AR mid-LOD: procedural Living Familiar in `CompanionEntityFactory`; USDZ slot at `App/Resources/Companion/Lira/`

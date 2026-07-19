@@ -18,12 +18,15 @@ Visual system imports and production follow-ons for the app repository.
 | [OUTDOOR_QA_RECEIPT_TEMPLATE.md](OUTDOOR_QA_RECEIPT_TEMPLATE.md) | Fillable evidence receipt |
 | [SIMULATOR_PREFLIGHT.md](SIMULATOR_PREFLIGHT.md) | Sim-only preflight |
 | [SIM_CHECKLIST_AUTOMATION.md](SIM_CHECKLIST_AUTOMATION.md) | Manual S1–S8 → automated tests |
-| [receipts/](receipts/) | Filled outdoor receipts |
+| [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md) | Spectral Lira direction accepted |
+| [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ drop-in |
+| [receipts/](receipts/) | Filled outdoor / sim receipts |
 
 ## Recommended order
 
-1. Simulator preflight (`./scripts/sim_walk_preflight.sh`) — **automated**
-2. Sim checklist S1–S8 — **UI/unit coverage** (see SIM_CHECKLIST_AUTOMATION)
-3. Outdoor walk + receipt — **deferred** (device required)
-4. Production art pack — **GENERATED_CANDIDATE** spectral matrix shipped
-5. Next when ready: outdoor OBSERVED walk, or hand-painted/sculpted production art sign-off
+1. Simulator preflight — **automated**
+2. Sim checklist S1–S8 — **automated**
+3. Spectral art direction — **DIRECTION_ACCEPTED**
+4. AR mid-LOD Living Familiar — **procedural shipped**; USDZ slot ready
+5. Outdoor walk + receipt — **deferred** (device required)
+6. Optional: sculpted `Lira_AR_Base.usdz` artist mesh

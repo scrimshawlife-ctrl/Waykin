@@ -14,10 +14,15 @@ final class AppearanceAndARSkinTests: XCTestCase {
         for skin in LiraSkin.allCases {
             let entity = CompanionEntityFactory(skin: skin).makeLira()
             XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
-            XCTAssertNotNil(entity.findEntity(named: "Body"))
-            XCTAssertNotNil(entity.findEntity(named: "CoreGlow"))
-            XCTAssertNotNil(entity.findEntity(named: "Filament"))
+            for name in CompanionEntityFactory.requiredNodeNames {
+                XCTAssertNotNil(entity.findEntity(named: name), "\(skin) missing \(name)")
+            }
+            // Living Familiar extra volume (not required by legacy renderer, present for mid-LOD).
+            XCTAssertNotNil(entity.findEntity(named: "Chest"))
+            XCTAssertNotNil(entity.findEntity(named: "FilamentTip"))
         }
+        XCTAssertEqual(LiraARAssetCatalog.activeARLODDescription, "procedural_living_familiar_mid")
+        XCTAssertFalse(LiraARAssetCatalog.hasPackagedUSDZ)
     }
 
     func testStillCatalogCoversFullPoseSkinMatrix() {

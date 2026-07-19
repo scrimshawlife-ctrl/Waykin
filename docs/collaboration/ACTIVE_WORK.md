@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Sim checklist automation (S1–S8) | design-agent | `feat/76-sim-checklist-automation` | `App/**`, `AppTests/**`, `WaykinUITests/**`, `docs/design/**`, `docs/collaboration/**` | In progress | After #75 |
+| Art sign-off + AR Living Familiar mid-LOD | design-agent | `feat/78-art-signoff-ar-rig` | `App/AR/**`, `App/Resources/Companion/**`, `AppTests/**`, `docs/**` | In progress | After #77 |
 
 ## Blocked
 
