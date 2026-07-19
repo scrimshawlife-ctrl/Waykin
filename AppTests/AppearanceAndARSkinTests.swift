@@ -19,15 +19,13 @@ final class AppearanceAndARSkinTests: XCTestCase {
         }
     }
 
-    func testStillCatalogNamesForDawnMVP() {
-        XCTAssertEqual(
-            LiraStillCatalog.imageName(pose: .guide, skin: .dawn),
-            "Lira_Session_Guide_Dawn"
-        )
-        XCTAssertEqual(
-            LiraStillCatalog.imageName(pose: .hunter, skin: .dawn),
-            "Lira_Session_Hunter_Dawn"
-        )
-        XCTAssertNil(LiraStillCatalog.imageName(pose: .bond, skin: .dawn))
+    func testStillCatalogCoversAllDawnPoses() {
+        for pose in LiraSessionPose.allCases {
+            let name = LiraStillCatalog.imageName(pose: pose, skin: .dawn)
+            XCTAssertNotNil(name, "Missing Dawn still for \(pose)")
+            XCTAssertTrue(name?.contains("Dawn") == true)
+        }
+        XCTAssertEqual(LiraStillCatalog.imageName(pose: .guide, skin: .veil), "Lira_Session_Guide_Veil")
+        XCTAssertEqual(LiraStillCatalog.glyphDawn, "Lira_Glyph_Dawn")
     }
 }
