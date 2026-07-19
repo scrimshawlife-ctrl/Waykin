@@ -76,6 +76,16 @@ struct LiraSessionFigure: View {
     private var stillOrFigure: some View {
         if displayedStillName != nil || previousStillName != nil {
             ZStack {
+                // Hunter delayed echo (pressure behind) — A3, still path.
+                if LiraSessionMotion.showsHunterEcho(pose: pose),
+                   let echoName = displayedStillName ?? targetStillName,
+                   UIImage(named: echoName) != nil {
+                    let offset = LiraSessionMotion.hunterEchoOffset(reduceMotion: reduceMotion)
+                    stillImage(echoName)
+                        .opacity(LiraSessionMotion.hunterEchoOpacity(reduceMotion: reduceMotion))
+                        .offset(x: offset.width, y: -offset.height)
+                        .accessibilityHidden(true)
+                }
                 if let previousStillName, UIImage(named: previousStillName) != nil {
                     stillImage(previousStillName)
                         .opacity(1 - stillBlend)

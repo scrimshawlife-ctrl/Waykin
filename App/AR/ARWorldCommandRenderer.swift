@@ -24,6 +24,9 @@ final class ARWorldCommandRenderer {
     private var elapsedInCompanionState: TimeInterval = 0
     /// Accumulated time for A2/A3 local loops (breath / sway). Reset on clear.
     private(set) var localMotionElapsed: TimeInterval = 0
+    /// Time since last successful companion spawn (A4 coalesce). Reset on clear / replace spawn.
+    private(set) var spawnCoalesceElapsed: TimeInterval = 0
+    private var isSpawningCoalesce = false
 
     /// Cosmetic Lira skin applied on next spawn.
     var companionSkin: LiraSkin {
@@ -68,6 +71,9 @@ final class ARWorldCommandRenderer {
                 behavior: presentation.behavior,
                 elapsed: elapsed
             )
+            // A4: restart coalesce on every successful spawn/replace attempt prep.
+            spawnCoalesceElapsed = 0
+            isSpawningCoalesce = true
             applyPresentation(for: transition.resolvedState, to: entity)
             let replacing = registry.entity(for: Self.companionID) != nil
             guard placementResolver.place(
@@ -77,6 +83,7 @@ final class ARWorldCommandRenderer {
                 in: arView
             ) else {
                 diagnostics.record(.placementDeferred, detail: "companion")
+                isSpawningCoalesce = false
                 return .deferred("companion")
             }
             diagnostics.record(replacing ? .entityReplaced : .entityCreated, detail: "companion")
@@ -167,19 +174,33 @@ final class ARWorldCommandRenderer {
         companionState = .idle
         elapsedInCompanionState = 0
         localMotionElapsed = 0
+        spawnCoalesceElapsed = 0
+        isSpawningCoalesce = false
         lastCompanionTransition = nil
         return .cleared
     }
 
-    /// Advance A2 breath + A3 filament sway. Safe no-op without companion.
+    /// Advance A2 breath, A3 filament sway / hunter echo, A4 spawn coalesce.
+    /// Safe no-op without companion.
     func advanceLocalMotion(by delta: TimeInterval) {
         guard delta.isFinite, delta >= 0 else { return }
         localMotionElapsed += delta
+        if isSpawningCoalesce {
+            spawnCoalesceElapsed += delta
+            let progress = LiraARMotion.spawnCoalesceProgress(
+                elapsed: spawnCoalesceElapsed,
+                duration: LiraARMotion.spawnCoalesceDuration
+            )
+            if progress >= 1 {
+                isSpawningCoalesce = false
+            }
+        }
         guard let anchor = registry.entity(for: Self.companionID),
               let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
             return
         }
         applyLocalMotion(to: companion, state: companionState, elapsed: localMotionElapsed)
+        applySpawnCoalesce(to: companion, state: companionState)
     }
 
     @discardableResult
@@ -256,8 +277,8 @@ final class ARWorldCommandRenderer {
     private func applyPresentation(for state: CompanionPresentationState, to entity: Entity) {
         let presentation = presentation(for: state)
         entity.position = presentation.position
-        entity.scale = presentation.scale
         entity.orientation = presentation.orientation
+        applySpawnCoalesce(to: entity, state: state)
 
         entity.findEntity(named: "StatusIndicator")?.isEnabled = presentation.indicatorVisible
         entity.findEntity(named: "CoreGlow")?.isEnabled = presentation.coreVisible
@@ -267,6 +288,21 @@ final class ARWorldCommandRenderer {
             ]
         }
         applyLocalMotion(to: entity, state: state, elapsed: localMotionElapsed)
+    }
+
+    private func applySpawnCoalesce(to entity: Entity, state: CompanionPresentationState) {
+        let base = presentation(for: state).scale
+        let progress: Float
+        if isSpawningCoalesce {
+            progress = LiraARMotion.spawnCoalesceProgress(
+                elapsed: spawnCoalesceElapsed,
+                duration: LiraARMotion.spawnCoalesceDuration
+            )
+        } else {
+            progress = 1
+        }
+        let factor = LiraARMotion.spawnScaleFactor(progress: progress)
+        entity.scale = base * factor
     }
 
     private func applyLocalMotion(
@@ -284,6 +320,15 @@ final class ARWorldCommandRenderer {
         }
         if let filament = entity.findEntity(named: "Filament") {
             filament.orientation = LiraARMotion.filamentOrientation(elapsed: elapsed, state: state)
+        }
+
+        // Hunter echo ghost — pressure only, optional node (procedural mid-LOD).
+        if let echo = entity.findEntity(named: LiraARMotion.hunterEchoNodeName) {
+            let show = LiraARMotion.showsHunterEcho(state: state)
+            echo.isEnabled = show
+            if show {
+                echo.position = LiraARMotion.hunterEchoOffset(elapsed: elapsed)
+            }
         }
     }
 

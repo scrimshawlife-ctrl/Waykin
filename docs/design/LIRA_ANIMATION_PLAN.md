@@ -156,8 +156,8 @@ Until U1, **do not block** on skeletal; drive procedural locals.
 | **A0** | This plan + USDZ load path | **Done** (#81) |
 | **A1** | Session still crossfade + Reduce Motion contract | **Done** (`LiraSessionMotion` + figure blend) |
 | **A2** | AR A2 breath + A3 sway (procedural) | **Done** (`LiraARMotion` + renderer advance) |
-| **A3** | Hunter echo (AR + session) | A1–A2 |
-| **A4** | Spawn coalesce + pose easing | A1–A2 |
+| **A3** | Hunter echo (AR + session) | **Done** (indoor) |
+| **A4** | Spawn coalesce (scale factor) | **Done** (indoor; root pose snaps) |
 | **A5** | USDZ AnimationLibrary (optional) | Artist mesh |
 | **A6** | Outdoor motion QA notes | Device walk |
 
