@@ -963,9 +963,14 @@ struct HomeView: View {
                     .frame(maxHeight: 200)
                     .accessibilityIdentifier("waykin.home.lira")
 
-                Text("\(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
-                    .foregroundStyle(theme.bondText)
-                    .accessibilityLabel("Companion \(appModel.companion.name), Bond \(appModel.companion.bondLevel)")
+                HStack(spacing: 10) {
+                    LiraGlyphView(size: 36, skin: appModel.selectedLiraSkin)
+                    Text("\(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
+                        .foregroundStyle(theme.bondText)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Companion \(appModel.companion.name), Bond \(appModel.companion.bondLevel)")
+                .accessibilityIdentifier("waykin.home.bondRow")
 
                 // Cosmetic skin picker (no unlock economy)
                 VStack(alignment: .leading, spacing: 8) {
