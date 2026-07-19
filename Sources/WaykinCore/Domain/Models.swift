@@ -437,6 +437,11 @@ public struct SessionSummary: Identifiable, Equatable {
     public let outcome: String
     public let bondDelta: Int
     public let memory: SessionMemory
+    /// Semantic path relation at end (`PathRelation.rawValue`); nil when not recorded.
+    public let pathRelation: String?
+    public let pathMetersAlongPath: Double
+    /// Coarse cadence band (`StepCadenceBand.rawValue`); nil/unknown when unavailable.
+    public let activityCadenceBand: String?
 
     public init(
         id: UUID,
@@ -450,7 +455,10 @@ public struct SessionSummary: Identifiable, Equatable {
         averageSpeed: Double,
         outcome: String,
         bondDelta: Int,
-        memory: SessionMemory
+        memory: SessionMemory,
+        pathRelation: String? = nil,
+        pathMetersAlongPath: Double = 0,
+        activityCadenceBand: String? = nil
     ) {
         self.id = id
         self.sessionID = sessionID
@@ -464,5 +472,48 @@ public struct SessionSummary: Identifiable, Equatable {
         self.outcome = outcome
         self.bondDelta = bondDelta
         self.memory = memory
+        self.pathRelation = pathRelation
+        self.pathMetersAlongPath = max(0, pathMetersAlongPath.finiteOrZero)
+        self.activityCadenceBand = activityCadenceBand
+    }
+
+    /// Human path line for summary UI.
+    public var pathPresentationLine: String? {
+        guard let raw = pathRelation, let relation = PathRelation(rawValue: raw) else { return nil }
+        return WalkPathCopy.pathLine(relation: relation, metersAlongPath: pathMetersAlongPath)
+    }
+
+    /// Human cadence line for summary UI; nil when unknown.
+    public var cadencePresentationLine: String? {
+        guard let raw = activityCadenceBand,
+              let band = StepCadenceBand(rawValue: raw) else { return nil }
+        return WalkPathCopy.cadenceLine(band: band)
+    }
+
+    public func withWalkSurfacing(
+        path: PathProgressSnapshot,
+        enrichment: ActivityEnrichment,
+        memoryText: String? = nil
+    ) -> SessionSummary {
+        let text = memoryText ?? memory.text
+        return SessionSummary(
+            id: id,
+            sessionID: sessionID,
+            activity: activity,
+            experience: experience,
+            variant: variant,
+            duration: duration,
+            activeTime: activeTime,
+            distanceMeters: distanceMeters,
+            averageSpeed: averageSpeed,
+            outcome: outcome,
+            bondDelta: bondDelta,
+            memory: SessionMemory(sessionID: memory.sessionID, text: text),
+            pathRelation: path.relation.rawValue,
+            pathMetersAlongPath: path.metersAlongPath,
+            activityCadenceBand: enrichment.stepCadenceBand == .unknown
+                ? nil
+                : enrichment.stepCadenceBand.rawValue
+        )
     }
 }

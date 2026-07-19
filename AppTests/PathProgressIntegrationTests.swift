@@ -19,6 +19,18 @@ final class PathProgressIntegrationTests: XCTestCase {
         XCTAssertFalse(model.activityEnrichment.authorizationDenied)
     }
 
+    func testDemoEndSurfacesPathOnSessionSummary() throws {
+        let model = try makeModel(health: NullHealthMetricsProvider())
+        model.startDemo(.calmDayWalk)
+        model.runDemoToEnd()
+        model.endDemo()
+
+        let summary = try XCTUnwrap(model.lastSummary)
+        XCTAssertNotNil(summary.pathRelation)
+        XCTAssertNotNil(summary.pathPresentationLine)
+        XCTAssertTrue(summary.memory.text.contains("path") || summary.pathRelation == PathRelation.establishing.rawValue)
+    }
+
     func testNullHealthProviderDeniedSurfacesFlag() async {
         let provider = NullHealthMetricsProvider(authorizationState: .denied)
         let enrichment = await provider.refreshEnrichment()

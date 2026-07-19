@@ -2,58 +2,56 @@
 
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
-version: 2.0
+version: 3.0
 date: 2026-07-19
-status: PATH_HEALTH_V1_1_COMPLETE
-goal: deepen_path_progress_and_health_enrichment_presentation
+status: EXPERIENCE_LOOP_COHESION_COMPLETE
+goal: close_path_health_into_session_summary_and_walk_feel
 outdoor_qa: DEFERRED_NON_BLOCKING
 ar_status: FROZEN_MAINTENANCE_ONLY
 ```
 
-## Completed waves (v1.0)
+## Completed waves
 
 | Wave | Status |
 | ---- | ------ |
 | Design / indoor presentation / AR mid-LOD / USDZ | **Done** |
-| **AR-F** freeze docs + mapping | **Done** |
-| **P** pathfinding MVP | **Done** (`PathProgressEngine` + app wiring) |
-| **H** HealthKit MVP | **Done** (App adapter + null provider + bands) |
+| **AR-F** freeze + **P/H MVP** | **Done** (#98) |
+| **Path/Health v1.1** | **Done** (#99) — phrases, receipts, fake provider, energy hint |
 
-## Wave v1.1 — Path + Health deepen (this plan)
+## Wave v3 — Experience Loop Cohesion (this plan)
 
-Primary product track after AR freeze. No navigation chrome, no HealthKit in core, Demo Mode never blocked.
+Path and Health already compute; this wave makes them **feel finished** in the walk loop without navigation chrome, outdoor QA, or AR expansion.
 
 | ID | Work | Acceptance |
 | -- | ---- | ---------- |
-| **P1** | Path relation phrases in session presence | When pursuit inactive and no stronger world event, phrase reflects `PathRelation` |
-| **P2** | Path integrity in pressure presentation | Inactive pursuit blends `pathIntegrityPressure` into pressure intensity / a11y |
-| **P3** | Privacy-safe path fields on field-test receipts | Summary captures relation, meters, pressure, accept count — **no coordinates** |
-| **P4** | Real-walk path integration tests | Accepted samples advance path; rejections strain / off-path |
-| **H1** | `FakeHealthMetricsProvider` | Deterministic enrichment for app tests |
-| **H2** | Energy hint presentation | Coarse `energyHint` lightly affects presence opacity; never required for walk |
-| **H3** | Health refresh on resume | Real walk re-refreshes enrichment at start **and** on resume from pause |
-| **H4** | Coarse activity band on receipts | Cadence band + denied flag only (no sample UUIDs / raw medical claims) |
+| **E1** | Human path / cadence copy helpers in core | Pure, privacy-safe strings; no coordinates |
+| **E2** | `SessionSummary` path + cadence fields | Optional fields; demo/real populate from path/activity |
+| **E3** | Summary UI shows path + cadence lines | Normal UI (not UI-test-only); a11y identifiers |
+| **E4** | `ExperienceContext.activityEnergyHint` | Optional 0…1; default 0 preserves demo determinism |
+| **E5** | Companion Walk blends energy hint | World energy uses max(speedEnergy, hint) |
+| **E6** | Real walk refreshes context energy | After Health refresh, real experience context updates |
+| **E7** | Path-aware memory suffix (app) | Physical/demo end may append one short path clause |
 
-### Out of scope (still deferred)
+### Out of scope
 
 | Track | Work |
 | ----- | ---- |
 | Outdoor | Device walk QA / outdoor receipt OBSERVED |
-| AR | Issue #41 physical AR; sculpted USDZ / AnimationLibrary |
-| Path v2 | Corridor geometry (still no nav chrome) |
-| Health v2 | Workouts, background delivery (separate privacy review) |
+| AR | Issue #41; sculpted USDZ / AnimationLibrary |
+| Path v2 | Corridor geometry / map product |
+| Health v2 | Workouts, background delivery |
+| Audio | New cue kinds / production sound redesign |
 
-## Product cores
+## Product cores after this wave
 
-| Track | Status after v1.1 |
-| ----- | ----------------- |
-| AR presentation | Maintenance-only |
-| Path progress | MVP → **v1.1 presentation + receipts + real-walk tests** |
-| Health enrichment | MVP → **v1.1 fake + energy hint + refresh + receipt band** |
+| Track | Status |
+| ----- | ------ |
+| AR | Maintenance-only |
+| Path + Health | **Surfaced end-to-end** (session + summary + mild energy bias) |
+| Experience tuning | Soft energy only; no event-weight overhaul |
 
 ## Related
 
-- [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md)
-- [REAL_WALK_TO_AR_MAPPING.md](REAL_WALK_TO_AR_MAPPING.md)
 - [PATHFINDING.md](PATHFINDING.md)
 - [HEALTHKIT.md](HEALTHKIT.md)
+- [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md)
