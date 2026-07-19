@@ -20,6 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
+| Generated Lira spectral art pack | design-agent | `feat/70-generated-lira-art` | `App/Resources/**`, `docs/assets/companion/generated/**`, `docs/design/**` | In progress | Art pipeline |
 | Issue #68 — Veil/Rupture full still matrix | design-agent | `feat/68-veil-rupture-stills` | `App/**`, `docs/**`, `AppTests/**` | In progress | After #66 |
 | Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
 | Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Merged on main | Reconciled with `main@16af4d2` |
