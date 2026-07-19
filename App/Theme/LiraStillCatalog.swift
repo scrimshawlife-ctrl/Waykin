@@ -3,7 +3,7 @@ import UIKit
 
 /// Session still LOD names. When an imageset exists in the asset catalog, prefer it over the Canvas puppet.
 enum LiraStillCatalog {
-    /// Full pose × skin matrix for Dawn / Veil / Rupture.
+    /// Generated spectral art (non-mascot). Dawn full 7 poses; Veil/Rupture Guide/Hunter/Sanctuary; else Canvas puppet.
     static func imageName(pose: LiraSessionPose, skin: LiraSkin) -> String? {
         let poseToken: String
         switch pose {
