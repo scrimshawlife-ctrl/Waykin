@@ -2,6 +2,8 @@ import Foundation
 import WaykinCore
 
 struct CanonicalARWorldCommandMapper {
+    // Stable per-session entity identities keep discovery and pursuit updates
+    // replaceable without creating parallel presentation owners.
     static let discoveryID = UUID(uuidString: "00000000-0000-0000-0000-00000000D15C")!
     static let threatID = UUID(uuidString: "00000000-0000-0000-0000-000000007A11")!
 
@@ -144,6 +146,9 @@ struct CanonicalARWorldCommandMapper {
         for state: CompanionBehaviorState,
         event: WorldEventKind?
     ) -> String {
+        // Events are presentation overlays only. Pursuit raises alert, Bond
+        // celebrates, and the remaining events select the closest existing
+        // visual behavior without changing canonical runtime state.
         switch event {
         case .bondMoment:
             return "celebrate"
@@ -157,6 +162,8 @@ struct CanonicalARWorldCommandMapper {
             break
         }
 
+        // The renderer has no separate lead or rest vocabulary. Lead remains
+        // locomotion via follow; rest remains settled via idle.
         switch state {
         case .idle, .rest:
             return "idle"
@@ -170,6 +177,8 @@ struct CanonicalARWorldCommandMapper {
     }
 
     private func distanceBand(for distance: Double) -> SpatialDistanceBand {
+        // These are the frozen M4 presentation distances. Invalid,
+        // non-finite, and nonpositive values use the conservative near band.
         guard distance.isFinite, distance > 0 else { return .near }
         switch distance {
         case ...0.75: return .immediate

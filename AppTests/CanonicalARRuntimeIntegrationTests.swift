@@ -58,6 +58,94 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
         XCTAssertEqual(first, second)
     }
 
+    func testEveryCanonicalStateUsesRatifiedPresentationMapping() throws {
+        let expected: [(CompanionBehaviorState, String, SpatialBearingIntent)] = [
+            (.idle, "idle", .beside),
+            (.rest, "idle", .beside),
+            (.follow, "follow", .beside),
+            (.drawNear, "follow", .beside),
+            (.lead, "follow", .ahead),
+            (.observe, "investigate", .contextual),
+            (.celebrate, "celebrate", .beside)
+        ]
+
+        for (state, behavior, bearing) in expected {
+            var runtime = CompanionRuntime()
+            runtime.apply(command: .setBehavior(state.rawValue))
+            let presentation = try XCTUnwrap(companionPresentation(
+                in: makeMapper().spawn(companionRuntime: runtime)
+            ))
+            XCTAssertEqual(presentation.behavior, behavior, "state: \(state.rawValue)")
+            XCTAssertEqual(presentation.spatialIntent.bearing, bearing, "state: \(state.rawValue)")
+        }
+    }
+
+    func testEveryEventUsesRatifiedPresentationEffect() throws {
+        let expected: [(WorldEventKind, String, [String])] = [
+            (.companionDrawsNear, "follow", ["removeDiscovery"]),
+            (.companionMovesAhead, "follow", ["removeDiscovery"]),
+            (.companionObserves, "investigate", ["removeDiscovery"]),
+            (.distantPresence, "investigate", ["discovery"]),
+            (.pursuitBegins, "alert", ["removeDiscovery", "spawnThreat"]),
+            (.pursuitIntensifies, "alert", ["removeDiscovery", "updateThreat"]),
+            (.pursuitFades, "follow", ["removeDiscovery", "removeThreat"]),
+            (.familiarPlaceStirs, "investigate", ["discovery"]),
+            (.quietInterval, "investigate", ["removeDiscovery"]),
+            (.bondMoment, "celebrate", ["removeDiscovery"])
+        ]
+
+        for (kind, behavior, eventCommands) in expected {
+            let commands = makeMapper().update(
+                companionRuntime: CompanionRuntime(),
+                event: makeEvent(kind)
+            )
+            XCTAssertEqual(try XCTUnwrap(companionPresentation(in: commands)).behavior, behavior)
+            XCTAssertEqual(eventCommandKinds(in: commands), eventCommands, "event: \(kind.rawValue)")
+        }
+    }
+
+    func testDistanceBandsUseFrozenThresholdsAndNormalizeInvalidInput() throws {
+        let expected: [(Double, SpatialDistanceBand)] = [
+            (0.75, .immediate),
+            (0.750_001, .near),
+            (1.25, .near),
+            (1.250_001, .medium),
+            (2.0, .medium),
+            (2.000_001, .far),
+            (0, .near),
+            (-1, .near),
+            (.nan, .near),
+            (.infinity, .near),
+            (-.infinity, .near)
+        ]
+
+        for (distance, band) in expected {
+            var runtime = CompanionRuntime()
+            runtime.apply(command: .setRelativeDistance(distance))
+            let presentation = try XCTUnwrap(companionPresentation(
+                in: makeMapper().spawn(companionRuntime: runtime)
+            ))
+            XCTAssertEqual(presentation.spatialIntent.distanceBand, band, "distance: \(distance)")
+        }
+    }
+
+    func testIdenticalDemoRunsProduceIdenticalCommandBatches() throws {
+        let stableCompanionID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+
+        func run() throws -> [[ARWorldCommand]] {
+            let model = try makeAppModel(companionID: stableCompanionID)
+            var batches: [[ARWorldCommand]] = []
+            let owner = model.attachARWorldCommandHandler { batches.append($0) }
+            model.startDemo(.calmDayWalk)
+            model.runDemoToEnd()
+            model.endDemo()
+            model.detachARWorldCommandHandler(owner: owner)
+            return batches
+        }
+
+        XCTAssertEqual(try run(), try run())
+    }
+
     func testEventMappingUsesBoundedStableEventIdentities() throws {
         let mapper = makeMapper()
         var runtime = CompanionRuntime()
@@ -138,6 +226,43 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
         }
         XCTAssertEqual(threat.kind, WorldEventKind.pursuitBegins.rawValue)
         XCTAssertEqual(threat.intensity, 0.65)
+    }
+
+    func testLateSnapshotRestorationCoversEveryPursuitState() throws {
+        let mapper = makeMapper()
+        let runtime = CompanionRuntime()
+
+        let noticed = mapper.snapshot(companionRuntime: runtime, pursuitState: .noticed, lastEvent: nil)
+        XCTAssertEqual(eventCommandKinds(in: noticed), ["discovery"])
+
+        let approaching = mapper.snapshot(companionRuntime: runtime, pursuitState: .approaching, lastEvent: nil)
+        XCTAssertEqual(eventCommandKinds(in: approaching), ["spawnThreat"])
+        guard case .spawnThreat(let approachingThreat) = try XCTUnwrap(approaching.last) else {
+            return XCTFail("Expected approaching threat")
+        }
+        XCTAssertEqual(approachingThreat.id, CanonicalARWorldCommandMapper.threatID)
+        XCTAssertEqual(approachingThreat.kind, WorldEventKind.pursuitBegins.rawValue)
+        XCTAssertEqual(approachingThreat.intensity, 0.65)
+
+        let close = mapper.snapshot(companionRuntime: runtime, pursuitState: .close, lastEvent: nil)
+        XCTAssertEqual(eventCommandKinds(in: close), ["spawnThreat"])
+        guard case .spawnThreat(let closeThreat) = try XCTUnwrap(close.last) else {
+            return XCTFail("Expected close threat")
+        }
+        XCTAssertEqual(closeThreat.id, CanonicalARWorldCommandMapper.threatID)
+        XCTAssertEqual(closeThreat.kind, WorldEventKind.pursuitIntensifies.rawValue)
+        XCTAssertEqual(closeThreat.intensity, 1)
+
+        for state in [PursuitState.inactive, .fading] {
+            XCTAssertTrue(
+                eventCommandKinds(in: mapper.snapshot(
+                    companionRuntime: runtime,
+                    pursuitState: state,
+                    lastEvent: makeEvent(.pursuitIntensifies)
+                )).isEmpty,
+                "state: \(state.rawValue)"
+            )
+        }
     }
 
     func testTransientDiscoveryIsRemovedBeforeTheNextProjection() {
@@ -444,12 +569,23 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
         }
     }
 
-    private func makeAppModel() throws -> WaykinAppModel {
+    private func makeAppModel(companionID: UUID? = nil) throws -> WaykinAppModel {
         let schema = Schema([CompanionRecord.self, SessionMemoryRecord.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: configuration)
+        let persistenceStore = PersistenceStore(modelContainer: container)
+        if let companionID {
+            try persistenceStore.saveCompanion(Companion(
+                id: companionID,
+                name: "Lira",
+                archetype: "explorer",
+                bondLevel: 12,
+                lastSessionID: nil,
+                memories: []
+            ))
+        }
         return WaykinAppModel(
-            persistenceStore: PersistenceStore(modelContainer: container),
+            persistenceStore: persistenceStore,
             audioPlayer: SilentAudioPlayer(),
             realLocationProvider: InertLocationProvider(),
             fieldTestReceiptStore: nil
