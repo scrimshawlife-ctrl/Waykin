@@ -196,14 +196,16 @@ sync_item() {
 }
 
 sync_initial_items() {
-  sync_item Issue 42 Review "AR Presentation" UNASSIGNED IMPLEMENT P0 High \
-    "PR #40 merged; implementation PR #45" NONE PARTIAL
-  sync_item PullRequest 45 Review "AR Presentation" UNASSIGNED REVIEW P0 High \
-    "Issue #42" NONE PARTIAL
-  sync_item Issue 46 Blocked Validation UNASSIGNED TEST P1 Medium \
-    "PR #45 must merge" NONE NOT_STARTED
-  sync_item Issue 41 Ready Validation UNASSIGNED DEVICE P1 High \
-    "PR #40 merged" NONE NOT_STARTED
+  sync_item Issue 35 Done "AR Presentation" UNASSIGNED IMPLEMENT P0 High \
+    "PR #40 merged" ACCEPTED PASS
+  sync_item Issue 42 Done "AR Presentation" UNASSIGNED IMPLEMENT P0 High \
+    "PR #45 merged" ACCEPTED PASS
+  sync_item PullRequest 45 Done "AR Presentation" UNASSIGNED REVIEW P0 High \
+    "Issue #42 completed" ACCEPTED PASS
+  sync_item Issue 46 Ready Validation UNASSIGNED TEST P1 Medium \
+    "PR #45 merged" NONE NOT_STARTED
+  sync_item Issue 41 Blocked Validation UNASSIGNED DEVICE P1 High \
+    "Physical device access required" NONE NOT_COMPUTABLE
   sync_item Issue 47 "In Progress" Governance scrimshawlife-ctrl GOVERNANCE P0 Medium \
     NONE NONE PARTIAL
   if [[ "$MODE" == "apply" ]]; then
