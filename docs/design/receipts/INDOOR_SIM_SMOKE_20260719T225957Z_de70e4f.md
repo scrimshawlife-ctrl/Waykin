@@ -3,8 +3,8 @@
 ```yaml
 document_id: WAYKIN-INDOOR-SIM-SMOKE
 date_utc: 2026-07-19T22:59:57Z
-git_sha: 0e0f158fa9d3e50a4808becc9f27dbac0c7d062c
-git_short: 0e0f158
+git_sha: de70e4fd0645767c1074aca5ed7d57ce77e96b0b
+git_short: de70e4f
 evidence_class: OBSERVED_IN_SIMULATOR_ONLY
 outdoor_qa: NOT_COMPUTABLE
 focus: indoor
