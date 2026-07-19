@@ -73,9 +73,18 @@ Outdoor walk / outdoor receipts / Issue #41 physical AR stay **out of scope** un
 1. **C1 / A1** session crossfade — **done**
 2. **C2 / A2** AR breath + sway — **done**
 3. **C3 / A3** hunter echo (session + AR) — **done**
-4. **C4 / A4** spawn coalesce — **done** (presentation root still snaps; coalesce is scale factor)
-5. Still UX polish (bond orbit + manifesting fade) — **this train**
-6. Next indoor (optional): further presence polish or pause until outdoor
+4. **C4 / A4** spawn coalesce — **done**
+5. Still UX polish (bond orbit + manifesting fade) — **done**
+6. Indoor sim smoke (preflight + UI 12/12) — **done** (receipt under `docs/design/receipts/INDOOR_SIM_SMOKE_*`)
+
+## Recommended next
+
+| Priority | Work | When |
+| -------- | ---- | ---- |
+| **Pause indoor** | No further presentation work required for MVP indoor | Now |
+| Optional | Artist `Lira_AR_Base.usdz` drop-in | When mesh exists |
+| Deferred | Outdoor walk + receipts (C8–C10) | When you have a device walk |
+| Optional | Hand-painted still pass (C11) | Art direction only |
 
 ## Non-goals while indoor-focused
 

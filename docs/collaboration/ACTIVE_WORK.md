@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Continuation C1/A1 session still crossfade | design-agent | `feat/82-continuation-a1-crossfade` | `App/Theme/**`, `AppTests/**`, `docs/design/**`, `docs/collaboration/**` | In progress | After #81 |
+| Indoor presentation complete — no active design slice | — | — | — | Paused (outdoor deferred) | Main @ polish + sim smoke |
 
 ## Blocked
 
