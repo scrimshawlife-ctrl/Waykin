@@ -11,8 +11,24 @@ body:
     attributes: {label: Workstream}
     validations: {required: true}
   - type: input
+    id: project_item
+    attributes: {label: Project item URL, description: "Use INTAKE_PENDING when the card will be created after issue submission."}
+    validations: {required: true}
+  - type: input
+    id: owner
+    attributes: {label: Owner or agent identity}
+    validations: {required: true}
+  - type: input
     id: agent_lane
     attributes: {label: Agent lane, description: "IMPLEMENT, REVIEW, TEST, DOCS, DEVICE, or GOVERNANCE"}
+    validations: {required: true}
+  - type: input
+    id: branch
+    attributes: {label: Branch, description: "Use NOT_CLAIMED before work is assigned."}
+    validations: {required: true}
+  - type: input
+    id: base_sha
+    attributes: {label: Base SHA, description: "Use NOT_CLAIMED before work is assigned."}
     validations: {required: true}
   - type: textarea
     id: dependencies
@@ -41,4 +57,8 @@ body:
   - type: textarea
     id: evidence_boundary
     attributes: {label: Evidence boundary, description: "Separate OBSERVED, INFERRED, and NOT_COMPUTABLE evidence."}
+    validations: {required: true}
+  - type: input
+    id: handoff_state
+    attributes: {label: Handoff state, description: "NONE, REQUESTED, READY, ACCEPTED, or REJECTED"}
     validations: {required: true}

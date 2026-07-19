@@ -1,5 +1,6 @@
 ```yaml
 issue:
+project_item:
 agent:
 lane:
 base_sha:
@@ -69,3 +70,12 @@ Physical GPS, audio, AR tracking, interruption recovery, battery, thermal, and o
 - Risk:
 - Rollback:
 - Documentation updated:
+
+## Agent and Stack Context
+
+- Agent assistance used:
+- Parent or superseded PR: NONE
+
+## Merge Control
+
+- [ ] Automatic merge is disabled; merge requires the repository's formal approval and validation gates.

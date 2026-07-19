@@ -39,7 +39,11 @@ resolve_project() {
 }
 
 list_fields() {
-  FIELDS_JSON="$(gh project field-list "$PROJECT_NUMBER" --owner "$OWNER" --limit 100 --format json)"
+  local fetched total
+  FIELDS_JSON="$(gh project field-list "$PROJECT_NUMBER" --owner "$OWNER" --limit 1000 --format json)"
+  fetched="$(jq '.fields | length' <<<"$FIELDS_JSON")"
+  total="$(jq -r --argjson fetched "$fetched" '.totalCount // $fetched' <<<"$FIELDS_JSON")"
+  [[ "$total" -eq "$fetched" ]] || record_drift "field list truncated: fetched=$fetched total=$total"
 }
 
 field_id() {
@@ -99,14 +103,26 @@ ensure_select_field() {
 }
 
 refresh_items() {
-  ITEMS_JSON="$(gh project item-list "$PROJECT_NUMBER" --owner "$OWNER" --limit 200 --format json)"
+  local fetched total
+  ITEMS_JSON="$(gh project item-list "$PROJECT_NUMBER" --owner "$OWNER" --limit 1000 --format json)"
+  fetched="$(jq '.items | length' <<<"$ITEMS_JSON")"
+  total="$(jq -r --argjson fetched "$fetched" '.totalCount // $fetched' <<<"$ITEMS_JSON")"
+  [[ "$total" -eq "$fetched" ]] || record_drift "item list truncated: fetched=$fetched total=$total"
 }
 
 find_project_item() {
-  local type="$1" number="$2"
-  jq -r --arg type "$type" --argjson number "$number" \
-    '.items[] | select(.content.type == $type and .content.number == $number) | .id' \
-    <<<"$ITEMS_JSON" | head -n 1
+  local type="$1" number="$2" url matches count
+  url="$(content_url "$type" "$number")"
+  matches="$(jq -c --arg url "$url" '[.items[] | select(.content.url == $url) | .id]' <<<"$ITEMS_JSON")"
+  count="$(jq 'length' <<<"$matches")"
+  ITEM_ID=""
+  if [[ "$count" -gt 1 ]]; then
+    record_drift "duplicate items for $url: $count"
+    return 1
+  fi
+  if [[ "$count" -eq 1 ]]; then
+    ITEM_ID="$(jq -r '.[0]' <<<"$matches")"
+  fi
 }
 
 content_url() {
@@ -120,14 +136,27 @@ content_url() {
 
 ensure_project_item() {
   local type="$1" number="$2" id
-  id="$(find_project_item "$type" "$number")"
+  if ! find_project_item "$type" "$number"; then
+    ITEM_ID=""
+    return
+  fi
+  id="$ITEM_ID"
   if [[ -z "$id" ]]; then
     if [[ "$MODE" == "apply" ]]; then
       gh project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "$(content_url "$type" "$number")" >/dev/null
       echo "APPLIED add item: $type #$number"
       CHANGES=$((CHANGES + 1))
       refresh_items
-      id="$(find_project_item "$type" "$number")"
+      if [[ "$DRIFT" -ne 0 ]]; then
+        ITEM_ID=""
+        return
+      fi
+      if ! find_project_item "$type" "$number"; then
+        ITEM_ID=""
+        return
+      fi
+      id="$ITEM_ID"
+      [[ -n "$id" ]] || { record_drift "added item could not be resolved: $type #$number"; return; }
     else
       record_drift "missing item: $type #$number"
     fi
@@ -150,8 +179,8 @@ set_text_value() {
     return
   fi
   current="$(item_value "$item_id" "$field")"
-  # Project values advance through the live workflow. Bootstrap blanks without
-  # resetting a populated owner, status, dependency, handoff, or evidence field.
+  # Project #1 owns live workflow state. Bootstrap blanks without comparing or
+  # resetting a populated owner, dependency, SHA, handoff, or evidence value.
   [[ -n "$current" ]] && return
   if [[ "$MODE" == "apply" ]]; then
     fid="$(field_id "$field")"
@@ -183,7 +212,8 @@ set_select_value() {
 
 sync_item() {
   local type="$1" number="$2" status="$3" workstream="$4" agent="$5" lane="$6"
-  local priority="$7" risk="$8" dependency="$9" handoff="${10}" evidence="${11}" item_id
+  local priority="$7" risk="$8" dependency="$9" handoff="${10}" evidence="${11}"
+  local base_sha="${12:-}" head_sha="${13:-}" item_id
   ensure_project_item "$type" "$number"
   item_id="$ITEM_ID"
   set_select_value "$item_id" "Execution Status" "$status"
@@ -193,26 +223,49 @@ sync_item() {
   set_select_value "$item_id" "Priority" "$priority"
   set_select_value "$item_id" "Risk" "$risk"
   set_text_value "$item_id" "Dependency" "$dependency"
+  set_text_value "$item_id" "Base SHA" "$base_sha"
+  set_text_value "$item_id" "Head SHA" "$head_sha"
   set_select_value "$item_id" "Handoff State" "$handoff"
   set_select_value "$item_id" "Evidence" "$evidence"
 }
 
 sync_initial_items() {
+  local coordination_head
+  coordination_head="$(gh pr view 48 --repo "$REPOSITORY" --json headRefOid --jq .headRefOid)"
+  [[ "$coordination_head" =~ ^[0-9a-f]{40}$ ]] || { echo "ERROR cannot resolve PR #48 head" >&2; exit 2; }
   sync_item Issue 35 Done "AR Presentation" UNASSIGNED IMPLEMENT P0 High \
-    "PR #40 merged" ACCEPTED PASS
+    "PR #40 merged" ACCEPTED PASS \
+    5f41eeb176d8c4dba4f77e26cbea8399a87624f7 4c6453958375eab4f7574b56aeb473d95ffc0f7f
   sync_item Issue 42 Done "AR Presentation" UNASSIGNED IMPLEMENT P0 High \
-    "PR #45 merged" ACCEPTED PASS
+    "PR #45 merged" ACCEPTED PASS \
+    98183fe689757ffff06c97f273653ef73aef51d6 16af4d2a8d198ae2b15f16c84aeff03388e7ee6f
   sync_item PullRequest 45 Done "AR Presentation" UNASSIGNED REVIEW P0 High \
-    "Issue #42 completed" ACCEPTED PASS
+    "Issue #42 completed" ACCEPTED PASS \
+    98183fe689757ffff06c97f273653ef73aef51d6 16af4d2a8d198ae2b15f16c84aeff03388e7ee6f
   sync_item Issue 46 Ready Validation UNASSIGNED TEST P1 Medium \
     "PR #45 merged" NONE NOT_STARTED
   sync_item Issue 41 Blocked Validation UNASSIGNED DEVICE P1 High \
-    "Physical device access required" NONE NOT_COMPUTABLE
-  sync_item Issue 47 "In Progress" Governance scrimshawlife-ctrl GOVERNANCE P0 Medium \
-    NONE NONE PARTIAL
+    "Physical device access required" NONE NOT_COMPUTABLE \
+    4c6453958375eab4f7574b56aeb473d95ffc0f7f 4c6453958375eab4f7574b56aeb473d95ffc0f7f
+  sync_item Issue 47 Review Governance "Daniel + Codex" GOVERNANCE P0 Medium \
+    NONE READY PASS 98183fe689757ffff06c97f273653ef73aef51d6 "$coordination_head"
   if [[ "$MODE" == "apply" ]]; then
     refresh_items
   fi
+}
+
+preflight_item_identities() {
+  local type number
+  while read -r type number; do
+    find_project_item "$type" "$number" || true
+  done <<'EOF'
+Issue 35
+Issue 42
+PullRequest 45
+Issue 46
+Issue 41
+Issue 47
+EOF
 }
 
 print_receipt() {
@@ -244,10 +297,23 @@ main() {
   ensure_text_field "Head SHA"
   ensure_select_field "Handoff State" "NONE,REQUESTED,READY,ACCEPTED,REJECTED"
   ensure_select_field "Evidence" "NOT_STARTED,PARTIAL,PASS,FAIL,NOT_COMPUTABLE"
+  if [[ "$MODE" == "apply" && "$DRIFT" -ne 0 ]]; then
+    print_receipt
+    echo "ERROR refusing item mutation while field schema is drifted" >&2
+    exit 1
+  fi
   refresh_items
+  preflight_item_identities
+  if [[ "$MODE" == "apply" && "$DRIFT" -ne 0 ]]; then
+    print_receipt
+    echo "ERROR refusing item mutation while item inventory is drifted" >&2
+    exit 1
+  fi
   sync_initial_items
   print_receipt
   [[ "$DRIFT" -eq 0 ]]
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

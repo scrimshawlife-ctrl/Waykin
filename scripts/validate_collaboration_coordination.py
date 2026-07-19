@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Validate repository-native GitHub Project coordination artifacts."""
 
+import json
+import os
 from pathlib import Path
+import re
+import shutil
+import subprocess
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("WAYKIN_COORDINATION_ROOT", Path(__file__).resolve().parents[1]))
 
 REQUIRED_FILES = [
     "docs/collaboration/GITHUB_PROJECT_COORDINATION.md",
@@ -26,6 +31,8 @@ PROHIBITED_AUTHORIZATIONS = [
     "narrative engine is authorized", "ai gameplay runtime is authorized",
     "additional companions are authorized",
 ]
+PROJECT_URL = "https://github.com/users/scrimshawlife-ctrl/projects/1"
+ISSUE_URL = "https://github.com/scrimshawlife-ctrl/Waykin/issues/47"
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -41,6 +48,109 @@ def read(relative: str, errors: list[str]) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def parse_issue_form(relative: str, errors: list[str]) -> dict:
+    path = ROOT / relative
+    if not path.is_file():
+        return {}
+    ruby = shutil.which("ruby")
+    if ruby is None:
+        errors.append("missing command required for issue-form validation: ruby")
+        return {}
+    result = subprocess.run(
+        [
+            ruby, "-ryaml", "-rjson", "-e",
+            "puts JSON.generate(YAML.safe_load(File.read(ARGV[0]), aliases: false))",
+            str(path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        errors.append(f"invalid issue-form YAML: {relative}: {result.stderr.strip()}")
+        return {}
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        errors.append(f"invalid issue-form parser output: {relative}: {error}")
+        return {}
+    require(errors, isinstance(parsed, dict), f"issue form is not a mapping: {relative}")
+    if not isinstance(parsed, dict):
+        return {}
+    for key in ("name", "description", "title", "body"):
+        require(errors, key in parsed, f"issue form missing top-level key: {relative}: {key}")
+    return parsed
+
+
+def parse_yaml_text(text: str, label: str, errors: list[str]) -> dict:
+    ruby = shutil.which("ruby")
+    if ruby is None:
+        errors.append(f"missing command required for YAML validation: ruby ({label})")
+        return {}
+    result = subprocess.run(
+        [ruby, "-ryaml", "-rjson", "-e", "puts JSON.generate(YAML.safe_load(STDIN.read, aliases: false))"],
+        input=text,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        errors.append(f"invalid YAML: {label}: {result.stderr.strip()}")
+        return {}
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        errors.append(f"invalid YAML parser output: {label}: {error}")
+        return {}
+    require(errors, isinstance(parsed, dict), f"YAML is not a mapping: {label}")
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def validate_required_form_entries(
+    relative: str, identifiers: list[str], errors: list[str]
+) -> None:
+    parsed = parse_issue_form(relative, errors)
+    body = parsed.get("body", [])
+    require(errors, isinstance(body, list), f"issue form body is not a list: {relative}")
+    if not isinstance(body, list):
+        return
+    entry_ids = [entry.get("id") for entry in body if isinstance(entry, dict)]
+    duplicate_ids = sorted({identifier for identifier in entry_ids if entry_ids.count(identifier) > 1})
+    require(errors, not duplicate_ids, f"{relative} has duplicate ids: {duplicate_ids}")
+    entries = {entry.get("id"): entry for entry in body if isinstance(entry, dict)}
+    for identifier in identifiers:
+        entry = entries.get(identifier)
+        require(errors, entry is not None, f"{relative} missing key: {identifier}")
+        if entry is None:
+            continue
+        if entry.get("type") == "checkboxes":
+            options = entry.get("attributes", {}).get("options", [])
+            required = bool(options) and all(option.get("required") is True for option in options)
+        else:
+            required = entry.get("validations", {}).get("required") is True
+        require(errors, required, f"{relative} field is not required: {identifier}")
+
+
+def validate_sync_script(errors: list[str]) -> None:
+    script = ROOT / "scripts/sync_github_project.sh"
+    result = subprocess.run(
+        ["bash", "-n", str(script)], text=True, capture_output=True, check=False
+    )
+    require(errors, result.returncode == 0, f"sync script shell syntax invalid: {result.stderr.strip()}")
+    text = script.read_text(encoding="utf-8") if script.is_file() else ""
+    for token in (
+        "set -Eeuo pipefail", "verify_auth", "resolve_project", "ensure_project_item",
+        "set_text_value", "set_select_value", '"--check"', '"--apply"',
+    ):
+        require(errors, token in text, f"sync script missing required behavior: {token}")
+
+
+def authorization_is_negated(line: str, phrase: str) -> bool:
+    prefix = line[:line.index(phrase)]
+    clause = re.split(r"[.;:]", prefix)[-1]
+    return re.search(r"\b(?:no|not|never|cannot|can't)\b(?:\W+\w+){0,4}\W*$", clause) is not None
+
+
 def main() -> int:
     errors: list[str] = []
     texts = {relative: read(relative, errors) for relative in REQUIRED_FILES}
@@ -54,44 +164,65 @@ def main() -> int:
         require(errors, token in doc, f"handoff schema missing: {token}")
 
     combined = "\n".join(texts.values())
-    require(errors, "https://github.com/users/scrimshawlife-ctrl/projects/1" in combined,
+    require(errors, PROJECT_URL in combined,
             "Project #1 URL is missing")
-    require(errors, "https://github.com/scrimshawlife-ctrl/Waykin/issues/47" in combined,
+    require(errors, ISSUE_URL in combined,
             "Issue #47 URL is missing")
+    require(errors, PROJECT_URL in texts["AGENTS.md"], "AGENTS.md missing Project #1 contract")
+    require(errors, ISSUE_URL in texts["AGENTS.md"], "AGENTS.md missing Issue #47 contract")
 
     required_template_ids = {
         ".github/ISSUE_TEMPLATE/agent-task.yml": [
-            "outcome", "workstream", "agent_lane", "dependencies", "intended_paths",
+            "outcome", "project_item", "owner", "workstream", "agent_lane", "branch",
+            "base_sha", "dependencies", "intended_paths",
             "frozen_paths", "acceptance_criteria", "required_validation", "non_goals",
-            "evidence_boundary",
+            "evidence_boundary", "handoff_state",
         ],
         ".github/ISSUE_TEMPLATE/validation-task.yml": [
+            "project_item", "owner", "workstream", "agent_lane",
             "implementation_dependency", "exact_build_or_sha", "environment",
             "protocol_scope", "observed_evidence", "inferred_evidence",
-            "not_computable_fields", "pass_fail_exit_criteria",
+            "not_computable_fields", "pass_fail_exit_criteria", "frozen_paths", "handoff_state",
         ],
         ".github/ISSUE_TEMPLATE/defect.yml": [
+            "project_item", "owner", "workstream", "agent_lane",
             "reproducible_behavior", "expected_behavior", "exact_sha", "environment",
             "reproduction_steps", "bounded_affected_surface", "evidence",
-            "prohibited_opportunistic_expansion",
+            "prohibited_opportunistic_expansion", "frozen_paths", "handoff_state",
         ],
     }
     for path, ids in required_template_ids.items():
-        for identifier in ids:
-            require(errors, f"id: {identifier}" in texts[path],
-                    f"{path} missing key: {identifier}")
+        validate_required_form_entries(path, ids, errors)
 
     pr = texts[".github/pull_request_template.md"]
+    metadata_match = re.match(r"\A```yaml\n(.*?)\n```", pr, flags=re.DOTALL)
+    require(errors, metadata_match is not None, "pull request template missing leading YAML metadata block")
+    metadata = parse_yaml_text(metadata_match.group(1), "pull request metadata", errors) if metadata_match else {}
+    required_metadata = [
+        "issue", "project_item", "agent", "lane", "base_sha", "head_sha", "workstream",
+        "dependency_state", "handoff_state", "evidence",
+    ]
+    for key in required_metadata:
+        require(errors, key in metadata, f"pull request metadata missing key: {key}")
+        occurrences = re.findall(
+            rf"(?m)^[\"']?{re.escape(key)}[\"']?\s*:", metadata_match.group(1)
+        ) if metadata_match else []
+        require(errors, len(occurrences) == 1, f"pull request metadata key must occur once: {key}")
     for key in (
-        "issue:", "agent:", "lane:", "base_sha:", "head_sha:", "workstream:",
-        "dependency_state:", "handoff_state:", "evidence:", "Exact test total",
-        "OBSERVED", "INFERRED", "Physical-Device Evidence Declaration",
+        "Exact test total", "OBSERVED", "INFERRED", "Physical-Device Evidence Declaration",
+        "Agent assistance used:", "Parent or superseded PR:", "Automatic merge is disabled",
     ):
         require(errors, key in pr, f"pull request template missing: {key}")
 
+    validate_sync_script(errors)
+
     lowered = combined.lower()
     for phrase in PROHIBITED_AUTHORIZATIONS:
-        require(errors, phrase not in lowered, f"prohibited scope authorization: {phrase}")
+        offending_lines = [
+            line for line in lowered.splitlines()
+            if phrase in line and not authorization_is_negated(line, phrase)
+        ]
+        require(errors, not offending_lines, f"prohibited scope authorization: {phrase}")
 
     if errors:
         print("COLLABORATION_COORDINATION=FAIL")

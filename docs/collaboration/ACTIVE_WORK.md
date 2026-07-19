@@ -4,7 +4,7 @@ This file is a repository-readable coordination surface for humans and coding ag
 
 Last updated: 2026-07-18
 
-> **Canonical coordination:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · [GitHub Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
+> **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow state:** [GitHub Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · **Repository snapshot and protocol:** this ledger · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
 ## Rules
 

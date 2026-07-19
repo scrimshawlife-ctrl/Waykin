@@ -1,6 +1,6 @@
 # GitHub Project Coordination
 
-[Waykin — Agent Execution](https://github.com/users/scrimshawlife-ctrl/projects/1) is Project #1. [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) is the canonical coordination authority. Repository product and architecture documents retain their precedence.
+[Waykin — Agent Execution](https://github.com/users/scrimshawlife-ctrl/projects/1) is Project #1 and the sole live workflow-state authority. [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) defines the coordination contract. This document and `ACTIVE_WORK.md` are repository-readable protocol and snapshot surfaces; repository product and architecture documents retain their precedence.
 
 ## Fields
 
@@ -13,8 +13,8 @@
 | Priority | P0 through P3 |
 | Risk | Low, Medium, or High |
 | Dependency | Resolved or unresolved issue/PR references, or `NONE` |
-| Base SHA | Exact starting `main` commit |
-| Head SHA | Current branch commit |
+| Base SHA | Exact starting `main` commit once claimed; blank while unclaimed |
+| Head SHA | Current branch or completed receipt commit; blank before a branch/build exists |
 | Handoff State | NONE, REQUESTED, READY, ACCEPTED, or REJECTED |
 | Evidence | NOT_STARTED, PARTIAL, PASS, FAIL, or NOT_COMPUTABLE |
 
@@ -81,4 +81,4 @@ In Project #1, manually create these views: **Execution Board** (board by Execut
 
 ## Drift Recovery
 
-Run `./scripts/sync_github_project.sh --check`. Review every reported mismatch and confirm Project #1 and Issue #47 before mutation. Run `--apply` to create missing fields, add missing initial items, and fill blank bootstrap values without overwriting populated live workflow state, deleting unrelated data, or blanking SHAs. Run `--check` again and attach its dated receipt to Issue #47. If select options drift, do not create a duplicate field: repair options manually in Project settings, then rerun check.
+Run `./scripts/sync_github_project.sh --check`. It reports missing bootstrap data, duplicate or foreign item identity, truncated API results, and schema drift without mutating Project #1. Populated values are live Project state, not bootstrap drift. Review every mismatch and confirm Project #1 and Issue #47 before mutation. Run `--apply` to create missing fields, add missing initial items, and fill blank bootstrap values without overwriting populated live workflow state, deleting unrelated data, or blanking SHAs. Schema and item-inventory drift fail closed before item mutation. Audit current workflow values directly in Project #1, then run `--check` again and attach its dated receipt to Issue #47. If select options drift, do not create a duplicate field: repair options manually in Project settings, then rerun check.

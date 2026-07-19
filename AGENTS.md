@@ -56,7 +56,7 @@ Report commands, results, changed files, assumptions, and unresolved evidence. D
 
 ## GitHub Project Coordination
 
-For issue-scoped work, read canonical coordination Issue #47 and verify the item in [Waykin — Agent Execution](https://github.com/users/scrimshawlife-ctrl/projects/1) before editing.
+For issue-scoped work, read canonical coordination [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) and verify the item in [Waykin — Agent Execution](https://github.com/users/scrimshawlife-ctrl/projects/1) before editing.
 
 - Claim `Ready` work before editing; record the agent, lane, branch, exact base SHA, intended paths, frozen paths, and dependency state.
 - Respect declared frozen paths and keep one implementation owner per issue. Review, test, and documentation work may overlap only when production paths do not.
