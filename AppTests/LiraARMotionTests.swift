@@ -1,0 +1,50 @@
+import RealityKit
+import WaykinCore
+import XCTest
+@testable import WaykinApp
+
+@MainActor
+final class LiraARMotionTests: XCTestCase {
+    func testBreathIsRestAtZeroElapsed() {
+        for state in CompanionPresentationState.allCases {
+            XCTAssertEqual(
+                LiraARMotion.coreBreathScale(elapsed: 0, state: state),
+                1,
+                accuracy: 0.0001,
+                "state \(state)"
+            )
+        }
+    }
+
+    func testBreathAndSwayAreBounded() {
+        let samples: [TimeInterval] = [0, 0.25, 0.5, 1, 2, 5, 10]
+        for state in CompanionPresentationState.allCases {
+            for t in samples {
+                let breath = LiraARMotion.coreBreathScale(elapsed: t, state: state)
+                XCTAssertGreaterThan(breath, 0.85, "breath \(state) t=\(t)")
+                XCTAssertLessThan(breath, 1.15, "breath \(state) t=\(t)")
+                let sway = LiraARMotion.filamentSwayRadians(elapsed: t, state: state)
+                XCTAssertGreaterThan(sway, -0.2, "sway \(state) t=\(t)")
+                XCTAssertLessThan(sway, 0.2, "sway \(state) t=\(t)")
+            }
+        }
+    }
+
+    func testNonFiniteElapsedTreatedAsZero() {
+        XCTAssertEqual(LiraARMotion.coreBreathScale(elapsed: .nan, state: .idle), 1, accuracy: 0.0001)
+        XCTAssertEqual(LiraARMotion.coreBreathScale(elapsed: -.infinity, state: .follow), 1, accuracy: 0.0001)
+        XCTAssertEqual(LiraARMotion.filamentSwayRadians(elapsed: .infinity, state: .alert), 0, accuracy: 0.0001)
+    }
+
+    func testRendererLocalMotionResetsOnClear() {
+        let registry = AREntityRegistry()
+        let renderer = ARWorldCommandRenderer(
+            registry: registry,
+            diagnostics: ARDiagnosticRecorder()
+        )
+        renderer.advanceLocalMotion(by: 1.5)
+        XCTAssertGreaterThan(renderer.localMotionElapsed, 1.0)
+        _ = renderer.clearSession()
+        XCTAssertEqual(renderer.localMotionElapsed, 0, accuracy: 0.0001)
+    }
+}

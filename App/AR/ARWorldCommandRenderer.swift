@@ -22,6 +22,8 @@ final class ARWorldCommandRenderer {
     private(set) var companionState: CompanionPresentationState = .idle
     private(set) var lastCompanionTransition: CompanionStateTransition?
     private var elapsedInCompanionState: TimeInterval = 0
+    /// Accumulated time for A2/A3 local loops (breath / sway). Reset on clear.
+    private(set) var localMotionElapsed: TimeInterval = 0
 
     /// Cosmetic Lira skin applied on next spawn.
     var companionSkin: LiraSkin {
@@ -164,8 +166,20 @@ final class ARWorldCommandRenderer {
         diagnostics.record(.sessionCleared)
         companionState = .idle
         elapsedInCompanionState = 0
+        localMotionElapsed = 0
         lastCompanionTransition = nil
         return .cleared
+    }
+
+    /// Advance A2 breath + A3 filament sway. Safe no-op without companion.
+    func advanceLocalMotion(by delta: TimeInterval) {
+        guard delta.isFinite, delta >= 0 else { return }
+        localMotionElapsed += delta
+        guard let anchor = registry.entity(for: Self.companionID),
+              let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
+            return
+        }
+        applyLocalMotion(to: companion, state: companionState, elapsed: localMotionElapsed)
     }
 
     @discardableResult
@@ -251,6 +265,25 @@ final class ARWorldCommandRenderer {
             indicator.model?.materials = [
                 SimpleMaterial(color: presentation.indicatorColor, isMetallic: false)
             ]
+        }
+        applyLocalMotion(to: entity, state: state, elapsed: localMotionElapsed)
+    }
+
+    private func applyLocalMotion(
+        to entity: Entity,
+        state: CompanionPresentationState,
+        elapsed: TimeInterval
+    ) {
+        if let core = entity.findEntity(named: "CoreGlow"), core.isEnabled {
+            let breath = LiraARMotion.coreBreathScale(elapsed: elapsed, state: state)
+            core.scale = SIMD3<Float>(repeating: breath)
+        }
+        if let halo = entity.findEntity(named: "CoreHalo"), halo.isEnabled {
+            let breath = LiraARMotion.coreBreathScale(elapsed: elapsed, state: state)
+            halo.scale = SIMD3<Float>(repeating: breath * 1.15)
+        }
+        if let filament = entity.findEntity(named: "Filament") {
+            filament.orientation = LiraARMotion.filamentOrientation(elapsed: elapsed, state: state)
         }
     }
 
