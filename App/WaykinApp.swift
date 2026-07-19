@@ -200,6 +200,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
         if shouldReset {
             _ = try? persistenceStore.resetDemoData()
+            UserDefaults.standard.removeObject(forKey: LiraSkin.storageKey)
+            UserDefaults.standard.removeObject(forKey: AppearancePreference.storageKey)
         }
 
         if let loaded = try? persistenceStore.loadCompanion() {
@@ -208,16 +210,20 @@ final class WaykinAppModel: CanonicalARCommandSource {
             self.companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
             _ = try? persistenceStore.saveCompanion(self.companion)
         }
-        if let raw = UserDefaults.standard.string(forKey: LiraSkin.storageKey),
-           let skin = LiraSkin(rawValue: raw) {
+        if shouldReset {
+            self.selectedLiraSkin = .dawn
+            self.appearancePreference = .system
+        } else if let raw = UserDefaults.standard.string(forKey: LiraSkin.storageKey),
+                  let skin = LiraSkin(rawValue: raw) {
             self.selectedLiraSkin = skin
         } else {
             self.selectedLiraSkin = .dawn
         }
-        if let raw = UserDefaults.standard.string(forKey: AppearancePreference.storageKey),
+        if !shouldReset,
+           let raw = UserDefaults.standard.string(forKey: AppearancePreference.storageKey),
            let appearance = AppearancePreference(rawValue: raw) {
             self.appearancePreference = appearance
-        } else {
+        } else if !shouldReset {
             self.appearancePreference = .system
         }
         persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
@@ -1098,6 +1104,8 @@ struct HomeView: View {
                             .accessibilityIdentifier("waykin.persistence.storePathHash")
                         Text(appModel.selectedLiraSkin.rawValue)
                             .accessibilityIdentifier("waykin.home.skin.selected")
+                        Text(appModel.appearancePreference.rawValue)
+                            .accessibilityIdentifier("waykin.home.appearance.selected")
                     }
                     .font(.caption2)
                     .foregroundStyle(theme.textTertiary)

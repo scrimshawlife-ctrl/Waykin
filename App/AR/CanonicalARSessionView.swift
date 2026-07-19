@@ -191,6 +191,10 @@ struct CanonicalARSessionView: View {
                     Text(runtime.lastResult)
                 }
                 .font(.caption.weight(.semibold))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(
+                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName)"
+                )
                 .accessibilityIdentifier("waykin.ar.canonical.status")
 
                 Spacer()
