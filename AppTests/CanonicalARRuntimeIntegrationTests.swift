@@ -195,6 +195,74 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
         XCTAssertEqual(threat.intensity, 0.7)
     }
 
+    func testLateSnapshotPreservesEventPresentationAndMatchesLiveUpdate() throws {
+        let cases: [(WorldEventKind, CompanionBehaviorState, PursuitState, String, Bool)] = [
+            (.pursuitBegins, .rest, .approaching, "alert", false),
+            (.pursuitIntensifies, .observe, .close, "alert", false),
+            (.bondMoment, .idle, .inactive, "celebrate", false),
+            (.companionMovesAhead, .lead, .inactive, "follow", true)
+        ]
+        let mapper = makeMapper()
+
+        for (kind, state, pursuitState, behavior, matchesBaseState) in cases {
+            var runtime = CompanionRuntime()
+            runtime.apply(command: .setBehavior(state.rawValue))
+            runtime.apply(command: .setRelativeDistance(1.25))
+            let event = makeEvent(kind, intensity: 0.8)
+            let originalState = runtime.state
+            let originalDistance = runtime.relativeDistance
+
+            let snapshotPresentation = try XCTUnwrap(companionPresentation(in: mapper.snapshot(
+                companionRuntime: runtime,
+                pursuitState: pursuitState,
+                lastEvent: event
+            )))
+            let livePresentation = try XCTUnwrap(companionPresentation(
+                in: mapper.update(companionRuntime: runtime, event: event)
+            ))
+
+            XCTAssertEqual(snapshotPresentation, livePresentation, "event: \(kind.rawValue)")
+            XCTAssertEqual(snapshotPresentation.behavior, behavior, "event: \(kind.rawValue)")
+            if matchesBaseState {
+                XCTAssertEqual(
+                    snapshotPresentation,
+                    try XCTUnwrap(companionPresentation(in: mapper.spawn(companionRuntime: runtime)))
+                )
+            }
+            XCTAssertEqual(runtime.state, originalState)
+            XCTAssertEqual(runtime.relativeDistance, originalDistance)
+        }
+    }
+
+    func testSnapshotEventOverlayKeepsDeterministicRestorationOrder() throws {
+        let mapper = makeMapper()
+        var runtime = CompanionRuntime()
+        runtime.apply(command: .setBehavior(CompanionBehaviorState.rest.rawValue))
+        let event = makeEvent(.pursuitBegins, intensity: 0.7)
+
+        let first = mapper.snapshot(
+            companionRuntime: runtime,
+            pursuitState: .approaching,
+            lastEvent: event
+        )
+        let second = mapper.snapshot(
+            companionRuntime: runtime,
+            pursuitState: .approaching,
+            lastEvent: event
+        )
+
+        XCTAssertEqual(first, second)
+        XCTAssertEqual(first.count, 2)
+        guard case .spawnCompanion(let companion) = first[0],
+              case .spawnThreat(let threat) = first[1] else {
+            return XCTFail("Expected companion then active threat")
+        }
+        XCTAssertEqual(companion.behavior, "alert")
+        XCTAssertEqual(threat.id, CanonicalARWorldCommandMapper.threatID)
+        XCTAssertEqual(threat.intensity, 0.7)
+        XCTAssertEqual(runtime.state, .rest)
+    }
+
     func testLateSnapshotKeepsNoticedAsDiscoveryAndRejectsUnrelatedThreatMetadata() throws {
         let mapper = makeMapper()
         var runtime = CompanionRuntime()

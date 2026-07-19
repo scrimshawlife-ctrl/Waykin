@@ -19,7 +19,9 @@ struct CanonicalARWorldCommandMapper {
         pursuitState: PursuitState,
         lastEvent: WorldEvent?
     ) -> [ARWorldCommand] {
-        var commands = spawn(companionRuntime: companionRuntime)
+        var commands: [ARWorldCommand] = [
+            .spawnCompanion(companionPresentation(for: companionRuntime, event: lastEvent))
+        ]
         switch pursuitState {
         case .noticed:
             commands.append(.spawnDiscovery(discoveryPresentation(kind: WorldEventKind.distantPresence.rawValue)))
