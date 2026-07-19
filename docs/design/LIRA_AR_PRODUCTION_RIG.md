@@ -2,9 +2,9 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
-version: 0.1
+version: 0.2
 status: PROCEDURAL_MID_SHIPPED
-usdz: OPTIONAL_DROP_IN
+usdz: ASYNC_LOAD_WIRED
 direction: spectral_living_familiar
 ```
 
@@ -14,8 +14,10 @@ direction: spectral_living_familiar
 | ----- | -------------- | ------ |
 | Session 2D | Spectral still matrix 7×3 | DIRECTION_ACCEPTED |
 | AR mid-LOD | Procedural Living Familiar (`CompanionEntityFactory`) | **Shipped** |
-| AR USDZ | Artist drop-in `Lira_AR_Base.usdz` | Slot ready; not required |
+| AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
+| AR USDZ asset | Artist drop-in `App/Resources/Companion/Lira/Lira_AR_Base.usdz` | Optional package |
 | Reference USDZ | `docs/assets/companion/ar/Lira_AR_Base.usdz` | Sketch / proportions |
+| Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Draft |
 
 ## Anchors (required)
 
@@ -31,13 +33,15 @@ Skins Dawn / Veil / Rupture change **materials only**.
 ## Runtime
 
 ```text
-CompanionEntityFactory.makeLira()
-  → procedural Living Familiar mid-LOD (default)
-LiraARAssetCatalog.hasPackagedUSDZ
-  → true when App/Resources/Companion/Lira/Lira_AR_Base.usdz is packaged
+CanonicalARSessionRuntime.attach
+  → Task { await LiraARAssetLoader.preloadFromBundle() }
+ARWorldCommandRenderer spawn
+  → assetLoader.makeLira()
+       ├─ clone preloaded USDZ if hierarchy valid + apply skin materials
+       └─ else CompanionEntityFactory procedural mid-LOD
 ```
 
-Async USDZ load + material remap is a follow-up once a sculpted mesh exists; hierarchy names must match.
+Invalid or missing USDZ never blocks spawn — procedural fallback is permanent safety net.
 
 ## Drop-in steps (artist)
 

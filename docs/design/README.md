@@ -19,7 +19,8 @@ Visual system imports and production follow-ons for the app repository.
 | [SIMULATOR_PREFLIGHT.md](SIMULATOR_PREFLIGHT.md) | Sim-only preflight |
 | [SIM_CHECKLIST_AUTOMATION.md](SIM_CHECKLIST_AUTOMATION.md) | Manual S1–S8 → automated tests |
 | [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md) | Spectral Lira direction accepted |
-| [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ drop-in |
+| [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ async load |
+| [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Session + AR animation draft plan |
 | [receipts/](receipts/) | Filled outdoor / sim receipts |
 
 ## Recommended order

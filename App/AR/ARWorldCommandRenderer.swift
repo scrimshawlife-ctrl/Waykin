@@ -16,7 +16,7 @@ final class ARWorldCommandRenderer {
 
     private let registry: AREntityRegistry
     private let placementResolver: ARPlacementResolver
-    private var companionFactory: CompanionEntityFactory
+    private let assetLoader: LiraARAssetLoader
     private let diagnostics: ARDiagnosticRecorder
 
     private(set) var companionState: CompanionPresentationState = .idle
@@ -25,26 +25,39 @@ final class ARWorldCommandRenderer {
 
     /// Cosmetic Lira skin applied on next spawn.
     var companionSkin: LiraSkin {
-        get { companionFactory.skin }
-        set { companionFactory.skin = newValue }
+        get { assetLoader.skin }
+        set { assetLoader.skin = newValue }
     }
+
+    /// Runtime LOD source (procedural vs preloaded USDZ).
+    var companionLODDescription: String { assetLoader.activeLODDescription }
 
     init(
         registry: AREntityRegistry,
         diagnostics: ARDiagnosticRecorder,
-        companionFactory: CompanionEntityFactory? = nil
+        companionFactory: CompanionEntityFactory? = nil,
+        assetLoader: LiraARAssetLoader? = nil
     ) {
         self.registry = registry
         self.placementResolver = ARPlacementResolver(registry: registry)
         self.diagnostics = diagnostics
-        self.companionFactory = companionFactory ?? CompanionEntityFactory()
+        if let assetLoader {
+            self.assetLoader = assetLoader
+            if let companionFactory {
+                self.assetLoader.skin = companionFactory.skin
+            }
+        } else {
+            let loader = LiraARAssetLoader()
+            loader.skin = companionFactory?.skin ?? .dawn
+            self.assetLoader = loader
+        }
     }
 
     func render(_ command: ARWorldCommand, in arView: ARView) -> ARCommandResult {
         switch command {
         case .spawnCompanion(let presentation):
             diagnostics.record(.placementAttempted, detail: "companion")
-            let entity = companionFactory.makeLira()
+            let entity = assetLoader.makeLira()
             let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
                 ? elapsedInCompanionState
                 : 0

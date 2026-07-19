@@ -29,9 +29,35 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertNotNil(entity.findEntity(named: "CoreGlow"))
         XCTAssertNotNil(entity.findEntity(named: "Filament"))
         XCTAssertEqual(
-            LiraARAssetCatalog.activeARLODDescription,
+            LiraARAssetCatalog.packagedLODHint,
             "procedural_living_familiar_mid"
         )
+    }
+
+    func testAssetLoaderClonesInjectedTemplateAndAppliesSkin() {
+        let loader = LiraARAssetLoader()
+        let template = CompanionEntityFactory(skin: .dawn).makeLira()
+        loader.installTemplateForTesting(template, label: "fixture.usdz")
+        XCTAssertEqual(loader.source, .usdz("fixture.usdz"))
+        XCTAssertEqual(loader.activeLODDescription, "artist_usdz:fixture.usdz")
+
+        loader.skin = .veil
+        let first = loader.makeLira()
+        let second = loader.makeLira()
+        XCTAssertEqual(first.name, CompanionEntityFactory.rootName)
+        XCTAssertEqual(second.name, CompanionEntityFactory.rootName)
+        XCTAssertFalse(first === second)
+        for name in CompanionEntityFactory.requiredNodeNames {
+            XCTAssertNotNil(first.findEntity(named: name), "clone missing \(name)")
+        }
+    }
+
+    func testAssetLoaderFallsBackWhenNoBundleUSDZ() async {
+        let loader = LiraARAssetLoader()
+        await loader.preloadFromBundle()
+        // No packaged artist mesh in app target yet → procedural.
+        XCTAssertEqual(loader.source, .procedural)
+        XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(loader.makeLira()))
     }
 
     func testFactoryProducesIndependentEntities() {
