@@ -20,7 +20,6 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #52 / branch `feat/52-echo-icons-brand` — Echo icons + Bond Filament | design-agent | `feat/52-echo-icons-brand` | `App/Theme/**`, `App/WaykinApp.swift`, `App/CompanionPresenceView.swift`, `AppTests/WKIconsTests.swift`, `docs/assets/brand/**`, `docs/design/**`, `docs/collaboration/ACTIVE_WORK.md` | In progress | Depends on #50 merged |
 | Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
 | Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Merged on main | Reconciled with `main@16af4d2` |
 
@@ -37,6 +36,7 @@ Last updated: 2026-07-19
 | Issue #35 — living-companion presentation | Complete | PR #40 merged as `4c645395`; Issue #35 closed completed |
 | Issue #42 — canonical runtime AR integration | Complete | PR #45 merged as `16af4d2`; Issue #42 closed completed |
 | Issue #50 — Echo theme tokens | Complete | PR #51 merged as `c5f97e4` |
+| Issue #52 — Echo icons + Bond Filament | Complete | PR #53 merged as `54582c4` |
 
 ## Preservation Boundary
 
