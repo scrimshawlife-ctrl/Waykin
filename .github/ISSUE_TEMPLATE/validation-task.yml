@@ -1,0 +1,60 @@
+name: Validation task
+description: Bounded validation against an exact implementation
+title: "[validation]: "
+body:
+  - type: input
+    id: project_item
+    attributes: {label: Project item URL, description: "Use INTAKE_PENDING when the card will be created after issue submission."}
+    validations: {required: true}
+  - type: input
+    id: owner
+    attributes: {label: Owner or agent identity}
+    validations: {required: true}
+  - type: input
+    id: workstream
+    attributes: {label: Workstream}
+    validations: {required: true}
+  - type: input
+    id: agent_lane
+    attributes: {label: Agent lane, description: "TEST or DEVICE"}
+    validations: {required: true}
+  - type: input
+    id: implementation_dependency
+    attributes: {label: Implementation dependency}
+    validations: {required: true}
+  - type: input
+    id: exact_build_or_sha
+    attributes: {label: Exact build or SHA}
+    validations: {required: true}
+  - type: textarea
+    id: environment
+    attributes: {label: Environment}
+    validations: {required: true}
+  - type: textarea
+    id: protocol_scope
+    attributes: {label: Protocol scope}
+    validations: {required: true}
+  - type: textarea
+    id: observed_evidence
+    attributes: {label: Observed evidence}
+    validations: {required: true}
+  - type: textarea
+    id: inferred_evidence
+    attributes: {label: Inferred evidence}
+    validations: {required: true}
+  - type: textarea
+    id: not_computable_fields
+    attributes: {label: NOT_COMPUTABLE fields}
+    validations: {required: true}
+  - type: textarea
+    id: pass_fail_exit_criteria
+    attributes: {label: Pass/fail exit criteria}
+    validations: {required: true}
+  - type: textarea
+    id: frozen_paths
+    attributes: {label: Frozen paths}
+    validations: {required: true}
+  - type: input
+    id: handoff_state
+    attributes: {label: Handoff state, description: "NONE, REQUESTED, READY, ACCEPTED, or REJECTED"}
+    validations: {required: true}

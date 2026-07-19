@@ -1,39 +1,81 @@
-## Summary
+```yaml
+issue:
+project_item:
+agent:
+lane:
+base_sha:
+head_sha:
+workstream:
+dependency_state:
+handoff_state:
+evidence:
+```
 
-## Issue / Milestone
+## Linked Issue and Bounded Objective
+
 Closes #
 
 ## Authority Context
+
 - Canonical documents consulted:
 - Future/reference documents consulted:
 - Architecture decision added or changed: yes/no
 
-## Scope Boundary
-### Changed
+## Files Changed
+
 -
 
-### Explicitly unchanged
--
+## Frozen Paths Acknowledgement
 
-## Agent Assistance
-- Tool/model:
-- Task packet or prompt reference:
-- Human-authored decisions:
+- [ ] Declared frozen paths were not changed.
 
-## Validation Evidence
-| Check | Result | Evidence class |
+## Acceptance Criteria
+
+- [ ]
+
+## Validation
+
+| Command | Result | Exact test total |
 |---|---|---|
-| `make build` | | OBSERVED / NOT_RUN |
-| `make test` | | OBSERVED / NOT_RUN |
-| `make validate` | | OBSERVED / NOT_RUN |
-| `make validate-simulator` | | OBSERVED / NOT_APPLICABLE |
-| Physical-device protocol | | OBSERVED / NOT_COMPUTABLE / NOT_APPLICABLE |
-| `git diff --check` | | OBSERVED / NOT_RUN |
+| `make build` | | |
+| `make test` | | |
+| `make validate` | | |
+| `make validate-simulator` (when simulator-visible behavior changes) | | |
+| `git diff --check` | | N/A |
 
-## Risk and Rollback
+## Evidence
 
-## Documentation Updated
+### OBSERVED results
 
-## Stacked Dependency
-- Parent PR:
-- Supersedes:
+-
+
+### INFERRED results
+
+-
+
+### Blockers
+
+- NONE
+
+## Scope Guard
+
+- [ ] No unrelated product behavior, architecture authority, gameplay semantics, or features were added.
+
+## Physical-Device Evidence Declaration
+
+Physical GPS, audio, AR tracking, interruption recovery, battery, thermal, and outdoor usability evidence: `OBSERVED` / `NOT_COMPUTABLE` / `NOT_APPLICABLE`.
+
+## Risk, Rollback, and Documentation
+
+- Risk:
+- Rollback:
+- Documentation updated:
+
+## Agent and Stack Context
+
+- Agent assistance used:
+- Parent or superseded PR: NONE
+
+## Merge Control
+
+- [ ] Automatic merge is disabled; merge requires the repository's formal approval and validation gates.

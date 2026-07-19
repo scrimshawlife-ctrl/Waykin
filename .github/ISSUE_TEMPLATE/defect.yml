@@ -1,0 +1,63 @@
+name: Bounded defect
+description: Reproducible defect discovered during approved work
+title: "[defect]: "
+body:
+  - type: input
+    id: project_item
+    attributes: {label: Project item URL, description: "Use INTAKE_PENDING when the card will be created after issue submission."}
+    validations: {required: true}
+  - type: input
+    id: owner
+    attributes: {label: Owner or agent identity}
+    validations: {required: true}
+  - type: input
+    id: workstream
+    attributes: {label: Workstream}
+    validations: {required: true}
+  - type: input
+    id: agent_lane
+    attributes: {label: Agent lane}
+    validations: {required: true}
+  - type: textarea
+    id: reproducible_behavior
+    attributes: {label: Reproducible behavior}
+    validations: {required: true}
+  - type: textarea
+    id: expected_behavior
+    attributes: {label: Expected behavior}
+    validations: {required: true}
+  - type: input
+    id: exact_sha
+    attributes: {label: Exact SHA}
+    validations: {required: true}
+  - type: textarea
+    id: environment
+    attributes: {label: Environment}
+    validations: {required: true}
+  - type: textarea
+    id: reproduction_steps
+    attributes: {label: Reproduction steps}
+    validations: {required: true}
+  - type: textarea
+    id: bounded_affected_surface
+    attributes: {label: Bounded affected surface}
+    validations: {required: true}
+  - type: textarea
+    id: evidence
+    attributes: {label: Evidence}
+    validations: {required: true}
+  - type: checkboxes
+    id: prohibited_opportunistic_expansion
+    attributes:
+      label: Scope guard
+      options:
+        - label: I will not use this defect to authorize opportunistic expansion.
+          required: true
+  - type: textarea
+    id: frozen_paths
+    attributes: {label: Frozen paths}
+    validations: {required: true}
+  - type: input
+    id: handoff_state
+    attributes: {label: Handoff state, description: "NONE, REQUESTED, READY, ACCEPTED, or REJECTED"}
+    validations: {required: true}

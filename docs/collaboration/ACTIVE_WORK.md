@@ -4,6 +4,8 @@ This file is a repository-readable coordination surface for humans and coding ag
 
 Last updated: 2026-07-18
 
+> **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow state:** [GitHub Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · **Repository snapshot and protocol:** this ledger · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
+
 ## Rules
 
 - One active owner per issue.
@@ -18,37 +20,25 @@ Last updated: 2026-07-18
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| PR #31 — reconciled AR baseline | Daniel | `agent/ar-reconciliation-main` | Reconciled AR baseline, focused tests, `project.yml`, AR docs | Merged to main at 5f42981; native build repaired and validated (PRs #31/#37/#32) | — |
-| Issue #38 — preserve AR-3 work and isolate PR #31 repair | Daniel | local `wip/ar3-local-preservation` (846c42d); clean worktree `Waykin-pr31-repair` | Preservation: current mixed AR-3 set. Repair: minimum files proven by compiler diagnostic | Completed — recovery topology executed; AR-3 preserved on wip/ar3-local-preservation (do not fold into main per ownership) | — |
-| PR #34 — collaborator ownership | Daniel + `prabu-openclaw` | `chore/28-collaborator-ownership` | `.github/CODEOWNERS` | Ready / awaiting Prabu review | Issue #28 |
-| Issue #29 — CI and structural guards | `prabu-openclaw` for first bounded task | `chore/29-core-framework-isolation` when started | scripts, Makefile, focused tests, CI docs | Assigned / not yet evidenced | No collision with PR #31 |
-| Issue #41 — physical AR validation | Prabu | Evidence-only from `main@4c645395` | Physical protocol and evidence receipt only; no code changes | Ready for physical execution | PR #40 merged |
-| Issue #42 — canonical runtime AR integration | Daniel + Codex | `codex/issue-42-runtime-integration` from `main@4c645395` | App-side command mapping, existing renderer, focused app tests, directly affected collaboration docs | In progress | PR #40 merged; Issue #41 proceeds independently |
+| Issue #46 — deterministic AR command replay and soak validation | Unassigned | Not started; branch must begin from current `main` | `AppTests/**`, focused test fixtures, directly affected validation docs | Ready | PR #45 merged as `16af4d2` |
+| Issue #47 / PR #48 — GitHub Project coordination | Daniel + Codex | `agent/github-project-coordination` | `.github/**`, `AGENTS.md`, `Makefile`, `docs/collaboration/**`, `scripts/**` | Review | Reconciled with `main@16af4d2` |
 
-## Blocked or Pending
+## Blocked
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Issue #27 — AR reconciliation closure | Completed via PR #31 merge | — |
-| Issue #28 — collaborator onboarding closure | First collaborator-authored branch and draft PR not yet supplied | Prabu reviews PR #34 and completes the Issue #29 bounded task |
-| Physical AR claims | Requires direct iPhone evidence | Execute the relevant physical-device protocol and attach receipts (NOT_COMPUTABLE in simulator) |
+| Issue #41 — physical AR validation | Physical device access is unavailable | Execute the evidence-only protocol on the named device and exact build; all unobserved fields remain `NOT_COMPUTABLE` |
 
-## Handoff Note (post-Issue #38)
+## Completed
 
-Recovery topology (Issue #38) complete. Issue #35 is in progress from main @ 5f41eeb176d8c4dba4f77e26cbea8399a87624f7. Preservation branch `wip/ar3-local-preservation` remains isolated per rules. All claims OBSERVED from git history + validation receipts only.
+| Issue | Outcome | Evidence |
+|---|---|---|
+| Issue #35 — living-companion presentation | Complete | PR #40 merged as `4c645395`; Issue #35 closed completed |
+| Issue #42 — canonical runtime AR integration | Complete | PR #45 merged as `16af4d2`; Issue #42 closed completed |
 
-## Exclusive Ownership Boundaries
+## Preservation Boundary
 
-### Daniel — AR recovery
-
-- Owns the local AR-3 preservation branch.
-- Owns the clean PR #31 repair worktree.
-- Must not fold the preserved AR-3 validation set into PR #31.
-
-### `prabu-openclaw` — infrastructure onboarding task
-
-- May work only on the Issue #29 framework-isolation guard and its declared files.
-- Must not modify `App/AR/**`, `ARLab/**`, `AppTests/AR*`, `project.yml`, `ARCHITECTURE.md`, or AR validation documents while Issue #38 is active.
+The local `wip/ar3-local-preservation` branch remains an isolated preservation surface. It is not merge authority for Issue #46 or any later work.
 
 ## Handoff Entry Template
 
