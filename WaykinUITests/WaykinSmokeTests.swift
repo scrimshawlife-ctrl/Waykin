@@ -337,6 +337,12 @@ final class WaykinSmokeTests: XCTestCase {
         XCTAssertTrue(begin.waitForExistence(timeout: 5))
         begin.tap()
 
+        // Indoor smoke: session presence remains reachable with pose a11y after open.
+        let presence = app.descendants(matching: .any).matching(identifier: "waykin.session.presence").firstMatch
+        XCTAssertTrue(presence.waitForExistence(timeout: 5))
+        XCTAssertEqual(presence.label, "Lira presence")
+        XCTAssertFalse((presence.value as? String ?? "").isEmpty)
+
         let openAR = app.buttons.matching(identifier: "waykin.session.openARCompanion").firstMatch
         XCTAssertTrue(openAR.waitForExistence(timeout: 5))
         openAR.tap()
@@ -349,6 +355,14 @@ final class WaykinSmokeTests: XCTestCase {
                 || statusText.localizedCaseInsensitiveContains("Veil"),
             "Expected AR form Veil in status, got \(statusText)"
         )
+        // LOD diagnostic may be procedural mid until artist USDZ is packaged.
+        let lod = app.staticTexts.matching(identifier: "waykin.ar.canonical.lod").firstMatch
+        if lod.waitForExistence(timeout: 2) {
+            XCTAssertTrue(
+                lod.label.contains("procedural") || lod.label.contains("usdz") || lod.label.contains("LOD"),
+                "Unexpected LOD label: \(lod.label)"
+            )
+        }
     }
 
     private func runBeginWalk() {
