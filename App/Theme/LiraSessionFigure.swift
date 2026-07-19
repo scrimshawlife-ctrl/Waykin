@@ -3,7 +3,7 @@ import UIKit
 
 /// Session-mid production puppet for Lira.
 /// Structured multi-pose figure with anchors A1 head, A2 chest bond, A3 filament.
-/// Dawn materials via Echo tokens. Not a final painted hero still.
+/// Spectral stills with pose/skin crossfade (A1). Canvas fallback if asset missing.
 struct LiraSessionFigure: View {
     let presentation: CompanionPresencePresentation
     /// When nil, uses environment `liraSkin` (default Dawn).
@@ -12,27 +12,38 @@ struct LiraSessionFigure: View {
     @Environment(\.liraSkin) private var environmentSkin
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
+    /// Currently shown still asset name (after crossfade settles on incoming).
+    @State private var displayedStillName: String?
+    /// Outgoing still during crossfade.
+    @State private var previousStillName: String?
+    /// 0 = fully previous, 1 = fully displayed.
+    @State private var stillBlend: Double = 1
 
     private var pose: LiraSessionPose { LiraSessionPose.resolve(from: presentation) }
     private var skin: LiraSkin { skinOverride ?? environmentSkin }
+
+    /// Resolved catalog still for current pose×skin when loadable.
+    private var targetStillName: String? {
+        guard let name = LiraStillCatalog.imageName(pose: pose, skin: skin),
+              UIImage(named: name) != nil else { return nil }
+        return name
+    }
+
+    private var stillIdentity: String {
+        targetStillName ?? "canvas:\(pose.rawValue):\(skin.rawValue)"
+    }
 
     var body: some View {
         ZStack {
             pressureRing
             bondOrbit
-            if let stillName = LiraStillCatalog.imageName(pose: pose, skin: skin),
-               UIImage(named: stillName) != nil {
-                Image(stillName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 140, height: 120)
-                    .accessibilityHidden(true)
-            } else {
-                figure
-            }
+            stillOrFigure
         }
         .frame(height: 190)
-        .scaleEffect(presentation.presenceScale * (pulse && !reduceMotion ? 1.03 : 1))
+        .scaleEffect(
+            presentation.presenceScale
+                * (pulse && LiraSessionMotion.allowsIdlePulse(reduceMotion: reduceMotion) ? 1.03 : 1)
+        )
         .opacity(presentation.presenceOpacity)
         .offset(y: presentation.verticalOffset)
         .accessibilityElement(children: .ignore)
@@ -40,9 +51,71 @@ struct LiraSessionFigure: View {
         .accessibilityValue(pose.accessibilityDescription)
         .accessibilitySortPriority(5)
         .accessibilityIdentifier("waykin.session.presence")
-        .onAppear(perform: runPulse)
+        .onAppear {
+            displayedStillName = targetStillName
+            previousStillName = nil
+            stillBlend = 1
+            runPulse()
+        }
+        .onChange(of: stillIdentity) { _, _ in
+            transitionStill(to: targetStillName)
+        }
         .onChange(of: presentation.animationKey) { _, _ in runPulse() }
-        .onChange(of: reduceMotion) { _, _ in runPulse() }
+        .onChange(of: reduceMotion) { _, _ in
+            if reduceMotion {
+                // Snap any in-flight crossfade and kill pulse loops.
+                previousStillName = nil
+                stillBlend = 1
+                pulse = false
+            }
+            runPulse()
+        }
+    }
+
+    @ViewBuilder
+    private var stillOrFigure: some View {
+        if displayedStillName != nil || previousStillName != nil {
+            ZStack {
+                if let previousStillName, UIImage(named: previousStillName) != nil {
+                    stillImage(previousStillName)
+                        .opacity(1 - stillBlend)
+                }
+                if let displayedStillName, UIImage(named: displayedStillName) != nil {
+                    stillImage(displayedStillName)
+                        .opacity(stillBlend)
+                }
+            }
+            .accessibilityHidden(true)
+        } else {
+            figure
+        }
+    }
+
+    private func stillImage(_ name: String) -> some View {
+        Image(name)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 140, height: 120)
+    }
+
+    private func transitionStill(to newName: String?) {
+        let duration = LiraSessionMotion.poseCrossfadeDuration(reduceMotion: reduceMotion)
+        if reduceMotion || displayedStillName == nil || displayedStillName == newName {
+            var transaction = Transaction()
+            transaction.disablesAnimations = reduceMotion
+            withTransaction(transaction) {
+                previousStillName = nil
+                displayedStillName = newName
+                stillBlend = 1
+            }
+            return
+        }
+        previousStillName = displayedStillName
+        displayedStillName = newName
+        stillBlend = 0
+        withAnimation(.easeInOut(duration: duration)) {
+            stillBlend = 1
+        }
     }
 
     private var pressureRing: some View {
@@ -235,7 +308,9 @@ struct LiraSessionFigure: View {
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { pulse = false }
-        guard let duration = presentation.animationDuration(reduceMotion: reduceMotion) else { return }
+        guard LiraSessionMotion.allowsIdlePulse(reduceMotion: reduceMotion) else { return }
+        guard let duration = presentation.animationDuration(reduceMotion: reduceMotion)
+                ?? LiraSessionMotion.idlePulseDuration(reduceMotion: reduceMotion) else { return }
         withAnimation(.easeInOut(duration: duration).repeatCount(2, autoreverses: true)) {
             pulse = true
         }

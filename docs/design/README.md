@@ -21,6 +21,7 @@ Visual system imports and production follow-ons for the app repository.
 | [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md) | Spectral Lira direction accepted |
 | [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ async load |
 | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Session + AR animation draft plan |
+| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | Ordered backlog + this-iteration scope |
 | [receipts/](receipts/) | Filled outdoor / sim receipts |
 
 ## Recommended order
@@ -28,6 +29,8 @@ Visual system imports and production follow-ons for the app repository.
 1. Simulator preflight — **automated**
 2. Sim checklist S1–S8 — **automated**
 3. Spectral art direction — **DIRECTION_ACCEPTED**
-4. AR mid-LOD Living Familiar — **procedural shipped**; USDZ slot ready
-5. Outdoor walk + receipt — **deferred** (device required)
-6. Optional: sculpted `Lira_AR_Base.usdz` artist mesh
+4. AR mid-LOD + USDZ load — **shipped**
+5. **A1** session still crossfade — **this iteration**
+6. A2–A4 AR motion (breath / echo / coalesce)
+7. Outdoor walk + receipt — **deferred** (device required)
+8. Optional: sculpted `Lira_AR_Base.usdz` + AnimationLibrary

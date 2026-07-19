@@ -153,8 +153,8 @@ Until U1, **do not block** on skeletal; drive procedural locals.
 
 | Phase | Deliverable | Depends |
 | ----- | ----------- | ------- |
-| **A0** | This plan + USDZ load path | Done in same train as loader |
-| **A1** | Session still crossfade + Reduce Motion contract | Sign-off stills |
+| **A0** | This plan + USDZ load path | **Done** (#81) |
+| **A1** | Session still crossfade + Reduce Motion contract | **Done** (`LiraSessionMotion` + figure blend) |
 | **A2** | AR A2 breath + A3 sway (procedural) | Mid-LOD factory |
 | **A3** | Hunter echo (AR + session) | A1–A2 |
 | **A4** | Spawn coalesce + pose easing | A1–A2 |
