@@ -34,6 +34,7 @@ Semantic **path progress** along an active Companion Walk:
 - `LiraSessionPose` uses integrity pressure when pursuit is inactive
 - Session phrases surface path relation when pursuit is quiet
 - Field-test receipts record privacy-safe path summary fields (schema 3)
+- Session summary shows human path line via `WalkPathCopy` / `SessionSummary.pathPresentationLine`
 
 ## Privacy
 

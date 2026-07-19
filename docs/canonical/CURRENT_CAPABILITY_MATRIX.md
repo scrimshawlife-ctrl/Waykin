@@ -14,8 +14,8 @@
 | AR semantic contracts | Implemented | Binding | Keep platform-neutral |
 | AR app adapter (MVP) | **Implemented (frozen)** | Binding | Maintenance/defects only — see `AR_MVP_FREEZE.md` |
 | Real-walk-to-AR commands | **Implemented** | Binding | Documented mapping; device tracking quality still NOT_COMPUTABLE |
-| Path progress (semantic) | **Implemented (v1.1)** | Binding | Phrases + receipts + real-walk tests; not navigation-grade |
-| HealthKit enrichment | **Implemented (v1.1)** | Binding | Fake provider + energy hint + resume refresh; Demo never blocked |
+| Path progress (semantic) | **Implemented (v1.1+summary)** | Binding | Phrases + receipts + summary line; not navigation-grade |
+| HealthKit enrichment | **Implemented (v1.1+energy)** | Binding | Fake + energy hint → experience + summary cadence; Demo never blocked |
 | Outdoor physical AR QA | Partial | Near term | Device evidence only (non-blocking) |
 | AI Director | Deferred | Reference only | Do not implement |
 | Experience Pack runtime | Deferred | Reference only | Preserve seam only |

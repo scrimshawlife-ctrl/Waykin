@@ -84,6 +84,9 @@ public struct CompanionWalkExperience: WaykinExperience {
         let priorWorld = walkState.worldState
         let priorDistance = priorWorld?.sessionDistanceMeters ?? 0
         let pressure = Self.nextPressure(previous: priorWorld?.pressure ?? 0, movement: movement, activeTime: walkState.movementSeconds)
+        let speedEnergy = min(1, max(0, movement.speed) / 2.2)
+        // Optional App-layer activity energy (default 0) never lowers speed-derived energy.
+        let energy = max(speedEnergy, context.activityEnergyHint)
         var worldState = WorldState(
             timeContext: timeContext,
             movementState: movement.isMoving ? .moving : .paused,
@@ -92,7 +95,7 @@ public struct CompanionWalkExperience: WaykinExperience {
             activeTime: walkState.movementSeconds,
             bondLevel: context.bondLevel,
             familiarity: min(1, (priorDistance + delta) / 1800),
-            energy: min(1, max(0, movement.speed) / 2.2),
+            energy: energy,
             pressure: pressure,
             lastEventAt: walkState.lastEvent?.occurredAt
         )

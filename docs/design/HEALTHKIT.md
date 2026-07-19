@@ -38,6 +38,8 @@ Optional read of **steps** (last hour) and **walking+running distance** (today) 
 ## Presentation
 
 - `energyHint` (0…0.2) lightly lifts presence opacity and can color path-on phrases
+- Real walk passes `activityEnergyHint` into `ExperienceContext` (soft world-energy floor)
+- Session summary may show a coarse cadence line (no step totals)
 - Never required for Demo Mode or walk completion
 
 ## Privacy

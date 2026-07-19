@@ -405,19 +405,28 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
         var updated = companion
         updated.bondLevel += result.bondDelta
-        let mem = SessionMemory(sessionID: summary.sessionID, text: result.memoryText)
+        let surfacedMemoryText = WalkPathCopy.appendingMemorySuffix(
+            to: result.memoryText,
+            relation: pathProgress.relation
+        )
+        let surfacedSummary = summary.withWalkSurfacing(
+            path: pathProgress,
+            enrichment: activityEnrichment,
+            memoryText: surfacedMemoryText
+        )
+        let mem = SessionMemory(sessionID: surfacedSummary.sessionID, text: surfacedMemoryText)
 
         do {
             let receipt = try persistenceStore.saveMemory(mem)
             try persistenceStore.saveCompanion(updated)
             updated.memories.append(mem)
             companion = updated
-            lastSummary = summary
+            lastSummary = surfacedSummary
             lastSavedMemoryID = receipt.recordID.uuidString
             demoMessage = "Session ended: \(result.outcome). Bond +\(result.bondDelta)"
             persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
             refreshRecommendation()
-            path.append(AppRoute.summary(summary.id))
+            path.append(AppRoute.summary(surfacedSummary.id))
             finishFieldTestReceipt(
                 session: session,
                 outcome: didCompleteScenario ? .completed : .userEnded,
@@ -599,8 +608,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
             CompanionWalkExperience().finish(state: $0, session: ended)
         }
         let physicalBondDelta = 1
-        let memoryText = experienceResult?.memoryText
+        let baseMemoryText = experienceResult?.memoryText
             ?? "Lira stayed close during a quiet \(Int(ended.distanceMeters))m walk."
+        let memoryText = WalkPathCopy.appendingMemorySuffix(
+            to: baseMemoryText,
+            relation: pathProgress.relation
+        )
         var updatedCompanion = companion
         updatedCompanion.bondLevel += physicalBondDelta
 
@@ -610,18 +623,23 @@ final class WaykinAppModel: CanonicalARCommandSource {
         realExperienceContext = nil
 
         let summary = SessionSummary(
-                id: UUID(),
-                sessionID: ended.id,
-                activity: ended.activityType,
-                experience: ended.experienceID,
-                variant: "physical_device_unverified",
-                duration: ended.elapsedTime,
-                activeTime: ended.activeTime,
-                distanceMeters: ended.distanceMeters,
-                averageSpeed: ended.averageSpeedMetersPerSecond,
-                outcome: "COMPLETED",
-                bondDelta: physicalBondDelta,
-                memory: SessionMemory(sessionID: ended.id, text: memoryText)
+            id: UUID(),
+            sessionID: ended.id,
+            activity: ended.activityType,
+            experience: ended.experienceID,
+            variant: "physical_device_unverified",
+            duration: ended.elapsedTime,
+            activeTime: ended.activeTime,
+            distanceMeters: ended.distanceMeters,
+            averageSpeed: ended.averageSpeedMetersPerSecond,
+            outcome: "COMPLETED",
+            bondDelta: physicalBondDelta,
+            memory: SessionMemory(sessionID: ended.id, text: memoryText),
+            pathRelation: pathProgress.relation.rawValue,
+            pathMetersAlongPath: pathProgress.metersAlongPath,
+            activityCadenceBand: activityEnrichment.stepCadenceBand == .unknown
+                ? nil
+                : activityEnrichment.stepCadenceBand.rawValue
         )
         lastSummary = summary
 
@@ -870,6 +888,17 @@ final class WaykinAppModel: CanonicalARCommandSource {
     private func refreshHealthEnrichmentForRealWalk() async {
         await healthMetricsProvider.requestAuthorizationIfNeeded()
         activityEnrichment = await healthMetricsProvider.refreshEnrichment()
+        // Soft energy bias into live experience (presentation/event intensity only).
+        if var context = realExperienceContext {
+            context = ExperienceContext(
+                timeOfDay: context.timeOfDay,
+                activity: context.activity,
+                bondLevel: context.bondLevel,
+                eventSeed: context.eventSeed,
+                activityEnergyHint: activityEnrichment.energyHint
+            )
+            realExperienceContext = context
+        }
     }
 
     private var arCommandMapper: CanonicalARWorldCommandMapper {
@@ -1359,6 +1388,20 @@ struct SessionSummaryView: View {
                     .foregroundStyle(theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("waykin.summary.memory")
+                if let pathLine = summary.pathPresentationLine {
+                    Text(pathLine)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(theme.guide)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("waykin.summary.path")
+                }
+                if let cadenceLine = summary.cadencePresentationLine {
+                    Text(cadenceLine)
+                        .font(.caption)
+                        .foregroundStyle(theme.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("waykin.summary.cadence")
+                }
                 if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                     Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
                         .accessibilityIdentifier("waykin.summary.memoryWrite")
