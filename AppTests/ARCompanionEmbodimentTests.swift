@@ -23,7 +23,7 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
         for name in [
             "Body", "Head", "LeftEar", "RightEar", "Tail",
-            "CoreGlow", "GroundShadow", "StatusIndicator"
+            "Filament", "CoreGlow", "GroundShadow", "StatusIndicator"
         ] {
             XCTAssertNotNil(entity.findEntity(named: name), "Missing \(name)")
         }
