@@ -30,7 +30,7 @@ CORE_DIR="${1:-${REPO_ROOT}/Sources/WaykinCore}"
 BASELINE="${WAYKIN_ISOLATION_BASELINE:-${SCRIPT_DIR}/core_isolation_baseline.txt}"
 STRICT="${WAYKIN_ISOLATION_STRICT:-0}"
 
-FRAMEWORKS="ARKit RealityKit SwiftUI MapKit SwiftData AVFoundation CoreLocation UIKit AppKit"
+FRAMEWORKS="ARKit RealityKit SwiftUI MapKit SwiftData AVFoundation CoreLocation UIKit AppKit HealthKit"
 
 if [ ! -d "$CORE_DIR" ]; then
   echo "check_core_framework_isolation: ERROR: expected source directory not found: $CORE_DIR" >&2

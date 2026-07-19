@@ -15,6 +15,10 @@ struct CompanionPresencePresentation {
     let isOpening: Bool
     let latitude: Double?
     let longitude: Double?
+    /// Semantic path relation from `PathProgressEngine` (no coordinates).
+    var pathRelation: PathRelation = .establishing
+    /// 0…1 integrity pressure from path progress.
+    var pathIntegrityPressure: Double = 0
 
     var phrase: String {
         if isOpening { return "\(companionName) is listening." }

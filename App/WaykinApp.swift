@@ -107,6 +107,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
     let fieldTestNow: @MainActor () -> Date
 
     let realLocationProvider: any RealLocationProviding
+    let pathProgressEngine = PathProgressEngine()
+    let healthMetricsProvider: any HealthMetricsProviding
 
     var companion: Companion
     var activeRecommendation: ExperienceRecommendation?
@@ -140,6 +142,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
     var liveSignalState: LiveLocationSignalState = .waitingForAuthorization
     var liveAcceptedCount: Int = 0
     var liveRejectedCount: Int = 0
+    /// Semantic path progress (demo + real). No coordinates.
+    private(set) var pathProgress: PathProgressSnapshot = .empty
+    /// Optional HealthKit enrichment; empty in Demo Mode / deny / unavailable.
+    private(set) var activityEnrichment: ActivityEnrichment = .empty
     private var realExperienceState: ExperienceSessionState?
     private var realExperienceContext: ExperienceContext?
     private(set) var realCompanionRuntime = CompanionRuntime()
@@ -171,7 +177,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
             isPaused: usesPhysicalRuntime ? realWalkState == .paused : demoController.isPaused,
             isOpening: usesPhysicalRuntime ? liveAcceptedCount == 0 : demoController.tickIndex == 0,
             latitude: coordinate?.latitude,
-            longitude: coordinate?.longitude
+            longitude: coordinate?.longitude,
+            pathRelation: pathProgress.relation,
+            pathIntegrityPressure: pathProgress.integrityPressure
         )
     }
 
@@ -180,6 +188,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         audioPlayer: (any AudioCuePlaying)? = nil,
         movementEngine: MovementEngine = MovementEngine(),
         realLocationProvider: any RealLocationProviding = RealLocationProvider(),
+        healthMetricsProvider: (any HealthMetricsProviding)? = nil,
         fieldTestReceiptStore: (any FieldTestReceiptStoring)? = FileFieldTestReceiptStore.applicationSupport(),
         fieldTestNow: @escaping @MainActor () -> Date = Date.init
     ) {
@@ -188,6 +197,14 @@ final class WaykinAppModel: CanonicalARCommandSource {
         self.demoController = DemoSessionController(movementEngine: movementEngine)
         self.audioPlayer = audioPlayer ?? AppAudioCuePlayer()
         self.realLocationProvider = realLocationProvider
+        // UI tests / default: null provider so Demo Mode never depends on HealthKit.
+        if let healthMetricsProvider {
+            self.healthMetricsProvider = healthMetricsProvider
+        } else if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+            self.healthMetricsProvider = NullHealthMetricsProvider()
+        } else {
+            self.healthMetricsProvider = HealthKitMetricsProvider()
+        }
         self.fieldTestReceiptStore = fieldTestReceiptStore
         self.fieldTestNow = fieldTestNow
 
@@ -272,6 +289,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
         do {
             lastClosingPhrase = ""
             audioPlayer.stopAll(fadeOut: false)
+            pathProgressEngine.reset(isDemo: true)
+            pathProgress = pathProgressEngine.snapshot
+            activityEnrichment = .empty
             try demoController.start(scenarioID: scenario)
             emitARWorldCommands(arCommandMapper.spawn(
                 companionRuntime: demoController.companionRuntime
@@ -329,6 +349,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 distanceDelta: max(0, tick.speed * tick.delta),
                 isMoving: tick.speed > 0.1
             )
+            pathProgressEngine.recordAccepted(snapshot)
+            pathProgress = pathProgressEngine.snapshot
             activeFieldTestReceipt?.recordMovementSnapshot(snapshot)
             recordObservedMovementState(snapshot.isMoving ? .moving : .paused, at: timestamp)
         }
@@ -475,6 +497,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
         guard realWalkState != .active && realWalkState != .paused else { return }
         do {
             audioPlayer.stopAll(fadeOut: false)
+            pathProgressEngine.reset(isDemo: false)
+            pathProgress = pathProgressEngine.snapshot
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
             try movementEngine.resumeSession()
             if let session = movementEngine.currentSession {
@@ -492,6 +516,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             liveSignalState = .waitingForFirstFix
             liveAcceptedCount = 0
             liveRejectedCount = 0
+            Task { await self.refreshHealthEnrichmentForRealWalk() }
             let context = ExperienceContext(
                 timeOfDay: selectedTimeContext,
                 activity: .walk,
@@ -692,6 +717,13 @@ final class WaykinAppModel: CanonicalARCommandSource {
             self.liveAcceptedCount = self.movementEngine.acceptedSampleCount
             self.liveRejectedCount = self.movementEngine.rejectedSampleCount
 
+            if let snapshot = result.snapshot {
+                self.pathProgressEngine.recordAccepted(snapshot)
+            } else if result.diagnostic.disposition != .awaitingFreshAnchor {
+                self.pathProgressEngine.recordRejected()
+            }
+            self.pathProgress = self.pathProgressEngine.snapshot
+
             guard let snapshot = result.snapshot,
                   let state = self.realExperienceState,
                   let context = self.realExperienceContext else { return }
@@ -830,6 +862,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
             errorCategory: errorCategory,
             endedAt: endedAt
         )
+    }
+
+    /// Optional HealthKit enrichment for real walks only. Never blocks Demo Mode.
+    private func refreshHealthEnrichmentForRealWalk() async {
+        await healthMetricsProvider.requestAuthorizationIfNeeded()
+        activityEnrichment = await healthMetricsProvider.refreshEnrichment()
     }
 
     private var arCommandMapper: CanonicalARWorldCommandMapper {
@@ -1106,6 +1144,12 @@ struct HomeView: View {
                             .accessibilityIdentifier("waykin.home.skin.selected")
                         Text(appModel.appearancePreference.rawValue)
                             .accessibilityIdentifier("waykin.home.appearance.selected")
+                        Text(appModel.pathProgress.relation.rawValue)
+                            .accessibilityIdentifier("waykin.path.relation")
+                        Text(String(format: "%.2f", appModel.pathProgress.integrityPressure))
+                            .accessibilityIdentifier("waykin.path.pressure")
+                        Text(appModel.activityEnrichment.stepCadenceBand.rawValue)
+                            .accessibilityIdentifier("waykin.health.cadence")
                     }
                     .font(.caption2)
                     .foregroundStyle(theme.textTertiary)
