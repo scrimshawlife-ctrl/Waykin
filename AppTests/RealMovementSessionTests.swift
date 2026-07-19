@@ -136,9 +136,79 @@ final class RealMovementSessionTests: XCTestCase {
         XCTAssertEqual(deliveredBatches.last, [.clearSession])
     }
 
+    func testAcceptedRealWalkSamplesAdvancePathProgress() throws {
+        let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
+        let model = try makeModel(provider: provider)
+        model.startRealCompanionWalk()
+        XCTAssertEqual(model.pathProgress.relation, .establishing)
+
+        // Keep sample timestamps within maximumSampleAge (15s).
+        let now = Date().addingTimeInterval(-10)
+        provider.emit(sample(at: now))
+        provider.emit(sample(at: now.addingTimeInterval(2), northMeters: 2, speed: 1))
+        provider.emit(sample(at: now.addingTimeInterval(4), northMeters: 4, speed: 1))
+        provider.emit(sample(at: now.addingTimeInterval(6), northMeters: 6, speed: 1))
+
+        XCTAssertGreaterThan(model.liveAcceptedCount, 0)
+        XCTAssertGreaterThan(model.pathProgress.acceptedSampleCount, 0)
+        XCTAssertGreaterThan(model.pathProgress.metersAlongPath, 0)
+        XCTAssertTrue(
+            model.pathProgress.relation == .onPath
+                || model.pathProgress.relation == .establishing
+                || model.pathProgress.relation == .recovered
+        )
+    }
+
+    func testRejectedRealWalkSamplesRaisePathIntegrityPressure() throws {
+        let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
+        let model = try makeModel(provider: provider)
+        model.startRealCompanionWalk()
+        let now = Date().addingTimeInterval(-10)
+        // Establish an accepted path first.
+        provider.emit(sample(at: now))
+        provider.emit(sample(at: now.addingTimeInterval(2), northMeters: 2, speed: 1))
+        provider.emit(sample(at: now.addingTimeInterval(4), northMeters: 4, speed: 1))
+
+        // Teleport samples should reject under integrity and strain the path.
+        for i in 0..<8 {
+            provider.emit(sample(
+                at: now.addingTimeInterval(5 + Double(i) * 0.5),
+                northMeters: 4 + Double(i + 1) * 100,
+                speed: 1
+            ))
+        }
+
+        XCTAssertGreaterThan(model.liveRejectedCount, 0)
+        XCTAssertGreaterThan(model.pathProgress.integrityPressure, 0.3)
+        XCTAssertTrue(
+            model.pathProgress.relation == .strained || model.pathProgress.relation == .offPath
+        )
+    }
+
+    func testFakeHealthEnrichmentSurfacesOnRealWalkStart() async throws {
+        let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
+        let health = FakeHealthMetricsProvider(
+            authorizationState: .authorized,
+            enrichment: ActivityEnrichment(stepCadenceBand: .high, stepCountWindow: 3_000)
+        )
+        let model = try makeModel(provider: provider, health: health)
+        model.startRealCompanionWalk()
+
+        // Allow the fire-and-forget refresh Task to complete.
+        let deadline = Date().addingTimeInterval(2)
+        while model.activityEnrichment.stepCadenceBand == .unknown, Date() < deadline {
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+
+        XCTAssertEqual(model.activityEnrichment.stepCadenceBand, .high)
+        XCTAssertGreaterThan(health.refreshCount, 0)
+        XCTAssertGreaterThan(model.activePresencePresentation.energyHint, 0)
+    }
+
     private func makeModel(
         provider: FakeRealLocationProvider,
-        audio: RealAudioSpy? = nil
+        audio: RealAudioSpy? = nil,
+        health: (any HealthMetricsProviding)? = nil
     ) throws -> WaykinAppModel {
         let schema = Schema([CompanionRecord.self, SessionMemoryRecord.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -150,6 +220,7 @@ final class RealMovementSessionTests: XCTestCase {
                 integrityConfiguration: MovementIntegrityConfiguration(speedWindowSize: 1)
             ),
             realLocationProvider: provider,
+            healthMetricsProvider: health ?? NullHealthMetricsProvider(),
             fieldTestReceiptStore: nil
         )
     }

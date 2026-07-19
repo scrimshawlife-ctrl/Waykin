@@ -179,7 +179,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             latitude: coordinate?.latitude,
             longitude: coordinate?.longitude,
             pathRelation: pathProgress.relation,
-            pathIntegrityPressure: pathProgress.integrityPressure
+            pathIntegrityPressure: pathProgress.integrityPressure,
+            energyHint: activityEnrichment.energyHint
         )
     }
 
@@ -566,6 +567,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             activeFieldTestReceipt?.recordAudioLifecycle("resume", at: now)
             realWalkState = .active
             lifecycleSuspendedRealWalk = false
+            Task { await self.refreshHealthEnrichmentForRealWalk() }
         } catch {
             failRealWalk(message: "The real walk could not resume safely.", outcome: .invalidState, errorCategory: .invalidState)
         }
@@ -941,7 +943,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
             memoryWritten: memoryWritten,
             persistence: persistence,
             errorCategory: errorCategory,
-            endedAt: endedAt
+            endedAt: endedAt,
+            pathProgress: pathProgress,
+            activityEnrichment: activityEnrichment
         )
         guard let fieldTestReceiptStore else { return }
         do {

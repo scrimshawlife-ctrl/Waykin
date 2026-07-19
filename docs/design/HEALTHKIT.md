@@ -2,8 +2,8 @@
 
 ```yaml
 document_id: WAYKIN-HEALTHKIT-001
-version: 0.1
-status: IMPLEMENTED_MVP
+version: 0.2
+status: IMPLEMENTED_V1_1
 required_for_demo: false
 ```
 
@@ -15,14 +15,15 @@ Optional read of **steps** (last hour) and **walking+running distance** (today) 
 
 | Layer | Allowed |
 | ----- | ------- |
-| App | `HealthKitMetricsProvider`, `NullHealthMetricsProvider` |
+| App | `HealthKitMetricsProvider`, `NullHealthMetricsProvider`, `FakeHealthMetricsProvider` |
 | WaykinCore | `ActivityEnrichment` / `StepCadenceBand` only — **no HealthKit import** |
 
 ## Authorization
 
 - Demo Mode never requests HealthKit
 - UI tests use `NullHealthMetricsProvider`
-- Real walk may call `requestAuthorizationIfNeeded()` non-blocking
+- App tests may inject `FakeHealthMetricsProvider`
+- Real walk may call `requestAuthorizationIfNeeded()` non-blocking at **start** and **resume**
 - Deny → `authorizationDenied: true`, empty bands; walk continues
 
 ## Cadence bands (steps / last hour)
@@ -34,12 +35,17 @@ Optional read of **steps** (last hour) and **walking+running distance** (today) 
 | 200–1999 | moderate |
 | ≥ 2000 | high |
 
+## Presentation
+
+- `energyHint` (0…0.2) lightly lifts presence opacity and can color path-on phrases
+- Never required for Demo Mode or walk completion
+
 ## Privacy
 
-No HealthKit sample UUIDs, device names, or medical diagnoses. Enrichment is coarse.
+No HealthKit sample UUIDs, device names, or medical diagnoses. Enrichment is coarse. Field-test receipts store **cadence band + denied flag only** (no step totals).
 
 ## Tests
 
 - `ActivityEnrichmentTests` (core)
-- `PathProgressIntegrationTests` health null/denied + cadence helper
+- `PathProgressIntegrationTests` health null/denied + fake provider + cadence helper
 - Isolation: HealthKit not in WaykinCore sources

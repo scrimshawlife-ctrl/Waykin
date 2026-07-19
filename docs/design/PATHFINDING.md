@@ -2,8 +2,8 @@
 
 ```yaml
 document_id: WAYKIN-PATHFINDING-001
-version: 0.1
-status: IMPLEMENTED_MVP
+version: 0.2
+status: IMPLEMENTED_V1_1
 navigation_grade: false
 ```
 
@@ -32,12 +32,17 @@ Semantic **path progress** along an active Companion Walk:
 - Real walk → accepted on integrity pass; rejected on fail (except fresh anchor wait)
 - `WaykinAppModel.pathProgress` exposed for UI diagnostics
 - `LiraSessionPose` uses integrity pressure when pursuit is inactive
+- Session phrases surface path relation when pursuit is quiet
+- Field-test receipts record privacy-safe path summary fields (schema 3)
 
 ## Privacy
 
-No coordinates stored in path snapshots. Route points remain in movement session only.
+No coordinates stored in path snapshots or field-test path fields. Route points remain in movement session only.
 
 ## Tests
 
 - `PathProgressEngineTests` (package)
 - `PathProgressIntegrationTests` (app demo walk)
+- `RealMovementSessionTests` path accept/reject
+- `CompanionPresencePresentationTests` path phrases
+- `FieldTestReceiptTests` path summary round-trip

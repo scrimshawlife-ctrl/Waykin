@@ -19,6 +19,8 @@ struct CompanionPresencePresentation {
     var pathRelation: PathRelation = .establishing
     /// 0…1 integrity pressure from path progress.
     var pathIntegrityPressure: Double = 0
+    /// Coarse activity energy (0…~0.2) — presentation only; never blocks walk.
+    var energyHint: Double = 0
 
     var phrase: String {
         if isOpening { return "\(companionName) is listening." }
@@ -45,6 +47,18 @@ struct CompanionPresencePresentation {
         case .inactive: break
         }
 
+        // Path relation phrases when pursuit is quiet and no stronger world event.
+        switch pathRelation {
+        case .strained: return "The path feels strained."
+        case .offPath: return "The path has slipped."
+        case .recovered: return "The path is finding you again."
+        case .onPath:
+            if energyHint >= 0.15 { return "\(companionName) matches your pace." }
+            return "\(companionName) walks with you."
+        case .establishing:
+            break
+        }
+
         switch behavior {
         case .idle, .follow: return "\(companionName) stays close."
         case .lead: return "\(companionName) has moved ahead."
@@ -64,13 +78,18 @@ struct CompanionPresencePresentation {
     }
 
     var pressureIntensity: Double {
-        switch pursuitState {
+        let pursuit: Double = switch pursuitState {
         case .inactive: 0
         case .noticed: 0.2
         case .approaching: 0.45
         case .close: 0.75
         case .fading: 0.12
         }
+        // When pursuit is quiet, path integrity still colors the field lightly.
+        if pursuitState == .inactive {
+            return min(1, max(pursuit, pathIntegrityPressure * 0.85))
+        }
+        return min(1, max(pursuit, pathIntegrityPressure * 0.35))
     }
 
     var presenceScale: CGFloat {
@@ -85,11 +104,13 @@ struct CompanionPresencePresentation {
     }
 
     var presenceOpacity: Double {
-        switch behavior {
+        let base: Double = switch behavior {
         case .idle, .observe: 0.64
         case .rest: 0.72
         default: 1
         }
+        // Subtle energy lift from optional Health enrichment (capped).
+        return min(1, base + max(0, min(0.25, energyHint)) * 0.4)
     }
 
     var verticalOffset: CGFloat { behavior == .lead ? -20 : 0 }
@@ -117,14 +138,32 @@ struct CompanionPresencePresentation {
         let meters = max(0, Int(distanceMeters))
         return "\(meters) meter\(meters == 1 ? "" : "s")"
     }
-    var pressureLabel: String { pursuitState == .inactive ? "Path quiet" : "Pressure \(pursuitState.rawValue)" }
+    var pressureLabel: String {
+        if pursuitState != .inactive {
+            return "Pressure \(pursuitState.rawValue)"
+        }
+        switch pathRelation {
+        case .strained: return "Path strained"
+        case .offPath: return "Path slipped"
+        case .recovered: return "Path recovering"
+        case .onPath: return "Path steady"
+        case .establishing: return "Path quiet"
+        }
+    }
     var pressureAccessibilityValue: String {
         switch pursuitState {
-        case .inactive: "The path is quiet."
-        case .noticed: "A change has been noticed on the path."
-        case .approaching: "Something is drawing closer on the path."
-        case .close: "The pressure is close."
-        case .fading: "The pressure is fading."
+        case .noticed: return "A change has been noticed on the path."
+        case .approaching: return "Something is drawing closer on the path."
+        case .close: return "The pressure is close."
+        case .fading: return "The pressure is fading."
+        case .inactive:
+            switch pathRelation {
+            case .strained: return "The path feels strained."
+            case .offPath: return "The path has slipped."
+            case .recovered: return "The path is finding you again."
+            case .onPath: return "The path holds steady."
+            case .establishing: return "The path is quiet."
+            }
         }
     }
     var pressureStrokeWidth: CGFloat { CGFloat(2 + pressureIntensity * 6) }
