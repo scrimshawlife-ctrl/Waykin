@@ -161,10 +161,8 @@ enum CompanionPresenceStyle {
 
 struct CompanionPresenceView: View {
     let presentation: CompanionPresencePresentation
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.wkTheme) private var theme
-    @State private var expanded = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -195,37 +193,8 @@ struct CompanionPresenceView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            ZStack {
-                // Outer pressure ring — geometry + opacity change with pursuit (not color alone)
-                Circle()
-                    .stroke(
-                        theme.hunterFilament.opacity(0.22 + presentation.pressureIntensity * 0.45),
-                        lineWidth: presentation.pressureStrokeWidth
-                    )
-                    .frame(width: 176, height: 176)
-                // Bond incomplete orbital (Echo mark language)
-                Circle()
-                    .trim(from: 0.08, to: 0.82)
-                    .stroke(theme.guide.opacity(0.55), style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .rotationEffect(.degrees(-40))
-                    .frame(width: 126, height: 126)
-                Circle()
-                    .fill(presenceColor)
-                    .frame(width: 76, height: 76)
-                    .overlay(
-                        Circle()
-                            .fill(theme.bond)
-                            .frame(width: 18, height: 18)
-                    )
-            }
-            .scaleEffect(presentation.presenceScale * (expanded ? 1.035 : 1))
-            .opacity(presentation.presenceOpacity)
-            .offset(y: presentation.verticalOffset)
-            .frame(height: 190)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(presentation.companionName) presence")
-            .accessibilitySortPriority(5)
-            .accessibilityIdentifier("waykin.session.presence")
+            // Lira Living Familiar silhouette (Echo materials; mid-session LOD)
+            LiraPresenceSilhouette(presentation: presentation)
 
             Text(presentation.phrase)
                 .font(.title3.weight(.semibold))
@@ -286,22 +255,6 @@ struct CompanionPresenceView: View {
             }
             .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
         }
-        .onAppear(perform: animatePresence)
-        .onChange(of: presentation.animationKey) { _, _ in animatePresence() }
-        .onChange(of: reduceMotion) { _, _ in animatePresence() }
-    }
-
-    /// Presence body color: guide default; bond warmth on celebrate/drawNear; sanctuary on rest; hunter filament under pursuit pressure.
-    private var presenceColor: Color {
-        if presentation.pressureIntensity >= 0.45 {
-            return theme.hunter
-        }
-        switch presentation.behavior {
-        case .drawNear, .celebrate: return theme.bond
-        case .rest: return theme.sanctuary
-        case .lead: return theme.guide
-        default: return theme.guide
-        }
     }
 
     private var pressureTint: Color {
@@ -322,18 +275,6 @@ struct CompanionPresenceView: View {
         .accessibilityValue(accessibilityValue)
         .accessibilitySortPriority(4)
         .accessibilityIdentifier(identifier)
-    }
-
-    private func animatePresence() {
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            expanded = false
-        }
-        guard let duration = presentation.animationDuration(reduceMotion: reduceMotion) else { return }
-        withAnimation(.easeInOut(duration: duration).repeatCount(2, autoreverses: true)) {
-            expanded = true
-        }
     }
 }
 
