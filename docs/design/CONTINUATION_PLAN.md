@@ -1,108 +1,148 @@
-# Waykin Design Continuation Plan
+# Waykin Continuation Plan
 
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
-version: 0.2
+version: 0.3
 date: 2026-07-19
 status: ACTIVE
-focus: indoor_only
-outdoor_qa: DEFERRED_EXPLICITLY
+goal: freeze_AR_slice_then_pathfinding_and_healthkit
+outdoor_qa: DEFERRED_NOT_BLOCKING_ENGINEERING
 audio_first: true
 ```
 
-## Where we are (shipped)
+## Product intent
 
-| Track | Status | Evidence |
-| ----- | ------ | -------- |
-| Echo tokens / icons / app icon | Shipped | PRs #51–#56 |
-| Session stills 7×3 spectral pack | **DIRECTION_ACCEPTED** | #71–#73, sign-off |
-| Sim preflight + S1–S8 automation | Shipped | #75, #77 |
-| AR Living Familiar mid-LOD | Procedural shipped | #79 |
-| USDZ async load + fallback | Shipped | #81 |
-| Animation plan (draft) | Doc only | `LIRA_ANIMATION_PLAN.md` |
-| Outdoor OBSERVED walk | **Blocked** | Needs device |
+Finish **AR presentation** well enough that it is a **stable, isolated adapter**, then shift engineering capacity to:
 
-## Goals (do not expand)
+1. **Pathfinding / route semantics** (walking path, not navigation-grade map app)
+2. **HealthKit** (movement/health signals as session inputs — scoped, privacy-safe)
 
-- One companion **Lira**; no marketplace / multiplayer / map combat UI
-- Audio-first; presentation supports presence
-- WaykinCore isolation unchanged
-- No false outdoor claims
+AR must not keep expanding into art polish or outdoor QA before those cores ship.
 
-## Continuation backlog (ordered)
+## Where AR is now (enough to freeze for MVP engineering)
 
-### Wave 1 — Motion that users see in session (now)
+| Layer | Status | Notes |
+| ----- | ------ | ----- |
+| Session 2D stills 7×3 + glyphs | **DIRECTION_ACCEPTED** | Home + walk presence |
+| Still motion (crossfade, bond orbit, manifest, hunter echo) | **Done indoor** | C1–C4 + polish |
+| AR procedural Living Familiar | **Shipped** | Permanent fallback |
+| USDZ package + async load + skin remap | **Shipped** | Mid-LOD spheres; not hero sculpt |
+| AR skins Dawn/Veil/Rupture | **Shipped** | Materials only |
+| Command replay / soak (#46) | **Done** | Deterministic sim evidence |
+| Canonical runtime → AR commands (#42) | **Done** | Core isolation held |
+| Outdoor / physical AR (#41) | **NOT_COMPUTABLE** | Device only; **do not block** pathfinding/HK |
 
-| ID | Work | Owner slice | Exit |
-| -- | ---- | ----------- | ---- |
-| **C1 / A1** | Session still **crossfade** on pose/skin change + Reduce Motion contract | App UI | **Done** |
-| **C2 / A2** | AR procedural **A2 breath + A3 sway** (bounded loops) | App AR | **Done** |
-| **C3 / A3** | Hunter **echo** pass (session still overlay + AR ghost) | App | **Done** (indoor) |
-| **C4 / A4** | Spawn coalesce (scale 0.92→1); root state still snaps for tests | App AR | **Done** (indoor) |
+**Recommendation:** Treat AR as **MVP-complete for engineering** after the short **AR Freeze** wave below. Optional art upgrade and outdoor AR stay parallel/later.
 
-### Wave 2 — Production mesh (when artist ready)
+## Recommended waves
 
-| ID | Work | Exit |
-| -- | ---- | ---- |
-| **C5** | Package `Lira_AR_Base.usdz` mid-LOD (Living Familiar anchors) | **Done** (procedural fallback remains) |
-| **C6 / A5** | Optional AnimationLibrary clips on USDZ | Mapped from `CompanionPresentationState` |
-| **C7** | Keep procedural as permanent debug fallback | Already designed |
+### Wave AR-F — AR Freeze (do this first, ~1–3 PRs)
 
-### Wave 3 — Device evidence (blocked on hardware)
+Goal: **seal the AR adapter** so pathfinding/HK work cannot be derailed by open AR todos.
 
-| ID | Work | Exit |
-| -- | ---- | ---- |
-| **C8** | Outdoor walk + `OUTDOOR_QA_RECEIPT` | Day+night OBSERVED |
-| **C9 / A6** | Outdoor motion notes (glare, pulse readability) | Receipt fields filled |
-| **C10** | Issue #41 physical AR | Named device build |
+| ID | Work | Exit criteria | Est. |
+| -- | ---- | ------------- | ---- |
+| **AR-F1** | **AR freeze doc** — declare MVP AR contract: surfaces, non-goals, frozen paths | `docs/design/AR_MVP_FREEZE.md` + capability matrix update | Small |
+| **AR-F2** | **LOD proof** — assert packaged USDZ preloads in sim when present; LOD label stable; fallback still works if load fails | Unit/UI tests green; receipt note | Small |
+| **AR-F3** | **Real-walk command bridge check** — confirm live walk already maps to AR commands (or stub gap list only) | Doc: “what AR receives on real walk” with OBSERVED sim / code paths; **no new AR features** | Small–med |
+| **AR-F4** | **Boundary tests** — freeze: WaykinCore has no RealityKit; AR does not own path/HK | Existing isolation + 1–2 focused tests if gaps | Small |
 
-### Wave 4 — Polish (optional)
+**Do not do in AR-F:** hand-sculpt mesh, AnimationLibrary, outdoor QA, new poses, multiplayer AR.
 
-| ID | Work |
-| -- | ---- |
-| **C11** | Hand-painted still pass on top of spectral direction |
-| **C12** | Hero marketing stills beyond Guide Dawn |
-| **C13** | Reduced-motion-specific still variants only if needed |
+**AR freeze definition of done**
 
-## Focus: indoor only
+- [ ] Presentation-only companion in AR (spawn/update/clear, skins, motion loops)
+- [ ] USDZ optional with procedural fallback
+- [ ] Replay/soak remain green
+- [ ] Explicit list of AR non-goals (outdoor, glasses, multi-companion)
+- [ ] ACTIVE_WORK: AR presentation → Complete / maintenance-only
 
-Outdoor walk / outdoor receipts / Issue #41 physical AR stay **out of scope** until you say otherwise.
+### Wave P — Pathfinding (after AR-F)
 
-## This iteration
+Align with existing contracts: route is **measurement support for Companion Walk**, not turn-by-turn navigation (`KNOWN_LIMITATIONS`, `MOVEMENT_INTEGRITY_CONTRACT`).
 
-1. **C1 / A1** session crossfade — **done**
-2. **C2 / A2** AR breath + sway — **done**
-3. **C3 / A3** hunter echo (session + AR) — **done**
-4. **C4 / A4** spawn coalesce — **done**
-5. Still UX polish (bond orbit + manifesting fade) — **done**
-6. Indoor sim smoke (preflight + UI 12/12) — **done** (receipt under `docs/design/receipts/INDOOR_SIM_SMOKE_*`)
+| ID | Work | Notes |
+| -- | ---- | ----- |
+| **P0** | **Scope ADR / issue** | Pathfinding = path integrity + progress along a walk, **not** Google Maps clone |
+| **P1** | **Core model** | Path segment / progress / off-path pressure as **semantic state** in WaykinCore (platform-neutral) |
+| **P2** | **Integrity hooks** | Tie to accepted GPS samples only; no invalid samples affect path state |
+| **P3** | **Demo Mode** | Deterministic path progress without location permission |
+| **P4** | **Presentation** | Audio + Lira pose lean only (guide/rival/hunter); no map chrome expansion |
+| **P5** | **Receipts** | Sparse path diagnostics without storing full route geometry for privacy |
 
-## Recommended next
+**Frozen while P runs:** AR mesh art, outdoor AR claims, marketplace.
 
-| Priority | Work | When |
-| -------- | ---- | ---- |
-| **Pause indoor** | No further presentation work required for MVP indoor | Now |
-| Optional | Higher-fidelity sculpted USDZ replace | When artist mesh exists |
-| Deferred | Outdoor walk + receipts (C8–C10) | When you have a device walk |
-| Optional | Hand-painted still pass (C11) | Art direction only |
+### Wave H — HealthKit (after P0 at least; can parallel P late if owners split)
 
-## Non-goals while indoor-focused
+| ID | Work | Notes |
+| -- | ---- | ----- |
+| **H0** | **Scope + privacy** | What we read (steps, walking distance, workout?); Info.plist; no write unless required |
+| **H1** | **Adapter boundary** | `HealthKit` only in App; Core receives **semantic samples** (e.g. cadence band, active energy bucket) |
+| **H2** | **Session coupling** | Optional enrichment of real walk; never required for Demo Mode |
+| **H3** | **Authorization UX** | Deny → silent degrade; no blocked Begin Walk demo |
+| **H4** | **Receipts** | Coarse counts only; no raw HealthKit identifiers dumped |
+| **H5** | **Tests** | Fake provider in AppTests; no device required for CI |
 
-- Outdoor walk / glare / GPS claims
-- Artist sculpt (unless you provide mesh)
-- New gameplay states
-- Flipbook multi-frame stills
+**Do not:** medical claims, background delivery v1 unless proven needed, multi-day history product.
 
-## Success metrics
+### Wave D — Device evidence (parallel, non-blocking)
 
-- `make validate` PASS
-- WaykinUITests presence identifiers unchanged
-- Reduce Motion: no looping pulse; pose change ≤80ms fade or cut
-- Normal motion: ~220ms ease-in-out still crossfade
+| ID | Work | Blocks? |
+| -- | ---- | ------- |
+| **D1** | Outdoor QA receipt | **No** — product polish / marketing only |
+| **D2** | Physical AR (#41) | **No** — engineering can proceed with sim + freeze |
+| **D3** | Field-test protocol walks | **No** — feeds P/H evidence later |
+
+## Explicit sequencing
+
+```text
+AR-F (freeze adapter)
+    │
+    ├─► P0–P5 Pathfinding (primary next engineering)
+    │       │
+    │       └─► H0–H5 HealthKit (after P0 privacy/scope; prefer after P2)
+    │
+    └─► D* outdoor/device AR (anytime you have a phone; never blocks P/H)
+```
+
+## Path isolation (protect the freeze)
+
+| Workstream | Allowed | Frozen |
+| ---------- | ------- | ------ |
+| AR-F | `App/AR/**`, AR docs/tests, capability matrix | WaykinCore gameplay, HealthKit, path algorithms |
+| Pathfinding | `Sources/WaykinCore/**` path/movement, focused App wiring, docs | AR mesh/USDZ art, HealthKit details |
+| HealthKit | `App/**` Health adapter, plist, AppTests fakes | WaykinCore importing HealthKit |
+
+## What “complete AR” means here
+
+**Yes — complete for unblocking pathfinding/HK:**
+
+- Companion can appear in AR during a session
+- Skins + mid-LOD (USDZ or procedural)
+- Deterministic command path + soak
+- Indoor motion good enough
+- Documented freeze so AR is maintenance-only
+
+**No — not required to start pathfinding/HK:**
+
+- Hand-sculpted hero mesh
+- Skeletal AnimationLibrary
+- Outdoor AR tracking receipt
+- Perfect visual parity with stills
+
+## Immediate next actions (recommended)
+
+1. **AR-F1** — write `AR_MVP_FREEZE.md` + mark AR presentation complete in capability matrix / ACTIVE_WORK  
+2. **AR-F2** — confirm USDZ LOD path in one focused test/receipt (if not already solid on main)  
+3. **AR-F3** — one short doc: real-walk → `ARWorldCommand` mapping gaps (list only; no feature creep)  
+4. Open **Issue P0** pathfinding scope  
+5. Open **Issue H0** HealthKit privacy/scope (can draft in parallel with P0)
 
 ## Related
 
-- [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md)
-- [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md)
 - [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md)
-- [OUTDOOR_QA_CHECKLIST.md](OUTDOOR_QA_CHECKLIST.md)
+- [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md)
+- [AR_REPLAY_VALIDATION.md](../AR_REPLAY_VALIDATION.md)
+- [MOVEMENT_INTEGRITY_CONTRACT.md](../MOVEMENT_INTEGRITY_CONTRACT.md)
+- [KNOWN_LIMITATIONS.md](../../KNOWN_LIMITATIONS.md)
+- [canonical/CURRENT_CAPABILITY_MATRIX.md](../canonical/CURRENT_CAPABILITY_MATRIX.md)

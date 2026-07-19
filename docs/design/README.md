@@ -21,16 +21,14 @@ Visual system imports and production follow-ons for the app repository.
 | [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md) | Spectral Lira direction accepted |
 | [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ async load |
 | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Session + AR animation draft plan |
-| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | Ordered backlog + this-iteration scope |
+| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | AR freeze → pathfinding → HealthKit roadmap |
 | [receipts/](receipts/) | Filled outdoor / sim receipts |
 
 ## Recommended order
 
-1. Simulator preflight — **automated**
-2. Sim checklist S1–S8 — **automated**
-3. Spectral art direction — **DIRECTION_ACCEPTED**
-4. AR mid-LOD + USDZ load — **shipped**
-5. **A1** session still crossfade — **this iteration**
-6. A2–A4 AR motion (breath / echo / coalesce)
-7. Outdoor walk + receipt — **deferred** (device required)
-8. Optional: sculpted `Lira_AR_Base.usdz` + AnimationLibrary
+1. Design / presentation / indoor AR motion — **largely complete** (see CONTINUATION_PLAN v0.3)
+2. **AR-F freeze** — seal adapter, stop expanding AR art
+3. **Pathfinding** (semantic walk path; not nav app)
+4. **HealthKit** (App adapter → semantic samples; Demo Mode never blocked)
+5. Outdoor / physical AR receipts — **parallel, non-blocking**
+6. Optional: sculpted USDZ + AnimationLibrary (art track)
