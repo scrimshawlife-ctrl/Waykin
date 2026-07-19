@@ -35,8 +35,8 @@ outdoor_qa: DEFERRED
 
 | ID | Work | Owner slice | Exit |
 | -- | ---- | ----------- | ---- |
-| **C1 / A1** | Session still **crossfade** on pose/skin change + Reduce Motion contract | App UI | Stills never blank; RM ≤80ms cut/fade; UI tests green |
-| **C2 / A2** | AR procedural **A2 breath + A3 sway** (bounded loops) | App AR | Deterministic tests; clear cancels motion |
+| **C1 / A1** | Session still **crossfade** on pose/skin change + Reduce Motion contract | App UI | **Done** |
+| **C2 / A2** | AR procedural **A2 breath + A3 sway** (bounded loops) | App AR | **Done** |
 | **C3 / A3** | Hunter **echo** pass (session still overlay + AR ghost) | App | No gore; pressure only |
 | **C4 / A4** | Spawn coalesce + AR state easing (≤250ms) | App AR | Replay/soak still pass |
 
@@ -66,10 +66,11 @@ outdoor_qa: DEFERRED
 
 ## This iteration
 
-1. **C1 / A1** — session still crossfade + Reduce Motion — **implemented**
-2. Continuation plan recorded in design index
-3. Next code slice: **C2 / A2** (AR breath + filament sway)
-4. Outdoor and USDZ sculpt remain deferred
+1. **C1 / A1** — session still crossfade — **done**
+2. **C2 / A2** — AR A2 breath + A3 sway — **done**
+3. Continuation plan recorded in design index
+4. Next code slice: **C3 / A3** hunter echo
+5. Outdoor and USDZ sculpt remain deferred
 
 ## Non-goals this iteration
 

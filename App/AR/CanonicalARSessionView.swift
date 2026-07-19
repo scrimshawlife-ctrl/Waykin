@@ -165,6 +165,8 @@ final class CanonicalARSessionRuntime {
     }
 
     private func advancePresentation(by delta: TimeInterval) {
+        // A2 local loops every frame; celebrate state machine remains separate.
+        renderer.advanceLocalMotion(by: delta)
         guard let transition = renderer.advanceCompanionPresentation(by: delta) else { return }
         companionState = transition.resolvedState
     }
