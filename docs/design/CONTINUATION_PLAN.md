@@ -2,12 +2,12 @@
 
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
-version: 0.1
+version: 0.2
 date: 2026-07-19
 status: ACTIVE
-main_sha_at_draft: e4536a4
+focus: indoor_only
+outdoor_qa: DEFERRED_EXPLICITLY
 audio_first: true
-outdoor_qa: DEFERRED
 ```
 
 ## Where we are (shipped)
@@ -37,8 +37,8 @@ outdoor_qa: DEFERRED
 | -- | ---- | ----------- | ---- |
 | **C1 / A1** | Session still **crossfade** on pose/skin change + Reduce Motion contract | App UI | **Done** |
 | **C2 / A2** | AR procedural **A2 breath + A3 sway** (bounded loops) | App AR | **Done** |
-| **C3 / A3** | Hunter **echo** pass (session still overlay + AR ghost) | App | No gore; pressure only |
-| **C4 / A4** | Spawn coalesce + AR state easing (≤250ms) | App AR | Replay/soak still pass |
+| **C3 / A3** | Hunter **echo** pass (session still overlay + AR ghost) | App | **Done** (indoor) |
+| **C4 / A4** | Spawn coalesce (scale 0.92→1); root state still snaps for tests | App AR | **Done** (indoor) |
 
 ### Wave 2 — Production mesh (when artist ready)
 
@@ -64,20 +64,24 @@ outdoor_qa: DEFERRED
 | **C12** | Hero marketing stills beyond Guide Dawn |
 | **C13** | Reduced-motion-specific still variants only if needed |
 
+## Focus: indoor only
+
+Outdoor walk / outdoor receipts / Issue #41 physical AR stay **out of scope** until you say otherwise.
+
 ## This iteration
 
-1. **C1 / A1** — session still crossfade — **done**
-2. **C2 / A2** — AR A2 breath + A3 sway — **done**
-3. Continuation plan recorded in design index
-4. Next code slice: **C3 / A3** hunter echo
-5. Outdoor and USDZ sculpt remain deferred
+1. **C1 / A1** session crossfade — **done**
+2. **C2 / A2** AR breath + sway — **done**
+3. **C3 / A3** hunter echo (session + AR) — **done**
+4. **C4 / A4** spawn coalesce — **done** (presentation root still snaps; coalesce is scale factor)
+5. Next indoor (optional): polish, USDZ sculpt when ready, or more still UX
 
-## Non-goals this iteration
+## Non-goals while indoor-focused
 
-- Outdoor walk
-- Artist sculpt
+- Outdoor walk / glare / GPS claims
+- Artist sculpt (unless you provide mesh)
 - New gameplay states
-- Flipbook multi-frame stills (plan Q1: pure crossfade)
+- Flipbook multi-frame stills
 
 ## Success metrics
 

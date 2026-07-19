@@ -201,7 +201,18 @@ struct CompanionEntityFactory {
         )
         indicator.position = [0, g + 0.80, 0.10]
 
-        [shadow, body, chest, head, leftEar, rightEar, haunch, tail, filament, coreHalo, core, indicator]
+        // Hunter pressure ghost (A3) — geometry/asymmetry, not gore. Off unless alert.
+        let hunterEcho = model(
+            name: LiraARMotion.hunterEchoNodeName,
+            mesh: .generateSphere(radius: 0.14),
+            color: palette.body.withAlphaComponent(0.22),
+            roughness: 0.75
+        )
+        hunterEcho.scale = SIMD3<Float>(0.72, 1.35, 1.0)
+        hunterEcho.position = [0.04, g + 0.28, -0.08]
+        hunterEcho.isEnabled = false
+
+        [shadow, body, chest, head, leftEar, rightEar, haunch, tail, filament, coreHalo, core, indicator, hunterEcho]
             .forEach { root.addChild($0) }
 
         root.scale = SIMD3<Float>(repeating: configuration.companionHeightMeters / 0.72)

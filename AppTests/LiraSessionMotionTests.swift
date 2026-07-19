@@ -14,4 +14,15 @@ final class LiraSessionMotionTests: XCTestCase {
         XCTAssertNil(LiraSessionMotion.idlePulseDuration(reduceMotion: true))
         XCTAssertNotNil(LiraSessionMotion.idlePulseDuration(reduceMotion: false))
     }
+
+    func testHunterEchoContract() {
+        XCTAssertTrue(LiraSessionMotion.showsHunterEcho(pose: .hunter))
+        XCTAssertFalse(LiraSessionMotion.showsHunterEcho(pose: .guide))
+        XCTAssertLessThan(
+            LiraSessionMotion.hunterEchoOpacity(reduceMotion: true),
+            LiraSessionMotion.hunterEchoOpacity(reduceMotion: false)
+        )
+        XCTAssertGreaterThan(LiraSessionMotion.hunterEchoOpacity(reduceMotion: false), 0.1)
+        XCTAssertLessThan(LiraSessionMotion.hunterEchoOpacity(reduceMotion: false), 0.4)
+    }
 }

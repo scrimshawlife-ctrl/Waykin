@@ -46,5 +46,31 @@ final class LiraARMotionTests: XCTestCase {
         XCTAssertGreaterThan(renderer.localMotionElapsed, 1.0)
         _ = renderer.clearSession()
         XCTAssertEqual(renderer.localMotionElapsed, 0, accuracy: 0.0001)
+        XCTAssertEqual(renderer.spawnCoalesceElapsed, 0, accuracy: 0.0001)
+    }
+
+    func testHunterEchoOnlyInAlert() {
+        XCTAssertTrue(LiraARMotion.showsHunterEcho(state: .alert))
+        XCTAssertFalse(LiraARMotion.showsHunterEcho(state: .idle))
+        XCTAssertFalse(LiraARMotion.showsHunterEcho(state: .follow))
+        let offset = LiraARMotion.hunterEchoOffset(elapsed: 0)
+        XCTAssertLessThan(offset.z, 0, "echo sits behind")
+    }
+
+    func testSpawnCoalesceProgressAndScale() {
+        XCTAssertEqual(LiraARMotion.spawnCoalesceProgress(elapsed: 0, duration: 0.7), 0, accuracy: 0.001)
+        XCTAssertEqual(LiraARMotion.spawnCoalesceProgress(elapsed: 0.7, duration: 0.7), 1, accuracy: 0.001)
+        XCTAssertEqual(LiraARMotion.spawnCoalesceProgress(elapsed: 2, duration: 0.7), 1, accuracy: 0.001)
+        XCTAssertEqual(LiraARMotion.spawnScaleFactor(progress: 0), 0.92, accuracy: 0.001)
+        XCTAssertEqual(LiraARMotion.spawnScaleFactor(progress: 1), 1.0, accuracy: 0.001)
+        XCTAssertGreaterThan(LiraARMotion.spawnScaleFactor(progress: 0.5), 0.92)
+        XCTAssertLessThan(LiraARMotion.spawnScaleFactor(progress: 0.5), 1.0)
+    }
+
+    func testFactoryIncludesOptionalHunterEchoNode() {
+        let entity = CompanionEntityFactory().makeLira()
+        let echo = entity.findEntity(named: LiraARMotion.hunterEchoNodeName)
+        XCTAssertNotNil(echo)
+        XCTAssertFalse(echo?.isEnabled ?? true)
     }
 }
