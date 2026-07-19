@@ -4,8 +4,9 @@
 style: spectral_living_familiar
 anti: [pokemon, mascot, canid, cute_creature_collectible]
 anchors: [A1_head, A2_chest_ember, A3_filament]
-status: GENERATED_CANDIDATE
+status: DIRECTION_ACCEPTED
 matrix: complete_7x3
+sign_off: docs/design/ART_DIRECTION_SIGN_OFF.md
 ```
 
 ## Full session still matrix

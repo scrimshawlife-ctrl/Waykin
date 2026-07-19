@@ -8,8 +8,8 @@ status: PRODUCTION_SPEC
 companion_product_name: Lira
 visual_family: Living_Familiar
 brand_climate: Echo_B
-current_app_state: procedural_placeholder
-direction_lock: Echo + Lira (Phase 0 accepted)
+current_app_state: spectral_stills_direction_accepted_ar_procedural_mid
+direction_lock: Echo + Lira spectral Living Familiar (DIRECTION_ACCEPTED)
 ```
 
 ## Purpose
@@ -22,8 +22,8 @@ Authoritative product rules: one companion, audio-first, no multi-companion, no 
 
 | Surface | Implementation | Status |
 | ------- | -------------- | ------ |
-| Session presence | `LiraPresenceSilhouette` (Canvas LOD) | Procedural mid-LOD |
-| AR entity | `CompanionEntityFactory` Echo materials + A1–A3 nodes | Procedural placeholder |
+| Session presence | Spectral stills 7×3 via `LiraStillCatalog` | DIRECTION_ACCEPTED |
+| AR entity | Living Familiar mid-LOD `CompanionEntityFactory` + USDZ slot | Procedural mid shipped |
 | Icons / brand | Echo icons + Bond Filament + AppIcon | Production candidate |
 | Tokens | `WKTokens` v0.2 day/night | In app |
 

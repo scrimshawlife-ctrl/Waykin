@@ -21,12 +21,17 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         let entity = CompanionEntityFactory().makeLira()
 
         XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
-        for name in [
-            "Body", "Head", "LeftEar", "RightEar", "Tail",
-            "Filament", "CoreGlow", "GroundShadow", "StatusIndicator"
-        ] {
+        for name in CompanionEntityFactory.requiredNodeNames {
             XCTAssertNotNil(entity.findEntity(named: name), "Missing \(name)")
         }
+        // A1–A3 living familiar anchors present on mid-LOD.
+        XCTAssertNotNil(entity.findEntity(named: "Head"))
+        XCTAssertNotNil(entity.findEntity(named: "CoreGlow"))
+        XCTAssertNotNil(entity.findEntity(named: "Filament"))
+        XCTAssertEqual(
+            LiraARAssetCatalog.activeARLODDescription,
+            "procedural_living_familiar_mid"
+        )
     }
 
     func testFactoryProducesIndependentEntities() {
