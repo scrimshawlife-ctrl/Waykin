@@ -53,3 +53,13 @@ Also run:
 - The relevant physical-device protocol for device-dependent behavior.
 
 Report commands, results, changed files, assumptions, and unresolved evidence. Do not report completion while required checks are failing.
+
+## GitHub Project Coordination
+
+For issue-scoped work, read canonical coordination Issue #47 and verify the item in [Waykin — Agent Execution](https://github.com/users/scrimshawlife-ctrl/projects/1) before editing.
+
+- Claim `Ready` work before editing; record the agent, lane, branch, exact base SHA, intended paths, frozen paths, and dependency state.
+- Respect declared frozen paths and keep one implementation owner per issue. Review, test, and documentation work may overlap only when production paths do not.
+- Record branch and base SHA at claim time, then provide the structured handoff defined in `docs/collaboration/GITHUB_PROJECT_COORDINATION.md`.
+- When validation reveals a defect, open a separate bounded defect issue instead of expanding the validating task.
+- Never convert physical-device assumptions into `OBSERVED`; use `NOT_COMPUTABLE` until the named device and build are directly exercised.

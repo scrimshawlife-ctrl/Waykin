@@ -51,6 +51,15 @@ else
 fi
 
 echo ""
+echo "--- Structural guard: collaboration coordination ---"
+if python3 "${SCRIPT_DIR}/validate_collaboration_coordination.py"; then
+  echo "collaboration coordination: PASS"
+else
+  echo "collaboration coordination: FAIL"
+  EXIT_CODE=1
+fi
+
+echo ""
 echo "--- Regenerate project ---"
 rm -rf Waykin.xcodeproj || true
 if xcodegen generate; then

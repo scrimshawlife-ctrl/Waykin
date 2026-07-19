@@ -1,0 +1,34 @@
+name: Validation task
+description: Bounded validation against an exact implementation
+title: "[validation]: "
+body:
+  - type: input
+    id: implementation_dependency
+    attributes: {label: Implementation dependency}
+    validations: {required: true}
+  - type: input
+    id: exact_build_or_sha
+    attributes: {label: Exact build or SHA}
+    validations: {required: true}
+  - type: textarea
+    id: environment
+    attributes: {label: Environment}
+    validations: {required: true}
+  - type: textarea
+    id: protocol_scope
+    attributes: {label: Protocol scope}
+    validations: {required: true}
+  - type: textarea
+    id: observed_evidence
+    attributes: {label: Observed evidence}
+    validations: {required: true}
+  - type: textarea
+    id: inferred_evidence
+    attributes: {label: Inferred evidence}
+  - type: textarea
+    id: not_computable_fields
+    attributes: {label: NOT_COMPUTABLE fields}
+  - type: textarea
+    id: pass_fail_exit_criteria
+    attributes: {label: Pass/fail exit criteria}
+    validations: {required: true}

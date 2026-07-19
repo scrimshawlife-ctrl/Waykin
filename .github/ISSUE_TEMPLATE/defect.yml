@@ -1,0 +1,39 @@
+name: Bounded defect
+description: Reproducible defect discovered during approved work
+title: "[defect]: "
+body:
+  - type: textarea
+    id: reproducible_behavior
+    attributes: {label: Reproducible behavior}
+    validations: {required: true}
+  - type: textarea
+    id: expected_behavior
+    attributes: {label: Expected behavior}
+    validations: {required: true}
+  - type: input
+    id: exact_sha
+    attributes: {label: Exact SHA}
+    validations: {required: true}
+  - type: textarea
+    id: environment
+    attributes: {label: Environment}
+    validations: {required: true}
+  - type: textarea
+    id: reproduction_steps
+    attributes: {label: Reproduction steps}
+    validations: {required: true}
+  - type: textarea
+    id: bounded_affected_surface
+    attributes: {label: Bounded affected surface}
+    validations: {required: true}
+  - type: textarea
+    id: evidence
+    attributes: {label: Evidence}
+    validations: {required: true}
+  - type: checkboxes
+    id: prohibited_opportunistic_expansion
+    attributes:
+      label: Scope guard
+      options:
+        - label: I will not use this defect to authorize opportunistic expansion.
+          required: true
