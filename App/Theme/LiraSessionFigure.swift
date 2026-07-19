@@ -5,11 +5,15 @@ import SwiftUI
 /// Dawn materials via Echo tokens. Not a final painted hero still.
 struct LiraSessionFigure: View {
     let presentation: CompanionPresencePresentation
+    /// When nil, uses environment `liraSkin` (default Dawn).
+    var skinOverride: LiraSkin? = nil
     @Environment(\.wkTheme) private var theme
+    @Environment(\.liraSkin) private var environmentSkin
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
 
     private var pose: LiraSessionPose { LiraSessionPose.resolve(from: presentation) }
+    private var skin: LiraSkin { skinOverride ?? environmentSkin }
 
     var body: some View {
         ZStack {
@@ -58,8 +62,8 @@ struct LiraSessionFigure: View {
             let crouch = pose.crouch
             let cx = size.width * 0.52
             let cy = size.height * 0.50 + crouch * 8 * unit
-            let bodyColor = Self.bodyFill(pose: pose, theme: theme)
-            let filamentColor = Self.filamentFill(pose: pose, theme: theme)
+            let bodyColor = skin.bodyFill(pose: pose, theme: theme)
+            let filamentColor = skin.filamentFill(pose: pose, theme: theme)
             let filLen = pose.filamentLength
 
             // A3 filament (behind body)
@@ -156,7 +160,7 @@ struct LiraSessionFigure: View {
                 width: coreSize * unit,
                 height: coreSize * unit
             ))
-            context.fill(core, with: .color(theme.bond))
+            context.fill(core, with: .color(skin.bondCore(theme: theme)))
             let coreInner = Path(ellipseIn: CGRect(
                 x: cx + 4 * unit,
                 y: cy - 1 * unit,
@@ -227,41 +231,6 @@ struct LiraSessionFigure: View {
         }
     }
 
-    // MARK: - Materials (Dawn / Echo)
-
-    static func bodyFill(pose: LiraSessionPose, theme: WKTheme) -> Color {
-        switch pose {
-        case .hunter:
-            return theme.hunter.opacity(0.92)
-        case .rival:
-            return Color(red: 0.88, green: 0.78, blue: 0.68)
-        case .sanctuary:
-            return theme.sanctuary.opacity(0.9)
-        case .bond:
-            return Color(red: 0.93, green: 0.88, blue: 0.80)
-        case .dormant:
-            return Color(red: 0.82, green: 0.78, blue: 0.72)
-        case .manifesting:
-            return Color(red: 0.91, green: 0.85, blue: 0.77).opacity(0.85)
-        case .guide:
-            return Color(red: 0.91, green: 0.85, blue: 0.77)
-        }
-    }
-
-    static func filamentFill(pose: LiraSessionPose, theme: WKTheme) -> Color {
-        switch pose {
-        case .hunter:
-            return theme.hunterFilament
-        case .rival:
-            return theme.rival.opacity(0.85)
-        case .bond:
-            return theme.bond.opacity(0.75)
-        case .sanctuary:
-            return theme.sanctuaryText.opacity(0.8)
-        default:
-            return theme.guide
-        }
-    }
 }
 
 // Back-compat alias used by presence view
