@@ -25,4 +25,32 @@ final class LiraSessionMotionTests: XCTestCase {
         XCTAssertGreaterThan(LiraSessionMotion.hunterEchoOpacity(reduceMotion: false), 0.1)
         XCTAssertLessThan(LiraSessionMotion.hunterEchoOpacity(reduceMotion: false), 0.4)
     }
+
+    func testManifestingFadeLongerThanDefaultCrossfade() {
+        XCTAssertEqual(LiraSessionMotion.manifestingFadeDuration(reduceMotion: false), 0.70, accuracy: 0.001)
+        XCTAssertEqual(LiraSessionMotion.manifestingFadeDuration(reduceMotion: true), 0.12, accuracy: 0.001)
+        XCTAssertGreaterThan(
+            LiraSessionMotion.poseCrossfadeDuration(reduceMotion: false, incomingPose: .manifesting),
+            LiraSessionMotion.poseCrossfadeDuration(reduceMotion: false, incomingPose: .guide)
+        )
+        XCTAssertEqual(
+            LiraSessionMotion.poseCrossfadeDuration(reduceMotion: true, incomingPose: .manifesting),
+            0.12,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(LiraSessionMotion.manifestingStartScale, 0.92, accuracy: 0.001)
+    }
+
+    func testBondOrbitTiming() {
+        let period = LiraSessionMotion.bondOrbitPeriod(reduceMotion: false)
+        XCTAssertNotNil(period)
+        XCTAssertEqual(period!, 1.2, accuracy: 0.001)
+        XCTAssertNil(LiraSessionMotion.bondOrbitPeriod(reduceMotion: true))
+        let bondTrim = LiraSessionMotion.bondOrbitTrim(pose: .bond)
+        let guideTrim = LiraSessionMotion.bondOrbitTrim(pose: .guide)
+        XCTAssertLessThan(bondTrim.from, guideTrim.from)
+        XCTAssertGreaterThan(bondTrim.to, guideTrim.to)
+        XCTAssertEqual(LiraSessionMotion.bondOrbitLineWidth(pose: .bond), 6)
+        XCTAssertEqual(LiraSessionMotion.bondOrbitLineWidth(pose: .guide), 5)
+    }
 }
