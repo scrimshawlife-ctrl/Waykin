@@ -9,6 +9,8 @@ token_version: WK_TOKENS_v0.2
 companion_name: Lira
 waykin_core_touched: false
 outdoor_qa: NOT_COMPUTABLE
+outdoor_protocol: docs/design/OUTDOOR_QA_CHECKLIST.md
+receipt_template: docs/design/OUTDOOR_QA_RECEIPT_TEMPLATE.md
 ```
 
 ## What shipped
