@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Indoor presentation complete — no active design slice | — | — | — | Paused (outdoor deferred) | Main @ polish + sim smoke |
+| — | — | — | — | Idle | AR frozen; path + HealthKit MVP landed |
 
 ## Blocked
 

@@ -30,6 +30,14 @@ enum LiraSessionPose: String, CaseIterable, Equatable, Sendable {
         if presentation.eventKind == .bondMoment { return .bond }
         if presentation.eventKind == .quietInterval { return .dormant }
 
+        // Path integrity lean (presentation only; not a new gameplay loop).
+        if presentation.pathRelation == .offPath || presentation.pathIntegrityPressure >= 0.7 {
+            return .hunter
+        }
+        if presentation.pathRelation == .strained || presentation.pathIntegrityPressure >= 0.4 {
+            return .rival
+        }
+
         switch presentation.behavior {
         case .rest:
             return .sanctuary

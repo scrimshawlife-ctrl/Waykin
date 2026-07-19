@@ -21,7 +21,11 @@ Visual system imports and production follow-ons for the app repository.
 | [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md) | Spectral Lira direction accepted |
 | [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ async load |
 | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Session + AR animation draft plan |
-| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | AR freeze → pathfinding → HealthKit roadmap |
+| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | AR freeze → pathfinding → HealthKit (complete v1.0) |
+| [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md) | AR presentation frozen for engineering |
+| [REAL_WALK_TO_AR_MAPPING.md](REAL_WALK_TO_AR_MAPPING.md) | Real/demo walk → AR commands |
+| [PATHFINDING.md](PATHFINDING.md) | Semantic path progress MVP |
+| [HEALTHKIT.md](HEALTHKIT.md) | Optional HealthKit enrichment MVP |
 | [receipts/](receipts/) | Filled outdoor / sim receipts |
 
 ## Recommended order

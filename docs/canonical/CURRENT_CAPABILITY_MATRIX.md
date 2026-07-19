@@ -12,8 +12,11 @@
 | Local persistence | Implemented | Binding | Make no cloud assumptions |
 | Field-test receipts | Implemented | Binding | Preserve privacy filtering |
 | AR semantic contracts | Implemented | Binding | Keep platform-neutral |
-| AR app adapter | Partial | Near term | Milestone-scoped only |
-| Real-walk-to-AR integration | Planned | Near term | Require explicit issue and device evidence |
+| AR app adapter (MVP) | **Implemented (frozen)** | Binding | Maintenance/defects only — see `AR_MVP_FREEZE.md` |
+| Real-walk-to-AR commands | **Implemented** | Binding | Documented mapping; device tracking quality still NOT_COMPUTABLE |
+| Path progress (semantic) | **Implemented (MVP)** | Binding | `PathProgressEngine` — not navigation-grade |
+| HealthKit enrichment | **Implemented (MVP)** | Binding | App adapter only; Demo never blocked |
+| Outdoor physical AR QA | Partial | Near term | Device evidence only (non-blocking) |
 | AI Director | Deferred | Reference only | Do not implement |
 | Experience Pack runtime | Deferred | Reference only | Preserve seam only |
 | Backend/auth/cloud save | Deferred | Reference only | Do not implement |
