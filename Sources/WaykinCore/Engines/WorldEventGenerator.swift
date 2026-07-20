@@ -60,22 +60,35 @@ public struct WorldEventGeneratorConfiguration: Codable, Equatable, Sendable {
     public let minimumTickSpacing: TimeInterval
     public let rules: [WorldEventRule]
 
+    /// Global floor between any two generated events (seconds of session active time).
+    /// Kept near 40 so walks feel sparse; do not drop below ~30 without outdoor evidence.
     public init(minimumTickSpacing: TimeInterval = 40, rules: [WorldEventRule] = WorldEventGeneratorConfiguration.defaultRules) {
         self.minimumTickSpacing = max(0, minimumTickSpacing)
         self.rules = rules
     }
 
+    /// Companion-first light tune (v1.1).
+    ///
+    /// Intent (bounded pursuit safety preserved):
+    /// - **More Lira**: drawsNear / observes / movesAhead slightly favored and cooler cooldowns
+    /// - **Quieter path**: quietInterval less dominant when other companion cues are eligible
+    /// - **Rarer sharp pursuit**: higher entry pressure/energy, lower weight, longer begin cooldown
+    /// - **Easier release**: pursuitFades slightly more available after pressure
+    /// - **Bond/familiar earlier**: mild threshold relief so return-walk reward can appear sooner
+    ///
+    /// Demo Mode schedules its arc explicitly and is unaffected by these weights.
+    /// Outdoor calibration may revise values; do not invent new event kinds here.
     public static let defaultRules: [WorldEventRule] = [
-        WorldEventRule(kind: .quietInterval, minimumEnergy: 0, maximumPressure: 0.25, weight: 4, cooldown: 24),
-        WorldEventRule(kind: .companionDrawsNear, minimumEnergy: 0.05, maximumPressure: 0.45, weight: 6, cooldown: 28),
-        WorldEventRule(kind: .companionMovesAhead, minimumEnergy: 0.45, maximumPressure: 0.6, weight: 4, cooldown: 32),
-        WorldEventRule(kind: .companionObserves, minimumEnergy: 0, minimumPressure: 0.05, maximumPressure: 0.55, weight: 3, cooldown: 24),
-        WorldEventRule(kind: .distantPresence, minimumPressure: 0.22, maximumPressure: 0.7, weight: 4, cooldown: 40),
-        WorldEventRule(kind: .pursuitBegins, minimumEnergy: 0.25, minimumPressure: 0.32, maximumPressure: 0.78, weight: 3, cooldown: 60),
-        WorldEventRule(kind: .pursuitIntensifies, minimumPressure: 0.55, maximumPressure: 1, weight: 3, cooldown: 45),
-        WorldEventRule(kind: .pursuitFades, minimumEnergy: 0.55, minimumPressure: 0.2, maximumPressure: 0.5, weight: 2, cooldown: 42),
-        WorldEventRule(kind: .familiarPlaceStirs, minimumFamiliarity: 0.35, weight: 2, cooldown: 55),
-        WorldEventRule(kind: .bondMoment, minimumEnergy: 0.25, minimumBondLevel: 10, weight: 2, cooldown: 70)
+        WorldEventRule(kind: .quietInterval, minimumEnergy: 0, maximumPressure: 0.25, weight: 3, cooldown: 28),
+        WorldEventRule(kind: .companionDrawsNear, minimumEnergy: 0.05, maximumPressure: 0.48, weight: 7, cooldown: 24),
+        WorldEventRule(kind: .companionMovesAhead, minimumEnergy: 0.40, maximumPressure: 0.62, weight: 4, cooldown: 30),
+        WorldEventRule(kind: .companionObserves, minimumEnergy: 0, minimumPressure: 0.04, maximumPressure: 0.55, weight: 4, cooldown: 22),
+        WorldEventRule(kind: .distantPresence, minimumPressure: 0.24, maximumPressure: 0.70, weight: 3, cooldown: 44),
+        WorldEventRule(kind: .pursuitBegins, minimumEnergy: 0.28, minimumPressure: 0.36, maximumPressure: 0.78, weight: 2, cooldown: 70),
+        WorldEventRule(kind: .pursuitIntensifies, minimumPressure: 0.55, maximumPressure: 1, weight: 3, cooldown: 48),
+        WorldEventRule(kind: .pursuitFades, minimumEnergy: 0.50, minimumPressure: 0.18, maximumPressure: 0.55, weight: 3, cooldown: 38),
+        WorldEventRule(kind: .familiarPlaceStirs, minimumFamiliarity: 0.30, weight: 3, cooldown: 50),
+        WorldEventRule(kind: .bondMoment, minimumEnergy: 0.20, minimumBondLevel: 8, weight: 3, cooldown: 60)
     ]
 }
 

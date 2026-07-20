@@ -7,7 +7,7 @@
 | Lira companion | Implemented | Binding | Extend only through approved states |
 | Bond | Implemented | Binding | Require migration plan for schema or semantic changes |
 | Bounded pursuit pressure | Implemented | Binding | Preserve safety constraints |
-| Deterministic events | Implemented | Binding | Maintain seeded reproducibility |
+| Deterministic events | Implemented | Binding | Seeded reproducibility; companion-first defaultRules v1.1 |
 | Semantic audio | Implemented | Binding | Core must not own filenames |
 | Local persistence | Implemented | Binding | Make no cloud assumptions |
 | Field-test receipts | Implemented | Binding | Preserve privacy filtering |

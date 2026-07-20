@@ -26,6 +26,7 @@ Visual system imports and production follow-ons for the app repository.
 | [REAL_WALK_TO_AR_MAPPING.md](REAL_WALK_TO_AR_MAPPING.md) | Real/demo walk → AR commands |
 | [PATHFINDING.md](PATHFINDING.md) | Semantic path progress + summary surfacing |
 | [HEALTHKIT.md](HEALTHKIT.md) | Optional HealthKit enrichment + energy bias |
+| [EVENT_WEIGHT_TUNING.md](EVENT_WEIGHT_TUNING.md) | Companion-first defaultRules light tune |
 | [receipts/](receipts/) | Filled outdoor / sim receipts |
 
 ## Recommended order
