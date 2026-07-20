@@ -58,7 +58,7 @@ struct LiraSessionFigure: View {
         .offset(y: presentation.verticalOffset)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(presentation.companionName) presence")
-        .accessibilityValue("\(pose.accessibilityDescription). Graphics \(graphicsPath.diagnosticLabel)")
+        .accessibilityValue(pose.accessibilityDescription)
         .accessibilitySortPriority(5)
         .accessibilityIdentifier("waykin.session.presence")
         .onAppear {
