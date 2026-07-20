@@ -2,13 +2,15 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-ANIM-PLAN-001
-version: 0.3
-status: PARTIAL_IMPLEMENTED
+version: 0.4
+status: MID_LOD_COMPLETE
 companion: Lira
 style: spectral_living_familiar
 direction: DIRECTION_ACCEPTED
 audio_first: true
 outdoor_qa: NOT_COMPUTABLE
+session_ambient_motion: SHIPPED
+route_polyline_reveal: SHIPPED
 skeletal_animation_library: JOINT_HIERARCHY_SHIPPED
 dcc_skinned_skeletal: NOT_SHIPPED
 runtime_animation_resource_clips: SHIPPED
@@ -63,7 +65,7 @@ This plan binds animation to existing state machines:
 | ------- | ------- | ------ | -------- | -------------- | ------ |
 | `S_pose_crossfade` | Pose change | Opacity crossfade between stills | 180–280ms | Hard cut or 80ms | **Shipped** |
 | `S_core_pulse` | Idle / bond | Presence scale pulse + period helper | 1.6s loop | Static | **Shipped** |
-| `S_filament_drift` | Guide / follow | Offset helper for still/orbit language | 2.4s loop | Off | **Helpers shipped** |
+| `S_filament_drift` | Guide / follow / bond / sanctuary | Still offset + ambient pulse via TimelineView | 2.4s / 1.6s | Off | **Shipped** (#157) |
 | `S_manifest` | Opening / manifesting | Opacity 0→1 + scale 0.92→1 | 700ms | ≤120ms fade | **Shipped** |
 | `S_hunter_echo` | Pursuit close | Delayed second silhouette, cool fringe | While pressure | Static hunter still | **Shipped** |
 | `S_bond_orbit` | Bond event | Bond ring continuous spin 1.2s | Loop while bond | Static ring | **Shipped** |
@@ -76,9 +78,9 @@ This plan binds animation to existing state machines:
 
 ### Exit criteria (session)
 
-- [ ] Pose transitions never blank the presence frame
-- [ ] Reduce Motion disables loops; one-shot fades ≤120ms
-- [ ] UI tests still find `waykin.session.presence` with pose a11y value
+- [x] Pose transitions never blank the presence frame (crossfade keep previous still)
+- [x] Reduce Motion disables ambient loops; one-shot fades ≤120ms (helpers + figure)
+- [x] UI tests still find `waykin.session.presence` with pose a11y value
 
 ## AR mid-LOD animation (priority 2)
 
@@ -134,10 +136,10 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 
 ### Exit criteria (AR)
 
-- [ ] `make validate` + AR embodiment tests stay green (deterministic presentation)
-- [ ] No animation after `clearSession`
-- [ ] Skin swap does not restart unrelated clips mid-pose incorrectly
-- [ ] LOD label reflects procedural vs USDZ (`waykin.ar.canonical.lod`)
+- [x] `make validate` + AR embodiment tests stay green (deterministic presentation)
+- [x] No animation after `clearSession` (`skeletalPlayer.clear()`)
+- [x] Skin swap materials only; skeletal clips by presentation state
+- [x] LOD label reflects procedural vs USDZ (`waykin.ar.canonical.lod`)
 
 ## State mapping matrix
 
@@ -174,8 +176,9 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 | **A4b** | MeshDescriptor mid-LOD + multi-seg filament + ears/tail/bob | **Done** (`LiraMeshGeometry` + factory) |
 | **A4c** | Runtime `AnimationResource` clip library | **Done** (`LiraARAnimationLibrary`) |
 | **A5** | Joint-hierarchy skeletal AnimationLibrary + player | **Done** (`LiraSkeletal*` + renderer default) |
-| **A5b** | DCC skinned skeletal (optional) | Artist mesh + bone export |
-| **A6** | Outdoor motion QA notes | Device walk |
+| **A5+** | Session ambient drift/pulse + route polyline reveal | **Done** (#157) |
+| **A5b** | DCC skinned skeletal (optional) | **Blocked on artist mesh** — not runtime-completeable |
+| **A6** | Outdoor motion QA notes | Device walk (#41) |
 
 ## Test strategy
 

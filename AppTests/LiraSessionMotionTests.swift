@@ -65,5 +65,36 @@ final class LiraSessionMotionTests: XCTestCase {
         XCTAssertNil(LiraSessionMotion.filamentDriftPeriod(reduceMotion: true))
         XCTAssertEqual(LiraSessionMotion.filamentDriftOffsetX(progress: 0, reduceMotion: true), 0, accuracy: 0.001)
         XCTAssertNotEqual(LiraSessionMotion.filamentDriftOffsetX(progress: 0.25, reduceMotion: false), 0)
+        XCTAssertEqual(LiraSessionMotion.filamentDriftOffsetY(progress: 0, reduceMotion: true), 0, accuracy: 0.001)
+        XCTAssertNotEqual(LiraSessionMotion.filamentDriftOffsetY(progress: 0.3, reduceMotion: false), 0)
+    }
+
+    func testAmbientStillMotionAndPulse() {
+        XCTAssertFalse(LiraSessionMotion.allowsAmbientStillMotion(pose: .dormant, reduceMotion: false))
+        XCTAssertFalse(LiraSessionMotion.allowsAmbientStillMotion(pose: .guide, reduceMotion: true))
+        XCTAssertTrue(LiraSessionMotion.allowsAmbientStillMotion(pose: .guide, reduceMotion: false))
+        XCTAssertTrue(LiraSessionMotion.allowsAmbientStillMotion(pose: .bond, reduceMotion: false))
+        let date = Date(timeIntervalSinceReferenceDate: 100)
+        XCTAssertEqual(
+            LiraSessionMotion.ambientPulseScale(at: date, pose: .guide, reduceMotion: true),
+            1,
+            accuracy: 0.001
+        )
+        // Peak of sin cycle: period 1.6 → quarter period ≈ 0.4s
+        let peak = Date(timeIntervalSinceReferenceDate: 0.4)
+        XCTAssertGreaterThan(
+            LiraSessionMotion.ambientPulseScale(at: peak, pose: .bond, reduceMotion: false),
+            1.01
+        )
+    }
+
+    func testRouteRevealPointCount() {
+        XCTAssertEqual(LiraSessionMotion.routeRevealPointCount(total: 0, progress: 1), 0)
+        XCTAssertEqual(LiraSessionMotion.routeRevealPointCount(total: 10, progress: 0), 0)
+        XCTAssertEqual(LiraSessionMotion.routeRevealPointCount(total: 10, progress: 1), 10)
+        XCTAssertGreaterThanOrEqual(LiraSessionMotion.routeRevealPointCount(total: 10, progress: 0.01), 2)
+        XCTAssertLessThan(LiraSessionMotion.routeRevealPointCount(total: 10, progress: 0.5), 10)
+        XCTAssertEqual(LiraSessionMotion.routeRevealDuration(reduceMotion: true), 0.12, accuracy: 0.001)
+        XCTAssertEqual(LiraSessionMotion.routeRevealDuration(reduceMotion: false), 0.85, accuracy: 0.001)
     }
 }
