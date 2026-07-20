@@ -142,6 +142,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
     private(set) var realWalkState: RealWalkSessionState = .idle
     var isLiveSessionActive: Bool { realWalkState == .active || realWalkState == .paused }
     var liveSignalState: LiveLocationSignalState = .waitingForAuthorization
+    /// Presentation-only breadcrumb of the current real walk (#121):
+    /// derived from accepted movement fixes, capped, reset per session,
+    /// never persisted.
+    private(set) var walkPathTrace = WalkPathTrace()
     var liveAcceptedCount: Int = 0
     var liveRejectedCount: Int = 0
     /// Semantic path progress (demo + real). No coordinates.
@@ -484,6 +488,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             demoMessage = "A walk is already in progress."
             return
         }
+        walkPathTrace.reset()
         if fieldTestReceiptStore != nil {
             activeFieldTestReceipt = FieldTestReceiptBuilder(
                 sessionID: UUID(),
@@ -772,6 +777,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
             if let snapshot = result.snapshot {
                 self.pathProgressEngine.recordAccepted(snapshot)
+                if let point = self.movementEngine.currentSession?.routePoints.last {
+                    self.walkPathTrace.append(latitude: point.latitude, longitude: point.longitude)
+                }
             } else if result.diagnostic.disposition != .awaitingFreshAnchor {
                 self.pathProgressEngine.recordRejected()
             }
@@ -1417,17 +1425,21 @@ struct ActiveSessionView: View {
                         .accessibilitySortPriority(1)
                         .accessibilityIdentifier("waykin.session.runToEnd")
                     } else {
-                        Text("Signal: \(String(describing: appModel.liveSignalState))")
+                        let signal = GPSSignalPresentation(state: appModel.liveSignalState)
+                        Label(signal.label, systemImage: signal.symbolName)
                             .font(.caption)
-                            .foregroundStyle(theme.textSecondary)
+                            .foregroundStyle(signal.isProblem ? theme.caution : theme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityLabel("GPS status")
+                            .accessibilityValue(signal.accessibilityValue)
                             .accessibilitySortPriority(1)
                             .accessibilityIdentifier("waykin.session.liveSignal")
                     }
 
                     CompactSessionMap(
                         latitude: presentation.latitude,
-                        longitude: presentation.longitude
+                        longitude: presentation.longitude,
+                        trace: appModel.walkPathTrace
                     )
 
                     Button {

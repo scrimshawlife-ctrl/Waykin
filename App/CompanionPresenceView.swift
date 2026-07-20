@@ -324,37 +324,51 @@ struct CompanionPresenceView: View {
 struct CompactSessionMap: View {
     let latitude: Double?
     let longitude: Double?
+    var trace: WalkPathTrace = WalkPathTrace()
     @Environment(\.wkTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var camera: MapCameraPosition = .automatic
 
     var locationAccessibilityValue: String {
-        latitude == nil || longitude == nil
-            ? "Waiting for a location update."
+        guard latitude != nil, longitude != nil else {
+            return "Waiting for a location update."
+        }
+        return trace.count >= 2
+            ? "Current location and the walked path so far are shown."
             : "Current location is available for this walk."
     }
 
-    var body: some View {
-        let center = CLLocationCoordinate2D(
+    private var center: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(
             latitude: latitude ?? 37.7749,
             longitude: longitude ?? -122.4194
         )
+    }
+
+    private func region(around coordinate: CLLocationCoordinate2D) -> MapCameraPosition {
+        .region(MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
+        ))
+    }
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Label("Location context", systemImage: "map")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.textSecondary)
                 .accessibilityHidden(true)
             ZStack {
-                Map(
-                    initialPosition: .region(MKCoordinateRegion(
-                        center: center,
-                        span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
-                    )),
-                    interactionModes: []
-                ) {
+                Map(position: $camera, interactionModes: []) {
+                    if trace.count >= 2 {
+                        MapPolyline(coordinates: trace.points.map(\.coordinate))
+                            .stroke(theme.guide.opacity(0.85),
+                                    style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                    }
                     if latitude != nil, longitude != nil {
                         Marker("Current location", coordinate: center)
                     }
                 }
-                .id("\(latitude ?? 0)-\(longitude ?? 0)")
                 .accessibilityHidden(true)
 
                 Color.clear
@@ -367,6 +381,20 @@ struct CompactSessionMap: View {
             }
             .frame(height: 76)
             .clipShape(RoundedRectangle(cornerRadius: 6))
+            .onAppear { camera = region(around: center) }
+            .onChange(of: latitude) { _, _ in follow() }
+            .onChange(of: longitude) { _, _ in follow() }
+        }
+    }
+
+    /// Smoothly follows the walker; jumps directly under Reduce Motion.
+    private func follow() {
+        guard latitude != nil, longitude != nil else { return }
+        let target = region(around: center)
+        if reduceMotion {
+            camera = target
+        } else {
+            withAnimation(.easeInOut(duration: 0.6)) { camera = target }
         }
     }
 }
