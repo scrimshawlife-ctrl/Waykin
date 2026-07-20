@@ -1,54 +1,18 @@
-#!/usr/bin/env bash
-# Print build identity for outdoor QA and scaffold a dated receipt.
-# Does not claim device evidence. Does not require a physical device.
-set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT"
-
-DATE_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-FULL="$(git rev-parse HEAD)"
-SHA="$(git rev-parse --short HEAD)"
-BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-RECEIPT_DIR="docs/design/receipts"
-mkdir -p "$RECEIPT_DIR"
-RECEIPT="$RECEIPT_DIR/OUTDOOR_QA_RECEIPT_${STAMP}_${SHA}_PENDING.md"
-
-echo "=== Waykin Outdoor QA Prep ==="
-echo "date_utc: $DATE_UTC"
-echo "git_sha: $FULL"
-echo "git_short: $SHA"
-echo "branch: $BRANCH"
-echo "session_packet: docs/design/OUTDOOR_SESSION_PACKET.md"
-echo "checklist: docs/design/OUTDOOR_QA_CHECKLIST.md"
-echo "receipt_template: docs/design/OUTDOOR_QA_RECEIPT_TEMPLATE.md"
-echo "sim_preflight: docs/design/SIMULATOR_PREFLIGHT.md"
-echo "issue_41: physical AR presentation validation"
-echo ""
-echo "Next:"
-echo "  1. make validate"
-echo "  2. optional: bash scripts/sim_walk_preflight.sh"
-echo "  3. install exact build on device"
-echo "  4. walk OUTDOOR_SESSION_PACKET.md"
-echo "  5. fill receipt rows; rename PENDING → device tag when signed"
-echo ""
-
-cat > "$RECEIPT" <<EOF
 # Outdoor QA Receipt (PENDING device walk)
 
-\`\`\`yaml
+```yaml
 document_id: WAYKIN-OUTDOOR-QA-RECEIPT
 version: 0.1
 template: false
 status: PENDING_DEVICE
 evidence_class: NOT_COMPUTABLE
-prepared_utc: $DATE_UTC
-git_sha: $FULL
-git_short: $SHA
-branch: $BRANCH
-\`\`\`
+prepared_utc: 2026-07-20T02:19:22Z
+git_sha: 8295da2dbaf7728c9617fabb3789126be6103e7f
+git_short: 8295da2
+branch: main
+```
 
-> Scaffolded by \`scripts/outdoor_qa_prep.sh\`. Rows below are **blank** until a human operator records **OBSERVED** results on a named device. Do not mark PASS without the walk.
+> Scaffolded by `scripts/outdoor_qa_prep.sh`. Rows below are **blank** until a human operator records **OBSERVED** results on a named device. Do not mark PASS without the walk.
 
 ## Meta
 
@@ -56,8 +20,8 @@ branch: $BRANCH
 | ----- | ----- |
 | Date (local) | |
 | Operator | |
-| Build SHA | \`$FULL\` |
-| Short SHA | \`$SHA\` |
+| Build SHA | `8295da2dbaf7728c9617fabb3789126be6103e7f` |
+| Short SHA | `8295da2` |
 | App version / config | Debug / Release |
 | Device model | |
 | iOS version | |
@@ -70,8 +34,8 @@ branch: $BRANCH
 
 | Gate | Result |
 | ---- | ------ |
-| \`make validate\` | (run at prep) |
-| Sim preflight (optional) | PASS / FAIL / SKIP |
+| `make validate` | PASS (prep session) |
+| Sim preflight (optional) | PASS (automated gate; manual S1–S12 still open) |
 
 ## Pass A — Day (UI)
 
@@ -129,7 +93,7 @@ branch: $BRANCH
 
 ## Overall
 
-\`\`\`yaml
+```yaml
 day_pass: true | false | partial | not_run
 night_pass: true | false | partial | not_run
 reduced_motion_pass: true | false | partial | not_run
@@ -142,8 +106,4 @@ follow_ups: |
   Complete OUTDOOR_SESSION_PACKET.md on device; open defect issues for FAIL rows.
 signed_by:
 signed_at:
-\`\`\`
-EOF
-
-echo "wrote $RECEIPT"
-ls -la "$RECEIPT"
+```
