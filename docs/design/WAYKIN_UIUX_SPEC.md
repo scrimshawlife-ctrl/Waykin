@@ -54,6 +54,11 @@ this age have design law this strong.
 
 # Part B — Comprehensive UI/UX Design
 
+**Visual companions (SIMULATOR / concept class, not outdoor proof):**
+- HTML mockup page: [`WAYKIN_UIUX_SPEC_MOCKUPS.html`](WAYKIN_UIUX_SPEC_MOCKUPS.html)
+- Day/night PNG renders: [`docs/assets/mockups/uiux-spec-v0.1/`](../assets/mockups/uiux-spec-v0.1/)
+- PDF companion: [`WAYKIN_UIUX_SPEC_VISUAL_COMPANION.pdf`](WAYKIN_UIUX_SPEC_VISUAL_COMPANION.pdf)
+
 ## B1. Design principles (derived from locked brand + product law)
 
 1. **Pocket-first.** The phone is not the product; the walk is. Every

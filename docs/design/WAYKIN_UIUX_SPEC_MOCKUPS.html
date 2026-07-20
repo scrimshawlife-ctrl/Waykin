@@ -1,0 +1,317 @@
+<title>Waykin UI/UX Spec — Visual Companion</title>
+<style>
+  :root {
+    --bg: #E4E8EC; --bg-warm: #F2EDE6; --surface: #F7F5F2; --surface-2: #EBEEF1;
+    --ink: #141820; --ink-2: #4A535E; --ink-3: #8A929C;
+    --guide: #3F8F8A; --guide-text: #2F6F6B; --bond: #D4A45A; --bond-text: #8A6428;
+    --hunter: #5C4E7A; --filament: #7B8C9E; --rival: #D17A4A;
+    --sanctuary: #A8C4B5; --sanctuary-text: #5F7F72; --caution: #E0B040;
+    --frame: #10131a; --shadow: 0 12px 40px rgba(20,24,32,.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151C; --bg-warm: #1A1614; --surface: #1E2430; --surface-2: #181C26;
+      --ink: #E6EAF0; --ink-2: #9AA3B0; --ink-3: #7A8494;
+      --guide: #4A9E98; --guide-text: #4A9E98; --bond: #B8894A; --bond-text: #B8894A;
+      --hunter: #6A5A8A; --filament: #8A97A8; --rival: #C46B3A;
+      --sanctuary: #5F7F72; --sanctuary-text: #A8C4B5;
+      --frame: #05070b; --shadow: 0 12px 40px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151C; --bg-warm: #1A1614; --surface: #1E2430; --surface-2: #181C26;
+    --ink: #E6EAF0; --ink-2: #9AA3B0; --ink-3: #7A8494;
+    --guide: #4A9E98; --guide-text: #4A9E98; --bond: #B8894A; --bond-text: #B8894A;
+    --hunter: #6A5A8A; --filament: #8A97A8; --rival: #C46B3A;
+    --sanctuary: #5F7F72; --sanctuary-text: #A8C4B5;
+    --frame: #05070b; --shadow: 0 12px 40px rgba(0,0,0,.5);
+  }
+  :root[data-theme="light"] {
+    --bg: #E4E8EC; --bg-warm: #F2EDE6; --surface: #F7F5F2; --surface-2: #EBEEF1;
+    --ink: #141820; --ink-2: #4A535E; --ink-3: #8A929C;
+    --guide: #3F8F8A; --guide-text: #2F6F6B; --bond: #D4A45A; --bond-text: #8A6428;
+    --hunter: #5C4E7A; --filament: #7B8C9E; --rival: #D17A4A;
+    --sanctuary: #A8C4B5; --sanctuary-text: #5F7F72; --caution: #E0B040;
+    --frame: #10131a; --shadow: 0 12px 40px rgba(20,24,32,.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 48px 24px 96px; }
+  header.masthead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 16px 24px; margin-bottom: 8px; }
+  .masthead h1 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+  .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+  .chip {
+    display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px;
+    letter-spacing: .06em; background: var(--surface-2); color: var(--ink-2);
+    border: 1px solid color-mix(in srgb, var(--ink-3) 35%, transparent);
+  }
+  .chip.status { background: color-mix(in srgb, var(--caution) 22%, var(--surface)); color: var(--bond-text); border-color: var(--caution); }
+  .lede { max-width: 62ch; color: var(--ink-2); margin: 8px 0 0; }
+  section { margin-top: 64px; }
+  section > h2 { font-size: 22px; letter-spacing: -0.01em; margin: 4px 0 4px; }
+  section > .sub { color: var(--ink-2); max-width: 64ch; margin: 0 0 24px; }
+  hr.rule { border: 0; height: 1px; background: color-mix(in srgb, var(--ink-3) 30%, transparent); margin: 8px 0 0; }
+
+  /* Palette */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .swatch { border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+  .swatch .color { height: 56px; }
+  .swatch .meta { padding: 8px 12px 10px; }
+  .swatch .name { font-size: 13px; font-weight: 600; }
+  .swatch .hex { font-size: 11px; color: var(--ink-3); }
+
+  /* Phones */
+  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px; align-items: start; }
+  .phone-slot { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  .phone-label { text-align: center; }
+  .phone-label .t { font-weight: 650; }
+  .phone-label .d { font-size: 13px; color: var(--ink-2); max-width: 34ch; }
+  .phone {
+    width: 290px; border-radius: 40px; padding: 10px; background: var(--frame);
+    box-shadow: var(--shadow);
+  }
+  .screen {
+    border-radius: 32px; overflow: hidden; background: var(--bg);
+    display: flex; flex-direction: column; min-height: 580px; position: relative;
+  }
+  .notch { height: 24px; display: flex; justify-content: center; padding-top: 6px; }
+  .notch::after { content: ""; width: 90px; height: 16px; border-radius: 999px; background: var(--frame); }
+  .app { padding: 10px 16px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+
+  .id-row { display: flex; justify-content: space-between; align-items: center; }
+  .wordmark { font-weight: 700; letter-spacing: .01em; font-size: 15px; }
+  .gear { color: var(--ink-3); font-size: 15px; }
+
+  .card { background: var(--surface); border-radius: 14px; padding: 14px; box-shadow: 0 2px 10px rgba(20,24,32,.06); }
+  .lira-card { display: flex; gap: 12px; align-items: center; }
+  .lira-figure { width: 74px; height: 74px; flex: none; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; }
+  .lira-card .txt .n { font-weight: 650; font-size: 15px; }
+  .lira-card .txt .m { font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+  .bond-bar { height: 4px; border-radius: 4px; background: var(--surface-2); margin-top: 6px; overflow: hidden; }
+  .bond-bar i { display: block; height: 100%; width: 62%; background: var(--bond); }
+
+  .btn { border-radius: 12px; text-align: center; font-weight: 650; padding: 15px 12px; font-size: 15px; }
+  .btn.primary { background: var(--guide); color: #F7F5F2; }
+  .btn.secondary { border: 1.5px solid color-mix(in srgb, var(--ink-3) 45%, transparent); color: var(--ink-2); padding: 11px 12px; font-size: 14px; }
+  .btn.tertiary { color: var(--guide-text); font-size: 13px; padding: 6px; font-weight: 600; }
+  .btn .hint { display: block; font-size: 11px; font-weight: 500; opacity: .85; margin-top: 2px; }
+
+  /* Session mock */
+  .sess-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .sess-head .n { font-weight: 700; }
+  .sess-head .b { font-size: 12px; color: var(--bond-text); font-weight: 650; }
+  .presence { display: grid; place-items: center; padding: 6px 0 2px; }
+  .ring { position: relative; width: 148px; height: 148px; }
+  .ring svg { display: block; }
+  .phrase { text-align: center; font-weight: 650; font-size: 15px; }
+  .status-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .pill { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+  .pill.warn { background: color-mix(in srgb, var(--caution) 25%, var(--surface)); color: var(--bond-text); }
+  .metrics { display: flex; justify-content: center; gap: 36px; font-variant-numeric: tabular-nums; }
+  .metric { text-align: center; }
+  .metric .v { font-size: 19px; font-weight: 700; }
+  .metric .l { font-size: 11px; color: var(--ink-3); }
+  .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .ctl { border-radius: 11px; text-align: center; padding: 11px 6px; font-size: 13px; font-weight: 650; border: 1.5px solid color-mix(in srgb, var(--ink-3) 40%, transparent); color: var(--ink-2); }
+  .ctl.ar { border-color: var(--guide); color: var(--guide-text); }
+  .mapmock { height: 64px; border-radius: 10px; background: var(--surface-2); position: relative; overflow: hidden; }
+  .mapmock svg { position: absolute; inset: 0; }
+
+  /* AR mock */
+  .ar-screen { background: linear-gradient(180deg, #2a3140 0%, #3a4150 55%, #4a4640 100%); }
+  :root[data-theme="light"] .ar-screen, .ar-screen { color: #E6EAF0; }
+  .ar-strip { display: flex; justify-content: space-between; align-items: center; margin: 0 4px; background: rgba(10,14,20,.55); border-radius: 11px; padding: 8px 12px; font-size: 12px; backdrop-filter: blur(4px); }
+  .ar-strip .x { font-weight: 700; }
+  .ar-stage { flex: 1; display: grid; place-items: center; }
+  .ar-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 4px; }
+  .ar-ctl { background: rgba(10,14,20,.55); border-radius: 11px; text-align: center; padding: 12px; font-size: 13px; font-weight: 650; backdrop-filter: blur(4px); }
+  .ar-hint { text-align: center; font-size: 12px; opacity: .8; margin-bottom: 6px; }
+
+  /* Crosswalk table */
+  .tablewrap { overflow-x: auto; border-radius: 12px; box-shadow: var(--shadow); }
+  table.xwalk { border-collapse: collapse; width: 100%; min-width: 720px; background: var(--surface); font-size: 13.5px; }
+  .xwalk th { text-align: left; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding: 12px 14px 8px; border-bottom: 1px solid color-mix(in srgb, var(--ink-3) 30%, transparent); }
+  .xwalk td { padding: 10px 14px; border-bottom: 1px solid color-mix(in srgb, var(--ink-3) 16%, transparent); vertical-align: middle; }
+  .xwalk tr:last-child td { border-bottom: 0; }
+  .still { display: inline-flex; align-items: center; gap: 7px; font-weight: 650; }
+  .dot { width: 10px; height: 10px; border-radius: 999px; flex: none; }
+  .ringcell { display: inline-block; width: 26px; height: 26px; border-radius: 999px; }
+
+  /* Findings */
+  .findings { display: grid; gap: 10px; }
+  .finding { display: grid; grid-template-columns: 64px 84px 1fr; gap: 14px; align-items: baseline; background: var(--surface); border-radius: 10px; padding: 12px 16px; }
+  .finding .sev { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .sev.high { color: var(--rival); } .sev.med { color: var(--bond-text); } .sev.low { color: var(--ink-3); }
+  .finding .txt { font-size: 14px; color: var(--ink-2); }
+  .finding .txt b { color: var(--ink); }
+
+  footer { margin-top: 72px; font-size: 13px; color: var(--ink-3); max-width: 70ch; }
+  @media (prefers-reduced-motion: no-preference) {
+    .ember { animation: ember 2.8s ease-in-out infinite alternate; transform-origin: center; }
+    @keyframes ember { from { opacity: .75; } to { opacity: 1; } }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Waykin · Echo climate · WK_TOKENS_v0.2</div>
+      <h1>UI/UX Specification — Visual Companion</h1>
+    </div>
+    <span class="chip status">PROPOSED</span>
+    <span class="chip mono">Issue #132 · PR #135</span>
+  </header>
+  <p class="lede">The visual half of <span class="mono">docs/design/WAYKIN_UIUX_SPEC.md</span>. Every color on this page is a live Echo token — switch your theme to see the indigo-earth night, which is designed, not inverted.</p>
+  <hr class="rule">
+
+  <section>
+    <h2>Echo palette</h2>
+    <p class="sub">Locked in <span class="mono">WKTokens.swift</span>; hex parity is test-enforced. Semantic colors never carry state alone — geometry and wording always accompany them.</p>
+    <div class="swatches">
+      <div class="swatch"><div class="color" style="background: var(--bg)"></div><div class="meta"><div class="name">Foundation</div><div class="hex mono">E4E8EC · 12151C</div></div></div>
+      <div class="swatch"><div class="color" style="background: var(--surface)"></div><div class="meta"><div class="name">Surface</div><div class="hex mono">F7F5F2 · 1E2430</div></div></div>
+      <div class="swatch"><div class="color" style="background: var(--guide)"></div><div class="meta"><div class="name">Guide teal</div><div class="hex mono">3F8F8A · 4A9E98</div></div></div>
+      <div class="swatch"><div class="color" style="background: var(--bond)"></div><div class="meta"><div class="name">Bond gold</div><div class="hex mono">D4A45A · B8894A</div></div></div>
+      <div class="swatch"><div class="color" style="background: var(--hunter)"></div><div class="meta"><div class="name">Hunter violet</div><div class="hex mono">5C4E7A · 6A5A8A</div></div></div>
+      <div class="swatch"><div class="color" style="background: var(--rival)"></div><div class="meta"><div class="name">Rival copper</div><div class="hex mono">D17A4A · C46B3A</div></div></div>
+      <div class="swatch"><div class="color" style="background: var(--sanctuary)"></div><div class="meta"><div class="name">Sanctuary moss</div><div class="hex mono">A8C4B5 · 5F7F72</div></div></div>
+      <div class="swatch"><div class="color" style="background: var(--caution)"></div><div class="meta"><div class="name">Caution amber</div><div class="hex mono">E0B040 · E0B040</div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The three surfaces</h2>
+    <p class="sub">Home as redesigned (spec B3 — the real walk finally gets the primary button), the active session as consolidated (B4), and AR as a full-screen cover with mirrored controls (B6). Push for flow · sheet for asides · cover for immersion.</p>
+    <div class="phones">
+
+      <!-- HOME -->
+      <div class="phone-slot">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="app">
+            <div class="id-row"><span class="wordmark">Waykin</span><span class="gear">⚙︎</span></div>
+            <div class="card lira-card">
+              <div class="lira-figure">
+                <svg width="58" height="58" viewBox="0 0 58 58" aria-label="Lira, dormant">
+                  <ellipse cx="26" cy="36" rx="13" ry="15" fill="var(--filament)" opacity="0.55"/>
+                  <ellipse cx="36" cy="22" rx="8" ry="10" fill="var(--guide)" transform="rotate(18 36 22)"/>
+                  <circle class="ember" cx="31" cy="31" r="3.4" fill="var(--bond)"/>
+                  <path d="M14 46 C10 42, 9 37, 11 32" fill="none" stroke="var(--filament)" stroke-width="2.4" stroke-linecap="round" opacity="0.9"/>
+                </svg>
+              </div>
+              <div class="txt">
+                <div class="n">Lira <span style="color:var(--ink-3); font-weight:500; font-size:12px">· Dawn</span></div>
+                <div class="m">“The path remembers yesterday’s loop by the creek.”</div>
+                <div class="bond-bar"><i></i></div>
+              </div>
+            </div>
+            <div class="btn primary">Begin Walk<span class="hint">GPS ready · Lira is listening</span></div>
+            <div class="btn secondary">Demo Walk</div>
+            <div class="btn tertiary">Memory History</div>
+          </div>
+        </div></div>
+        <div class="phone-label"><div class="t">Home — redesigned</div><div class="d">Real walk is primary. Inline state lives on the button. Lira is an anchor, not a menu.</div></div>
+      </div>
+
+      <!-- SESSION -->
+      <div class="phone-slot">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="app">
+            <div class="sess-head"><span class="n">Lira <span style="color:var(--ink-3);font-weight:500;font-size:11px">Companion Walk</span></span><span class="b">Bond 12</span></div>
+            <div class="presence">
+              <div class="ring">
+                <svg width="148" height="148" viewBox="0 0 148 148" aria-label="Lira presence, pressure building">
+                  <circle cx="74" cy="74" r="66" fill="none" stroke="var(--filament)" stroke-width="5.5" opacity="0.6"/>
+                  <path d="M 74 22 A 52 52 0 1 1 38 42" fill="none" stroke="var(--guide)" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+                  <ellipse cx="66" cy="86" rx="20" ry="23" fill="var(--filament)" opacity="0.5"/>
+                  <ellipse cx="84" cy="62" rx="12" ry="15" fill="var(--guide)" transform="rotate(16 84 62)"/>
+                  <circle class="ember" cx="76" cy="76" r="5" fill="var(--bond)"/>
+                  <path d="M 50 104 C 42 98, 40 90, 44 82" fill="none" stroke="var(--filament)" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+                </svg>
+              </div>
+            </div>
+            <div class="phrase">Something is keeping pace.</div>
+            <div class="status-row"><span class="pill warn">Pressure approaching</span><span class="pill">Sound active</span></div>
+            <div class="metrics">
+              <div class="metric"><div class="v">14:32</div><div class="l">TIME</div></div>
+              <div class="metric"><div class="v">1,180 m</div><div class="l">DISTANCE</div></div>
+            </div>
+            <div class="controls"><div class="ctl">Pause</div><div class="ctl">End</div><div class="ctl ar">AR ▸</div></div>
+            <div class="status-row"><span class="pill">GPS active</span><span class="pill">Path steady</span></div>
+            <div class="mapmock">
+              <svg viewBox="0 0 258 64">
+                <path d="M 12 52 C 60 48, 90 30, 140 34 S 220 26, 236 18" fill="none" stroke="var(--guide)" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+                <circle cx="236" cy="18" r="5" fill="var(--rival)"/>
+              </svg>
+            </div>
+          </div>
+        </div></div>
+        <div class="phone-label"><div class="t">Active Session — consolidated</div><div class="d">AR joins the control row. Ring thickness carries pressure; color never works alone.</div></div>
+      </div>
+
+      <!-- AR -->
+      <div class="phone-slot">
+        <div class="phone"><div class="screen ar-screen">
+          <div class="notch"></div>
+          <div class="app">
+            <div class="ar-strip"><span>AR active · Lira: follow</span><span class="x">✕</span></div>
+            <div class="ar-stage">
+              <svg width="150" height="170" viewBox="0 0 150 170" aria-label="Lira in AR">
+                <ellipse cx="75" cy="156" rx="42" ry="7" fill="#0a0e14" opacity="0.5"/>
+                <ellipse cx="70" cy="108" rx="26" ry="34" fill="#8A97A8" opacity="0.75"/>
+                <ellipse cx="88" cy="62" rx="14" ry="20" fill="#4A9E98" transform="rotate(14 88 62)"/>
+                <path d="M 80 44 L 74 24 L 86 40 Z" fill="#3F8F8A" opacity="0.9"/>
+                <path d="M 96 46 L 100 26 L 106 44 Z" fill="#3F8F8A" opacity="0.9"/>
+                <circle class="ember" cx="80" cy="92" r="7" fill="#D4A45A"/>
+                <path d="M 44 132 C 28 122, 22 106, 30 88" fill="none" stroke="#8A97A8" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+              </svg>
+            </div>
+            <div class="ar-hint">Lira is just ahead on the path</div>
+            <div class="ar-controls"><div class="ar-ctl">Pause</div><div class="ar-ctl">End</div></div>
+          </div>
+        </div></div>
+        <div class="phone-label"><div class="t">AR — full-screen cover</div><div class="d">No accidental swipe-away. Pause/End mirrored in chrome; continuity hint when she’s out of view.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Canonical state crosswalk</h2>
+    <p class="sub">Spec B7 — the single table that unifies four vocabularies. Art stills follow presentation state, never raw events; pursuit colors the ring, never swaps the still.</p>
+    <div class="tablewrap">
+      <table class="xwalk">
+        <tr><th>Canonical driver</th><th>Presentation</th><th>Art still</th><th>Audio cue</th><th>Ring</th></tr>
+        <tr><td class="mono">idle · rest</td><td>idle</td><td><span class="still"><span class="dot" style="background:var(--filament)"></span>Dormant</span></td><td class="mono">quiet_shift</td><td><span class="ringcell" style="border:2px solid var(--filament)"></span></td></tr>
+        <tr><td class="mono">follow · lead · drawNear</td><td>follow</td><td><span class="still"><span class="dot" style="background:var(--guide)"></span>Guide</span></td><td class="mono">companion_near/ahead</td><td><span class="ringcell" style="border:2px solid var(--filament)"></span></td></tr>
+        <tr><td class="mono">observe · distantPresence · familiar · quiet</td><td>investigate</td><td><span class="still"><span class="dot" style="background:var(--filament)"></span>Manifesting</span></td><td class="mono">distant_presence</td><td><span class="ringcell" style="border:3px solid var(--filament)"></span></td></tr>
+        <tr><td class="mono">pursuitBegins · pursuitIntensifies</td><td>alert</td><td><span class="still"><span class="dot" style="background:var(--hunter)"></span>Hunter</span></td><td class="mono">pursuit_pressure</td><td><span class="ringcell" style="border:6px solid var(--hunter)"></span></td></tr>
+        <tr><td class="mono">pursuitFades</td><td>follow</td><td><span class="still"><span class="dot" style="background:var(--sanctuary-text)"></span>Sanctuary</span></td><td class="mono">pursuit_release</td><td><span class="ringcell" style="border:3px solid var(--sanctuary-text)"></span></td></tr>
+        <tr><td class="mono">bondMoment · celebrate</td><td>celebrate</td><td><span class="still"><span class="dot" style="background:var(--bond)"></span>Bond</span></td><td class="mono">bond_motif</td><td><span class="ringcell" style="border:2px solid var(--bond)"></span></td></tr>
+        <tr><td class="mono">(reserved — no runtime driver)</td><td>—</td><td><span class="still"><span class="dot" style="background:var(--rival)"></span>Rival</span></td><td>—</td><td>—</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Audit findings → backlog</h2>
+    <p class="sub">Part A in one glance. Each fix ships as its own bounded issue; the first two are already scoped under #126.</p>
+    <div class="findings">
+      <div class="finding"><span class="mono" style="color:var(--ink-3)">A2-1</span><span class="sev high">High</span><span class="txt"><b>Four state vocabularies, no crosswalk.</b> Resolved by the table above — proposed as canonical.</span></div>
+      <div class="finding"><span class="mono" style="color:var(--ink-3)">A2-2</span><span class="sev high">High</span><span class="txt"><b>Home CTA inversion.</b> Demo is prominent; the real walk is a buried text link. Fix scoped in #126.</span></div>
+      <div class="finding"><span class="mono" style="color:var(--ink-3)">A2-3</span><span class="sev high">High</span><span class="txt"><b>AR is a swipe-dismissible sheet covering Pause/End.</b> Full-screen cover + mirrored controls. Scoped in #126.</span></div>
+      <div class="finding"><span class="mono" style="color:var(--ink-3)">A2-4</span><span class="sev med">Med</span><span class="txt"><b>No canonical screenshots exist.</b> Proposed: simulator set, day/night, evidence-classed.</span></div>
+      <div class="finding"><span class="mono" style="color:var(--ink-3)">A2-5</span><span class="sev med">Med</span><span class="txt"><b>Dual icon-raster authority.</b> One paragraph in BRAND_GUIDE settles it.</span></div>
+      <div class="finding"><span class="mono" style="color:var(--ink-3)">A2-6</span><span class="sev low">Low</span><span class="txt"><b>Modality rule was implicit.</b> Now explicit: push / sheet / cover.</span></div>
+      <div class="finding"><span class="mono" style="color:var(--ink-3)">A2-7</span><span class="sev low">Low</span><span class="txt"><b>Debug blocks share Home’s layout.</b> Housekeeping candidate, low urgency.</span></div>
+    </div>
+  </section>
+
+  <footer>
+    Authority: PROPOSED · DESIGN_REFERENCE. Nothing on this page implements itself; product ratification and bounded issues govern all changes. Mockups are illustrative compositions of shipped components plus spec B3/B4/B6 proposals — they are not screenshots and carry no outdoor-evidence claims (that column stays NOT_COMPUTABLE until Issue #41 receipts).
+  </footer>
+</div>
