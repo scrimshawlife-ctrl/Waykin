@@ -13,9 +13,16 @@
 | Field-test receipts | Implemented | Binding | Preserve privacy filtering |
 | AR semantic contracts | Implemented | Binding | Keep platform-neutral |
 | AR app adapter (MVP) | **Implemented (frozen)** | Binding | Maintenance/defects only — see `AR_MVP_FREEZE.md` |
-| Real-walk-to-AR commands | **Implemented** | Binding | Documented mapping; device tracking quality still NOT_COMPUTABLE |
-| Path progress (semantic) | **Implemented (v1.1+summary)** | Binding | Phrases + receipts + summary line; not navigation-grade |
-| HealthKit enrichment | **Implemented (v1.1+energy)** | Binding | Fake + energy hint → experience + summary cadence; Demo never blocked |
+| Real-walk-to-AR commands | **Implemented** | Binding | Device tracking quality still requires evidence |
+| Path progress (semantic) | **Implemented (v1.1+summary)** | Binding | Not navigation-grade |
+| HealthKit read enrichment | **Implemented (v1.1+energy)** | Binding | Optional steps/distance read; Demo never blocked |
+| HealthKit authorization/query hardening | **Planned** | Near term | Fix state semantics, race, provenance, refresh lifecycle, and device evidence |
+| HealthKit workout writing | **Not implemented** | Reference | Requires explicit issue, write authorization, duplicate protection, and failure fallback |
+| Apple Watch app target | **Not implemented** | Reference | No watchOS target or Watch UI may be claimed |
+| Apple Watch workout session | **Not implemented** | Reference | Requires workout lifecycle, live builder, and paired-device evidence |
+| Workout-session mirroring | **Not implemented** | Reference | Preserve iPhone gameplay authority and idempotent reconciliation |
+| WatchConnectivity semantic sync | **Not implemented** | Reference | Non-authoritative state only; session ID + revision required |
+| Live heart-rate/effort enrichment | **Not implemented** | Reference | Raw metrics may not directly select events or raise coercive pressure |
 | Outdoor physical AR QA | Partial | Near term | Device evidence only (non-blocking) |
 | AI Director | Deferred | Reference only | Do not implement |
 | Experience Pack runtime | Deferred | Reference only | Preserve seam only |

@@ -18,6 +18,7 @@ Waykin advances by proving one bounded layer before promoting the next. This roa
 | Bond progression | IMPLEMENTED | Validate memory and persistence behavior |
 | Semantic audio | VALIDATION | Physical-device playback evidence |
 | Real-walk movement integrity | VALIDATION | Repeated outdoor walk receipts |
+| HealthKit read enrichment | IMPLEMENTED | Harden authorization/query semantics and collect device evidence |
 | Local session memories | IMPLEMENTED | Preserve concise, privacy-bounded format |
 | Deterministic Demo Mode | IMPLEMENTED | Keep parity with the canonical loop |
 
@@ -44,10 +45,33 @@ Waykin advances by proving one bounded layer before promoting the next. This roa
 - Improve Lira presentation while preserving stable semantic behavior.
 - Remove deprecated compatibility surfaces only through migration issues.
 
+### 4. HealthKit V1 Hardening
+
+- Correct read-authorization semantics without claiming access HealthKit cannot prove.
+- Fix enrichment ordering so real-session context always receives the result.
+- Distinguish no data, unavailable service, unreadable data, and query failure.
+- Clarify that the existing previous-hour step band measures recent activity volume rather than live cadence.
+- Add bounded refresh lifecycle and direct-device evidence.
+- Decide whether daily walking distance has a bounded product purpose.
+
+## Apple Watch Reference Sequence
+
+Apple Watch remains non-authorizing until promoted through issue scope and architecture review. When promoted, implement in this order:
+
+1. Optional HealthKit workout writing on iPhone with explicit authorization and duplicate protection.
+2. Minimal watchOS target with Ready, Active, and Summary surfaces.
+3. `HKWorkoutSession` and live workout builder for outdoor walking.
+4. Workout-session mirroring with idempotent iPhone reconciliation.
+5. Non-authoritative Lira, pursuit, Bond, phrase, and haptic synchronization.
+6. Paired-device validation for lifecycle, disconnection, recovery, permissions, battery, thermal, audio, and haptics.
+
+The iPhone remains canonical for movement integrity, event generation, Lira, pursuit, Bond, memories, and final session outcome.
+
 ## Future Reference
 
 The following remain non-authorizing until promoted through `docs/governance/SPEC_PROMOTION_PROCESS.md`:
 
+- Apple Watch implementation beyond the approved reference contract
 - Additional activity modes
 - Experience Pack runtime
 - Broader companion roster
@@ -67,4 +91,4 @@ A future capability becomes implementable only when:
 3. Canonical scope and architecture documents are updated when necessary.
 4. Architecture review or an ADR approves material boundary changes.
 
-See `WAYKIN_SPEC.md`, `docs/canonical/CURRENT_CAPABILITY_MATRIX.md`, and `docs/governance/DOCUMENT_AUTHORITY.md`.
+See `WAYKIN_SPEC.md`, `docs/design/HEALTHKIT.md`, `docs/canonical/CURRENT_CAPABILITY_MATRIX.md`, and `docs/governance/DOCUMENT_AUTHORITY.md`.
