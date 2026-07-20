@@ -30,6 +30,8 @@ final class CanonicalARSessionRuntime {
     private(set) var companionState: CompanionPresentationState = .idle
     private(set) var lastResult = "Waiting for AR session"
     private(set) var companionLODDescription = "procedural_living_familiar_mid"
+    /// #125: placement continuity note (ok_present / planted_* / replant_*).
+    private(set) var companionContinuityNote = "none"
     var pendingCommandSnapshot: [ARWorldCommand] { pendingCommands }
 
     init(renderCommand: ((ARWorldCommand, ARView) -> ARCommandResult)? = nil) {
@@ -151,6 +153,7 @@ final class CanonicalARSessionRuntime {
             guard case .deferred = result else {
                 pendingCommands.remove(at: index)
                 companionState = renderer.companionState
+                companionContinuityNote = renderer.companionContinuityNote
                 continue
             }
 
@@ -215,12 +218,17 @@ struct CanonicalARSessionView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("waykin.ar.canonical.meshClass")
+                    // #125: continuity plant note for outdoor QA (not a quality claim).
+                    Text("Continuity: \(runtime.companionContinuityNote)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("waykin.ar.canonical.continuity")
                     Text(runtime.lastResult)
                 }
                 .font(.caption.weight(.semibold))
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(
-                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName), LOD: \(runtime.companionLODDescription), mesh mid-LOD not hero sculpt"
+                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName), LOD: \(runtime.companionLODDescription), mesh mid-LOD not hero sculpt, Continuity: \(runtime.companionContinuityNote)"
                 )
                 .accessibilityIdentifier("waykin.ar.canonical.status")
 

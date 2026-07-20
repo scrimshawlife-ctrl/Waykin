@@ -107,6 +107,132 @@ final class SoloMVPVerticalSliceTests: XCTestCase {
         XCTAssertEqual(layer.activeCueCount, 0)
     }
 
+    func testBehaviorTransitionMapsOntoProducedCueKinds() {
+        XCTAssertEqual(AudioExperienceLayer.map(behavior: .drawNear)?.kind, .companionNear)
+        XCTAssertEqual(AudioExperienceLayer.map(behavior: .lead)?.kind, .companionAhead)
+        XCTAssertEqual(AudioExperienceLayer.map(behavior: .rest)?.kind, .quietShift)
+        XCTAssertEqual(AudioExperienceLayer.map(behavior: .observe)?.kind, .quietShift)
+        XCTAssertEqual(AudioExperienceLayer.map(behavior: .celebrate)?.kind, .bondMotif)
+        XCTAssertNil(AudioExperienceLayer.map(behavior: .follow))
+        XCTAssertNil(AudioExperienceLayer.map(behavior: .idle))
+    }
+
+    func testBehaviorTransitionCueCooldownAndFirstSeedSilent() {
+        // First presentation seeds without audio.
+        XCTAssertNil(
+            AudioExperienceLayer.cueForBehaviorTransition(
+                from: nil,
+                to: .drawNear,
+                sessionElapsed: 10,
+                lastBehaviorAudioElapsed: nil
+            )
+        )
+        // Transition after seed emits produced companionNear.
+        let first = AudioExperienceLayer.cueForBehaviorTransition(
+            from: CompanionBehaviorState.follow.rawValue,
+            to: .drawNear,
+            sessionElapsed: 20,
+            lastBehaviorAudioElapsed: nil
+        )
+        XCTAssertEqual(first?.kind, .companionNear)
+        XCTAssertTrue(first?.debugLabel.hasPrefix("behavior:") == true)
+
+        // Cooldown suppresses rapid flips.
+        XCTAssertNil(
+            AudioExperienceLayer.cueForBehaviorTransition(
+                from: CompanionBehaviorState.drawNear.rawValue,
+                to: .lead,
+                sessionElapsed: 25,
+                lastBehaviorAudioElapsed: 20
+            )
+        )
+        // After cooldown, transition is accepted.
+        let after = AudioExperienceLayer.cueForBehaviorTransition(
+            from: CompanionBehaviorState.drawNear.rawValue,
+            to: .lead,
+            sessionElapsed: 20 + AudioExperienceLayer.behaviorTransitionCooldown,
+            lastBehaviorAudioElapsed: 20
+        )
+        XCTAssertEqual(after?.kind, .companionAhead)
+    }
+
+    func testExperienceEmitsBehaviorCueWhenNoWorldEvent() {
+        let exp = CompanionWalkExperience()
+        // eventSeed with no eligible pressure/energy often stays event-silent on a short pause tick.
+        let ctx = ExperienceContext(timeOfDay: TimeContext.midday.rawValue, activity: .walk, bondLevel: 1, eventSeed: 1)
+        var state = exp.start(context: ctx)
+        if case .companionWalk(var walk) = state.runtimeState {
+            walk.lastPresentedBehavior = CompanionBehaviorState.follow.rawValue
+            walk.movementSeconds = 5
+            walk.lastBehaviorAudioElapsed = nil
+            // High lastEventElapsed so generator tick spacing may suppress new events.
+            walk.lastEventElapsed = 4.9
+            state = ExperienceSessionState(runtimeState: .companionWalk(walk))
+        } else {
+            XCTFail("Expected companion walk")
+            return
+        }
+
+        // Stationary → observe when no event.
+        let snapshot = MovementSnapshot(
+            timestamp: Date(timeIntervalSince1970: 9_000),
+            speed: 0,
+            distanceDelta: 0,
+            isMoving: false
+        )
+        let update = exp.update(previousState: state, movement: snapshot, context: ctx)
+        if let cue = update.semanticAudioCues.first {
+            XCTAssertTrue(AudioCueKind.allCases.contains(cue.kind))
+        }
+        if case .companionWalk(let walk) = update.state.runtimeState {
+            XCTAssertNotNil(walk.lastPresentedBehavior)
+            if walk.lastEvent == nil {
+                // follow → observe (stationary) without world event → quietShift behavior cue.
+                XCTAssertEqual(walk.lastPresentedBehavior, CompanionBehaviorState.observe.rawValue)
+                XCTAssertEqual(update.semanticAudioCues.first?.kind, .quietShift)
+                XCTAssertEqual(update.semanticAudioCues.first?.debugLabel, "behavior:observe")
+                XCTAssertEqual(walk.lastBehaviorAudioElapsed, walk.movementSeconds)
+            } else {
+                // Event path remains valid; cue must still be a produced kind when present.
+                XCTAssertLessThanOrEqual(update.semanticAudioCues.count, 1)
+            }
+        } else {
+            XCTFail("Expected companion walk after update")
+        }
+    }
+
+    func testDemoScheduledEventPrefersEventCueOverBehavior() {
+        let exp = CompanionWalkExperience()
+        let ctx = ExperienceContext(timeOfDay: TimeContext.midday.rawValue, activity: .walk, bondLevel: 12, eventSeed: 3)
+        var state = exp.start(context: ctx)
+        if case .companionWalk(var walk) = state.runtimeState {
+            walk.lastPresentedBehavior = CompanionBehaviorState.follow.rawValue
+            walk.movementSeconds = 40
+            state = ExperienceSessionState(runtimeState: .companionWalk(walk))
+        }
+
+        let snapshot = MovementSnapshot(
+            timestamp: Date(timeIntervalSince1970: 10_000),
+            speed: 1.4,
+            distanceDelta: 40,
+            isMoving: true
+        )
+        let update = exp.updateForDemo(
+            previousState: state,
+            movement: snapshot,
+            context: ctx,
+            scheduledEventKind: .companionDrawsNear
+        )
+        XCTAssertEqual(update.semanticAudioCues.first?.kind, .companionNear)
+        XCTAssertEqual(update.semanticAudioCues.first?.debugLabel, WorldEventKind.companionDrawsNear.rawValue)
+        if case .companionWalk(let walk) = update.state.runtimeState {
+            XCTAssertEqual(walk.lastPresentedBehavior, CompanionBehaviorState.drawNear.rawValue)
+            XCTAssertEqual(walk.lastEvent?.kind, .companionDrawsNear)
+        } else {
+            XCTFail("Expected companion walk")
+        }
+    }
+
     func testFrequencyBoundOverDeterministicFixture() {
         let start = Date(timeIntervalSince1970: 5_000)
         var generator = WorldEventGenerator(seed: 19)
