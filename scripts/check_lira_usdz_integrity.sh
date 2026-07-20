@@ -21,13 +21,15 @@ s3=$(stat -f%z "$DOC" 2>/dev/null || stat -c%s "$DOC")
 [[ "$s1" == "$s3" ]] || fail "root vs docs size $s1 != $s3"
 pass "triple package size match ($s1 bytes)"
 
-# Package should contain USD + optional textures
-entries=$(unzip -l "$ROOT_USDZ" | rg -c 'Lira_AR_Base\.usd|textures/' || true)
-[[ "${entries:-0}" -ge 1 ]] || fail "usdz missing Lira_AR_Base.usd entry"
-pass "usdz entries present"
+# Package should contain USD + optional textures (grep: no ripgrep dependency on CI)
+if unzip -l "$ROOT_USDZ" | grep -E 'Lira_AR_Base\.usd|textures/' >/dev/null; then
+  pass "usdz entries present"
+else
+  fail "usdz missing Lira_AR_Base.usd entry"
+fi
 
 if [[ -f "$MARKER" ]]; then
-  if rg -q 'ARTIST_BLEND_SKINNED_MID_LOD|ARTIST_BLEND_ARMATURE_MID_LOD|ARTIST_BLEND_MID_LOD' "$MARKER"; then
+  if grep -E 'ARTIST_BLEND_SKINNED_MID_LOD|ARTIST_BLEND_ARMATURE_MID_LOD|ARTIST_BLEND_MID_LOD' "$MARKER" >/dev/null; then
     pass "EXPORT_OK evidence marker"
   else
     fail "EXPORT_OK missing known evidence class"
@@ -35,7 +37,7 @@ if [[ -f "$MARKER" ]]; then
 fi
 
 # Catalog Swift evidence class should mention SKINNED when package is skinned export
-if rg -q 'ARTIST_BLEND_SKINNED_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
+if grep -q 'ARTIST_BLEND_SKINNED_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
   pass "catalog evidence ARTIST_BLEND_SKINNED_MID_LOD"
 fi
 
