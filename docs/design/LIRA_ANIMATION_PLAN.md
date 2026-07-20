@@ -2,8 +2,8 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-ANIM-PLAN-001
-version: 0.6
-status: MID_LOD_COMPLETE
+version: 0.7
+status: MESHY_STATIC_MESH_PUPPET
 companion: Lira
 style: spectral_living_familiar
 direction: DIRECTION_ACCEPTED
@@ -12,6 +12,7 @@ outdoor_qa: NOT_COMPUTABLE
 session_ambient_motion: SHIPPED
 route_polyline_reveal: SHIPPED
 skeletal_animation_library: JOINT_HIERARCHY_SHIPPED
+static_mesh_body_centric_puppet: SHIPPED
 blender_armature_rigid_bind: SHIPPED
 heat_map_auto_weights: SHIPPED
 hero_region_weights: SHIPPED
@@ -19,6 +20,7 @@ dcc_action_clips: SHIPPED
 generated_mid_lod_usdz: SHIPPED_V1_2
 artist_blend_armature_usdz: SHIPPED_V1
 artist_blend_skinned_usdz: SHIPPED_V1
+meshy_textured_static_usdz: SHIPPED_V1
 runtime_animation_resource_clips: SHIPPED
 procedural_mesh_mid_lod: SHIPPED
 ```
@@ -191,6 +193,7 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 | **A5c** | Heat-map auto-weights (merge torso + ARMATURE_AUTO) | **Done** (`skin_lira_armature.py`) |
 | **A5d** | Hero region weight paint (reproducible) | **Done** (`paint_lira_hero_weights.py`) |
 | **A5e** | DCC action clips + hybrid runtime player | **Done** (`author_lira_armature_clips` + DCC overlay) |
+| **A5f** | Meshy static mesh body-centric puppet style | **Done** (`PuppetStyle.staticMesh` + Body bob/lean) |
 | **A6** | Outdoor motion QA notes | Device walk (#41) |
 
 ## Test strategy

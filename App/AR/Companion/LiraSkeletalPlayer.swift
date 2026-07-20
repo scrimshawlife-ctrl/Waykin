@@ -31,6 +31,8 @@ final class LiraSkeletalPlayer {
     private(set) var isDriving = false
     private(set) var activeClip: LiraSkeletalAnimationLibrary.ClipID?
     private(set) var clipSource: ClipSource = .none
+    /// multiPart vs staticMesh puppet rest language (Meshy uses staticMesh).
+    private(set) var puppetStyle: LiraSkeletalRig.PuppetStyle = .multiPart
     private var library: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource] = [:]
     private var playbackController: AnimationPlaybackController?
 
@@ -47,14 +49,19 @@ final class LiraSkeletalPlayer {
             isDriving = false
             activeClip = nil
             clipSource = .none
+            puppetStyle = .multiPart
             library = [:]
             return false
         }
 
+        let style = LiraSkeletalRig.puppetStyle(for: entity)
+        puppetStyle = style
+
         // Always build puppet library as base; overlay any DCC animations found on the entity.
+        // Static-mesh (Meshy) keeps puppet even if DCC names appear — no skinned skeleton.
         let puppet: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource]
         do {
-            puppet = try LiraSkeletalAnimationLibrary.makeLibrary()
+            puppet = try LiraSkeletalAnimationLibrary.makeLibrary(style: style)
         } catch {
             isInstalled = false
             isDriving = false
@@ -63,7 +70,7 @@ final class LiraSkeletalPlayer {
             library = [:]
             return false
         }
-        let dcc = Self.mapDCCAnimations(from: entity)
+        let dcc = style == .staticMesh ? [:] : Self.mapDCCAnimations(from: entity)
         var merged = puppet
         for (id, resource) in dcc {
             merged[id] = resource
@@ -124,7 +131,7 @@ final class LiraSkeletalPlayer {
 
     /// Human-readable install source for chrome / tests.
     var sourceDescription: String {
-        "\(clipSource.rawValue):\(library.count)_clips"
+        "\(clipSource.rawValue):\(puppetStyle.rawValue):\(library.count)_clips"
     }
 
     /// Play ambient (or one-shot) clip for presentation state.
@@ -175,6 +182,7 @@ final class LiraSkeletalPlayer {
         isInstalled = false
         isDriving = false
         clipSource = .none
+        puppetStyle = .multiPart
     }
 
     /// Disable driving without removing library (falls back to pure-function motion).

@@ -129,6 +129,36 @@ enum LiraARMotion {
         return amp * sin(Float(t) * 1.9)
     }
 
+    /// Body lean for single-mesh (Meshy) pure-function fallback — identity rest.
+    static func staticMeshBodyOrientation(
+        elapsed: TimeInterval,
+        state: CompanionPresentationState
+    ) -> simd_quatf {
+        let t = Self.safeElapsed(elapsed)
+        let pitch: Float
+        let yaw: Float
+        switch state {
+        case .follow:
+            pitch = 0.05 + 0.015 * sin(Float(t) * 1.3)
+            yaw = 0.08 + 0.04 * sin(Float(t) * 1.1)
+        case .investigate:
+            pitch = 0.12 + 0.02 * sin(Float(t) * 1.0)
+            yaw = -0.14 + 0.04 * sin(Float(t) * 0.9)
+        case .alert:
+            pitch = 0.03 + 0.02 * sin(Float(t) * 2.0)
+            yaw = 0.04 * sin(Float(t) * 2.2)
+        case .celebrate:
+            pitch = -0.03
+            yaw = 0.12 * sin(Float(t) * 1.6)
+        case .idle:
+            pitch = 0.01 * sin(Float(t) * 0.9)
+            yaw = 0.025 * sin(Float(t) * 0.7)
+        }
+        let qPitch = simd_quatf(angle: pitch, axis: [1, 0, 0])
+        let qYaw = simd_quatf(angle: yaw, axis: [0, 1, 0])
+        return qYaw * qPitch
+    }
+
     /// Factory rest Y for Body (includes ground offset).
     static func bodyRestY(groundOffset: Float = defaultGroundOffsetMeters) -> Float {
         groundOffset + bodyBaseYAboveGround

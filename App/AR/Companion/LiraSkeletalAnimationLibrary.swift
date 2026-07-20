@@ -8,6 +8,11 @@ import simd
 /// `LiraRoot`. Not DCC bone export — runtime-authored puppet clips that share
 /// the same joint names as procedural and USDZ hierarchies.
 ///
+/// **Styles:**
+/// - `.multiPart` — procedural/artist parts; preserves factory rest scale/translation.
+/// - `.staticMesh` — Meshy single mesh under `Body`; body-centric motion only
+///   (identity rest) so authored PBR mesh is never squashed by factory scales.
+///
 /// **Policy:** When `LiraSkeletalPlayer` is driving, the renderer must not apply
 /// conflicting per-frame pure-function channels on the same joints.
 @MainActor
@@ -40,15 +45,31 @@ enum LiraSkeletalAnimationLibrary {
     }
 
     /// Build the full named library (clip id → resource).
-    static func makeLibrary() throws -> [ClipID: AnimationResource] {
+    static func makeLibrary(
+        style: LiraSkeletalRig.PuppetStyle = .multiPart
+    ) throws -> [ClipID: AnimationResource] {
         var result: [ClipID: AnimationResource] = [:]
         for id in ClipID.allCases {
-            result[id] = try generate(clip: id)
+            result[id] = try generate(clip: id, style: style)
         }
         return result
     }
 
-    static func generate(clip: ClipID) throws -> AnimationResource {
+    static func generate(
+        clip: ClipID,
+        style: LiraSkeletalRig.PuppetStyle = .multiPart
+    ) throws -> AnimationResource {
+        switch style {
+        case .staticMesh:
+            return try generateStaticMesh(clip: clip)
+        case .multiPart:
+            return try generateMultiPart(clip: clip)
+        }
+    }
+
+    // MARK: - Multi-part (procedural / artist)
+
+    private static func generateMultiPart(clip: ClipID) throws -> AnimationResource {
         switch clip {
         case .idle: return try idleClip()
         case .follow: return try followClip()
@@ -59,7 +80,95 @@ enum LiraSkeletalAnimationLibrary {
         }
     }
 
-    // MARK: - Clips
+    // MARK: - Static mesh (Meshy) — body-centric
+
+    /// Single textured mesh lives under `Body`. Empty promote markers do not
+    /// carry geometry, so ambient language is Body bob + lean only.
+    private static func generateStaticMesh(clip: ClipID) throws -> AnimationResource {
+        switch clip {
+        case .idle:
+            return try bodyCentricClip(
+                duration: 1.8,
+                from: bodyPose(y: 0, pitch: 0, yaw: -0.02),
+                to: bodyPose(y: 0.01, pitch: 0.015, yaw: 0.03),
+                reverse: true
+            )
+        case .follow:
+            return try bodyCentricClip(
+                duration: 2.2,
+                from: bodyPose(y: 0.002, pitch: 0.04, yaw: 0.05),
+                to: bodyPose(y: 0.008, pitch: 0.06, yaw: 0.12),
+                reverse: true
+            )
+        case .investigate:
+            return try bodyCentricClip(
+                duration: 2.0,
+                from: bodyPose(y: -0.006, pitch: 0.10, yaw: -0.10),
+                to: bodyPose(y: -0.01, pitch: 0.14, yaw: -0.18),
+                reverse: true
+            )
+        case .alert:
+            return try bodyCentricClip(
+                duration: 0.9,
+                from: bodyPose(y: -0.004, pitch: 0.02, yaw: 0.02),
+                to: bodyPose(y: 0.002, pitch: 0.05, yaw: 0.06),
+                reverse: true
+            )
+        case .celebrate:
+            return try bodyCentricClip(
+                duration: 0.55,
+                from: bodyPose(y: 0, pitch: 0, yaw: 0),
+                to: bodyPose(y: 0.04, pitch: -0.04, yaw: 0.18, scale: 1.03),
+                reverse: false
+            )
+        case .spawn:
+            return try bodyCentricClip(
+                duration: 0.7,
+                from: bodyPose(y: 0, pitch: 0, yaw: 0, scale: 0.92),
+                to: bodyPose(y: 0, pitch: 0, yaw: 0, scale: 1),
+                reverse: false,
+                timing: .easeOut
+            )
+        }
+    }
+
+    private static func bodyPose(
+        y: Float,
+        pitch: Float,
+        yaw: Float,
+        scale: Float = 1
+    ) -> Transform {
+        var t = Transform.identity
+        t.scale = SIMD3<Float>(repeating: scale)
+        t.translation = SIMD3<Float>(0, y, 0)
+        let qPitch = simd_quatf(angle: pitch, axis: [1, 0, 0])
+        let qYaw = simd_quatf(angle: yaw, axis: [0, 1, 0])
+        t.rotation = qYaw * qPitch
+        return t
+    }
+
+    private static func bodyCentricClip(
+        duration: TimeInterval,
+        from: Transform,
+        to: Transform,
+        reverse: Bool,
+        timing: AnimationTimingFunction = .easeInOut
+    ) throws -> AnimationResource {
+        let d = max(0.05, duration)
+        let half = reverse ? d / 2 : d
+        let definition = FromToByAnimation<Transform>(
+            from: from,
+            to: to,
+            duration: half,
+            timing: timing,
+            isAdditive: false,
+            bindTarget: jointTransform("Body"),
+            repeatMode: reverse ? .autoReverse : .none
+        )
+        return try AnimationResource.generate(with: definition)
+    }
+
+    // MARK: - Multi-part clips
 
     /// Soft A2 breath + mild A3 filament sway + micro head.
     static func idleClip(duration: TimeInterval = 1.8) throws -> AnimationResource {

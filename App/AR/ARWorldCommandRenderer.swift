@@ -430,6 +430,15 @@ final class ARWorldCommandRenderer {
 
     /// Reduce Motion: freeze continuous loops at rest, keep hunter echo off unless alert.
     private func applyRestLocalMotion(to entity: Entity, state: CompanionPresentationState) {
+        if LiraSkeletalRig.puppetStyle(for: entity) == .staticMesh {
+            if let body = entity.findEntity(named: "Body") {
+                body.position = .zero
+                body.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+                body.scale = SIMD3<Float>(repeating: 1)
+            }
+            applyHunterEcho(to: entity, state: state, elapsed: 0)
+            return
+        }
         if let core = entity.findEntity(named: "CoreGlow"), core.isEnabled {
             core.scale = SIMD3<Float>(repeating: 1)
         }
@@ -488,9 +497,19 @@ final class ARWorldCommandRenderer {
             tail.orientation = LiraARMotion.tailOrientation(elapsed: elapsed, state: state)
         }
         if let body = entity.findEntity(named: "Body") {
-            var p = body.position
-            p.y = LiraARMotion.bodyPositionY(elapsed: elapsed, state: state)
-            body.position = p
+            // Meshy static mesh: Body rest is identity — only add bob/lean deltas.
+            // Multi-part factory: absolute rest Y from LiraARMotion.
+            if LiraSkeletalRig.puppetStyle(for: entity) == .staticMesh {
+                let bob = LiraARMotion.bodyBobOffsetY(elapsed: elapsed, state: state)
+                let lean = LiraARMotion.staticMeshBodyOrientation(elapsed: elapsed, state: state)
+                body.position = SIMD3<Float>(0, bob, 0)
+                body.orientation = lean
+                body.scale = SIMD3<Float>(repeating: 1)
+            } else {
+                var p = body.position
+                p.y = LiraARMotion.bodyPositionY(elapsed: elapsed, state: state)
+                body.position = p
+            }
         }
 
         applyHunterEcho(to: entity, state: state, elapsed: elapsed)
