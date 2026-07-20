@@ -364,7 +364,7 @@ public struct ExperienceResult: Codable {
     }
 }
 
-public struct Companion: Codable, Identifiable {
+public struct Companion: Codable, Identifiable, Equatable, Sendable {
     public let id: UUID
     public var name: String
     public var archetype: String
@@ -382,7 +382,7 @@ public struct Companion: Codable, Identifiable {
     }
 }
 
-public struct SessionMemory: Codable, Identifiable, Equatable {
+public struct SessionMemory: Codable, Identifiable, Equatable, Sendable {
     public let id: UUID
     public let sessionID: UUID
     public let text: String

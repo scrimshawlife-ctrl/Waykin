@@ -19,11 +19,12 @@ final class PathProgressIntegrationTests: XCTestCase {
         XCTAssertFalse(model.activityEnrichment.authorizationDenied)
     }
 
-    func testDemoEndSurfacesPathOnSessionSummary() throws {
+    func testDemoEndSurfacesPathOnSessionSummary() async throws {
         let model = try makeModel(health: NullHealthMetricsProvider())
         model.startDemo(.calmDayWalk)
         model.runDemoToEnd()
         model.endDemo()
+        await model.waitForPendingPersistence()
 
         let summary = try XCTUnwrap(model.lastSummary)
         XCTAssertNotNil(summary.pathRelation)

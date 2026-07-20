@@ -20,11 +20,11 @@
 
 ## P1 Isolation
 
-- [ ] Add repository protocols.
-- [ ] Add SwiftData `ModelActor` adapter.
-- [ ] Add deterministic in-memory test adapters.
-- [ ] Keep WaykinCore engines free of SwiftData.
-- [ ] Inject persistence through app orchestration.
+- [x] Add repository protocols. (`CompanionRepository` / `SessionMemoryRepository` / `WaykinPersistenceServing`)
+- [x] Add SwiftData `ModelActor` adapter. (`WaykinPersistenceActor` + `WaykinPersistenceGateway`)
+- [x] Add deterministic in-memory test adapters. (`InMemoryPersistenceRepository`, `FailingPersistenceRepository`)
+- [x] Keep WaykinCore engines free of SwiftData. (only Persistence/* imports SwiftData)
+- [x] Inject persistence through app orchestration. (`WaykinAppModel.persistence`)
 
 ## P1 Session Aggregate
 

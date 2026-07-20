@@ -246,7 +246,6 @@ public final class PersistenceStore {
     // MARK: Companion
 
     public func saveCompanion(_ companion: Companion) throws {
-        // Always persist under the domain id the caller supplies; production uses liraID.
         guard let ctx = modelContext else {
             guard availability != .failed else { throw PersistenceError.unavailable }
             if let idx = inMemoryCompanions.firstIndex(where: { $0.id == companion.id }) {
@@ -257,32 +256,7 @@ public final class PersistenceStore {
             }
             return
         }
-
-        do {
-            let id = companion.id
-            let descriptor = FetchDescriptor<CompanionRecord>(predicate: #Predicate { $0.id == id })
-            if let existing = try ctx.fetch(descriptor).first {
-                existing.name = companion.name
-                existing.archetype = companion.archetype
-                existing.bondLevel = companion.bondLevel
-                existing.lastSessionID = companion.lastSessionID
-            } else {
-                ctx.insert(
-                    CompanionRecord(
-                        id: companion.id,
-                        name: companion.name,
-                        archetype: companion.archetype,
-                        bondLevel: companion.bondLevel,
-                        lastSessionID: companion.lastSessionID
-                    )
-                )
-            }
-            try ctx.save()
-        } catch let error as PersistenceError {
-            throw error
-        } catch {
-            throw PersistenceError.saveFailed("companion")
-        }
+        try PersistenceContextOperations.saveCompanion(companion, context: ctx)
     }
 
     /// Deterministic canonical Lira load (WP-DB2). Promotes legacy rows to `liraID`.
@@ -294,41 +268,7 @@ public final class PersistenceStore {
             }
             return inMemoryCompanions.sorted { $0.id.uuidString < $1.id.uuidString }.first
         }
-
-        do {
-            let liraID = CanonicalCompanionIdentity.liraID
-            let byID = FetchDescriptor<CompanionRecord>(predicate: #Predicate { $0.id == liraID })
-            if let record = try ctx.fetch(byID).first {
-                return mapCompanion(record)
-            }
-
-            // Legacy: any companions — promote the richest deterministic winner.
-            let legacyRecords = try ctx.fetch(FetchDescriptor<CompanionRecord>())
-            guard !legacyRecords.isEmpty else { return nil }
-
-            let winner = legacyRecords.sorted { a, b in
-                if a.bondLevel != b.bondLevel { return a.bondLevel > b.bondLevel }
-                return a.id.uuidString < b.id.uuidString
-            }.first!
-
-            let promoted = CompanionRecord(
-                id: liraID,
-                name: winner.name,
-                archetype: winner.archetype,
-                bondLevel: winner.bondLevel,
-                lastSessionID: winner.lastSessionID
-            )
-            for record in legacyRecords {
-                ctx.delete(record)
-            }
-            ctx.insert(promoted)
-            try ctx.save()
-            return mapCompanion(promoted)
-        } catch let error as PersistenceError {
-            throw error
-        } catch {
-            throw PersistenceError.fetchFailed("companion")
-        }
+        return try PersistenceContextOperations.loadCompanion(context: ctx)
     }
 
     // MARK: Session memory
@@ -348,45 +288,11 @@ public final class PersistenceStore {
                 verificationFetchSucceeded: true
             )
         }
-
-        do {
-            let sessionID = memory.sessionID
-            let existingDescriptor = FetchDescriptor<SessionMemoryRecord>(
-                predicate: #Predicate { $0.sessionID == sessionID }
-            )
-            if let existing = try ctx.fetch(existingDescriptor).first {
-                throw PersistenceError.duplicateSessionMemory(existing.sessionID)
-            }
-
-            let record = SessionMemoryRecord(
-                id: memory.id,
-                sessionID: memory.sessionID,
-                scenarioID: nil,
-                text: memory.text,
-                createdAt: memory.timestamp
-            )
-            ctx.insert(record)
-            try ctx.save()
-
-            let memoryID = memory.id
-            let descriptor = FetchDescriptor<SessionMemoryRecord>(
-                predicate: #Predicate { $0.id == memoryID }
-            )
-            guard let fetched = try ctx.fetch(descriptor).first, fetched.id == memory.id else {
-                throw PersistenceError.verificationFetchFailed(memory.id)
-            }
-
-            return PersistenceWriteReceipt(
-                recordID: memory.id,
-                storeURL: storeURL ?? URL(fileURLWithPath: "/unknown-store"),
-                savedAt: Date(),
-                verificationFetchSucceeded: true
-            )
-        } catch let error as PersistenceError {
-            throw error
-        } catch {
-            throw PersistenceError.saveFailed("memory")
-        }
+        return try PersistenceContextOperations.saveMemory(
+            memory,
+            context: ctx,
+            storeURL: storeURL
+        )
     }
 
     public func loadMemories() throws -> [SessionMemory] {
@@ -394,22 +300,7 @@ public final class PersistenceStore {
             guard availability != .failed else { throw PersistenceError.unavailable }
             return inMemoryMemories.sorted { $0.timestamp > $1.timestamp }
         }
-        do {
-            let descriptor = FetchDescriptor<SessionMemoryRecord>(
-                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-            )
-            let records = try ctx.fetch(descriptor)
-            return records.map { r in
-                SessionMemory(
-                    id: r.id,
-                    sessionID: r.sessionID,
-                    text: r.text,
-                    timestamp: r.createdAt
-                )
-            }
-        } catch {
-            throw PersistenceError.fetchFailed("memories")
-        }
+        return try PersistenceContextOperations.loadMemories(context: ctx)
     }
 
     public func memoryCount() throws -> Int {
@@ -417,11 +308,7 @@ public final class PersistenceStore {
             guard availability != .failed else { throw PersistenceError.unavailable }
             return inMemoryMemories.count
         }
-        do {
-            return try ctx.fetchCount(FetchDescriptor<SessionMemoryRecord>())
-        } catch {
-            throw PersistenceError.fetchFailed("memoryCount")
-        }
+        return try PersistenceContextOperations.memoryCount(context: ctx)
     }
 
     public func resetDemoData() throws {
@@ -431,23 +318,16 @@ public final class PersistenceStore {
             inMemoryMemories.removeAll()
             return
         }
-        do {
-            try ctx.delete(model: CompanionRecord.self)
-            try ctx.delete(model: SessionMemoryRecord.self)
-            try ctx.save()
-        } catch {
-            throw PersistenceError.saveFailed("reset")
-        }
+        try PersistenceContextOperations.resetDemoData(context: ctx)
     }
 
-    private func mapCompanion(_ record: CompanionRecord) -> Companion {
-        Companion(
-            id: record.id,
-            name: record.name,
-            archetype: record.archetype,
-            bondLevel: record.bondLevel,
-            lastSessionID: record.lastSessionID,
-            memories: []
+    /// Gateway sharing this store's container (production orchestration path).
+    public func makeGateway() -> WaykinPersistenceGateway? {
+        guard let container = modelContext?.container else { return nil }
+        return WaykinPersistenceGateway(
+            modelContainer: container,
+            storeURL: storeURL,
+            availability: availability
         )
     }
 }
