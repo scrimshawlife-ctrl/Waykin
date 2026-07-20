@@ -15,11 +15,18 @@ Waykin's core emits semantic `AudioCue` values. Only the app target maps those v
 ## Format And Sound Guidance
 
 - Bundle local, repository-owned or properly licensed `.wav` files.
-- Keep cues nonverbal, short, subtle, and conservatively normalized. A practical target is under two seconds with comfortable headroom and no clipping.
+- Prefer nonverbal, subtle cues with comfortable headroom and no clipping.
+- **Soft duration guidance:** foreground cues ideally ≤ ~2 s; ambient beds may run slightly longer (current `quiet_shift` ≈ 3 s is accepted). Bond motif may run slightly longer for cadence (current `bond_motif` ≈ 2.76 s is accepted).
 - Design for intermittent presence rather than notification-like urgency. Do not mask environmental awareness.
 - The adapter allows at most one foreground cue and one ambient cue. Higher-priority foreground cues replace lower-priority foreground cues.
 
-The current files are deterministic mono 16-bit PCM engineering tones at 22.05 kHz. They prove loading and lifecycle behavior only; they are not production sound design. Regenerate them with `swift scripts/generate_placeholder_audio.swift`.
+## Current assets (production cues)
+
+Produced sound-design WAVs (owner-rendered 2026-07-19), first-party licensing:
+
+- Format: stereo 48 kHz 16-bit PCM (adapter is basename-based; mono 22.05 kHz is not required).
+- Engineering placeholder tones (mono 22.05 kHz) are obsolete; regenerate only for local sandbox work via `swift scripts/generate_placeholder_audio.swift`.
+- Physical audibility, outdoor masking, and loudness balance remain **NOT_COMPUTABLE** without device evidence.
 
 ## Failure And Replacement
 
