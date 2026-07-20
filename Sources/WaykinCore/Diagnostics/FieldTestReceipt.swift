@@ -143,6 +143,76 @@ public struct FieldTestAudioDiagnosticSummary: Codable, Equatable, Sendable {
     }
 }
 
+/// Privacy-safe AR presentation snapshot for field-test receipts (schema 4).
+/// Strings are operator labels only — no coordinates, raw ARKit errors, or asset paths.
+public struct FieldTestARPresentationSummary: Codable, Equatable, Sendable {
+    public var arSessionOpened: Bool
+    public var finalLODDescription: String?
+    public var meshEvidenceClass: String?
+    public var finalContinuityNote: String?
+    public var finalCapabilityState: String?
+    public var motionDiagnosticsLine: String?
+    public var sessionStillDiagnosticLabel: String?
+    public var placementDeferredCount: Int
+    public var continuityReplantCount: Int
+    public var entityReplacementCount: Int
+    public var companionPlaced: Bool
+
+    public static let empty = FieldTestARPresentationSummary()
+
+    public init(
+        arSessionOpened: Bool = false,
+        finalLODDescription: String? = nil,
+        meshEvidenceClass: String? = nil,
+        finalContinuityNote: String? = nil,
+        finalCapabilityState: String? = nil,
+        motionDiagnosticsLine: String? = nil,
+        sessionStillDiagnosticLabel: String? = nil,
+        placementDeferredCount: Int = 0,
+        continuityReplantCount: Int = 0,
+        entityReplacementCount: Int = 0,
+        companionPlaced: Bool = false
+    ) {
+        self.arSessionOpened = arSessionOpened
+        self.finalLODDescription = Self.sanitizeLabel(finalLODDescription)
+        self.meshEvidenceClass = Self.sanitizeLabel(meshEvidenceClass)
+        self.finalContinuityNote = Self.sanitizeLabel(finalContinuityNote)
+        self.finalCapabilityState = Self.sanitizeLabel(finalCapabilityState)
+        self.motionDiagnosticsLine = Self.sanitizeLabel(motionDiagnosticsLine)
+        self.sessionStillDiagnosticLabel = Self.sanitizeLabel(sessionStillDiagnosticLabel)
+        self.placementDeferredCount = max(0, placementDeferredCount)
+        self.continuityReplantCount = max(0, continuityReplantCount)
+        self.entityReplacementCount = max(0, entityReplacementCount)
+        self.companionPlaced = companionPlaced
+    }
+
+    /// Merge later AR session observations into a single session snapshot.
+    public mutating func merge(from other: FieldTestARPresentationSummary) {
+        if other.arSessionOpened { arSessionOpened = true }
+        if let lod = other.finalLODDescription { finalLODDescription = lod }
+        if let mesh = other.meshEvidenceClass { meshEvidenceClass = mesh }
+        if let note = other.finalContinuityNote { finalContinuityNote = note }
+        if let cap = other.finalCapabilityState { finalCapabilityState = cap }
+        if let motion = other.motionDiagnosticsLine { motionDiagnosticsLine = motion }
+        if let still = other.sessionStillDiagnosticLabel { sessionStillDiagnosticLabel = still }
+        placementDeferredCount = max(placementDeferredCount, other.placementDeferredCount)
+        continuityReplantCount = max(continuityReplantCount, other.continuityReplantCount)
+        entityReplacementCount = max(entityReplacementCount, other.entityReplacementCount)
+        if other.companionPlaced { companionPlaced = true }
+    }
+
+    private static func sanitizeLabel(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        // Drop absolute paths if a label ever leaks one.
+        if trimmed.contains("/private/") || trimmed.hasPrefix("/") {
+            return String(trimmed.split(separator: "/").last ?? Substring(trimmed))
+        }
+        return String(trimmed.prefix(160))
+    }
+}
+
 public struct FieldTestSummary: Codable, Equatable, Sendable {
     public var durationSeconds: TimeInterval
     public var activeDurationSeconds: TimeInterval
@@ -177,6 +247,8 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
     /// Coarse HealthKit cadence band only — never sample UUIDs.
     public var activityStepCadenceBand: String?
     public var activityAuthorizationDenied: Bool
+    /// Privacy-safe AR presentation snapshot (schema 4); empty when AR never opened.
+    public var arPresentation: FieldTestARPresentationSummary
 
     public init(startingBond: Int) {
         durationSeconds = 0
@@ -207,6 +279,7 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         pathAcceptedSampleCount = 0
         activityStepCadenceBand = nil
         activityAuthorizationDenied = false
+        arPresentation = .empty
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -238,6 +311,7 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         case pathAcceptedSampleCount
         case activityStepCadenceBand
         case activityAuthorizationDenied
+        case arPresentation
     }
 
     public init(from decoder: Decoder) throws {
@@ -273,12 +347,16 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         pathAcceptedSampleCount = try container.decodeIfPresent(Int.self, forKey: .pathAcceptedSampleCount) ?? 0
         activityStepCadenceBand = try container.decodeIfPresent(String.self, forKey: .activityStepCadenceBand)
         activityAuthorizationDenied = try container.decodeIfPresent(Bool.self, forKey: .activityAuthorizationDenied) ?? false
+        arPresentation = try container.decodeIfPresent(
+            FieldTestARPresentationSummary.self,
+            forKey: .arPresentation
+        ) ?? .empty
     }
 }
 
 public struct FieldTestReceipt: Codable, Equatable, Sendable {
-    /// Schema 3 adds optional path-progress + activity-band summary fields (privacy-safe).
-    public static let currentSchemaVersion = 3
+    /// Schema 4 adds privacy-safe AR presentation summary (LOD / continuity / counts).
+    public static let currentSchemaVersion = 4
 
     public var schemaVersion: Int
     public var receiptID: UUID
@@ -508,7 +586,8 @@ public final class FieldTestReceiptBuilder {
         errorCategory: FieldTestErrorCategory? = nil,
         endedAt: Date,
         pathProgress: PathProgressSnapshot? = nil,
-        activityEnrichment: ActivityEnrichment? = nil
+        activityEnrichment: ActivityEnrichment? = nil,
+        arPresentation: FieldTestARPresentationSummary? = nil
     ) -> FieldTestReceipt {
         if let pauseStart = pausedAt {
             accumulatedPausedDuration += max(0, endedAt.timeIntervalSince(pauseStart))
@@ -543,6 +622,9 @@ public final class FieldTestReceiptBuilder {
             // Bands only — never raw step totals or HealthKit sample identifiers.
             receipt.summary.activityStepCadenceBand = activityEnrichment.stepCadenceBand.rawValue
             receipt.summary.activityAuthorizationDenied = activityEnrichment.authorizationDenied
+        }
+        if let arPresentation {
+            receipt.summary.arPresentation = arPresentation
         }
         appendRequired(FieldTestEntry(timestamp: endedAt, category: .memoryWriteResult, code: persistence.rawValue))
         appendRequired(FieldTestEntry(timestamp: endedAt, category: .sessionCompleted, code: outcome.rawValue))

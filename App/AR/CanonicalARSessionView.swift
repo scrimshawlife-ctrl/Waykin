@@ -8,6 +8,8 @@ import WaykinCore
 protocol CanonicalARCommandSource: AnyObject {
     func attachARWorldCommandHandler(_ handler: @escaping ([ARWorldCommand]) -> Void) -> UUID
     func detachARWorldCommandHandler(owner: UUID)
+    /// Privacy-safe AR presentation snapshot for field-test receipts (D1).
+    func ingestARPresentationDiagnostics(_ summary: FieldTestARPresentationSummary)
 }
 
 @MainActor
@@ -96,6 +98,7 @@ final class CanonicalARSessionRuntime {
 
     func detach(_ arView: ARView, appModel: any CanonicalARCommandSource) {
         guard self.arView === arView else { return }
+        publishPresentationDiagnostics(to: appModel)
         if let commandHandlerOwner {
             appModel.detachARWorldCommandHandler(owner: commandHandlerOwner)
             self.commandHandlerOwner = nil
@@ -111,6 +114,27 @@ final class CanonicalARSessionRuntime {
         sessionCoordinator.pause()
         companionState = .idle
         self.arView = nil
+    }
+
+    /// Push privacy-safe AR labels + counts into the walk receipt path.
+    func publishPresentationDiagnostics(to appModel: any CanonicalARCommandSource) {
+        let counts = diagnostics.fieldTestPresentationSummary
+        let summary = FieldTestARPresentationSummary(
+            arSessionOpened: true,
+            finalLODDescription: companionLODDescription,
+            meshEvidenceClass: LiraARAssetCatalog.packagedEvidenceClass,
+            finalContinuityNote: companionContinuityNote,
+            finalCapabilityState: capabilityState.rawValue,
+            motionDiagnosticsLine: motionDiagnosticsLine,
+            placementDeferredCount: counts.placementDeferredCount,
+            continuityReplantCount: counts.continuityReplantCount,
+            entityReplacementCount: counts.entityReplacementCount,
+            companionPlaced: counts.companionPlaced
+        )
+        appModel.ingestARPresentationDiagnostics(summary)
+        WaykinLog.ar.info(
+            "snapshot lod=\(self.companionLODDescription, privacy: .public) continuity=\(self.companionContinuityNote, privacy: .public) cap=\(self.capabilityState.rawValue, privacy: .public)"
+        )
     }
 
     func receive(_ commands: [ARWorldCommand]) {
@@ -164,6 +188,7 @@ final class CanonicalARSessionRuntime {
                 pendingCommands.remove(at: index)
                 companionState = renderer.companionState
                 companionContinuityNote = renderer.companionContinuityNote
+                companionLODDescription = assetLoader.activeLODDescription
                 continue
             }
 
@@ -330,6 +355,9 @@ struct CanonicalARSessionView: View {
         }
         .onChange(of: reduceMotion) { _, enabled in
             runtime.setReduceMotion(enabled)
+        }
+        .onDisappear {
+            runtime.publishPresentationDiagnostics(to: appModel)
         }
     }
 

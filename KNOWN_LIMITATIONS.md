@@ -27,9 +27,9 @@
 
 A **PARTIAL** outdoor AR operator receipt exists (`docs/design/receipts/OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md`, pre-mitigation continuity/audio notes). That is **not** a full outdoor COH PASS. Do not mark GPS, outdoor audio, battery, or outdoor AR quality as PASS from simulator, package evidence, or that PARTIAL alone. Issue #41 requires a daylight re-walk on current main tip.
 
-The local field-test receipt is engineering evidence only. It has no remote analytics or automatic upload, and receipt creation does not validate physical behavior. Timestamps may reveal session timing when a receipt is shared, field-test ratings remain manual, and receipt-related battery impact is unverified.
+The local field-test receipt is engineering evidence only. It has no remote analytics or automatic upload, and receipt creation does not validate physical behavior. Timestamps may reveal session timing when a receipt is shared, field-test ratings remain manual, and receipt-related battery impact is unverified. Settings can show latest-receipt status and share the on-device JSON; that is still a privacy-filtered engineering export, not analytics.
 
-Receipt schema v2 can distinguish semantic cue requests from software-stage playback diagnostics. That detail does not prove human audibility, accessory behavior, or perceived loudness, and it intentionally omits asset paths, raw error payloads, device or accessory names, port labels, coordinates, volume, raw health samples, sample identifiers, and related identifiers.
+Receipt schema v4 adds optional privacy-safe `arPresentation` (LOD/mesh class/continuity labels and counts) plus path/activity fields from v3 and audio software-stage diagnostics from v2. Those details do not prove human audibility, outdoor AR tracking quality, accessory behavior, or perceived loudness, and they intentionally omit asset paths, raw error payloads, device or accessory names, port labels, coordinates, volume, raw health samples, sample identifiers, and related identifiers.
 
 The recorded route is measurement support for the active Companion Walk only. It is not navigation-grade, does not provide route planning or guidance, and has no background-location guarantee. Battery impact is not characterized.
 

@@ -583,8 +583,7 @@ final class AppAudioCuePlayer: AudioCuePlaying {
     }
 
     private static func defaultDiagnostic(_ diagnostic: AudioPlaybackDiagnostic) {
-#if DEBUG
-        print("[WaykinAudio] \(diagnostic.kind.rawValue)")
-#endif
+        // Prefer structured Console filters: subsystem life.scrimshaw.waykin, category audio.
+        WaykinLog.audio.debug("\(diagnostic.kind.rawValue, privacy: .public)")
     }
 }

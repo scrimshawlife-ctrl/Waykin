@@ -67,4 +67,5 @@ final class SessionMenuUXTests: XCTestCase {
 private final class StubARCommandSource: CanonicalARCommandSource {
     func attachARWorldCommandHandler(_ handler: @escaping ([ARWorldCommand]) -> Void) -> UUID { UUID() }
     func detachARWorldCommandHandler(owner: UUID) {}
+    func ingestARPresentationDiagnostics(_ summary: FieldTestARPresentationSummary) {}
 }

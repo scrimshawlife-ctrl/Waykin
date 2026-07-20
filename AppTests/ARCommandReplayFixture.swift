@@ -66,6 +66,8 @@ final class ReplayCommandSourceStub: CanonicalARCommandSource {
     func detachARWorldCommandHandler(owner: UUID) {
         handlers.removeValue(forKey: owner)
     }
+
+    func ingestARPresentationDiagnostics(_ summary: FieldTestARPresentationSummary) {}
 }
 
 /// Drives the production host through traces while recording every command
