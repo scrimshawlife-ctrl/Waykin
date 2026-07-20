@@ -139,7 +139,10 @@ struct WaykinApp: App {
 @Observable
 final class WaykinAppModel: CanonicalARCommandSource {
     let movementEngine: MovementEngine
+    /// Sync diagnostics / bootstrap (WP-DB1). Prefer `persistence` for durable writes.
     let persistenceStore: PersistenceStore
+    /// Serialized repository surface (WP-DB3 ModelActor / in-memory doubles).
+    let persistence: any WaykinPersistenceServing
     let recommendationEngine = RecommendationEngine()
     let demoController: DemoSessionController
     let audioPlayer: any AudioCuePlaying
@@ -309,8 +312,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
         currentRealPauseStartedAt = nil
     }
 
+    /// Tracks in-flight repository work so tests can await durable completion (WP-DB3).
+    @ObservationIgnored private var pendingPersistenceTasks: [Task<Void, Never>] = []
+
     init(
         persistenceStore: PersistenceStore,
+        persistence: (any WaykinPersistenceServing)? = nil,
         audioPlayer: (any AudioCuePlaying)? = nil,
         movementEngine: MovementEngine = MovementEngine(),
         realLocationProvider: any RealLocationProviding = RealLocationProvider(),
@@ -320,6 +327,16 @@ final class WaykinAppModel: CanonicalARCommandSource {
         fieldTestNow: @escaping @MainActor () -> Date = Date.init
     ) {
         self.persistenceStore = persistenceStore
+        // Prefer explicit inject; else gateway on the store's container; else in-memory double.
+        if let persistence {
+            self.persistence = persistence
+        } else if let gateway = persistenceStore.makeGateway() {
+            self.persistence = gateway
+        } else {
+            self.persistence = InMemoryPersistenceRepository(
+                availability: persistenceStore.availability
+            )
+        }
         self.movementEngine = movementEngine
         self.demoController = DemoSessionController(movementEngine: movementEngine)
         self.audioPlayer = audioPlayer ?? AppAudioCuePlayer()
@@ -361,6 +378,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         }
 
         // WP-DB1/DB2: map store availability + load canonical Lira (not random UUID).
+        // Bootstrap remains sync via PersistenceStore so @MainActor init stays deterministic.
         switch persistenceStore.availability {
         case .availableFileBacked:
             self.persistenceMode = "FILE_BACKED"
@@ -652,40 +670,62 @@ final class WaykinAppModel: CanonicalARCommandSource {
             memoryText: surfacedMemoryText
         )
         let mem = SessionMemory(sessionID: surfacedSummary.sessionID, text: surfacedMemoryText)
+        lastSummary = surfacedSummary
+        // Optimistic companion update; durable write goes through repository actor (WP-DB3).
+        updated.memories.append(mem)
+        companion = updated
+        demoMessage = "Session ended: \(result.outcome). Bond +\(result.bondDelta)"
+        refreshRecommendation()
+        path.append(AppRoute.summary(surfacedSummary.id))
 
-        do {
-            let receipt = try persistenceStore.saveMemory(mem)
-            try persistenceStore.saveCompanion(updated)
-            updated.memories.append(mem)
-            companion = updated
-            lastSummary = surfacedSummary
-            lastSavedMemoryID = receipt.recordID.uuidString
-            demoMessage = "Session ended: \(result.outcome). Bond +\(result.bondDelta)"
-            persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
-            refreshRecommendation()
-            // Relationship-first exit: summary → bond update (Stage 6 graph).
-            path.append(AppRoute.summary(surfacedSummary.id))
-            finishFieldTestReceipt(
-                session: session,
-                outcome: didCompleteScenario ? .completed : .userEnded,
-                endingBond: updated.bondLevel,
-                memoryWritten: true,
-                persistence: .succeeded,
-                endedAt: endedAt
-            )
-        } catch {
-            demoMessage = "Persistence failed: \(error)"
-            persistenceLoadState = .failed
-            finishFieldTestReceipt(
-                session: session,
-                outcome: .persistenceFailed,
-                endingBond: companion.bondLevel,
-                memoryWritten: false,
-                persistence: .failed,
-                errorCategory: .persistence,
-                endedAt: endedAt
-            )
+        enqueuePersistence { [weak self] in
+            guard let self else { return }
+            do {
+                let receipt = try await self.persistence.saveMemory(mem)
+                try await self.persistence.saveCompanion(updated)
+                let count = try await self.persistence.memoryCount()
+                await MainActor.run {
+                    self.lastSavedMemoryID = receipt.recordID.uuidString
+                    self.persistenceMemoryCount = count
+                    self.finishFieldTestReceipt(
+                        session: session,
+                        outcome: didCompleteScenario ? .completed : .userEnded,
+                        endingBond: updated.bondLevel,
+                        memoryWritten: true,
+                        persistence: .succeeded,
+                        endedAt: endedAt
+                    )
+                }
+            } catch {
+                await MainActor.run {
+                    self.demoMessage = "Persistence failed: \(error)"
+                    self.persistenceLoadState = .failed
+                    self.finishFieldTestReceipt(
+                        session: session,
+                        outcome: .persistenceFailed,
+                        endingBond: self.companion.bondLevel,
+                        memoryWritten: false,
+                        persistence: .failed,
+                        errorCategory: .persistence,
+                        endedAt: endedAt
+                    )
+                }
+            }
         }
+    }
+
+    /// Await all repository writes (tests / UI automation).
+    func waitForPendingPersistence() async {
+        let tasks = pendingPersistenceTasks
+        pendingPersistenceTasks.removeAll()
+        for task in tasks {
+            await task.value
+        }
+    }
+
+    private func enqueuePersistence(_ work: @escaping @Sendable () async -> Void) {
+        let task = Task { await work() }
+        pendingPersistenceTasks.append(task)
     }
 
     func returnHome() { path = NavigationPath() }
@@ -900,36 +940,43 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 : activityEnrichment.stepCadenceBand.rawValue
         )
         lastSummary = summary
+        companion = updatedCompanion
+        path.append(AppRoute.summary(summary.id))
 
         let mem = SessionMemory(sessionID: summary.sessionID, text: summary.memory.text)
-        do {
-            let receipt = try persistenceStore.saveMemory(mem)
-            try persistenceStore.saveCompanion(updatedCompanion)
-            companion = updatedCompanion
-            lastSavedMemoryID = receipt.recordID.uuidString
-            persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
-
-            path.append(AppRoute.summary(summary.id))
-            finishFieldTestReceipt(
-                session: ended,
-                outcome: .userEnded,
-                endingBond: updatedCompanion.bondLevel,
-                memoryWritten: true,
-                persistence: .succeeded,
-                endedAt: endedAt
-            )
-        } catch {
-            demoMessage = "The walk ended, but its memory could not be saved."
-            persistenceLoadState = .failed
-            finishFieldTestReceipt(
-                session: ended,
-                outcome: .persistenceFailed,
-                endingBond: companion.bondLevel,
-                memoryWritten: false,
-                persistence: .failed,
-                errorCategory: .persistence,
-                endedAt: endedAt
-            )
+        enqueuePersistence { [weak self] in
+            guard let self else { return }
+            do {
+                let receipt = try await self.persistence.saveMemory(mem)
+                try await self.persistence.saveCompanion(updatedCompanion)
+                let count = try await self.persistence.memoryCount()
+                await MainActor.run {
+                    self.lastSavedMemoryID = receipt.recordID.uuidString
+                    self.persistenceMemoryCount = count
+                    self.finishFieldTestReceipt(
+                        session: ended,
+                        outcome: .userEnded,
+                        endingBond: updatedCompanion.bondLevel,
+                        memoryWritten: true,
+                        persistence: .succeeded,
+                        endedAt: endedAt
+                    )
+                }
+            } catch {
+                await MainActor.run {
+                    self.demoMessage = "The walk ended, but its memory could not be saved."
+                    self.persistenceLoadState = .failed
+                    self.finishFieldTestReceipt(
+                        session: ended,
+                        outcome: .persistenceFailed,
+                        endingBond: self.companion.bondLevel,
+                        memoryWritten: false,
+                        persistence: .failed,
+                        errorCategory: .persistence,
+                        endedAt: endedAt
+                    )
+                }
+            }
         }
     }
 

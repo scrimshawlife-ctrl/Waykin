@@ -6,7 +6,7 @@ import XCTest
 
 @MainActor
 final class FieldTestReceiptIntegrationTests: XCTestCase {
-    func testDemoReceiptIsDeterministicAndDoesNotChangeGameplayOutcome() throws {
+    func testDemoReceiptIsDeterministicAndDoesNotChangeGameplayOutcome() async throws {
         let enabledStore = ReceiptCaptureStore()
         let enabledClock = ReceiptTestClock(now: Date(timeIntervalSince1970: 1_000))
         let disabledClock = ReceiptTestClock(now: enabledClock.now)
@@ -25,6 +25,8 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         disabledClock.now = disabledClock.now.addingTimeInterval(280)
         enabled.endDemo()
         disabled.endDemo()
+        await enabled.waitForPendingPersistence()
+        await disabled.waitForPendingPersistence()
 
         XCTAssertEqual(enabled.lastSummary?.duration, disabled.lastSummary?.duration)
         XCTAssertEqual(enabled.lastSummary?.activeTime, disabled.lastSummary?.activeTime)
@@ -80,7 +82,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertTrue(receipt.timeline.contains { $0.category == .audioLifecycleAction && $0.code == "stop" })
     }
 
-    func testConcreteAudioDiagnosticsRelayIntoDemoReceiptWithoutChangingGameplay() throws {
+    func testConcreteAudioDiagnosticsRelayIntoDemoReceiptWithoutChangingGameplay() async throws {
         let enabledStore = ReceiptCaptureStore()
         let enabledClock = ReceiptTestClock(now: Date(timeIntervalSince1970: 1_250))
         let disabledClock = ReceiptTestClock(now: enabledClock.now)
@@ -101,6 +103,8 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         disabled.runDemoToEnd()
         enabled.endDemo()
         disabled.endDemo()
+        await enabled.waitForPendingPersistence()
+        await disabled.waitForPendingPersistence()
 
         XCTAssertEqual(enabled.lastSummary?.duration, disabled.lastSummary?.duration)
         XCTAssertEqual(enabled.lastSummary?.activeTime, disabled.lastSummary?.activeTime)
@@ -149,6 +153,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertEqual(enabledStore.receipts.count, 1)
 
         enabled.endDemo()
+        await enabled.waitForPendingPersistence()
         XCTAssertEqual(enabledStore.receipts.count, 1)
         XCTAssertEqual(enabled.persistenceMemoryCount, 1)
     }
@@ -173,7 +178,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertEqual(demoPresence.phrase, physicalPresence.phrase)
     }
 
-    func testPhysicalReceiptAggregatesAcceptedAndRejectedSamples() throws {
+    func testPhysicalReceiptAggregatesAcceptedAndRejectedSamples() async throws {
         let store = ReceiptCaptureStore()
         let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 2_000))
         let provider = ReceiptLocationProvider(status: .authorizedWhenInUse)
@@ -188,6 +193,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         clock.now = clock.now.addingTimeInterval(7)
         model.endRealSession()
         model.endRealSession()
+        await model.waitForPendingPersistence()
 
         let receipt = try XCTUnwrap(store.receipts.single)
         XCTAssertEqual(store.receipts.count, 1)
@@ -216,7 +222,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertFalse(json.contains("private provider detail"))
     }
 
-    func testReceiptWriteFailureIsExplicitAndDoesNotUndoMemory() throws {
+    func testReceiptWriteFailureIsExplicitAndDoesNotUndoMemory() async throws {
         let store = ReceiptCaptureStore(error: .writeFailed)
         let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 4_000))
         let model = try makeModel(clock: clock, receiptStore: store)
@@ -225,6 +231,7 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         model.runDemoToEnd()
         clock.now = clock.now.addingTimeInterval(96)
         model.endDemo()
+        await model.waitForPendingPersistence()
 
         XCTAssertEqual(model.fieldTestReceiptError, .writeFailed)
         XCTAssertEqual(model.persistenceMemoryCount, 1)

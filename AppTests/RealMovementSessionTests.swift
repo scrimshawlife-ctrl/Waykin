@@ -113,7 +113,7 @@ final class RealMovementSessionTests: XCTestCase {
         XCTAssertEqual(deliveredBatches.last, [.clearSession])
     }
 
-    func testEndingRealWalkStopsAudioAndPersistsExactlyOneMemory() throws {
+    func testEndingRealWalkStopsAudioAndPersistsExactlyOneMemory() async throws {
         let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
         let audio = RealAudioSpy()
         let model = try makeModel(provider: provider, audio: audio)
@@ -125,6 +125,7 @@ final class RealMovementSessionTests: XCTestCase {
 
         model.endRealSession()
         model.endRealSession()
+        await model.waitForPendingPersistence()
 
         XCTAssertEqual(model.realWalkState, .completed)
         XCTAssertNil(model.movementEngine.currentSession)

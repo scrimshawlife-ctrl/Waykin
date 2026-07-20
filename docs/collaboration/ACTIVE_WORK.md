@@ -10,7 +10,7 @@ Last updated: 2026-07-20 (persistence WP-DB1/DB2; UI partial; outdoor parked)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **Persistence hardening WP-DB1–DB2** | — | **In progress / shipping** | [PERSISTENCE_HARDENING_PLAN.md](../plans/PERSISTENCE_HARDENING_PLAN.md) · ADR-0003 |
+| **Persistence hardening WP-DB1–DB3** | — | **DB1–DB3 shipping** (repos + ModelActor) | [PERSISTENCE_HARDENING_PLAN.md](../plans/PERSISTENCE_HARDENING_PLAN.md) · ADR-0003 |
 | **UI CANDIDATE_v0.2 Phase 4** | — | **Partial** — waves 1–3 + onboarding/legal on main; checklist polish remains | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
 | Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 
@@ -18,7 +18,7 @@ Last updated: 2026-07-20 (persistence WP-DB1/DB2; UI partial; outdoor parked)
 
 | Work | Reason |
 |---|---|
-| WP-DB3–DB5 (repos, ModelActor, session aggregate, migration suite) | Next after DB1/DB2 lands |
+| WP-DB4–DB5 (session aggregate, migration suite) | Next after DB3 |
 | UI checklist polish + sim screenshot matrix | Non-outdoor product evidence |
 | HO residual icons / production-board density | Design package alignment |
 

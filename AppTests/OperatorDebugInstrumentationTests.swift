@@ -6,7 +6,7 @@ import WaykinCore
 @MainActor
 final class OperatorDebugInstrumentationTests: XCTestCase {
 
-    func testIngestARPresentationMergesIntoSessionSummary() throws {
+    func testIngestARPresentationMergesIntoSessionSummary() async throws {
         let model = try makeModel(receiptStore: ReceiptMemoryStore())
         model.startDemo(.calmDayWalk)
         XCTAssertFalse(model.sessionARPresentationSummary.arSessionOpened)
@@ -37,9 +37,10 @@ final class OperatorDebugInstrumentationTests: XCTestCase {
         XCTAssertEqual(model.sessionARPresentationSummary.finalLODDescription, "artist_usdz:Lira_AR_Base")
         XCTAssertEqual(model.sessionARPresentationSummary.continuityReplantCount, 4)
         model.endDemo()
+        await model.waitForPendingPersistence()
     }
 
-    func testFinishReceiptIncludesARPresentationAndStillLabel() throws {
+    func testFinishReceiptIncludesARPresentationAndStillLabel() async throws {
         let store = ReceiptMemoryStore()
         let model = try makeModel(receiptStore: store)
         model.startDemo(.calmDayWalk)
@@ -54,6 +55,7 @@ final class OperatorDebugInstrumentationTests: XCTestCase {
             )
         )
         model.endDemo()
+        await model.waitForPendingPersistence()
 
         let receipt = try XCTUnwrap(store.receipts.last)
         XCTAssertEqual(receipt.schemaVersion, 4)
@@ -67,11 +69,12 @@ final class OperatorDebugInstrumentationTests: XCTestCase {
         XCTAssertEqual(model.latestFieldTestReceipt?.receiptID, receipt.receiptID)
     }
 
-    func testRefreshLatestReceiptFromStore() throws {
+    func testRefreshLatestReceiptFromStore() async throws {
         let store = ReceiptMemoryStore()
         let model = try makeModel(receiptStore: store)
         model.startDemo(.calmDayWalk)
         model.endDemo()
+        await model.waitForPendingPersistence()
         XCTAssertNotNil(model.latestFieldTestReceipt)
         model.refreshLatestFieldTestReceiptFromStore()
         XCTAssertNotNil(model.latestFieldTestReceipt)
