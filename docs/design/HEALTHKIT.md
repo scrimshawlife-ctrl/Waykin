@@ -1,53 +1,130 @@
-# HealthKit Enrichment
+# HealthKit and Apple Watch Integration
 
 ```yaml
 document_id: WAYKIN-HEALTHKIT-001
-version: 0.2
-status: IMPLEMENTED_V1_1
+version: 1.0
+status: IMPLEMENTED_V1_1_WITH_WATCH_REFERENCE
+authority: REFERENCE
 required_for_demo: false
 ```
 
-## Scope
+## Current Implemented Scope
 
-Optional read of **steps** (last hour) and **walking+running distance** (today) to produce `ActivityEnrichment` semantic bands.
-
-## Boundaries
+Waykin optionally reads **steps from the previous hour** and **walking/running distance from the current day** to produce platform-neutral `ActivityEnrichment` values.
 
 | Layer | Allowed |
-| ----- | ------- |
+|---|---|
 | App | `HealthKitMetricsProvider`, `NullHealthMetricsProvider`, `FakeHealthMetricsProvider` |
-| WaykinCore | `ActivityEnrichment` / `StepCadenceBand` only — **no HealthKit import** |
+| WaykinCore | `ActivityEnrichment` and coarse activity bands only; no HealthKit import |
 
-## Authorization
+Demo Mode never requests HealthKit. A real walk may request authorization at start and resume. Missing, unavailable, or unreadable data must not block the walk.
 
-- Demo Mode never requests HealthKit
-- UI tests use `NullHealthMetricsProvider`
-- App tests may inject `FakeHealthMetricsProvider`
-- Real walk may call `requestAuthorizationIfNeeded()` non-blocking at **start** and **resume**
-- Deny → `authorizationDenied: true`, empty bands; walk continues
+## Current Semantic Use
 
-## Cadence bands (steps / last hour)
+- `energyHint` lightly affects presence and experience energy.
+- Session summary may show a coarse activity line without exposing step totals.
+- Field-test receipts store only a coarse activity band and denial flag.
+- HealthKit never becomes movement truth, event authority, Bond authority, or a completion requirement.
 
-| Steps | Band |
-| ----- | ---- |
-| unknown / missing | unknown |
-| &lt; 200 | low |
-| 200–1999 | moderate |
-| ≥ 2000 | high |
+## Current Limits
 
-## Presentation
+The repository currently has no:
 
-- `energyHint` (0…0.2) lightly lifts presence opacity and can color path-on phrases
-- Real walk passes `activityEnergyHint` into `ExperienceContext` (soft world-energy floor)
-- Session summary may show a coarse cadence line (no step totals)
-- Never required for Demo Mode or walk completion
+- watchOS target.
+- `HKWorkoutSession` or `HKLiveWorkoutBuilder`.
+- Workout-session mirroring.
+- WatchConnectivity session.
+- Live heart-rate stream.
+- HealthKit workout writer.
+- Watch controls, haptics, or summary surface.
 
-## Privacy
+An Apple Watch may indirectly contribute samples to the HealthKit store, but that is not a Waykin Watch integration.
 
-No HealthKit sample UUIDs, device names, or medical diagnoses. Enrichment is coarse. Field-test receipts store **cadence band + denied flag only** (no step totals).
+## Required HealthKit Hardening
 
-## Tests
+Before Apple Watch implementation is promoted:
 
-- `ActivityEnrichmentTests` (core)
-- `PathProgressIntegrationTests` health null/denied + fake provider + cadence helper
-- Isolation: HealthKit not in WaykinCore sources
+1. Replace the misleading definitive read-authorization state with request-completion and per-metric availability states.
+2. Fix the start-time race where enrichment may complete before `realExperienceContext` exists.
+3. Distinguish query failure, no data, unavailable service, and unreadable data.
+4. Rename or clarify the current one-hour step-volume band; it is not live cadence.
+5. Add bounded periodic refresh during active real walks, with cancellation on pause or end and one outstanding query maximum.
+6. Give daily walking distance a bounded semantic purpose or remove the unnecessary read permission.
+7. Add direct-device evidence for authorization, denial, empty samples, refresh, and lifecycle behavior.
+
+## Apple Watch Authority Contract
+
+The iPhone remains the canonical gameplay authority.
+
+```text
+Apple Watch adapters
+  workout lifecycle / sensors / haptics / minimal controls
+                    ↓
+Platform-neutral wearable contracts
+                    ↓
+iPhone Waykin app
+  MovementEngine / WorldState / events / Lira / pursuit / audio
+                    ↓
+Bond / memory / summary / AR
+```
+
+Apple Watch may own workout collection, minimal Start/Pause/Resume/End controls, bounded haptic rendering, and local recovery while disconnected. It must not own movement acceptance, event selection, Lira behavior, pursuit state, Bond, memory generation, canonical outcome, or AR state.
+
+Shared wearable contracts must not import HealthKit, WatchKit, WatchConnectivity, SwiftUI, or platform object types. Every cross-device message must contain a session identifier and monotonic revision.
+
+Raw heart-rate or effort values must not directly select events or increase coercive pursuit pressure. They may only provide bounded context, presentation intensity, optional audio-density reduction, or summary information.
+
+## Transport Responsibilities
+
+Use HealthKit workout mirroring for workout lifecycle, live workout metrics, reconnection, and supported background recovery.
+
+Use WatchConnectivity only for non-authoritative semantic state such as:
+
+- Latest Lira state.
+- Pursuit band.
+- Immediate control acknowledgements.
+- Completed summary delivery.
+
+Do not transfer route geometry, personal memory text, or diagnostic receipts to Watch.
+
+## Minimal Watch Product Surface
+
+1. **Ready** — Lira status and Start Walk.
+2. **Active** — elapsed time, distance, effort or heart-rate band, Lira state, Pause, and End.
+3. **Summary** — duration, distance, Bond delta, one closing phrase, and Done.
+
+The first Watch release excludes maps, AR, memory browsing, detailed health charts, complications, skin management, independent event generation, and independent Bond calculation.
+
+## Promotion Sequence
+
+### Phase 0 — HealthKit V1 hardening
+
+Correct authorization semantics, enrichment ordering, query provenance, and refresh lifecycle while preserving Demo Mode isolation.
+
+### Phase 1 — Optional workout writing
+
+Add explicit write authorization and an app-layer `WorkoutWriting` protocol. Save completed Waykin walks with duplicate protection. Write failure must never block Waykin completion.
+
+### Phase 2 — Minimal watchOS target
+
+Add a Watch app, workout controller, platform-neutral wearable contracts, outdoor walking workout, and the three-screen UI.
+
+### Phase 3 — Workout mirroring
+
+Install the iPhone mirroring handler during app initialization, reconcile repeated callbacks idempotently, and preserve iPhone gameplay authority.
+
+### Phase 4 — Semantic Watch presentation
+
+Send bounded Lira, pursuit, Bond, phrase, lifecycle, and haptic commands with cooldowns.
+
+### Phase 5 — Paired-device validation
+
+Validate start, pause, resume, and end from either device; phone lock/background behavior; temporary disconnection and reconnection; duplicate delivery; permission denial; missing heart-rate data; crash recovery; workout save/discard; and battery, thermal, audio, and haptic behavior.
+
+## Privacy and Safety
+
+Health data remains optional and local unless separately approved. No diagnoses, medical claims, raw sample identifiers, device names, or detailed health histories belong in memories or field-test receipts. Missing or stale wearable data degrades to `unknown` without blocking the walk. Waykin is not safety equipment or medical guidance.
+
+## Promotion Gate
+
+Apple Watch implementation requires an accepted GitHub issue defining user outcome, allowed and frozen systems, target and entitlement changes, data contracts, privacy and safety constraints, tests, paired-device evidence, and rollback path. Until then, Apple Watch remains an approved architectural reference rather than an implementation claim.
