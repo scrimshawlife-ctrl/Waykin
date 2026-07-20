@@ -91,6 +91,10 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(promoted))
         XCTAssertNotNil(promoted.findEntity(named: "Body"))
         XCTAssertNotNil(promoted.findEntity(named: "mesh1"))
+        XCTAssertTrue(LiraARAssetLoader.hasModelGeometry(promoted.findEntity(named: "CoreGlow")!))
+        XCTAssertTrue(LiraARAssetLoader.hasModelGeometry(promoted.findEntity(named: "Filament")!))
+        XCTAssertTrue(LiraARAssetLoader.hasModelGeometry(promoted.findEntity(named: "GroundShadow")!))
+        XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: promoted), .staticMesh)
     }
 
     func testApplySkinAllFormsOnPackagedClone() async throws {

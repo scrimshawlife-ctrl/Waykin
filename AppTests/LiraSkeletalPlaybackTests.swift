@@ -50,6 +50,11 @@ final class LiraSkeletalPlaybackTests: XCTestCase {
         bare.addChild(mesh)
         let promoted = LiraARAssetLoader.promoteIncompleteHierarchy(bare)
         XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: promoted), .staticMesh)
+        // Spectral FX layer for A2/A3/shadow.
+        XCTAssertTrue(LiraARAssetLoader.hasModelGeometry(promoted.findEntity(named: "CoreGlow")!))
+        XCTAssertTrue(LiraARAssetLoader.hasModelGeometry(promoted.findEntity(named: "Filament")!))
+        XCTAssertTrue(LiraARAssetLoader.hasModelGeometry(promoted.findEntity(named: "GroundShadow")!))
+        XCTAssertNotNil(promoted.findEntity(named: LiraARMotion.filamentMidName))
         let player = LiraSkeletalPlayer()
         XCTAssertTrue(player.install(on: promoted))
         XCTAssertEqual(player.puppetStyle, .staticMesh)
@@ -60,6 +65,23 @@ final class LiraSkeletalPlaybackTests: XCTestCase {
         player.play(state: .alert, on: promoted)
         XCTAssertEqual(player.activeClip, .alert)
         player.clear()
+    }
+
+    func testSpectralFXSkinDoesNotRequireBodyPaint() {
+        let bare = Entity()
+        bare.name = CompanionEntityFactory.rootName
+        let mesh = ModelEntity(
+            mesh: .generateBox(size: 0.25),
+            materials: [SimpleMaterial(color: .white, isMetallic: false)]
+        )
+        mesh.name = "authored"
+        bare.addChild(mesh)
+        let promoted = LiraARAssetLoader.promoteIncompleteHierarchy(bare, skin: .dawn)
+        for skin in LiraSkin.allCases {
+            LiraARAssetLoader.applySpectralFXSkin(skin, to: promoted)
+        }
+        XCTAssertTrue(LiraARAssetLoader.hasModelGeometry(promoted.findEntity(named: "CoreGlow")!))
+        XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: promoted), .staticMesh)
     }
 
     func testClipMappingCoversEveryPresentationState() {

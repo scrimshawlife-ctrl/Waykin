@@ -13,7 +13,8 @@ direction: spectral_living_familiar
 evidence_class: MESHY_TEXTURED_STATIC_V1
 source_mesh: ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz
 armature: puppet_markers_plus_optional_prior_LiraArmature
-puppet_style: staticMesh_body_centric
+puppet_style: staticMesh_body_plus_spectral_fx
+spectral_fx: A2_CoreGlow_A3_Filament_GroundShadow
 ```
 
 ## What shipped
@@ -64,10 +65,19 @@ Skeletal clips bind via `AnimationBindTarget.entity(name)` on semantic nodes (pu
 
 | Style | When | Motion |
 | ----- | ---- | ------ |
-| `multiPart` | Procedural factory / multi-mesh artist | Head, ears, filament, core, Body factory rest |
-| `staticMesh` | Meshy single textured mesh under `Body` | Body-centric bob + lean only (identity rest scale) |
+| `multiPart` | Procedural factory / multi-mesh artist (Head has mesh) | Head, ears, filament, core, Body factory rest |
+| `staticMesh` | Meshy under `Body` + spectral FX (Head empty) | Body bob/lean (identity rest) + CoreGlow breath + Filament sway |
 
-Detects empty promote markers vs real part meshes so factory Body scale (0.68×1.52×1.12) never squashes the Meshy PBR mesh.
+`promoteIncompleteHierarchy` installs spectral FX children on empty markers:
+
+| Node | FX |
+| ---- | -- |
+| `CoreGlow` / `CoreHalo` | Amber bond spheres (A2) |
+| `Filament` | 3-segment plume (A3) |
+| `GroundShadow` | Flat dark disc |
+| `StatusIndicator` / `HunterEcho` | Chrome / alert ghost |
+
+`applySpectralFXSkin` recolors FX only — Body Meshy PBR is never paint-over.
 
 ## Export / rebuild
 

@@ -401,7 +401,11 @@ final class ARWorldCommandRenderer {
     /// Re-paint materials on the currently planted companion (live form change).
     func reapplySkinToLiveCompanion() {
         guard let companion = liveCompanionRoot() else { return }
-        LiraARAssetLoader.applySkin(companionSkin, to: companion)
+        if assetLoader.preserveAuthoredMaterials {
+            LiraARAssetLoader.applySpectralFXSkin(companionSkin, to: companion)
+        } else {
+            LiraARAssetLoader.applySkin(companionSkin, to: companion)
+        }
     }
 
     private func prepareSkeletalPlayback(on entity: Entity) {
@@ -430,25 +434,22 @@ final class ARWorldCommandRenderer {
 
     /// Reduce Motion: freeze continuous loops at rest, keep hunter echo off unless alert.
     private func applyRestLocalMotion(to entity: Entity, state: CompanionPresentationState) {
-        if LiraSkeletalRig.puppetStyle(for: entity) == .staticMesh {
-            if let body = entity.findEntity(named: "Body") {
-                body.position = .zero
-                body.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
-                body.scale = SIMD3<Float>(repeating: 1)
-            }
-            applyHunterEcho(to: entity, state: state, elapsed: 0)
-            return
+        let staticMesh = LiraSkeletalRig.puppetStyle(for: entity) == .staticMesh
+        if staticMesh, let body = entity.findEntity(named: "Body") {
+            body.position = .zero
+            body.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+            body.scale = SIMD3<Float>(repeating: 1)
         }
         if let core = entity.findEntity(named: "CoreGlow"), core.isEnabled {
             core.scale = SIMD3<Float>(repeating: 1)
         }
         if let halo = entity.findEntity(named: "CoreHalo"), halo.isEnabled {
-            halo.scale = SIMD3<Float>(repeating: 1.15)
+            halo.scale = SIMD3<Float>(repeating: staticMesh ? 1 : 1.15)
         }
         if let filament = entity.findEntity(named: "Filament") {
             filament.orientation = LiraARMotion.filamentOrientation(elapsed: 0, state: state)
         }
-        if let head = entity.findEntity(named: "Head") {
+        if !staticMesh, let head = entity.findEntity(named: "Head") {
             head.orientation = LiraARMotion.headOrientation(elapsed: 0, state: state)
         }
         applyHunterEcho(to: entity, state: state, elapsed: 0)

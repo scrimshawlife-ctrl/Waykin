@@ -10,8 +10,8 @@ import simd
 ///
 /// **Styles:**
 /// - `.multiPart` — procedural/artist parts; preserves factory rest scale/translation.
-/// - `.staticMesh` — Meshy single mesh under `Body`; body-centric motion only
-///   (identity rest) so authored PBR mesh is never squashed by factory scales.
+/// - `.staticMesh` — Meshy body (identity rest) + spectral FX on CoreGlow/Filament
+///   (A2 breath, A3 sway). Authored PBR under Body is never squashed by factory scales.
 ///
 /// **Policy:** When `LiraSkeletalPlayer` is driving, the renderer must not apply
 /// conflicting per-frame pure-function channels on the same joints.
@@ -80,55 +80,131 @@ enum LiraSkeletalAnimationLibrary {
         }
     }
 
-    // MARK: - Static mesh (Meshy) — body-centric
+    // MARK: - Static mesh (Meshy) — body + spectral FX hybrid
 
-    /// Single textured mesh lives under `Body`. Empty promote markers do not
-    /// carry geometry, so ambient language is Body bob + lean only.
+    /// Body carries authored mesh (identity rest). Spectral FX under CoreGlow /
+    /// Filament provide A2 breath + A3 plume language.
     private static func generateStaticMesh(clip: ClipID) throws -> AnimationResource {
         switch clip {
         case .idle:
-            return try bodyCentricClip(
-                duration: 1.8,
-                from: bodyPose(y: 0, pitch: 0, yaw: -0.02),
-                to: bodyPose(y: 0.01, pitch: 0.015, yaw: 0.03),
-                reverse: true
-            )
+            let half = 1.8 / 2
+            return try AnimationResource.group(with: [
+                try bodyChannel(
+                    duration: half,
+                    from: bodyPose(y: 0, pitch: 0, yaw: -0.02),
+                    to: bodyPose(y: 0.01, pitch: 0.015, yaw: 0.03),
+                    reverse: true
+                ),
+                try scalePulse(path: "CoreGlow", to: 1.1, duration: half, reverse: true),
+                try scalePulse(path: "CoreHalo", to: 1.14, duration: half, reverse: true),
+                try rotateSwing(
+                    path: "Filament",
+                    from: filamentRest(),
+                    to: filamentTilt(pitchDelta: 0.08, yaw: 0.03),
+                    duration: half,
+                    reverse: true
+                )
+            ])
         case .follow:
-            return try bodyCentricClip(
-                duration: 2.2,
-                from: bodyPose(y: 0.002, pitch: 0.04, yaw: 0.05),
-                to: bodyPose(y: 0.008, pitch: 0.06, yaw: 0.12),
-                reverse: true
-            )
+            let half = 2.2 / 2
+            return try AnimationResource.group(with: [
+                try bodyChannel(
+                    duration: half,
+                    from: bodyPose(y: 0.002, pitch: 0.04, yaw: 0.05),
+                    to: bodyPose(y: 0.008, pitch: 0.06, yaw: 0.12),
+                    reverse: true
+                ),
+                try scalePulse(path: "CoreGlow", to: 1.07, duration: half, reverse: true),
+                try scalePulse(path: "CoreHalo", to: 1.1, duration: half, reverse: true),
+                try rotateSwing(
+                    path: "Filament",
+                    from: filamentRest(),
+                    to: filamentTilt(pitchDelta: 0.1, yaw: -0.04),
+                    duration: half,
+                    reverse: true
+                ),
+                try rotateSwing(
+                    path: "FilamentMid",
+                    from: Transform.identity,
+                    to: segmentPitch(0.08),
+                    duration: half * 1.05,
+                    reverse: true
+                ),
+                try rotateSwing(
+                    path: "FilamentTip",
+                    from: Transform.identity,
+                    to: segmentPitch(0.12),
+                    duration: half * 0.9,
+                    reverse: true
+                )
+            ])
         case .investigate:
-            return try bodyCentricClip(
-                duration: 2.0,
-                from: bodyPose(y: -0.006, pitch: 0.10, yaw: -0.10),
-                to: bodyPose(y: -0.01, pitch: 0.14, yaw: -0.18),
-                reverse: true
-            )
+            let half = 2.0 / 2
+            return try AnimationResource.group(with: [
+                try bodyChannel(
+                    duration: half,
+                    from: bodyPose(y: -0.006, pitch: 0.10, yaw: -0.10),
+                    to: bodyPose(y: -0.01, pitch: 0.14, yaw: -0.18),
+                    reverse: true
+                ),
+                try scalePulse(path: "CoreGlow", to: 1.05, duration: half, reverse: true),
+                try rotateSwing(
+                    path: "Filament",
+                    from: filamentRest(),
+                    to: filamentTilt(pitchDelta: 0.06, yaw: 0.05),
+                    duration: half,
+                    reverse: true
+                )
+            ])
         case .alert:
-            return try bodyCentricClip(
-                duration: 0.9,
-                from: bodyPose(y: -0.004, pitch: 0.02, yaw: 0.02),
-                to: bodyPose(y: 0.002, pitch: 0.05, yaw: 0.06),
-                reverse: true
-            )
+            let half = 0.9 / 2
+            return try AnimationResource.group(with: [
+                try bodyChannel(
+                    duration: half,
+                    from: bodyPose(y: -0.004, pitch: 0.02, yaw: 0.02),
+                    to: bodyPose(y: 0.002, pitch: 0.05, yaw: 0.06),
+                    reverse: true
+                ),
+                try scalePulse(path: "CoreGlow", to: 1.06, duration: half, reverse: true),
+                try rotateSwing(
+                    path: "Filament",
+                    from: filamentRest(),
+                    to: filamentTilt(pitchDelta: 0.14, yaw: 0.06),
+                    duration: half * 0.85,
+                    reverse: true
+                )
+            ])
         case .celebrate:
-            return try bodyCentricClip(
-                duration: 0.55,
-                from: bodyPose(y: 0, pitch: 0, yaw: 0),
-                to: bodyPose(y: 0.04, pitch: -0.04, yaw: 0.18, scale: 1.03),
-                reverse: false
-            )
+            let d: TimeInterval = 0.55
+            return try AnimationResource.group(with: [
+                try bodyChannel(
+                    duration: d,
+                    from: bodyPose(y: 0, pitch: 0, yaw: 0),
+                    to: bodyPose(y: 0.04, pitch: -0.04, yaw: 0.18, scale: 1.03),
+                    reverse: false
+                ),
+                try scalePulse(path: "CoreGlow", to: 1.18, duration: d, reverse: false),
+                try scalePulse(path: "CoreHalo", to: 1.22, duration: d, reverse: false),
+                try rotateSwing(
+                    path: "Filament",
+                    from: filamentRest(),
+                    to: filamentTilt(pitchDelta: 0.12, yaw: 0.1),
+                    duration: d,
+                    reverse: false
+                )
+            ])
         case .spawn:
-            return try bodyCentricClip(
-                duration: 0.7,
-                from: bodyPose(y: 0, pitch: 0, yaw: 0, scale: 0.92),
-                to: bodyPose(y: 0, pitch: 0, yaw: 0, scale: 1),
-                reverse: false,
-                timing: .easeOut
-            )
+            let d: TimeInterval = 0.7
+            return try AnimationResource.group(with: [
+                try bodyChannel(
+                    duration: d,
+                    from: bodyPose(y: 0, pitch: 0, yaw: 0, scale: 0.92),
+                    to: bodyPose(y: 0, pitch: 0, yaw: 0, scale: 1),
+                    reverse: false,
+                    timing: .easeOut
+                ),
+                try scalePulse(path: "CoreGlow", to: 1.12, duration: d, reverse: false)
+            ])
         }
     }
 
@@ -147,7 +223,7 @@ enum LiraSkeletalAnimationLibrary {
         return t
     }
 
-    private static func bodyCentricClip(
+    private static func bodyChannel(
         duration: TimeInterval,
         from: Transform,
         to: Transform,
@@ -155,11 +231,10 @@ enum LiraSkeletalAnimationLibrary {
         timing: AnimationTimingFunction = .easeInOut
     ) throws -> AnimationResource {
         let d = max(0.05, duration)
-        let half = reverse ? d / 2 : d
         let definition = FromToByAnimation<Transform>(
             from: from,
             to: to,
-            duration: half,
+            duration: d,
             timing: timing,
             isAdditive: false,
             bindTarget: jointTransform("Body"),

@@ -13,9 +13,10 @@ Source: `ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz`
 ## Runtime
 
 1. AR attach → `LiraARAssetLoader.preloadFromBundle()`
-2. If hierarchy incomplete → promote markers (Body + A1–A3 empties)
-3. Spawn clone; preserve textures; puppet animation binds to semantic names
-4. On failure → procedural Living Familiar mid-LOD
+2. If hierarchy incomplete → promote markers (Body + A1–A3) + spectral FX (ember/plume/shadow)
+3. Spawn clone; preserve Body textures; `applySpectralFXSkin` for Dawn/Veil/Rupture FX climate
+4. Hybrid puppet: Body bob/lean + CoreGlow breath + Filament sway
+5. On failure → procedural Living Familiar mid-LOD
 
 ## Required hierarchy (post-promote)
 
