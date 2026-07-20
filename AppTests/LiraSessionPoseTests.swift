@@ -28,6 +28,13 @@ final class LiraSessionPoseTests: XCTestCase {
         XCTAssertEqual(LiraSessionPose.resolve(from: p), .bond)
     }
 
+    func testQuietIntervalMapsToSanctuaryWhenActive() {
+        let active = makePresentation(behavior: .rest, pursuit: .inactive, event: .quietInterval, isPaused: false)
+        XCTAssertEqual(LiraSessionPose.resolve(from: active), .sanctuary)
+        let paused = makePresentation(behavior: .rest, pursuit: .inactive, event: .quietInterval, isPaused: true)
+        XCTAssertEqual(LiraSessionPose.resolve(from: paused), .dormant)
+    }
+
     func testFadingPursuitMapsToSanctuary() {
         let p = makePresentation(pursuit: .fading)
         XCTAssertEqual(LiraSessionPose.resolve(from: p), .sanctuary)

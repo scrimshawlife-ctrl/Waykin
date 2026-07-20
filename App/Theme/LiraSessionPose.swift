@@ -28,7 +28,10 @@ enum LiraSessionPose: String, CaseIterable, Equatable, Sendable {
         }
 
         if presentation.eventKind == .bondMoment { return .bond }
-        if presentation.eventKind == .quietInterval { return .dormant }
+        // Quiet world + rest behavior: sanctuary when settled; dormant only when paused (#139).
+        if presentation.eventKind == .quietInterval {
+            return presentation.isPaused ? .dormant : .sanctuary
+        }
 
         // Path integrity lean (presentation only; not a new gameplay loop).
         if presentation.pathRelation == .offPath || presentation.pathIntegrityPressure >= 0.7 {

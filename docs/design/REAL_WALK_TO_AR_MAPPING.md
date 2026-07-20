@@ -41,6 +41,19 @@ Mapper: `CanonicalARWorldCommandMapper`.
 | noticed | + discovery |
 | approaching / close | + threat |
 
+## Presentation triangle (#139) + path soft coupling (#140/#141)
+
+| Tick source | Core behavior | Distance | AR behavior string | 2D pose lean | Audio |
+| ----------- | ------------- | -------- | ------------------ | ------------ | ----- |
+| quietInterval | rest | 2.0 | idle | sanctuary (dormant if paused) | quietShift (event) |
+| companionMovesAhead / lead | lead | 4.0 far | follow + ahead bearing | guide | companionAhead |
+| bondMoment | drawNear | 1.2 | celebrate | bond | bondMotif |
+| path strained (pursuit quiet) | (unchanged) | (unchanged) | investigate | rival lean | quietShift `path:strained` if silent |
+| path offPath (pursuit quiet) | (unchanged) | (unchanged) | alert | hunter lean | quietShift `path:offPath` if silent |
+| path recovered | (unchanged) | (unchanged) | (matrix) | (matrix) | pursuitRelease `path:recovered` if silent |
+
+Shared resolver: `CompanionPresentationMatrix`. Outdoor multi-surface scorecard: `OUTDOOR_QA_RECEIPT_TEMPLATE.md` Pass COH (#143).
+
 ## Product decision (#125) — world-plant + continuity re-plant
 
 **Ratified for solo MVP:** keep **world-plane plant** (ground raycast → `AnchorEntity`). Presentation state `.follow` remains a **local pose**, not walker re-anchor.

@@ -138,7 +138,9 @@ public struct CompanionWalkExperience: WaykinExperience {
             walkState.pursuitState = Self.nextPursuitState(current: walkState.pursuitState, event: event)
         }
 
-        let behavior = Self.behavior(for: event, moving: movement.isMoving)
+        // Shared matrix: behavior + distance for commands and runtime (#139, #142).
+        let resolved = CompanionPresentationMatrix.resolve(event: event, moving: movement.isMoving)
+        let behavior = resolved.behavior
 
         // Event cues first; when silent, couple produced assets to companion behavior changes (#130).
         var audioLayer = AudioExperienceLayer()
@@ -164,7 +166,11 @@ public struct CompanionWalkExperience: WaykinExperience {
 
         return ExperienceUpdate(
             state: newState,
-            companionCommands: [.showMessage(tone), .setBehavior(behavior.rawValue)],
+            companionCommands: [
+                .showMessage(tone),
+                .setBehavior(behavior.rawValue),
+                .setRelativeDistance(resolved.relativeDistance)
+            ],
             audioCues: cue.map { [$0.kind.rawValue] } ?? [],
             semanticAudioCues: cue.map { [$0] } ?? [],
             narrativeEvents: event.map { [$0.kind.rawValue] } ?? [],
@@ -224,22 +230,6 @@ public struct CompanionWalkExperience: WaykinExperience {
             return current == .approaching || current == .close
         default:
             return true
-        }
-    }
-
-    private static func behavior(for event: WorldEvent?, moving: Bool) -> CompanionBehaviorState {
-        guard let event else { return moving ? .follow : .observe }
-        switch event.kind {
-        case .companionDrawsNear, .bondMoment:
-            return .drawNear
-        case .companionMovesAhead, .pursuitFades:
-            return .lead
-        case .quietInterval:
-            return .rest
-        case .companionObserves, .familiarPlaceStirs, .distantPresence:
-            return .observe
-        case .pursuitBegins, .pursuitIntensifies:
-            return .follow
         }
     }
 

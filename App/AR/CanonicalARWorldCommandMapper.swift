@@ -11,16 +11,30 @@ struct CanonicalARWorldCommandMapper {
     let companionName: String
 
     func spawn(companionRuntime: CompanionRuntime) -> [ARWorldCommand] {
-        [.spawnCompanion(companionPresentation(for: companionRuntime, event: nil))]
+        [.spawnCompanion(companionPresentation(
+            for: companionRuntime,
+            event: nil,
+            pursuitState: .inactive,
+            pathRelation: .establishing,
+            pathIntegrityPressure: 0
+        ))]
     }
 
     func snapshot(
         companionRuntime: CompanionRuntime,
         pursuitState: PursuitState,
-        lastEvent: WorldEvent?
+        lastEvent: WorldEvent?,
+        pathRelation: PathRelation = .establishing,
+        pathIntegrityPressure: Double = 0
     ) -> [ARWorldCommand] {
         var commands: [ARWorldCommand] = [
-            .spawnCompanion(companionPresentation(for: companionRuntime, event: lastEvent))
+            .spawnCompanion(companionPresentation(
+                for: companionRuntime,
+                event: lastEvent,
+                pursuitState: pursuitState,
+                pathRelation: pathRelation,
+                pathIntegrityPressure: pathIntegrityPressure
+            ))
         ]
         switch pursuitState {
         case .noticed:
@@ -42,9 +56,21 @@ struct CanonicalARWorldCommandMapper {
         return commands
     }
 
-    func update(companionRuntime: CompanionRuntime, event: WorldEvent?) -> [ARWorldCommand] {
+    func update(
+        companionRuntime: CompanionRuntime,
+        event: WorldEvent?,
+        pursuitState: PursuitState = .inactive,
+        pathRelation: PathRelation = .establishing,
+        pathIntegrityPressure: Double = 0
+    ) -> [ARWorldCommand] {
         var commands: [ARWorldCommand] = [
-            .updateCompanion(companionPresentation(for: companionRuntime, event: event))
+            .updateCompanion(companionPresentation(
+                for: companionRuntime,
+                event: event,
+                pursuitState: pursuitState,
+                pathRelation: pathRelation,
+                pathIntegrityPressure: pathIntegrityPressure
+            ))
         ]
 
         guard let event else {
@@ -76,12 +102,21 @@ struct CanonicalARWorldCommandMapper {
 
     private func companionPresentation(
         for runtime: CompanionRuntime,
-        event: WorldEvent?
+        event: WorldEvent?,
+        pursuitState: PursuitState,
+        pathRelation: PathRelation,
+        pathIntegrityPressure: Double
     ) -> CompanionPresentation {
         CompanionPresentation(
             id: companionID,
             name: companionName,
-            behavior: presentationBehavior(for: runtime.state, event: event?.kind),
+            behavior: CompanionPresentationMatrix.arBehaviorString(
+                state: runtime.state,
+                event: event?.kind,
+                pursuitState: pursuitState,
+                pathRelation: pathRelation,
+                pathIntegrityPressure: pathIntegrityPressure
+            ),
             spatialIntent: SpatialIntent(
                 placement: .groundPlane,
                 distanceBand: distanceBand(for: runtime.relativeDistance),
@@ -142,40 +177,6 @@ struct CanonicalARWorldCommandMapper {
         state == .close
             ? WorldEventKind.pursuitIntensifies.rawValue
             : WorldEventKind.pursuitBegins.rawValue
-    }
-
-    private func presentationBehavior(
-        for state: CompanionBehaviorState,
-        event: WorldEventKind?
-    ) -> String {
-        // Events are presentation overlays only. Pursuit raises alert, Bond
-        // celebrates, and the remaining events select the closest existing
-        // visual behavior without changing canonical runtime state.
-        switch event {
-        case .bondMoment:
-            return "celebrate"
-        case .pursuitBegins, .pursuitIntensifies:
-            return "alert"
-        case .companionObserves, .distantPresence, .familiarPlaceStirs, .quietInterval:
-            return "investigate"
-        case .companionDrawsNear, .companionMovesAhead, .pursuitFades:
-            return "follow"
-        case nil:
-            break
-        }
-
-        // The renderer has no separate lead or rest vocabulary. Lead remains
-        // locomotion via follow; rest remains settled via idle.
-        switch state {
-        case .idle, .rest:
-            return "idle"
-        case .follow, .lead, .drawNear:
-            return "follow"
-        case .observe:
-            return "investigate"
-        case .celebrate:
-            return "celebrate"
-        }
     }
 
     private func distanceBand(for distance: Double) -> SpatialDistanceBand {
