@@ -1333,6 +1333,12 @@ struct HomeView: View {
                         .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("waykin.memory.latest")
+                } else {
+                    Text("Walk with Lira to write your first memory.")
+                        .font(.callout)
+                        .foregroundStyle(theme.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("waykin.memory.emptyInvite")
                 }
 
                 if !appModel.demoMessage.isEmpty {
@@ -1343,15 +1349,32 @@ struct HomeView: View {
                         .accessibilityIdentifier("waykin.status")
                 }
 
+                // #126: product priority — real walk is primary CTA; demo is secondary.
+                Button {
+                    appModel.startRealCompanionWalk()
+                } label: {
+                    WKIconLabel(title: realWalkButtonTitle, icon: .beginSession)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(theme.guide)
+                .disabled(realWalkButtonDisabled)
+                .accessibilityLabel(realWalkButtonTitle)
+                .accessibilityIdentifier("waykin.real.open")
+                .accessibilityIdentifier("waykin.real.activity.walk")
+                .accessibilityIdentifier("waykin.real.experience.companionWalk")
+                .accessibilityIdentifier("waykin.home.beginWalk.real")
+
                 Button {
                     appModel.startDemo(.calmDayWalk)
                 } label: {
-                    WKIconLabel(title: "Begin Walk", icon: .beginSession)
-                        .frame(minWidth: 48, minHeight: 48)
+                    WKIconLabel(title: "Demo Walk", icon: .beginSession)
+                        .frame(maxWidth: .infinity, minHeight: 48)
                 }
-                    .buttonStyle(.borderedProminent)
-                    .tint(theme.guide)
-                    .accessibilityIdentifier("waykin.beginWalk")
+                .buttonStyle(.bordered)
+                .tint(theme.guide)
+                .accessibilityLabel("Demo Walk")
+                .accessibilityIdentifier("waykin.beginWalk")
 
                 if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                     Text("Demo Mode")
@@ -1364,15 +1387,6 @@ struct HomeView: View {
                     .foregroundStyle(theme.guideText)
                     .frame(minHeight: 48)
                     .accessibilityIdentifier("waykin.memory.open")
-
-                // Real device entry point for physical validation (COMPANION_WALK)
-                Button("Start Real Walk") {
-                    appModel.startRealCompanionWalk()
-                }
-                .frame(minHeight: 48)
-                .accessibilityIdentifier("waykin.real.open")
-                .accessibilityIdentifier("waykin.real.activity.walk")
-                .accessibilityIdentifier("waykin.real.experience.companionWalk")
 
                 if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                     VStack(alignment: .leading, spacing: 2) {
@@ -1427,6 +1441,31 @@ struct HomeView: View {
                 .wkThemed()
                 .liraSkin(appModel.selectedLiraSkin)
                 .preferredColorScheme(appModel.appearancePreference.preferredColorScheme)
+        }
+    }
+
+    /// Inline real-walk CTA feedback (#126) — state lives on the button, not a missed status line.
+    private var realWalkButtonTitle: String {
+        switch appModel.realWalkState {
+        case .requestingPermission:
+            return "Allow Location…"
+        case .active, .paused:
+            return "Walk in Progress"
+        case .ending:
+            return "Ending Walk…"
+        case .failed:
+            return "Try Walk Again"
+        case .idle, .completed:
+            return "Begin Walk"
+        }
+    }
+
+    private var realWalkButtonDisabled: Bool {
+        switch appModel.realWalkState {
+        case .requestingPermission, .active, .paused, .ending:
+            return true
+        case .idle, .completed, .failed:
+            return false
         }
     }
 }
@@ -1517,6 +1556,7 @@ struct ActiveSessionView: View {
                     CompanionPresenceView(presentation: presentation)
                         .liraSkin(appModel.selectedLiraSkin)
 
+                    // #126: AR beside Pause/End for one-handed reach (continuity re-entry).
                     AnyLayout(dynamicTypeSize.isAccessibilitySize
                         ? AnyLayout(VStackLayout(spacing: 12))
                         : AnyLayout(HStackLayout(spacing: 12))) {
@@ -1558,6 +1598,18 @@ struct ActiveSessionView: View {
                         .accessibilityLabel("End walk")
                         .accessibilitySortPriority(1.9)
                         .accessibilityIdentifier("waykin.session.end")
+
+                        Button {
+                            showsARCompanion = true
+                        } label: {
+                            Label("AR", systemImage: "viewfinder")
+                                .frame(minWidth: 48, minHeight: 48)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(theme.guide)
+                        .accessibilityLabel("Open AR companion")
+                        .accessibilitySortPriority(1.8)
+                        .accessibilityIdentifier("waykin.session.openARCompanion")
                     }
                     .frame(maxWidth: .infinity)
 
@@ -1587,16 +1639,6 @@ struct ActiveSessionView: View {
                         longitude: presentation.longitude,
                         trace: appModel.walkPathTrace
                     )
-
-                    Button {
-                        showsARCompanion = true
-                    } label: {
-                        Label("AR Companion", systemImage: "viewfinder")
-                            .frame(minWidth: 48, minHeight: 48)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(theme.guide)
-                    .accessibilityIdentifier("waykin.session.openARCompanion")
                 }
                 .padding(.horizontal, CompanionPresenceStyle.horizontalPadding)
                 .padding(.vertical, 12)
@@ -1604,8 +1646,24 @@ struct ActiveSessionView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(appModel.demoController.isRunning || appModel.isLiveSessionActive)
-        .sheet(isPresented: $showsARCompanion) {
-            CanonicalARSessionView(appModel: appModel, liraSkin: appModel.selectedLiraSkin)
+        // #126: full-screen cover, not swipe-dismissible sheet over Pause/End.
+        .fullScreenCover(isPresented: $showsARCompanion) {
+            CanonicalARSessionView(
+                appModel: appModel,
+                liraSkin: appModel.selectedLiraSkin,
+                isPaused: appModel.activePresencePresentation.isPaused,
+                onPause: {
+                    appModel.isLiveSessionActive ? appModel.pauseRealSession() : appModel.pauseDemo()
+                },
+                onResume: {
+                    appModel.isLiveSessionActive ? appModel.resumeRealSession() : appModel.resumeDemo()
+                },
+                onEnd: {
+                    showsARCompanion = false
+                    appModel.isLiveSessionActive ? appModel.endRealSession() : appModel.endDemo()
+                }
+            )
+            .interactiveDismissDisabled()
         }
     }
 }
