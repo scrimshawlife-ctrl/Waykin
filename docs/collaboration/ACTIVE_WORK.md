@@ -35,13 +35,13 @@ Last updated: 2026-07-20
 | Work | Reason | Required resolution |
 |---|---|---|
 | Issue #41 — outdoor / physical AR validation | **PARTIAL device evidence** recorded; full PASS blocked | Address #125 + #126 (or accept world-plant design); then resume outdoor packet |
-| Further outdoor AR PASS claims | Continuity + menu friction | Do not claim continuous outdoor AR until #125 closed or explicitly accepted |
+| Further outdoor AR PASS claims | Continuity + menu + audio | Address #125/#126/#130; re-walk #41 recording graphics path + AR LOD lines |
 
 ## Completed (recent)
 
 | Issue / PR | Outcome | Evidence |
 |---|---|---|
-| Issue #133 — graphics LOD diagnostics | Session still path + AR load notes (not hero mesh claim) | PR #136 |
+| Issue #133 — graphics LOD diagnostics | Session still path + AR load notes; 7×3 catalog verified | PR #136 merged |
 | Issue #132 — UI/UX design spec | PROPOSED docs landed | PR #135 merged |
 | Issue #128 — session elapsed ~2s steps | Fixed wall-clock presentation + 1Hz refresh | PR #129 merged |
 | Issue #121 — session map follow + path trace + GPS chip | Complete (path-trace ratified presentation-only) | PR #123 merged |
