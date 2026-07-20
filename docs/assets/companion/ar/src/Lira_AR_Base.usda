@@ -3,9 +3,10 @@
     defaultPrim = "LiraRoot"
     metersPerUnit = 1
     upAxis = "Y"
-    doc = """Waykin Lira AR mid-LOD v1.1 Living Familiar (sculpted prim hierarchy).
-A1 Head+Snout, A2 CoreGlow, A3 Filament. Soft asymmetry; spectral not mascot.
-Canonical height ~0.72m. Procedural fallback remains permanent safety net."""
+    doc = """Waykin Lira AR mid-LOD v1.2 GENERATED_MID_LOD (procedural prim hierarchy).
+Evidence class: GENERATED_MID_LOD — not hand-sculpted artist mesh.
+A1 Head+Snout, A2 CoreGlow, A3 FilamentBase/Mid/Tip joints. Soft asymmetry; spectral not mascot.
+Canonical height ~0.72m. Nested joints for LiraSkeletalPlayer. Procedural RealityKit factory remains fallback."""
 )
 
 def Xform "LiraRoot" (
@@ -16,76 +17,71 @@ def Xform "LiraRoot" (
     {
         double radius = 0.18
         color3f[] primvars:displayColor = [(0.05, 0.05, 0.05)]
+        float3 xformOp:translate = (0.01, 0.0, 0.02)
         float3 xformOp:scale = (1.35, 0.012, 0.92)
-        float3 xformOp:translate = (0.01, 0, 0.02)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
 
-    # Main body mass — slightly forward-leaning, soft oval (not sphere mascot)
+    # Body mass + climate (sibling joints for skeletal bind paths)
     def Sphere "Body"
     {
         double radius = 0.15
         color3f[] primvars:displayColor = [(0.91, 0.85, 0.77)]
-        float3 xformOp:scale = (0.68, 1.52, 1.12)
         float3 xformOp:translate = (0.008, 0.29, 0.03)
+        float3 xformOp:scale = (0.68, 1.52, 1.12)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
-
-    # Secondary body climate (fringe / haunch mass)
     def Sphere "Haunch"
     {
-        double radius = 0.10
+        double radius = 0.1
         color3f[] primvars:displayColor = [(0.79, 0.72, 0.60)]
-        float3 xformOp:scale = (0.88, 1.02, 1.18)
         float3 xformOp:translate = (-0.02, 0.22, -0.12)
+        float3 xformOp:scale = (0.88, 1.02, 1.18)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
-
     def Sphere "Chest"
     {
         double radius = 0.11
-        color3f[] primvars:displayColor = [(0.82, 0.74, 0.62)]
-        float3 xformOp:scale = (0.98, 0.82, 0.95)
+        color3f[] primvars:displayColor = [(0.79, 0.72, 0.60)]
         float3 xformOp:translate = (0.01, 0.34, 0.13)
+        float3 xformOp:scale = (0.98, 0.82, 0.95)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
 
-    # A1 Head — tapered non-canid (elongated Z, narrow X)
+    # A1 Head joint (tapered non-canid) + local Snout
     def Sphere "Head"
     {
         double radius = 0.11
         color3f[] primvars:displayColor = [(0.91, 0.85, 0.77)]
+        float3 xformOp:translate = (0.012, 0.59, 0.2)
         float3 xformOp:scale = (0.48, 0.68, 1.72)
-        float3 xformOp:translate = (0.012, 0.59, 0.20)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+
+            def Sphere "Snout"
+            {
+                double radius = 0.045
+                color3f[] primvars:displayColor = [(0.79, 0.72, 0.60)]
+                float3 xformOp:translate = (0.0, -0.02, 0.12)
+                float3 xformOp:scale = (0.55, 0.45, 1.25)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
     }
 
-    # Soft snout / facing cue (optional child language; not required by loader)
-    def Sphere "Snout"
-    {
-        double radius = 0.05
-        color3f[] primvars:displayColor = [(0.85, 0.78, 0.70)]
-        float3 xformOp:scale = (0.55, 0.45, 1.35)
-        float3 xformOp:translate = (0.015, 0.56, 0.34)
-        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-    }
-
-    # A4 ears — soft offset asymmetry (sensor blades, not animal ears)
+    # Sensor blades (asymmetric) — skeletal ear joints
     def Sphere "LeftEar"
     {
         double radius = 0.065
         color3f[] primvars:displayColor = [(0.79, 0.72, 0.60)]
-        float3 xformOp:scale = (0.32, 1.55, 0.48)
         float3 xformOp:translate = (-0.062, 0.72, 0.11)
+        float3 xformOp:scale = (0.32, 1.55, 0.48)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
-
     def Sphere "RightEar"
     {
         double radius = 0.065
         color3f[] primvars:displayColor = [(0.79, 0.72, 0.60)]
-        float3 xformOp:scale = (0.30, 1.42, 0.52)
         float3 xformOp:translate = (0.068, 0.705, 0.095)
+        float3 xformOp:scale = (0.3, 1.42, 0.52)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
 
@@ -93,31 +89,47 @@ def Xform "LiraRoot" (
     {
         double radius = 0.09
         color3f[] primvars:displayColor = [(0.25, 0.56, 0.54)]
-        float3 xformOp:scale = (0.38, 0.48, 1.65)
         float3 xformOp:translate = (-0.015, 0.25, -0.28)
+        float3 xformOp:scale = (0.38, 0.48, 1.65)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
 
-    # A3 Filament plume + tip
+    # A3 Filament joint chain (Base/Mid/Tip nested for multi-seg clips)
     def Sphere "Filament"
     {
-        double radius = 0.055
+        double radius = 0.052
         color3f[] primvars:displayColor = [(0.48, 0.62, 0.60)]
-        float3 xformOp:scale = (0.26, 0.26, 3.05)
-        float3 xformOp:translate = (0.04, 0.35, -0.52)
+        float3 xformOp:translate = (0.04, 0.35, -0.38)
+        float3 xformOp:scale = (0.32, 0.32, 1.4)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
 
-        def Sphere "FilamentTip"
-        {
-            double radius = 0.04
-            color3f[] primvars:displayColor = [(0.25, 0.56, 0.54)]
-            float3 xformOp:scale = (0.75, 0.75, 1.25)
-            float3 xformOp:translate = (0, 0, -0.58)
-            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-        }
+            def Sphere "FilamentBase"
+            {
+                double radius = 0.048
+                color3f[] primvars:displayColor = [(0.48, 0.62, 0.60)]
+                float3 xformOp:translate = (0.0, 0.0, -0.12)
+                float3 xformOp:scale = (0.85, 0.85, 1.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Sphere "FilamentMid"
+            {
+                double radius = 0.042
+                color3f[] primvars:displayColor = [(0.48, 0.62, 0.60)]
+                float3 xformOp:translate = (0.0, 0.0, -0.28)
+                float3 xformOp:scale = (0.75, 0.75, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Sphere "FilamentTip"
+            {
+                double radius = 0.036
+                color3f[] primvars:displayColor = [(0.25, 0.56, 0.54)]
+                float3 xformOp:translate = (0.0, 0.0, -0.42)
+                float3 xformOp:scale = (0.7, 0.7, 1.2)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
     }
 
-    # A2 bond ember + halo
+    # A2 bond ember + halo (skeletal CoreGlow target)
     def Sphere "CoreGlow"
     {
         double radius = 0.044
@@ -125,13 +137,12 @@ def Xform "LiraRoot" (
         float3 xformOp:translate = (0.01, 0.34, 0.19)
         uniform token[] xformOpOrder = ["xformOp:translate"]
     }
-
     def Sphere "CoreHalo"
     {
         double radius = 0.058
         color3f[] primvars:displayColor = [(0.83, 0.64, 0.35)]
-        float3 xformOp:scale = (1.18, 1.18, 1.18)
         float3 xformOp:translate = (0.01, 0.34, 0.19)
+        float3 xformOp:scale = (1.18, 1.18, 1.18)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
 
@@ -143,13 +154,14 @@ def Xform "LiraRoot" (
         uniform token[] xformOpOrder = ["xformOp:translate"]
     }
 
-    # Hunter pressure ghost (disabled by default in factory; present for hierarchy)
+    # Hunter pressure ghost (present for hierarchy; presentation toggles visibility)
     def Sphere "HunterEcho"
     {
         double radius = 0.14
         color3f[] primvars:displayColor = [(0.70, 0.68, 0.74)]
-        float3 xformOp:scale = (0.70, 1.32, 0.98)
         float3 xformOp:translate = (0.05, 0.28, -0.09)
+        float3 xformOp:scale = (0.7, 1.32, 0.98)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
     }
 }
+

@@ -43,7 +43,7 @@ Assets installed under `App/Resources/Assets.xcassets/LiraStills` (21 imagesets)
 | Surface | Path when “new art used” | Fallback / notes |
 | ------- | ------------------------ | ---------------- |
 | Session 2D | `still:catalog` via `UIImage(named: Lira_Session_*)` | `still:canvas_fallback` Canvas puppet |
-| AR mid-LOD | `artist_usdz:Lira_AR_Base.usdz (usdz_active_sphere_mid_lod)` | `procedural_living_familiar_mid (<note>)` — **sphere mid-LOD**, not hero sculpt |
+| AR mid-LOD | `generated_usdz:Lira_AR_Base.usdz (usdz_active_generated_mid_lod)` — **GENERATED_MID_LOD** | `procedural_living_familiar_mid (<note>)` — RealityKit factory fallback |
 
 Session HUD shows graphics path; AR chrome shows LOD + “mid-LOD (not hero sculpt)”.
 `LiraStillCatalog` resolves `Lira_Session_{Pose}_{Skin}`; missing names fall back to Canvas puppet (none expected for this pack).
