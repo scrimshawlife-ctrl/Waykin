@@ -146,6 +146,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
     /// derived from accepted movement fixes, capped, reset per session,
     /// never persisted.
     private(set) var walkPathTrace = WalkPathTrace()
+    /// Session planned walking route (presentation guide only; #155).
+    var plannedWalkRoute: PlannedWalkRoute = .empty
+    @ObservationIgnored let walkRoutePlanner = WalkRoutePlanner()
     var liveAcceptedCount: Int = 0
     var liveRejectedCount: Int = 0
     /// Semantic path progress (demo + real). No coordinates.
@@ -363,6 +366,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathProgress = pathProgressEngine.snapshot
             lastPathRelationForAudio = pathProgress.relation
             lastPathAudioElapsed = nil
+            walkPathTrace.reset()
+            plannedWalkRoute = .empty
             activityEnrichment = .empty
             try demoController.start(scenarioID: scenario)
             emitARWorldCommands(arCommandMapper.spawn(
@@ -470,6 +475,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
     }
 
     func endDemo() {
+        plannedWalkRoute = .empty
         emitARWorldCommands(arCommandMapper.clear())
         endGlassesGlanceSession()
         lastClosingPhrase = activePresencePresentation.closingPhrase
@@ -549,6 +555,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             return
         }
         walkPathTrace.reset()
+        plannedWalkRoute = .empty
         if fieldTestReceiptStore != nil {
             activeFieldTestReceipt = FieldTestReceiptBuilder(
                 sessionID: UUID(),
@@ -688,6 +695,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         guard isLiveSessionActive else { return }
         cancelHealthRefresh()
         endGlassesGlanceSession()
+        plannedWalkRoute = .empty
         emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
@@ -1528,6 +1536,7 @@ struct ActiveSessionView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.wkTheme) private var theme
     @State private var showsARCompanion = false
+    @State private var showsFullMap = false
     let scenario: DemoScenarioID
 
     var body: some View {
@@ -1638,7 +1647,9 @@ struct ActiveSessionView: View {
                     CompactSessionMap(
                         latitude: presentation.latitude,
                         longitude: presentation.longitude,
-                        trace: appModel.walkPathTrace
+                        trace: appModel.walkPathTrace,
+                        plannedRoute: appModel.plannedWalkRoute,
+                        onOpenFullMap: { showsFullMap = true }
                     )
                 }
                 .padding(.horizontal, CompanionPresenceStyle.horizontalPadding)
@@ -1665,6 +1676,22 @@ struct ActiveSessionView: View {
                 }
             )
             .interactiveDismissDisabled()
+        }
+        // #155: full interactive map + create walking route.
+        .fullScreenCover(isPresented: $showsFullMap) {
+            SessionMapFullView(
+                latitude: appModel.activePresencePresentation.latitude,
+                longitude: appModel.activePresencePresentation.longitude,
+                trace: appModel.walkPathTrace,
+                plannedRoute: Binding(
+                    get: { appModel.plannedWalkRoute },
+                    set: { appModel.plannedWalkRoute = $0 }
+                ),
+                planner: appModel.walkRoutePlanner,
+                onDismiss: { showsFullMap = false }
+            )
+            .wkThemed()
+            .preferredColorScheme(appModel.appearancePreference.preferredColorScheme)
         }
     }
 }

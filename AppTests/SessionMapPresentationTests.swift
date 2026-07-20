@@ -1,3 +1,4 @@
+import CoreLocation
 import WaykinCore
 import XCTest
 @testable import WaykinApp
@@ -102,5 +103,82 @@ final class SessionMapPresentationTests: XCTestCase {
                        "Current location and the walked path so far are shown.")
         // Never coordinates in VoiceOver.
         XCTAssertFalse(traced.locationAccessibilityValue.contains("37"))
+    }
+
+    func testPlannedRouteSummaryOmitsCoordinates() {
+        let route = PlannedWalkRoute(
+            destinationName: "Park",
+            destinationLatitude: 37.77,
+            destinationLongitude: -122.42,
+            polyline: [
+                TracePoint(latitude: 37.77, longitude: -122.42),
+                TracePoint(latitude: 37.78, longitude: -122.41)
+            ],
+            distanceMeters: 1500,
+            expectedTravelTime: 900,
+            status: .ready
+        )
+        XCTAssertTrue(route.isReady)
+        XCTAssertTrue(route.summaryLabel.contains("Park"))
+        XCTAssertTrue(route.summaryLabel.contains("1.5 km") || route.summaryLabel.contains("1500"))
+        XCTAssertFalse(route.summaryLabel.contains("37.77"))
+        XCTAssertFalse(route.accessibilitySummary.contains("37"))
+        XCTAssertTrue(route.accessibilitySummary.contains("Park"))
+    }
+
+    func testRoutePlannerUsesInjectedDirections() async {
+        final class FixtureDirections: WalkingRouteDirectionsProviding {
+            func walkingRoute(
+                from origin: CLLocationCoordinate2D,
+                to destination: CLLocationCoordinate2D
+            ) async throws -> (coordinates: [CLLocationCoordinate2D], distance: Double, travelTime: TimeInterval) {
+                (
+                    [
+                        origin,
+                        CLLocationCoordinate2D(
+                            latitude: (origin.latitude + destination.latitude) / 2,
+                            longitude: (origin.longitude + destination.longitude) / 2
+                        ),
+                        destination
+                    ],
+                    800,
+                    600
+                )
+            }
+        }
+        let planner = WalkRoutePlanner(directions: FixtureDirections())
+        let route = await planner.plan(
+            from: CLLocationCoordinate2D(latitude: 37.77, longitude: -122.42),
+            to: CLLocationCoordinate2D(latitude: 37.78, longitude: -122.41),
+            destinationName: "Cafe"
+        )
+        XCTAssertEqual(route.status, .ready)
+        XCTAssertEqual(route.destinationName, "Cafe")
+        XCTAssertEqual(route.polyline.count, 3)
+        XCTAssertEqual(route.distanceMeters, 800, accuracy: 0.1)
+        XCTAssertEqual(route.expectedTravelTime, 600, accuracy: 0.1)
+    }
+
+    func testRoutePlannerFailsWithoutValidOrigin() async {
+        let planner = WalkRoutePlanner(directions: FixtureAlwaysFail())
+        let route = await planner.plan(
+            from: kCLLocationCoordinate2DInvalid,
+            to: CLLocationCoordinate2D(latitude: 37.78, longitude: -122.41),
+            destinationName: "X"
+        )
+        if case .failed = route.status {
+            // expected
+        } else {
+            XCTFail("Expected failed status for invalid origin")
+        }
+    }
+}
+
+private final class FixtureAlwaysFail: WalkingRouteDirectionsProviding {
+    func walkingRoute(
+        from origin: CLLocationCoordinate2D,
+        to destination: CLLocationCoordinate2D
+    ) async throws -> (coordinates: [CLLocationCoordinate2D], distance: Double, travelTime: TimeInterval) {
+        throw WalkRoutePlanningError.noRoute
     }
 }
