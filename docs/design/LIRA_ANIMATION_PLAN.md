@@ -202,11 +202,17 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 
 Prefer **injectable clocks** or discrete `advance(by:)` (already used for celebrate) over `DispatchQueue` sleeps.
 
-## Open questions
+## Resolved decisions (non-outdoor)
 
-1. Should session stills ever use a short flipbook (3 frames) or stay pure crossfade?
-2. Does celebrate remain AR-only spin, or also session bond orbit only?
-3. When USDZ ships, do we freeze procedural as debug fallback forever? (**Recommend yes.**)
+1. **Session stills:** pure crossfade forever (no flipbook). Ambient drift/pulse is separate and Reduce-Motion gated.
+2. **Celebrate:** AR skeletal celebrate clip + session bond orbit only (no shared flipbook).
+3. **Procedural fallback:** permanent safety net forever when USDZ missing/invalid (`LiraARAssetLoader`).
+
+## Open (device / artist)
+
+1. Outdoor motion QA (#41)
+2. Optional hand-painted hero weights (A5d)
+3. Optional DCC action export enabled in production package (`LIRA_EXPORT_ANIM`)
 
 ## Related docs
 

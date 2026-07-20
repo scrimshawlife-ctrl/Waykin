@@ -16,28 +16,56 @@
     ]
   },
   "skin": {
-    "merge": ["Body+Chest+Neck→Body", "Head+Snout+Nose→Head"],
-    "auto_weight_meshes": ["Body", "Head", "LeftEar", "RightEar", "legs", "paws", "detail"],
-    "rigid_fx": ["CoreGlow", "CoreHalo", "Filament*", "Tail", "GroundShadow", "StatusIndicator"],
+    "merge": [
+      "Body+Chest+Neck\u2192Body",
+      "Head+Snout+Nose\u2192Head"
+    ],
+    "auto_weight_meshes": [
+      "Body",
+      "Head",
+      "LeftEar",
+      "RightEar",
+      "legs",
+      "paws",
+      "detail"
+    ],
+    "rigid_fx": [
+      "CoreGlow",
+      "CoreHalo",
+      "Filament*",
+      "Tail",
+      "GroundShadow",
+      "StatusIndicator"
+    ],
     "body": {
       "verts": 1830,
       "vgroups": 25,
       "multi_bone_verts": 1709,
-      "max_influences": 5
+      "max_influences": 4,
+      "multi_bone_ratio": 0.9339
     },
     "head": {
       "verts": 1830,
       "vgroups": 25,
       "multi_bone_verts": 1216,
-      "max_influences": 5
-    }
+      "max_influences": 4,
+      "multi_bone_ratio": 0.6645
+    },
+    "quality_pass": "normalize_cap_4_influences"
   },
   "coordinate_system": "+Y up after USD convert_orientation",
   "canonical_height_meters": 0.72,
   "root_node": "LiraRoot",
   "required_nodes": [
-    "Body", "Head", "LeftEar", "RightEar", "Tail",
-    "Filament", "CoreGlow", "GroundShadow", "StatusIndicator"
+    "Body",
+    "Head",
+    "LeftEar",
+    "RightEar",
+    "Tail",
+    "Filament",
+    "CoreGlow",
+    "GroundShadow",
+    "StatusIndicator"
   ],
   "export": {
     "script": "scripts/export_lira_blend_to_usdz.sh",
@@ -53,10 +81,11 @@
     "usdz_skel_joint_weights": "PASS",
     "skeletal_puppet_bind": "NAME_COMPATIBLE",
     "physical_device": "NOT_RUN",
-    "outdoor_readability": "NOT_RUN"
+    "outdoor_readability": "NOT_RUN",
+    "heat_map_quality_gate": "PASS"
   },
   "provenance": {
-    "OBSERVED": "Auto-weight heat-map on Body/Head (max 5 influences, 1709/1216 multi-bone verts); USD primvars:skel:jointWeights; ~754KB USDZ.",
+    "OBSERVED": "Auto-weight heat-map + influence cap 4; Body multi-bone ratio ~0.93; USD SkelBindingAPI; ~739KB USDZ after harden.",
     "INFERRED": "Mid-LOD deformation suitable for bone-driven motion; puppet entity clips still bind by name on semantic meshes/FX.",
     "NOT_COMPUTABLE": "Artist hand-painted weights; outdoor AR; DCC performance clip library."
   }

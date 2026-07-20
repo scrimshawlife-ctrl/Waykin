@@ -25,6 +25,17 @@ final class ARCompanionLabRuntime {
     var receipt: ARValidationReceipt { diagnostics.summary }
     var isSceneUpdateAttached: Bool { arView != nil && sceneUpdateSubscription != nil }
     var isSessionStartScheduled: Bool { sessionStartTask != nil }
+    var companionLODDescription: String { renderer.companionLODDescription }
+    var motionDiagnosticsLine: String { renderer.motionDiagnosticsLine }
+    var activeSkeletalClipName: String { renderer.activeSkeletalClip?.rawValue ?? "none" }
+
+    func setReduceMotion(_ enabled: Bool) {
+        renderer.reduceMotionEnabled = enabled
+    }
+
+    func setCompanionSkin(_ skin: LiraSkin) {
+        renderer.companionSkin = skin
+    }
 
     init() {
         let registry = AREntityRegistry()
@@ -170,6 +181,7 @@ final class ARCompanionLabRuntime {
     }
 
     private func advanceCompanionPresentation(by delta: TimeInterval) {
+        renderer.advanceLocalMotion(by: delta)
         guard let transition = renderer.advanceCompanionPresentation(by: delta) else { return }
         currentState = transition.resolvedState
         report(transition)
@@ -188,6 +200,7 @@ final class ARCompanionLabRuntime {
 struct ARCompanionLabView: View {
     @State private var runtime = ARCompanionLabRuntime()
     @State private var controlsExpanded = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -213,6 +226,17 @@ struct ARCompanionLabView: View {
                     .accessibilityLabel("Last AR command result")
                     .accessibilityValue(runtime.lastResult)
                     .accessibilityIdentifier("waykin.ar.lastCommand")
+
+                Text("LOD: \(runtime.companionLODDescription)")
+                    .font(.caption2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("waykin.ar.lab.lod")
+                Text("Motion: \(runtime.motionDiagnosticsLine)")
+                    .font(.caption2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(2)
+                    .accessibilityIdentifier("waykin.ar.lab.motion")
 
                 HStack {
                     Text("State: \(runtime.currentState.rawValue.capitalized)")
@@ -267,6 +291,10 @@ struct ARCompanionLabView: View {
         }
         .navigationTitle("Waykin AR Lab")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { runtime.setReduceMotion(reduceMotion) }
+        .onChange(of: reduceMotion) { _, enabled in
+            runtime.setReduceMotion(enabled)
+        }
         .onDisappear { runtime.pause() }
     }
 

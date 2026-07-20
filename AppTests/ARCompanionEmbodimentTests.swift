@@ -76,15 +76,13 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         }
         let loader = LiraARAssetLoader()
         await loader.preloadFromBundle(usdzURL: url)
-        // Load may still fall back if RealityKit rejects the file; assert consistent states only.
-        switch loader.source {
-        case .usdz(let name):
-            XCTAssertEqual(name, "Lira_AR_Base.usdz")
-            XCTAssertTrue(loader.activeLODDescription.contains("Lira_AR_Base"))
-        case .procedural:
-            // Hierarchy/load failure still yields permanent procedural fallback.
-            XCTAssertEqual(loader.source, .procedural)
+        // Shipped skinned package must load in sim; procedural is only for explicit fallback tests.
+        guard case .usdz(let name) = loader.source else {
+            XCTFail("expected usdz load, got \(loader.activeLODDescription)")
+            return
         }
+        XCTAssertEqual(name, "Lira_AR_Base.usdz")
+        XCTAssertTrue(loader.activeLODDescription.contains("Lira_AR_Base"))
         XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(loader.makeLira()))
     }
 

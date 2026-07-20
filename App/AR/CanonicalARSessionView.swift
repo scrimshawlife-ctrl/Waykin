@@ -51,8 +51,18 @@ final class CanonicalARSessionRuntime {
     }
 
     func setCompanionSkin(_ skin: LiraSkin) {
+        // Re-applies materials to live companion when planted.
         renderer.companionSkin = skin
     }
+
+    /// Sync Reduce Motion from UI (call on appear / onChange).
+    func setReduceMotion(_ enabled: Bool) {
+        renderer.reduceMotionEnabled = enabled
+    }
+
+    var motionDiagnosticsLine: String { renderer.motionDiagnosticsLine }
+    var isSkeletalDriving: Bool { renderer.isSkeletalDriving }
+    var activeSkeletalClipName: String { renderer.activeSkeletalClip?.rawValue ?? "none" }
 
     func attach(_ arView: ARView, appModel: any CanonicalARCommandSource) {
         if let currentView = self.arView, currentView !== arView {
@@ -205,6 +215,7 @@ struct CanonicalARSessionView: View {
     var onEnd: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.wkTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var runtime = CanonicalARSessionRuntime()
 
     var body: some View {
@@ -220,11 +231,16 @@ struct CanonicalARSessionView: View {
                         Text("Form: \(liraSkin.displayName)")
                         Text("LOD: \(runtime.companionLODDescription)")
                             .accessibilityIdentifier("waykin.ar.canonical.lod")
-                        // #133: mid-LOD is sphere prims / procedural — not marketing hero art.
-                        Text("AR mesh: mid-LOD (not hero sculpt)")
+                        // Mid-LOD skinned artist package (not outdoor hero claim).
+                        Text("AR mesh: \(LiraARAssetCatalog.packagedEvidenceClass)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .accessibilityIdentifier("waykin.ar.canonical.meshClass")
+                        Text("Motion: \(runtime.motionDiagnosticsLine)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .accessibilityIdentifier("waykin.ar.canonical.motion")
                         // #125: continuity plant note for outdoor QA (not a quality claim).
                         Text("Continuity: \(runtime.companionContinuityNote)")
                             .font(.caption2)
@@ -307,9 +323,13 @@ struct CanonicalARSessionView: View {
         }
         .onAppear {
             runtime.setCompanionSkin(liraSkin)
+            runtime.setReduceMotion(reduceMotion)
         }
         .onChange(of: liraSkin) { _, newSkin in
             runtime.setCompanionSkin(newSkin)
+        }
+        .onChange(of: reduceMotion) { _, enabled in
+            runtime.setReduceMotion(enabled)
         }
     }
 
@@ -319,7 +339,8 @@ struct CanonicalARSessionView: View {
             "Lira: \(runtime.companionState.rawValue)",
             "Form: \(liraSkin.displayName)",
             "LOD: \(runtime.companionLODDescription)",
-            "mesh mid-LOD not hero sculpt",
+            "mesh \(LiraARAssetCatalog.packagedEvidenceClass)",
+            "Motion: \(runtime.motionDiagnosticsLine)",
             "Continuity: \(runtime.companionContinuityNote)"
         ]
         if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {

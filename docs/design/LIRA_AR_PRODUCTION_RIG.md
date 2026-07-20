@@ -98,3 +98,22 @@ Root
 - Gore / teeth / blood hunter geometry
 - Claiming outdoor AR quality without Issue #41 device receipt
 - Claiming hand-painted hero weight quality without artist paint pass
+
+## Integrity
+
+```bash
+./scripts/check_lira_usdz_integrity.sh
+```
+
+Verifies root / nested / docs USDZ byte-match and evidence markers.
+
+## Dual motion stack
+
+| Layer | What drives it |
+| ----- | -------------- |
+| **Puppet clips** | `LiraSkeletalAnimationLibrary` → entity-name `AnimationBindTarget` |
+| **Heat-map mesh** | Blender auto-weights on Body/Head/ears/legs (USD SkelBindingAPI) |
+| **FX rigid** | Filament / CoreGlow bone-parent (readable A2/A3 under motion) |
+| **Reduce Motion** | Stops skeletal loops; rest poses + short spawn coalesce |
+
+Do not claim DCC SkinnedMesh clip playback unless `LIRA_EXPORT_ANIM=1` packages authored actions and a dedicated runtime player is added.
