@@ -60,11 +60,19 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
             return
         }
         let entity = loader.makeLira()
+        XCTAssertEqual(
+            LiraSkeletalRig.puppetStyle(for: entity),
+            .staticMesh,
+            "Meshy package should detect static-mesh puppet style"
+        )
         let player = LiraSkeletalPlayer()
         XCTAssertTrue(player.install(on: entity))
-        // Meshy static has no DCC clips → puppet fill on promoted markers.
-        XCTAssertNotEqual(player.clipSource, .none)
-        XCTAssertTrue(player.sourceDescription.contains("clips"))
+        // Meshy static has no DCC clips → body-centric puppet fill.
+        XCTAssertEqual(player.clipSource, .puppet)
+        XCTAssertEqual(player.puppetStyle, .staticMesh)
+        XCTAssertTrue(player.sourceDescription.contains("staticMesh"))
+        player.play(state: .follow, on: entity)
+        XCTAssertEqual(player.activeClip, .follow)
         player.clear()
     }
 

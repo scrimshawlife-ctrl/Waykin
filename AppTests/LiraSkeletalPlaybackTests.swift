@@ -15,12 +15,51 @@ final class LiraSkeletalPlaybackTests: XCTestCase {
     }
 
     func testSkeletalLibraryGeneratesAllClips() throws {
-        for clip in LiraSkeletalAnimationLibrary.ClipID.allCases {
-            let resource = try LiraSkeletalAnimationLibrary.generate(clip: clip)
-            XCTAssertNotNil(resource, clip.rawValue)
+        for style in [LiraSkeletalRig.PuppetStyle.multiPart, .staticMesh] {
+            for clip in LiraSkeletalAnimationLibrary.ClipID.allCases {
+                let resource = try LiraSkeletalAnimationLibrary.generate(clip: clip, style: style)
+                XCTAssertNotNil(resource, "\(style.rawValue)/\(clip.rawValue)")
+            }
+            let library = try LiraSkeletalAnimationLibrary.makeLibrary(style: style)
+            XCTAssertEqual(
+                library.count,
+                LiraSkeletalAnimationLibrary.ClipID.allCases.count,
+                style.rawValue
+            )
         }
-        let library = try LiraSkeletalAnimationLibrary.makeLibrary()
-        XCTAssertEqual(library.count, LiraSkeletalAnimationLibrary.ClipID.allCases.count)
+    }
+
+    func testProceduralEntityUsesMultiPartPuppetStyle() {
+        let entity = CompanionEntityFactory().makeLira()
+        XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: entity), .multiPart)
+        let player = LiraSkeletalPlayer()
+        XCTAssertTrue(player.install(on: entity))
+        XCTAssertEqual(player.puppetStyle, .multiPart)
+        XCTAssertTrue(player.sourceDescription.contains("multiPart"))
+        player.clear()
+    }
+
+    func testPromotedStaticMeshUsesBodyCentricPuppetStyle() {
+        let bare = Entity()
+        bare.name = CompanionEntityFactory.rootName
+        let mesh = ModelEntity(
+            mesh: .generateBox(size: 0.3),
+            materials: [SimpleMaterial(color: .white, isMetallic: false)]
+        )
+        mesh.name = "meshy_mesh"
+        bare.addChild(mesh)
+        let promoted = LiraARAssetLoader.promoteIncompleteHierarchy(bare)
+        XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: promoted), .staticMesh)
+        let player = LiraSkeletalPlayer()
+        XCTAssertTrue(player.install(on: promoted))
+        XCTAssertEqual(player.puppetStyle, .staticMesh)
+        XCTAssertEqual(player.clipSource, .puppet)
+        XCTAssertTrue(player.sourceDescription.contains("staticMesh"))
+        player.play(state: .idle, on: promoted)
+        XCTAssertEqual(player.activeClip, .idle)
+        player.play(state: .alert, on: promoted)
+        XCTAssertEqual(player.activeClip, .alert)
+        player.clear()
     }
 
     func testClipMappingCoversEveryPresentationState() {

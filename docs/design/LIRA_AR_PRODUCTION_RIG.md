@@ -6,13 +6,14 @@ version: 0.6
 status: MESHY_TEXTURED_STATIC_V1_SHIPPED
 usdz: MESHY_TEXTURED_STATIC_V1
 mesh_descriptor: SHIPPED
-runtime_animation_clips: SHIPPED_PUPPET
+runtime_animation_clips: SHIPPED_PUPPET_STATIC_MESH
 skeletal_joint_hierarchy: PROMOTED_MARKERS
 blender_armature_rigid_bind: REFERENCE_ONLY
 direction: spectral_living_familiar
 evidence_class: MESHY_TEXTURED_STATIC_V1
 source_mesh: ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz
 armature: puppet_markers_plus_optional_prior_LiraArmature
+puppet_style: staticMesh_body_centric
 ```
 
 ## What shipped
@@ -58,6 +59,15 @@ ARWorldCommandRenderer spawn
 Invalid or missing USDZ never blocks spawn — procedural fallback is permanent safety net.
 
 Skeletal clips bind via `AnimationBindTarget.entity(name)` on semantic nodes (puppet paths), not SkinnedMesh weight maps.
+
+**Puppet styles** (`LiraSkeletalRig.puppetStyle`):
+
+| Style | When | Motion |
+| ----- | ---- | ------ |
+| `multiPart` | Procedural factory / multi-mesh artist | Head, ears, filament, core, Body factory rest |
+| `staticMesh` | Meshy single textured mesh under `Body` | Body-centric bob + lean only (identity rest scale) |
+
+Detects empty promote markers vs real part meshes so factory Body scale (0.68×1.52×1.12) never squashes the Meshy PBR mesh.
 
 ## Export / rebuild
 
