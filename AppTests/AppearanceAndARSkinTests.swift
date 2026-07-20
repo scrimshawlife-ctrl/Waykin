@@ -25,7 +25,7 @@ final class AppearanceAndARSkinTests: XCTestCase {
         XCTAssertEqual(LiraARAssetCatalog.packagedLODHint, "packaged_usdz:Lira_AR_Base")
         let loader = LiraARAssetLoader()
         // Before preload, spawn remains procedural factory.
-        XCTAssertEqual(loader.activeLODDescription, "procedural_living_familiar_mid")
+        XCTAssertTrue(loader.activeLODDescription.contains("procedural_living_familiar_mid"))
         XCTAssertEqual(loader.makeLira().name, CompanionEntityFactory.rootName)
     }
 

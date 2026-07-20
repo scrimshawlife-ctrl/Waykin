@@ -39,7 +39,7 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         let template = CompanionEntityFactory(skin: .dawn).makeLira()
         loader.installTemplateForTesting(template, label: "fixture.usdz")
         XCTAssertEqual(loader.source, .usdz("fixture.usdz"))
-        XCTAssertEqual(loader.activeLODDescription, "artist_usdz:fixture.usdz")
+        XCTAssertTrue(loader.activeLODDescription.contains("artist_usdz:fixture.usdz"))
 
         loader.skin = .veil
         let first = loader.makeLira()

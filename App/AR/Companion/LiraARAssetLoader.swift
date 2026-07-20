@@ -14,6 +14,8 @@ final class LiraARAssetLoader {
     }
 
     private(set) var source: Source = .procedural
+    /// Why the last preload chose procedural or USDZ (#133 outdoor QA).
+    private(set) var loadNote: String = "not_attempted"
     private var template: Entity?
     var skin: LiraSkin = .dawn
 
@@ -24,20 +26,22 @@ final class LiraARAssetLoader {
     ///   the app bundle to omit `Lira_AR_Base.usdz`.
     func preloadFromBundle(usdzURL: URL? = LiraARAssetCatalog.baseUSDZURL) async {
         guard let url = usdzURL else {
-            clearTemplate(reason: .procedural)
+            clearTemplate(reason: .procedural, note: "no_packaged_url")
             return
         }
         do {
             let loaded = try await Self.loadEntity(from: url)
             let root = Self.normalizeRoot(loaded)
             guard Self.hasRequiredNodes(root) else {
-                clearTemplate(reason: .procedural)
+                clearTemplate(reason: .procedural, note: "hierarchy_invalid")
                 return
             }
             template = root
             source = .usdz(url.lastPathComponent)
+            // Sphere-prim mid-LOD is intentional packaging; not a hero sculpt.
+            loadNote = "usdz_active_sphere_mid_lod"
         } catch {
-            clearTemplate(reason: .procedural)
+            clearTemplate(reason: .procedural, note: "load_error")
         }
     }
 
@@ -70,11 +74,13 @@ final class LiraARAssetLoader {
         precondition(Self.hasRequiredNodes(root), "test template missing required Lira nodes")
         template = root
         source = .usdz(label)
+        loadNote = "usdz_active_test_template"
     }
 
-    func clearTemplate(reason: Source = .procedural) {
+    func clearTemplate(reason: Source = .procedural, note: String = "cleared") {
         template = nil
         source = .procedural
+        loadNote = note
         _ = reason
     }
 
@@ -91,12 +97,13 @@ final class LiraARAssetLoader {
         return CompanionEntityFactory(skin: skin).makeLira(configuration: configuration)
     }
 
+    /// Operator-facing LOD line (AR chrome + field receipts). Includes fallback reason.
     var activeLODDescription: String {
         switch source {
         case .procedural:
-            return "procedural_living_familiar_mid"
+            return "procedural_living_familiar_mid (\(loadNote))"
         case .usdz(let name):
-            return "artist_usdz:\(name)"
+            return "artist_usdz:\(name) (\(loadNote))"
         }
     }
 

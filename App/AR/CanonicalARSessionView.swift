@@ -210,12 +210,17 @@ struct CanonicalARSessionView: View {
                     Text("Form: \(liraSkin.displayName)")
                     Text("LOD: \(runtime.companionLODDescription)")
                         .accessibilityIdentifier("waykin.ar.canonical.lod")
+                    // #133: mid-LOD is sphere prims / procedural — not marketing hero art.
+                    Text("AR mesh: mid-LOD (not hero sculpt)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("waykin.ar.canonical.meshClass")
                     Text(runtime.lastResult)
                 }
                 .font(.caption.weight(.semibold))
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(
-                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName), LOD: \(runtime.companionLODDescription)"
+                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName), LOD: \(runtime.companionLODDescription), mesh mid-LOD not hero sculpt"
                 )
                 .accessibilityIdentifier("waykin.ar.canonical.status")
 
