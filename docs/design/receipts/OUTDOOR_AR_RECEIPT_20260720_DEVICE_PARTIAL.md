@@ -54,6 +54,8 @@ gps_failure: NOT_CLAIMED
 3. **Closing and reopening** the AR portion restored the companion in front of the walker after a short delay.
 4. **Menu navigation felt awkward.**
 5. **Session elapsed clock advanced about two seconds at a time** (not smooth 1s ticks).
+6. **Audio was not tied to companion actions.**
+7. **New (produced) audio was not used** / not perceived as the production cue set.
 
 ## INFERRED
 
@@ -61,11 +63,14 @@ gps_failure: NOT_CLAIMED
 - **Continuous companion presence** and any expectation of **follow-the-walker** behavior are **not established** on device.
 - This is a **recoverable AR continuity** problem plus a **separate usability** finding.
 - Elapsed HUD was coupled to sparse GPS sample intervals (`distanceFilter = 2` m + sample-driven `elapsedTime`), not wall-clock presentation — **presentation clock defect**, not GPS failure.
+- Audio is **event-gated** (`WorldEvent` → `AudioExperienceLayer` → `AppAudioCuePlayer`), not driven by AR companion motion or continuous Lira “actions.” Between rare events the walk can be silent while the companion still presents. Produced WAVs **are** mapped/bundled in-repo; non-use outdoors is more consistent with **rare emission / low outdoor gain / expectation mismatch** than with missing project files.
 
 ## NOT_COMPUTABLE
 
 - Root cause of disappearance: tracking loss vs anchor lifecycle vs rendering vs intended placement semantics (no AR diagnostics attached).
 - Whether GPS measurement failed — **not evidenced**; do not treat as GPS defect.
+- Whether any cue was planner-accepted / asset-resolved / play-started on device (no outdoor audio diagnostics attached).
+- Outdoor audibility of produced WAVs at catalog volumes (~0.14–0.24).
 - Full outdoor UI checklist (D1–D8, N*, R*, H*) — not completed this session.
 - Device model / iOS / exact binary identity for this walk — not supplied by operator report.
 
@@ -84,7 +89,8 @@ Confirm product intent before coding “AR follow”: either document world-plan
 | #41 | Parent validation — remains open, **PARTIAL** |
 | #125 | AR continuity (disappear ~10–15 m; re-entry recovers) |
 | #126 | Session menu UX audit |
-| #128 | Session elapsed clock ~2s steps on real walk |
+| #128 | Session elapsed clock ~2s steps on real walk (**fixed** #129) |
+| #130 | Audio not tied to companion actions; produced assets not perceived outdoors |
 
 ## Overall
 
@@ -101,9 +107,10 @@ blockers: |
 follow_ups: |
   1. Bounded AR continuity investigation (diagnostics + anchor lifecycle) — #125
   2. Focused menu flow audit — #126
-  3. Session presentation elapsed wall-clock — #128
-  4. Product decision: world-plant vs follow semantics
-  5. Resume outdoor packet after fixes or explicit design acceptance of world-plant
+  3. Session presentation elapsed wall-clock — #128 (**shipped** #129)
+  4. Companion-visible audio coupling + outdoor cue verification — #130
+  5. Product decision: world-plant vs follow semantics
+  6. Resume outdoor packet after fixes or explicit design acceptance of world-plant
 signed_by: operator-report + agent record
 signed_at: 2026-07-20
 ```
