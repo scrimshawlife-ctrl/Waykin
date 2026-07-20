@@ -20,7 +20,6 @@ Last updated: 2026-07-20
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #121 / PR #123 — session map follow + trace + GPS chip | Grok (land) / prabu (author) | `feat/121-session-map-gps` | `App/SessionMapPresentation.swift`, map UI, AppTests, path docs | Path-trace **ratified** presentation-only; landing | Rebased on main |
 | Issue #41 — outdoor / physical AR validation | Device operator | evidence-only (no product branch) | `docs/design/receipts/**` only | Ready for device walk | Exact `main` build; packet: `OUTDOOR_SESSION_PACKET.md` |
 
 ## Intake (not Ready)
@@ -39,6 +38,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Outcome | Evidence |
 |---|---|---|
+| Issue #121 — session map follow + path trace + GPS chip | Complete (path-trace ratified presentation-only) | PR #123 merged |
 | Issue #115 — glasses glance adapter | Expansion ratified; mock-first adapter shipped (flag default off) | PR #120 merged |
 | Issue #47 — agent coordination board | Complete | PR #48 merged; Project #1 live; closed 2026-07-20 |
 | Issue #46 — AR command replay + soak | Complete | `ARCommandReplaySoakTests` + docs |
