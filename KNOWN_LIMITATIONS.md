@@ -33,7 +33,7 @@ Receipt schema v2 can distinguish semantic cue requests from software-stage play
 
 The recorded route is measurement support for the active Companion Walk only. It is not navigation-grade, does not provide route planning or guidance, and has no background-location guarantee. Battery impact is not characterized.
 
-**Session map breadcrumb (#121, ratified):** The App may show a **presentation-only** polyline of the *current* real walk’s accepted fixes (`WalkPathTrace`: ≥4 m spacing, 400-point cap, reset on session end, never persisted, no coordinates in VoiceOver). This does not authorize route history, navigation, guidance, corridor geometry, or outdoor map-readability claims (still `NOT_COMPUTABLE` until Issue #41 device evidence).
+**Session map (#121 + #155):** The App may show a **presentation-only** polyline of the *current* real walk’s accepted fixes (`WalkPathTrace`: ≥4 m spacing, 400-point cap, reset on session end, never persisted, no coordinates in VoiceOver) and an optional **planned walking route** (`PlannedWalkRoute` via MapKit walking directions: place search / long-press). Route is a visual guide only—not turn-by-turn navigation, not movement/event truth, not persisted. Outdoor map readability remains `NOT_COMPUTABLE` until Issue #41 device evidence.
 
 ## HealthKit Limitations
 

@@ -2,10 +2,11 @@
 
 ```yaml
 document_id: WAYKIN-PATHFINDING-001
-version: 0.3
-status: IMPLEMENTED_V1_1
+version: 0.4
+status: IMPLEMENTED_V1_2
 navigation_grade: false
 session_map_breadcrumb: RATIFIED_PRESENTATION_ONLY
+session_map_route: PRESENTATION_GUIDE_ONLY
 ```
 
 ## Scope
@@ -16,19 +17,29 @@ Semantic **path progress** along an active Companion Walk:
 - relation: establishing / onPath / strained / offPath / recovered
 - integrity pressure 0…1 for presentation (rival/hunter lean)
 
-**Not** turn-by-turn navigation, route planning, or map product expansion.
+**Not** turn-by-turn voice navigation, corridor pathfinding v2, or gameplay-owned routing.
 
-### Session map presentation (#121 — ratified)
+### Session map presentation (#121 + #155)
 
-App-layer only (`WalkPathTrace` / `GPSSignalPresentation` / map camera follow):
+App-layer only (`WalkPathTrace` / `GPSSignalPresentation` / `PlannedWalkRoute` / map chrome):
 
 | Allowed | Not allowed |
 | ------- | ----------- |
 | In-session breadcrumb of accepted fixes (dedup/capped, ephemeral) | Persisted route history |
-| GPS signal chip from existing `LiveLocationSignalState` | Navigation / guidance chrome |
+| GPS signal chip from existing `LiveLocationSignalState` | Movement integrity / event authority from map |
 | Smooth map camera follow (Reduce Motion honored) | Corridor geometry / pathfinding v2 |
+| Full interactive map (pan/zoom) | Turn-by-turn spoken guidance |
+| **Create walking route** via place search / long-press → MapKit walking directions | Route as Bond/event selector |
+| Planned polyline + distance/time summary (session only) | Coordinates in VoiceOver or field receipts |
 
 Outdoor map readability remains `NOT_COMPUTABLE` pending Issue #41.
+
+### Route creation (#155)
+
+- `WalkRoutePlanner` + `MapKitWalkingDirections` (injectable for tests)
+- Session state: `WaykinAppModel.plannedWalkRoute` (cleared on session start/end)
+- UI: compact map → full map; search place or long-press pin; clear route
+- Product copy: **guide only** — Lira/events still follow real accepted movement
 
 ## Core API
 
