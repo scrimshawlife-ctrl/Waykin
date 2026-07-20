@@ -71,9 +71,10 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
                 AudioCueKind.bondMotif.rawValue
             ]
         )
+        // Path-progress surfacing may append a privacy-safe path clause (v1.1 experience loop).
         XCTAssertEqual(
             enabled.lastSummary?.memory.text,
-            "Lira watched the path, drew close when a distant presence appeared, and stayed beside you until it faded."
+            "Lira watched the path, drew close when a distant presence appeared, and stayed beside you until it faded; the path held steady."
         )
         XCTAssertEqual(receipt.timeline.last?.category, .sessionCompleted)
         XCTAssertTrue(receipt.timeline.contains { $0.category == .audioLifecycleAction && $0.code == "stop" })
