@@ -644,6 +644,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         } ?? false
         audioPlayer.stopAll(fadeOut: true)
         activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
+        let scenarioLabel = demoController.currentScenario.map { String(describing: $0.id) }
         let (session, result, summary) = demoController.end()
         guard let result = result, let summary = summary else {
             finishFieldTestReceipt(
@@ -658,6 +659,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             return
         }
 
+        let bondBefore = companion.bondLevel
         var updated = companion
         updated.bondLevel += result.bondDelta
         let surfacedMemoryText = WalkPathCopy.appendingMemorySuffix(
@@ -670,9 +672,28 @@ final class WaykinAppModel: CanonicalARCommandSource {
             memoryText: surfacedMemoryText
         )
         let mem = SessionMemory(sessionID: surfacedSummary.sessionID, text: surfacedMemoryText)
+        let completionReason = didCompleteScenario ? "completed" : "userEnded"
+        let aggregate = CompletedSession(
+            id: mem.id,
+            sessionID: surfacedSummary.sessionID,
+            scenarioID: scenarioLabel ?? surfacedSummary.experience,
+            walkMode: selectedWalkMode.rawValue,
+            activityType: surfacedSummary.activity.rawValue,
+            experienceID: surfacedSummary.experience,
+            startedAt: session?.startedAt ?? endedAt.addingTimeInterval(-surfacedSummary.duration),
+            completedAt: endedAt,
+            activeDurationSeconds: surfacedSummary.activeTime,
+            distanceMeters: surfacedSummary.distanceMeters,
+            completionReason: completionReason,
+            bondBefore: bondBefore,
+            bondAfter: updated.bondLevel,
+            memoryText: surfacedMemoryText,
+            pathRelation: pathProgress.relation.rawValue
+        )
         lastSummary = surfacedSummary
-        // Optimistic companion update; durable write goes through repository actor (WP-DB3).
+        // Optimistic companion update; durable write is atomic via WP-DB4.
         updated.memories.append(mem)
+        updated.lastSessionID = surfacedSummary.sessionID
         companion = updated
         demoMessage = "Session ended: \(result.outcome). Bond +\(result.bondDelta)"
         refreshRecommendation()
@@ -681,8 +702,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
         enqueuePersistence { [weak self] in
             guard let self else { return }
             do {
-                let receipt = try await self.persistence.saveMemory(mem)
-                try await self.persistence.saveCompanion(updated)
+                let receipt = try await self.persistence.saveCompletedSession(
+                    aggregate,
+                    companion: updated
+                )
                 let count = try await self.persistence.memoryCount()
                 await MainActor.run {
                     self.lastSavedMemoryID = receipt.recordID.uuidString
@@ -906,6 +929,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             CompanionWalkExperience().finish(state: $0, session: ended)
         }
         let physicalBondDelta = 1
+        let bondBefore = companion.bondLevel
         let baseMemoryText = experienceResult?.memoryText
             ?? "Lira stayed close during a quiet \(Int(ended.distanceMeters))m walk."
         let memoryText = WalkPathCopy.appendingMemorySuffix(
@@ -914,6 +938,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         )
         var updatedCompanion = companion
         updatedCompanion.bondLevel += physicalBondDelta
+        updatedCompanion.lastSessionID = ended.id
 
         realWalkState = .completed
         lifecycleSuspendedRealWalk = false
@@ -944,11 +969,30 @@ final class WaykinAppModel: CanonicalARCommandSource {
         path.append(AppRoute.summary(summary.id))
 
         let mem = SessionMemory(sessionID: summary.sessionID, text: summary.memory.text)
+        let aggregate = CompletedSession(
+            id: mem.id,
+            sessionID: summary.sessionID,
+            scenarioID: "physical_companion_walk",
+            walkMode: selectedWalkMode.rawValue,
+            activityType: ended.activityType.rawValue,
+            experienceID: ended.experienceID,
+            startedAt: ended.startedAt,
+            completedAt: endedAt,
+            activeDurationSeconds: ended.activeTime,
+            distanceMeters: ended.distanceMeters,
+            completionReason: "userEnded",
+            bondBefore: bondBefore,
+            bondAfter: updatedCompanion.bondLevel,
+            memoryText: memoryText,
+            pathRelation: pathProgress.relation.rawValue
+        )
         enqueuePersistence { [weak self] in
             guard let self else { return }
             do {
-                let receipt = try await self.persistence.saveMemory(mem)
-                try await self.persistence.saveCompanion(updatedCompanion)
+                let receipt = try await self.persistence.saveCompletedSession(
+                    aggregate,
+                    companion: updatedCompanion
+                )
                 let count = try await self.persistence.memoryCount()
                 await MainActor.run {
                     self.lastSavedMemoryID = receipt.recordID.uuidString

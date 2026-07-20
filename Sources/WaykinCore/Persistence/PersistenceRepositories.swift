@@ -21,13 +21,25 @@ public protocol SessionMemoryRepository: Sendable {
     func memoryCount() async throws -> Int
 }
 
+/// Structured completed-session aggregate (WP-DB4). Idempotent on `sessionID`.
+public protocol SessionCompletionRepository: Sendable {
+    /// Atomically persists companion bond linkage + completed-session aggregate.
+    @discardableResult
+    func saveCompletedSession(
+        _ session: CompletedSession,
+        companion: Companion
+    ) async throws -> PersistenceWriteReceipt
+    func completedSession(for sessionID: UUID) async throws -> CompletedSession?
+    func recentCompletedSessions(limit: Int) async throws -> [CompletedSession]
+}
+
 /// Explicit demo/UI-test reset (never silent).
 public protocol PersistenceResetting: Sendable {
     func resetDemoData() async throws
 }
 
 /// Combined local-first persistence surface for app orchestration.
-public protocol WaykinPersistenceServing: CompanionRepository, SessionMemoryRepository, PersistenceResetting, Sendable {
+public protocol WaykinPersistenceServing: CompanionRepository, SessionMemoryRepository, SessionCompletionRepository, PersistenceResetting, Sendable {
     var availability: PersistenceAvailability { get async }
     var storeURL: URL? { get async }
 }

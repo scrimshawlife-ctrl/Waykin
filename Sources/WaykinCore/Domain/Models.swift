@@ -396,6 +396,68 @@ public struct SessionMemory: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
+// MARK: - Completed session aggregate (WP-DB4)
+
+/// Privacy-safe durable facts for one completed walk. No coordinates or raw samples.
+public struct CompletedSession: Identifiable, Equatable, Sendable {
+    public let id: UUID
+    public let sessionID: UUID
+    public var scenarioID: String?
+    public var walkMode: String?
+    public var activityType: String?
+    public var experienceID: String?
+    public var startedAt: Date
+    public var completedAt: Date
+    public var activeDurationSeconds: TimeInterval
+    public var distanceMeters: Double
+    public var completionReason: String
+    public var bondBefore: Int
+    public var bondAfter: Int
+    public var memoryText: String
+    /// Semantic path relation raw value only (never coordinates).
+    public var pathRelation: String?
+
+    public init(
+        id: UUID = UUID(),
+        sessionID: UUID,
+        scenarioID: String? = nil,
+        walkMode: String? = nil,
+        activityType: String? = nil,
+        experienceID: String? = nil,
+        startedAt: Date,
+        completedAt: Date,
+        activeDurationSeconds: TimeInterval,
+        distanceMeters: Double,
+        completionReason: String,
+        bondBefore: Int,
+        bondAfter: Int,
+        memoryText: String,
+        pathRelation: String? = nil
+    ) {
+        self.id = id
+        self.sessionID = sessionID
+        self.scenarioID = scenarioID
+        self.walkMode = walkMode
+        self.activityType = activityType
+        self.experienceID = experienceID
+        self.startedAt = startedAt
+        self.completedAt = completedAt
+        self.activeDurationSeconds = max(0, activeDurationSeconds.isFinite ? activeDurationSeconds : 0)
+        self.distanceMeters = max(0, distanceMeters.isFinite ? distanceMeters : 0)
+        self.completionReason = completionReason
+        self.bondBefore = max(0, bondBefore)
+        self.bondAfter = max(0, bondAfter)
+        self.memoryText = memoryText
+        self.pathRelation = pathRelation
+    }
+
+    public var bondDelta: Int { bondAfter - bondBefore }
+
+    public var asSessionMemory: SessionMemory {
+        SessionMemory(id: id, sessionID: sessionID, text: memoryText, timestamp: completedAt)
+    }
+}
+
 public struct ExperienceDefinition: Codable {
     public let id: String
     public let name: String

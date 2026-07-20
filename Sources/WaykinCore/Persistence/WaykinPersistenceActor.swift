@@ -43,6 +43,27 @@ public actor WaykinPersistenceActor {
     public func resetDemoData() throws {
         try PersistenceContextOperations.resetDemoData(context: modelContext)
     }
+
+    public func saveCompletedSession(
+        _ session: CompletedSession,
+        companion: Companion,
+        storeURL: URL?
+    ) throws -> PersistenceWriteReceipt {
+        try PersistenceContextOperations.saveCompletedSession(
+            session,
+            companion: companion,
+            context: modelContext,
+            storeURL: storeURL
+        )
+    }
+
+    public func completedSession(for sessionID: UUID) throws -> CompletedSession? {
+        try PersistenceContextOperations.completedSession(for: sessionID, context: modelContext)
+    }
+
+    public func recentCompletedSessions(limit: Int) throws -> [CompletedSession] {
+        try PersistenceContextOperations.recentCompletedSessions(limit: limit, context: modelContext)
+    }
 }
 
 /// Sendable gateway: ModelActor + availability/URL metadata (WP-DB3).
@@ -117,6 +138,21 @@ public struct WaykinPersistenceGateway: WaykinPersistenceServing, Sendable {
     public func resetDemoData() async throws {
         try await actor.resetDemoData()
     }
+
+    public func saveCompletedSession(
+        _ session: CompletedSession,
+        companion: Companion
+    ) async throws -> PersistenceWriteReceipt {
+        try await actor.saveCompletedSession(session, companion: companion, storeURL: storeURLValue)
+    }
+
+    public func completedSession(for sessionID: UUID) async throws -> CompletedSession? {
+        try await actor.completedSession(for: sessionID)
+    }
+
+    public func recentCompletedSessions(limit: Int) async throws -> [CompletedSession] {
+        try await actor.recentCompletedSessions(limit: limit)
+    }
 }
 
 // MARK: - Shared context operations (store + actor)
@@ -126,29 +162,124 @@ public struct WaykinPersistenceGateway: WaykinPersistenceServing, Sendable {
 enum PersistenceContextOperations {
     static func saveCompanion(_ companion: Companion, context: ModelContext) throws {
         do {
-            let id = companion.id
-            let descriptor = FetchDescriptor<CompanionRecord>(predicate: #Predicate { $0.id == id })
-            if let existing = try context.fetch(descriptor).first {
-                existing.name = companion.name
-                existing.archetype = companion.archetype
-                existing.bondLevel = companion.bondLevel
-                existing.lastSessionID = companion.lastSessionID
-            } else {
-                context.insert(
-                    CompanionRecord(
-                        id: companion.id,
-                        name: companion.name,
-                        archetype: companion.archetype,
-                        bondLevel: companion.bondLevel,
-                        lastSessionID: companion.lastSessionID
-                    )
-                )
-            }
+            try upsertCompanion(companion, context: context)
             try context.save()
         } catch let error as PersistenceError {
             throw error
         } catch {
             throw PersistenceError.saveFailed("companion")
+        }
+    }
+
+    /// Companion upsert without `save()` — used inside multi-step transactions (WP-DB4).
+    static func upsertCompanion(_ companion: Companion, context: ModelContext) throws {
+        let id = companion.id
+        let descriptor = FetchDescriptor<CompanionRecord>(predicate: #Predicate { $0.id == id })
+        if let existing = try context.fetch(descriptor).first {
+            existing.name = companion.name
+            existing.archetype = companion.archetype
+            existing.bondLevel = companion.bondLevel
+            existing.lastSessionID = companion.lastSessionID
+        } else {
+            context.insert(
+                CompanionRecord(
+                    id: companion.id,
+                    name: companion.name,
+                    archetype: companion.archetype,
+                    bondLevel: companion.bondLevel,
+                    lastSessionID: companion.lastSessionID
+                )
+            )
+        }
+    }
+
+    /// Atomic companion + structured session completion (WP-DB4).
+    static func saveCompletedSession(
+        _ session: CompletedSession,
+        companion: Companion,
+        context: ModelContext,
+        storeURL: URL?
+    ) throws -> PersistenceWriteReceipt {
+        do {
+            let sessionID = session.sessionID
+            let existingDescriptor = FetchDescriptor<SessionMemoryRecord>(
+                predicate: #Predicate { $0.sessionID == sessionID }
+            )
+            if let existing = try context.fetch(existingDescriptor).first {
+                throw PersistenceError.duplicateSessionMemory(existing.sessionID)
+            }
+
+            var linked = companion
+            linked.lastSessionID = session.sessionID
+            linked.bondLevel = session.bondAfter
+
+            context.insert(
+                SessionMemoryRecord(
+                    id: session.id,
+                    sessionID: session.sessionID,
+                    scenarioID: session.scenarioID,
+                    text: session.memoryText,
+                    createdAt: session.completedAt,
+                    walkMode: session.walkMode,
+                    activityType: session.activityType,
+                    experienceID: session.experienceID,
+                    startedAt: session.startedAt,
+                    completedAt: session.completedAt,
+                    activeDurationSeconds: session.activeDurationSeconds,
+                    distanceMeters: session.distanceMeters,
+                    completionReason: session.completionReason,
+                    bondBefore: session.bondBefore,
+                    bondAfter: session.bondAfter,
+                    pathRelation: session.pathRelation
+                )
+            )
+            try upsertCompanion(linked, context: context)
+            try context.save()
+
+            let recordID = session.id
+            let verify = FetchDescriptor<SessionMemoryRecord>(
+                predicate: #Predicate { $0.id == recordID }
+            )
+            guard let fetched = try context.fetch(verify).first, fetched.id == session.id else {
+                throw PersistenceError.verificationFetchFailed(session.id)
+            }
+
+            return PersistenceWriteReceipt(
+                recordID: session.id,
+                storeURL: storeURL ?? URL(fileURLWithPath: "/unknown-store"),
+                savedAt: Date(),
+                verificationFetchSucceeded: true
+            )
+        } catch let error as PersistenceError {
+            throw error
+        } catch {
+            throw PersistenceError.saveFailed("completedSession")
+        }
+    }
+
+    static func completedSession(for sessionID: UUID, context: ModelContext) throws -> CompletedSession? {
+        do {
+            let descriptor = FetchDescriptor<SessionMemoryRecord>(
+                predicate: #Predicate { $0.sessionID == sessionID }
+            )
+            guard let record = try context.fetch(descriptor).first else { return nil }
+            return mapCompletedSession(record)
+        } catch {
+            throw PersistenceError.fetchFailed("completedSession")
+        }
+    }
+
+    static func recentCompletedSessions(limit: Int, context: ModelContext) throws -> [CompletedSession] {
+        do {
+            let descriptor = FetchDescriptor<SessionMemoryRecord>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            let records = try context.fetch(descriptor)
+            let mapped = records.compactMap(mapCompletedSession)
+            guard limit > 0 else { return [] }
+            return Array(mapped.prefix(limit))
+        } catch {
+            throw PersistenceError.fetchFailed("completedSessions")
         }
     }
 
@@ -294,6 +425,36 @@ enum PersistenceContextOperations {
             bondLevel: record.bondLevel,
             lastSessionID: record.lastSessionID,
             memories: []
+        )
+    }
+
+    /// Maps a row to `CompletedSession` when structured fields are present.
+    /// Legacy memory-only rows (no completionReason / bondAfter) return nil so
+    /// presentation history stays on `SessionMemory` without inventing facts.
+    private static func mapCompletedSession(_ record: SessionMemoryRecord) -> CompletedSession? {
+        guard let completionReason = record.completionReason,
+              let bondBefore = record.bondBefore,
+              let bondAfter = record.bondAfter else {
+            return nil
+        }
+        let completedAt = record.completedAt ?? record.createdAt
+        let startedAt = record.startedAt ?? completedAt
+        return CompletedSession(
+            id: record.id,
+            sessionID: record.sessionID,
+            scenarioID: record.scenarioID,
+            walkMode: record.walkMode,
+            activityType: record.activityType,
+            experienceID: record.experienceID,
+            startedAt: startedAt,
+            completedAt: completedAt,
+            activeDurationSeconds: record.activeDurationSeconds,
+            distanceMeters: record.distanceMeters,
+            completionReason: completionReason,
+            bondBefore: bondBefore,
+            bondAfter: bondAfter,
+            memoryText: record.text,
+            pathRelation: record.pathRelation
         )
     }
 }

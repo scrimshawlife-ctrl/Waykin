@@ -28,15 +28,16 @@
 
 ## P1 Session Aggregate
 
-- [ ] Define approved structured completion fields.
-- [ ] Persist Bond before/after.
-- [ ] Persist distance and active duration.
-- [ ] Persist completion reason and scenario/mode.
-- [ ] Preserve concise memory text as presentation.
-- [ ] Exclude coordinates and route geometry.
-- [ ] Exclude raw HealthKit samples.
-- [ ] Exclude AR transforms and anchors.
-- [ ] Exclude unbounded telemetry and AI history.
+- [x] Define approved structured completion fields. (`CompletedSession`)
+- [x] Persist Bond before/after.
+- [x] Persist distance and active duration.
+- [x] Persist completion reason and scenario/mode.
+- [x] Preserve concise memory text as presentation.
+- [x] Exclude coordinates and route geometry.
+- [x] Exclude raw HealthKit samples.
+- [x] Exclude AR transforms and anchors.
+- [x] Exclude unbounded telemetry and AI history.
+- [x] One completion transaction (companion + aggregate) via `saveCompletedSession`.
 
 ## P1 Validation
 
