@@ -38,8 +38,8 @@ final class LiraARAssetLoader {
             }
             template = root
             source = .usdz(url.lastPathComponent)
-            // Artist blend + armature mid-LOD (rigid bone parent) — not heat-map skinned hero.
-            loadNote = "usdz_active_artist_blend_armature_mid_lod"
+            // Artist blend + armature + auto-weight heat-map mid-LOD (FX still rigid bone-parent).
+            loadNote = "usdz_active_artist_blend_skinned_mid_lod"
         } catch {
             clearTemplate(reason: .procedural, note: "load_error")
         }

@@ -1,16 +1,36 @@
 {
   "asset": "Lira_AR_Base",
   "variant": "Dawn",
-  "status": "MID_LOD_USDZ_ARTIST_BLEND_ARMATURE_V1",
-  "evidence_class": "ARTIST_BLEND_ARMATURE_MID_LOD",
+  "status": "MID_LOD_USDZ_ARTIST_BLEND_SKINNED_V1",
+  "evidence_class": "ARTIST_BLEND_SKINNED_MID_LOD",
   "source_blend": "ArtSource/Companion/Lira/lira.blend",
   "prepared_blend": "ArtSource/Companion/Lira/Lira_AR_Base_prepared.blend",
   "armature": {
     "object": "LiraArmature",
     "bone_count": 25,
-    "bind": "rigid_bone_parent",
-    "skinned_weights": false,
-    "script": "scripts/build_lira_armature.py"
+    "bind": "heat_map_auto_weights",
+    "skinned_weights": true,
+    "scripts": [
+      "scripts/build_lira_armature.py",
+      "scripts/skin_lira_armature.py"
+    ]
+  },
+  "skin": {
+    "merge": ["Body+Chest+Neck→Body", "Head+Snout+Nose→Head"],
+    "auto_weight_meshes": ["Body", "Head", "LeftEar", "RightEar", "legs", "paws", "detail"],
+    "rigid_fx": ["CoreGlow", "CoreHalo", "Filament*", "Tail", "GroundShadow", "StatusIndicator"],
+    "body": {
+      "verts": 1830,
+      "vgroups": 25,
+      "multi_bone_verts": 1709,
+      "max_influences": 5
+    },
+    "head": {
+      "verts": 1830,
+      "vgroups": 25,
+      "multi_bone_verts": 1216,
+      "max_influences": 5
+    }
   },
   "coordinate_system": "+Y up after USD convert_orientation",
   "canonical_height_meters": 0.72,
@@ -19,41 +39,25 @@
     "Body", "Head", "LeftEar", "RightEar", "Tail",
     "Filament", "CoreGlow", "GroundShadow", "StatusIndicator"
   ],
-  "skeleton_joints_sample": [
-    "Root", "Root/Body", "Root/Body/Chest/Neck/Head",
-    "Root/Body/Filament/FilamentBase/FilamentMid/FilamentTip",
-    "Root/Body/Chest/CoreGlow"
-  ],
-  "name_map": {
-    "Lira_ROOT": "LiraRoot",
-    "Lira_Body": "Body",
-    "Lira_Head": "Head",
-    "Lira_Ear.L": "LeftEar",
-    "Lira_Ear.R": "RightEar",
-    "Lira_Tail": "Filament",
-    "Lira_TailTip": "FilamentTip",
-    "Lira_ChestGlow": "CoreGlow",
-    "Lira_GroundLocator": "GroundShadow",
-    "Lira_Muzzle": "Snout"
-  },
   "export": {
     "script": "scripts/export_lira_blend_to_usdz.sh",
-    "blender": "Blender 5.2 USD export + LiraArmature",
+    "blender": "Blender 5.2 USD export + SkelBindingAPI",
     "package": "usdzip"
   },
   "validation": {
     "required_nodes_prep": "PASS",
     "armature_bones": "PASS_25",
+    "heat_map_weights": "PASS_AUTO",
     "usdz_package": "PASS",
     "usdz_skeleton_prim": "PASS",
-    "armature_skinned_weights": "NOT_APPLICABLE_RIGID_BIND",
+    "usdz_skel_joint_weights": "PASS",
     "skeletal_puppet_bind": "NAME_COMPATIBLE",
     "physical_device": "NOT_RUN",
     "outdoor_readability": "NOT_RUN"
   },
   "provenance": {
-    "OBSERVED": "Multi-mesh Living Familiar + generated LiraArmature (25 bones); rigid bone-parent bind; FilamentBase/Mid markers; USD Skeleton joints export; USDZ ~515KB with textures.",
-    "INFERRED": "Runtime puppet clips bind by entity name; DCC skeleton available for future skinned weights or DCC animation libraries.",
-    "NOT_COMPUTABLE": "Outdoor AR; heat-map skin deformation (would need merged mesh + weight paint)."
+    "OBSERVED": "Auto-weight heat-map on Body/Head (max 5 influences, 1709/1216 multi-bone verts); USD primvars:skel:jointWeights; ~754KB USDZ.",
+    "INFERRED": "Mid-LOD deformation suitable for bone-driven motion; puppet entity clips still bind by name on semantic meshes/FX.",
+    "NOT_COMPUTABLE": "Artist hand-painted weights; outdoor AR; DCC performance clip library."
   }
 }

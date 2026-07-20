@@ -2,16 +2,17 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
-version: 0.5
-status: ARTIST_BLEND_ARMATURE_MID_LOD_SHIPPED
-usdz: ARTIST_BLEND_ARMATURE_MID_LOD_V1
+version: 0.6
+status: ARTIST_BLEND_SKINNED_MID_LOD_SHIPPED
+usdz: ARTIST_BLEND_SKINNED_MID_LOD_V1
 mesh_descriptor: SHIPPED
 runtime_animation_clips: SHIPPED
 skeletal_joint_hierarchy: SHIPPED
 blender_armature_rigid_bind: SHIPPED
-dcc_skinned_weights: NOT_SHIPPED
+heat_map_auto_weights: SHIPPED
+dcc_hand_painted_weights: NOT_SHIPPED
 direction: spectral_living_familiar
-evidence_class: ARTIST_BLEND_ARMATURE_MID_LOD
+evidence_class: ARTIST_BLEND_SKINNED_MID_LOD
 source_blend: ArtSource/Companion/Lira/lira.blend
 armature: LiraArmature
 ```
@@ -27,8 +28,9 @@ armature: LiraArmature
 | AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
 | AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** |
 | AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_ARMATURE_MID_LOD** (~515 KB) |
-| Blender armature | `LiraArmature` 25 bones, rigid bone-parent multi-mesh | **Shipped** (`build_lira_armature.py`) |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_SKINNED_MID_LOD** (~754 KB) |
+| Blender armature | `LiraArmature` 25 bones | **Shipped** (`build_lira_armature.py`) |
+| Heat-map skin | Auto-weights Body/Head/ears/legs; FX rigid | **Shipped** (`skin_lira_armature.py`) |
 | Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |
 | Generated fallback | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | `scripts/build_lira_usdz.sh` |
 | Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Mid-LOD + armature |
@@ -69,7 +71,7 @@ Skeletal clips bind via `AnimationBindTarget.entity(name)` on semantic nodes (pu
 ./scripts/build_lira_usdz.sh
 ```
 
-Evidence class **ARTIST_BLEND_ARMATURE_MID_LOD**: multi-mesh Living Familiar + Blender armature with rigid bone-parent bind. USD includes a `Skeleton` prim. Heat-map skin weights are **not** shipped.
+Evidence class **ARTIST_BLEND_SKINNED_MID_LOD**: multi-mesh Living Familiar + `LiraArmature` + automatic heat-map weights on Body/Head/ears/legs (USD `SkelBindingAPI`). FX filament/core stay rigid bone-parent. Hand-painted weights are **not** shipped.
 
 ## Armature joint tree (Blender)
 
@@ -85,7 +87,7 @@ Root
 
 ## Optional next (not this ship)
 
-1. Merge organic body into one mesh and paint heat-map weights.
+1. Hand-paint weights for hero close-ups.
 2. Author DCC action clips on `LiraArmature` with same bone names.
 3. Outdoor AR QA (#41).
 
@@ -95,4 +97,4 @@ Root
 - Unique mesh per skin
 - Gore / teeth / blood hunter geometry
 - Claiming outdoor AR quality without Issue #41 device receipt
-- Claiming heat-map skinned deformation without weight-painted mesh
+- Claiming hand-painted hero weight quality without artist paint pass
