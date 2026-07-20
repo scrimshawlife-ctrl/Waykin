@@ -54,34 +54,24 @@ enum LiraSkeletalRig {
     }
 
     /// Detect Meshy-style single mesh vs multi-part procedural/artist hierarchy.
+    ///
+    /// Spectral FX under CoreGlow/Filament do **not** force multiPart — only a real
+    /// Head mesh (factory/artist multi-part) does. Static mesh keeps identity Body rest.
     static func puppetStyle(for entity: Entity) -> PuppetStyle {
         guard let body = entity.findEntity(named: "Body") else { return .multiPart }
 
-        var modelsUnderBody = 0
-        var modelsOutsideBody = 0
-        func walk(_ node: Entity, underBody: Bool) {
-            let here = underBody || node.name == "Body"
-            if node is ModelEntity {
-                if here { modelsUnderBody += 1 } else { modelsOutsideBody += 1 }
-            }
-            for child in node.children {
-                walk(child, underBody: here)
-            }
-        }
-        walk(entity, underBody: false)
-
-        // Head/ears/filament as ModelEntity ⇒ multi-part (factory or artist).
-        let multiPartMarkers = ["Head", "LeftEar", "RightEar", "Tail", "Filament", "CoreGlow"]
-        let markerHasMesh = multiPartMarkers.contains { name in
-            guard let joint = entity.findEntity(named: name) else { return false }
-            if joint is ModelEntity { return true }
-            return joint.children.contains { $0 is ModelEntity }
+        func hasModelGeometry(_ node: Entity) -> Bool {
+            if node is ModelEntity { return true }
+            return node.children.contains { hasModelGeometry($0) }
         }
 
-        if markerHasMesh { return .multiPart }
-        if modelsUnderBody >= 1, modelsOutsideBody == 0 { return .staticMesh }
-        // Promote path: mesh reparented under Body, empty sibling markers.
-        if modelsUnderBody >= 1, !markerHasMesh { return .staticMesh }
-        return .multiPart
+        guard hasModelGeometry(body) else { return .multiPart }
+
+        // Factory / artist: Head is a ModelEntity with real geometry.
+        if let head = entity.findEntity(named: "Head"), hasModelGeometry(head) {
+            return .multiPart
+        }
+        // Meshy promote: Body holds authored mesh; Head is empty transform marker.
+        return .staticMesh
     }
 }

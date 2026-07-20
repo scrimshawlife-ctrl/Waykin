@@ -36,17 +36,27 @@ final class LiraARAssetLoader {
             var root = Self.normalizeRoot(loaded)
             var promoted = false
             if !Self.hasRequiredNodes(root) {
-                root = Self.promoteIncompleteHierarchy(root)
+                root = Self.promoteIncompleteHierarchy(root, skin: skin)
                 promoted = true
+            } else if Self.looksLikeTexturedStaticMesh(root) {
+                // Named hierarchy but empty FX markers — still install spectral layer.
+                Self.installSpectralFX(on: root, skin: skin)
             }
             guard Self.hasRequiredNodes(root) else {
                 clearTemplate(reason: .procedural, note: "hierarchy_invalid")
                 return
             }
-            Self.normalizeVisualHeight(root, targetHeightMeters: 0.72)
+            // Height from Body mesh only when possible — FX discs shouldn't inflate bounds.
+            if let body = root.findEntity(named: "Body") {
+                Self.normalizeVisualHeight(body, targetHeightMeters: 0.72)
+            } else {
+                Self.normalizeVisualHeight(root, targetHeightMeters: 0.72)
+            }
             template = root
             source = .usdz(url.lastPathComponent)
-            preserveAuthoredMaterials = promoted || Self.looksLikeTexturedStaticMesh(root)
+            // After FX install, model count is high — use promote flag + Body-only mesh heuristic.
+            preserveAuthoredMaterials = promoted
+                || Self.isAuthoredBodyStaticMesh(root)
             if preserveAuthoredMaterials {
                 loadNote = "usdz_active_meshy_textured_static"
             } else {
@@ -102,8 +112,10 @@ final class LiraARAssetLoader {
         if let template {
             let clone = template.clone(recursive: true)
             clone.name = CompanionEntityFactory.rootName
-            // Keep Meshy PBR textures; only paint procedural/artist multi-part meshes.
-            if !preserveAuthoredMaterials {
+            // Keep Meshy PBR textures; spectral FX (A2/A3/shadow) still follow skin climate.
+            if preserveAuthoredMaterials {
+                Self.applySpectralFXSkin(skin, to: clone)
+            } else {
                 Self.applySkin(skin, to: clone)
             }
             let scale = configuration.companionHeightMeters / 0.72
@@ -159,9 +171,18 @@ final class LiraARAssetLoader {
     }
 
     /// Meshy image-to-3d (and similar) ships a single textured mesh without A1–A3 names.
-    /// Promote into the semantic hierarchy so puppet animation can bind to joints.
-    static func promoteIncompleteHierarchy(_ root: Entity) -> Entity {
-        guard !hasRequiredNodes(root) else { return root }
+    /// Promote into the semantic hierarchy so puppet animation can bind to joints,
+    /// then install spectral FX (A2 ember, A3 filament, ground shadow) so anchors
+    /// remain readable without destroying authored PBR on Body.
+    static func promoteIncompleteHierarchy(
+        _ root: Entity,
+        skin: LiraSkin = .dawn
+    ) -> Entity {
+        guard !hasRequiredNodes(root) else {
+            // Hierarchy already complete but may still need FX on empty markers.
+            installSpectralFX(on: root, skin: skin)
+            return root
+        }
 
         var modelEntities: [Entity] = []
         func collectModels(_ entity: Entity) {
@@ -188,14 +209,14 @@ final class LiraARAssetLoader {
             root.addChild(body)
         }
 
-        // Empty transform anchors for A1–A3 + required chrome (puppet / motion targets).
+        // Transform anchors for A1–A3 + chrome (puppet bind targets).
         let markerOffsets: [String: SIMD3<Float>] = [
             "Head": SIMD3(0, 0.42, 0.10),
             "LeftEar": SIMD3(-0.10, 0.50, 0.04),
             "RightEar": SIMD3(0.10, 0.50, 0.04),
             "Tail": SIMD3(0, 0.18, -0.28),
-            "Filament": SIMD3(0, 0.26, -0.22),
-            "CoreGlow": SIMD3(0, 0.30, 0.06),
+            "Filament": SIMD3(0, 0.28, -0.20),
+            "CoreGlow": SIMD3(0, 0.32, 0.12),
             "GroundShadow": SIMD3(0, 0.01, 0),
             "StatusIndicator": SIMD3(0, 0.58, 0),
         ]
@@ -213,10 +234,211 @@ final class LiraARAssetLoader {
         if root.findEntity(named: "CoreHalo") == nil {
             let halo = Entity()
             halo.name = "CoreHalo"
-            halo.position = SIMD3(0, 0.32, 0.06)
+            halo.position = SIMD3(0, 0.34, 0.12)
             root.addChild(halo)
         }
+        if root.findEntity(named: LiraARMotion.hunterEchoNodeName) == nil {
+            let echo = Entity()
+            echo.name = LiraARMotion.hunterEchoNodeName
+            echo.position = SIMD3(0.04, 0.28, -0.08)
+            echo.isEnabled = false
+            root.addChild(echo)
+        }
+
+        installSpectralFX(on: root, skin: skin)
         return root
+    }
+
+    /// Whether `node` already has ModelEntity geometry (self or descendants).
+    static func hasModelGeometry(_ node: Entity) -> Bool {
+        if node is ModelEntity { return true }
+        return node.children.contains { hasModelGeometry($0) }
+    }
+
+    /// Attach Living Familiar spectral FX under empty promote markers.
+    /// Does not touch Body-authored Meshy mesh.
+    static func installSpectralFX(on root: Entity, skin: LiraSkin = .dawn) {
+        let palette = CompanionEntityFactory.SkinPalette(skin: skin)
+
+        if let core = root.findEntity(named: "CoreGlow"), !hasModelGeometry(core) {
+            let ember = fxModel(
+                name: "CoreGlowMesh",
+                mesh: LiraMeshGeometry.sphere(radius: 0.038, segments: 12, rings: 10),
+                color: palette.bondCore,
+                roughness: 0.15,
+                metallic: 0.25
+            )
+            core.addChild(ember)
+        }
+
+        if let halo = root.findEntity(named: "CoreHalo"), !hasModelGeometry(halo) {
+            let shell = fxModel(
+                name: "CoreHaloMesh",
+                mesh: LiraMeshGeometry.sphere(radius: 0.052, segments: 12, rings: 10),
+                color: palette.bondCore.withAlphaComponent(0.32),
+                roughness: 0.85
+            )
+            halo.addChild(shell)
+        }
+
+        if let filament = root.findEntity(named: "Filament"), !hasModelGeometry(filament) {
+            filament.orientation = simd_quatf(
+                angle: LiraARMotion.filamentBasePitch,
+                axis: simd_normalize(SIMD3<Float>(1, 0.12, 0))
+            )
+            let base = fxModel(
+                name: LiraARMotion.filamentBaseName,
+                mesh: LiraMeshGeometry.filamentSegment(),
+                color: palette.filament.withAlphaComponent(0.92),
+                roughness: 0.28
+            )
+            base.scale = SIMD3<Float>(0.02, 0.02, 0.08)
+            base.position = [0, 0, -0.06]
+            let mid = fxModel(
+                name: LiraARMotion.filamentMidName,
+                mesh: LiraMeshGeometry.filamentSegment(),
+                color: palette.filament.withAlphaComponent(0.9),
+                roughness: 0.26
+            )
+            mid.scale = SIMD3<Float>(0.016, 0.016, 0.09)
+            mid.position = [0, 0, -0.20]
+            let tip = fxModel(
+                name: LiraARMotion.filamentTipName,
+                mesh: LiraMeshGeometry.filamentSegment(),
+                color: palette.fringe.withAlphaComponent(0.85),
+                roughness: 0.22
+            )
+            tip.scale = SIMD3<Float>(0.012, 0.012, 0.07)
+            tip.position = [0, 0, -0.36]
+            filament.addChild(base)
+            filament.addChild(mid)
+            filament.addChild(tip)
+        }
+
+        if let shadow = root.findEntity(named: "GroundShadow"), !hasModelGeometry(shadow) {
+            let disc = fxModel(
+                name: "GroundShadowMesh",
+                mesh: LiraMeshGeometry.sphere(radius: 0.16, segments: 12, rings: 8),
+                color: palette.shadow,
+                roughness: 1
+            )
+            disc.scale = SIMD3<Float>(1.4, 0.012, 0.95)
+            shadow.addChild(disc)
+        }
+
+        if let indicator = root.findEntity(named: "StatusIndicator"), !hasModelGeometry(indicator) {
+            let bead = fxModel(
+                name: "StatusIndicatorMesh",
+                mesh: LiraMeshGeometry.sphere(radius: 0.018, segments: 8, rings: 6),
+                color: palette.indicator,
+                roughness: 0.25
+            )
+            indicator.addChild(bead)
+            indicator.isEnabled = false
+        }
+
+        if let echo = root.findEntity(named: LiraARMotion.hunterEchoNodeName), !hasModelGeometry(echo) {
+            let ghost = fxModel(
+                name: "HunterEchoMesh",
+                mesh: LiraMeshGeometry.sphere(radius: 0.12, segments: 10, rings: 8),
+                color: palette.body.withAlphaComponent(0.2),
+                roughness: 0.8
+            )
+            ghost.scale = SIMD3<Float>(0.65, 1.2, 0.9)
+            echo.addChild(ghost)
+            echo.isEnabled = false
+        }
+    }
+
+    private static func fxModel(
+        name: String,
+        mesh: MeshResource,
+        color: UIColor,
+        roughness: Float = 0.35,
+        metallic: Float = 0
+    ) -> ModelEntity {
+        let material = SimpleMaterial(
+            color: color,
+            roughness: .float(roughness),
+            isMetallic: metallic > 0.05
+        )
+        let entity = ModelEntity(mesh: mesh, materials: [material])
+        entity.name = name
+        return entity
+    }
+
+    /// Paint only spectral FX nodes (A2/A3/shadow/chrome). Never touches Body Meshy mesh.
+    static func applySpectralFXSkin(_ skin: LiraSkin, to root: Entity) {
+        let palette = CompanionEntityFactory.SkinPalette(skin: skin)
+        let fxSemantic: Set<String> = [
+            "CoreGlow", "CoreHalo", "Filament",
+            LiraARMotion.filamentBaseName, LiraARMotion.filamentMidName, LiraARMotion.filamentTipName,
+            "GroundShadow", "StatusIndicator", LiraARMotion.hunterEchoNodeName,
+            "CoreGlowMesh", "CoreHaloMesh", "GroundShadowMesh", "StatusIndicatorMesh", "HunterEchoMesh"
+        ]
+
+        func paint(_ entity: Entity, underBody: Bool) {
+            let hereUnderBody = underBody || entity.name == "Body"
+            // Authored mesh under Body stays as-is.
+            if !hereUnderBody, let model = entity as? ModelEntity {
+                let semantic = semanticName(for: entity)
+                let key = fxSemantic.contains(entity.name) || fxSemantic.contains(semantic)
+                    ? (fxSemantic.contains(entity.name) ? entity.name : semantic)
+                    : semantic
+                if fxSemantic.contains(entity.name) || fxSemantic.contains(semantic) {
+                    let paintKey: String
+                    switch entity.name {
+                    case "CoreGlowMesh": paintKey = "CoreGlow"
+                    case "CoreHaloMesh": paintKey = "CoreHalo"
+                    case "GroundShadowMesh": paintKey = "GroundShadow"
+                    case "StatusIndicatorMesh": paintKey = "StatusIndicator"
+                    case "HunterEchoMesh": paintKey = LiraARMotion.hunterEchoNodeName
+                    default: paintKey = key
+                    }
+                    let c = color(for: paintKey, palette: palette)
+                    let roughness: Float
+                    let metallic: Float
+                    switch paintKey {
+                    case "CoreGlow", "CoreHalo":
+                        roughness = paintKey == "CoreHalo" ? 0.85 : 0.15
+                        metallic = paintKey == "CoreGlow" ? 0.25 : 0
+                    case "Filament", LiraARMotion.filamentBaseName, LiraARMotion.filamentMidName, LiraARMotion.filamentTipName:
+                        roughness = 0.26
+                        metallic = 0
+                    case "GroundShadow":
+                        roughness = 1
+                        metallic = 0
+                    default:
+                        roughness = 0.4
+                        metallic = 0
+                    }
+                    let alphaColor: UIColor
+                    switch paintKey {
+                    case "CoreHalo":
+                        alphaColor = c.withAlphaComponent(0.32)
+                    case LiraARMotion.filamentTipName:
+                        alphaColor = palette.fringe.withAlphaComponent(0.85)
+                    case LiraARMotion.hunterEchoNodeName:
+                        alphaColor = palette.body.withAlphaComponent(0.2)
+                    case "Filament", LiraARMotion.filamentBaseName, LiraARMotion.filamentMidName:
+                        alphaColor = c.withAlphaComponent(0.9)
+                    default:
+                        alphaColor = c
+                    }
+                    model.model?.materials = [
+                        SimpleMaterial(
+                            color: alphaColor,
+                            roughness: .float(roughness),
+                            isMetallic: metallic > 0.05
+                        )
+                    ]
+                }
+            }
+            for child in entity.children {
+                paint(child, underBody: hereUnderBody)
+            }
+        }
+        paint(root, underBody: false)
     }
 
     /// Scale visual content so bounds height ≈ target (handles feet-scale Meshy exports).
@@ -230,15 +452,19 @@ final class LiraARAssetLoader {
     }
 
     /// Heuristic: single-mesh textured exports (Meshy) vs multi-part procedural/artist.
+    /// Ignores spectral FX under CoreGlow/Filament/etc.
     static func looksLikeTexturedStaticMesh(_ root: Entity) -> Bool {
-        var modelCount = 0
-        func walk(_ entity: Entity) {
-            if entity is ModelEntity { modelCount += 1 }
-            for child in entity.children { walk(child) }
+        isAuthoredBodyStaticMesh(root)
+    }
+
+    /// True when visual mass is under Body and Head is not a real mesh part.
+    static func isAuthoredBodyStaticMesh(_ root: Entity) -> Bool {
+        guard let body = root.findEntity(named: "Body") else { return false }
+        guard hasModelGeometry(body) else { return false }
+        if let head = root.findEntity(named: "Head"), hasModelGeometry(head) {
+            return false
         }
-        walk(root)
-        // Meshy static: one mesh + empty markers. Artist rig: many named model parts.
-        return modelCount <= 2
+        return true
     }
 
     static func applySkin(_ skin: LiraSkin, to root: Entity) {

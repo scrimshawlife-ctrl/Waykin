@@ -16,11 +16,13 @@ Use this static textured mesh as the AR embodiment. Animate via existing runtime
 ## Runtime adaptation
 
 - Loader promotes incomplete hierarchy → `LiraRoot` + required marker nodes + mesh under `Body`.
-- Authored PBR textures preserved (no `applySkin` paint-over).
-- Visual height normalized to ~0.72 m companion scale.
+- Spectral FX installed on markers: A2 CoreGlow, A3 Filament segments, GroundShadow, StatusIndicator, HunterEcho.
+- Authored Body PBR preserved; `applySpectralFXSkin` recolors FX only (Dawn/Veil/Rupture climate on ember/plume).
+- Hybrid puppet: Body bob/lean + CoreGlow breath + Filament sway.
+- Visual height normalized on Body to ~0.72 m companion scale.
 
 ## Non-claims
 
 - Not outdoor AR quality (#41)
 - Not skinned DCC walk cycle
-- Dawn/Veil/Rupture material remaps deferred for textured mesh
+- Not full Body material remap per skin (FX climate only)

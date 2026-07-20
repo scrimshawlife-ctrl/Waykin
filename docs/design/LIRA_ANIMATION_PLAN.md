@@ -194,6 +194,7 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 | **A5d** | Hero region weight paint (reproducible) | **Done** (`paint_lira_hero_weights.py`) |
 | **A5e** | DCC action clips + hybrid runtime player | **Done** (`author_lira_armature_clips` + DCC overlay) |
 | **A5f** | Meshy static mesh body-centric puppet style | **Done** (`PuppetStyle.staticMesh` + Body bob/lean) |
+| **A5g** | Spectral FX layer (A2/A3/shadow) + hybrid clips | **Done** (`installSpectralFX` + body+FX groups) |
 | **A6** | Outdoor motion QA notes | Device walk (#41) |
 
 ## Test strategy
