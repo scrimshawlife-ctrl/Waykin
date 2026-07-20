@@ -1,15 +1,15 @@
 import RealityKit
 import UIKit
+import simd
 
 /// Living Familiar **AR mid-LOD** for Lira under Echo materials.
 ///
 /// Anchors (product contract):
-/// - **A1** `Head` — tapered non-canid snout
+/// - **A1** `Head` — tapered non-canid snout mesh
 /// - **A2** `CoreGlow` — amber bond ember
-/// - **A3** `Filament` — trailing path plume
+/// - **A3** `Filament` — multi-segment trailing path plume
 ///
-/// Cosmetics via `LiraSkin`. Same hierarchy for Dawn / Veil / Rupture.
-/// Optional artist USDZ may replace this later; see `LiraARAssetCatalog`.
+/// Geometry from `LiraMeshGeometry` (real MeshDescriptor meshes). Cosmetics via `LiraSkin`.
 @MainActor
 struct CompanionEntityFactory {
     static let rootName = "LiraRoot"
@@ -70,7 +70,7 @@ struct CompanionEntityFactory {
         makeProceduralLivingFamiliar(configuration: configuration)
     }
 
-    /// Spectral Living Familiar silhouette — mature, slightly uncanny, non-mascot.
+    /// Spectral Living Familiar — low-poly mesh mid-LOD (mature, slightly uncanny).
     private func makeProceduralLivingFamiliar(
         configuration: CompanionVisualConfiguration
     ) -> Entity {
@@ -79,157 +79,175 @@ struct CompanionEntityFactory {
         root.name = Self.rootName
         let g = configuration.groundOffsetMeters
 
-        // Ground contact shadow
         let shadow = model(
             name: "GroundShadow",
-            mesh: .generateSphere(radius: 0.18),
+            mesh: LiraMeshGeometry.sphere(radius: 0.18, segments: 12, rings: 8),
             color: palette.shadow,
             roughness: 1.0
         )
-        shadow.scale = SIMD3<Float>(1.25, 0.01, 0.85)
-        shadow.position = [0, g, 0.02]
+        shadow.scale = SIMD3<Float>(1.35, 0.012, 0.92)
+        shadow.position = [0.01, g, 0.02]
 
-        // Torso — elongated, upright presence (not a pet blob)
+        // Torso mass — ellipsoid mesh scaled for upright presence
         let body = model(
             name: "Body",
-            mesh: .generateSphere(radius: 0.15),
+            mesh: LiraMeshGeometry.sphere(radius: 0.15, segments: 18, rings: 14),
             color: palette.body,
             roughness: 0.52
         )
-        body.scale = SIMD3<Float>(0.72, 1.45, 1.05)
-        body.position = [0, g + 0.28, 0.02]
+        body.scale = SIMD3<Float>(0.68, 1.52, 1.12)
+        body.position = [0.008, LiraARMotion.bodyRestY(groundOffset: g), 0.03]
 
-        // Chest plate volume (secondary body mass under A2)
         let chest = model(
             name: "Chest",
-            mesh: .generateSphere(radius: 0.11),
+            mesh: LiraMeshGeometry.sphere(radius: 0.11, segments: 14, rings: 10),
             color: palette.bodySecondary,
             roughness: 0.48
         )
-        chest.scale = SIMD3<Float>(0.95, 0.85, 0.9)
-        chest.position = [0, g + 0.32, 0.12]
+        chest.scale = SIMD3<Float>(0.98, 0.82, 0.95)
+        chest.position = [0.01, g + 0.34, 0.13]
 
-        // A1 Head — tapered blade/snout, non-canid
+        // A1 Head — real tapered mesh (not a scaled sphere)
         let head = model(
             name: "Head",
-            mesh: .generateSphere(radius: 0.11),
+            mesh: LiraMeshGeometry.taperedHead(length: 0.24, baseRadius: 0.085, tipRadius: 0.032, segments: 14, rings: 12),
             color: palette.body,
             roughness: 0.45
         )
-        head.scale = SIMD3<Float>(0.55, 0.72, 1.55)
-        head.position = [0, g + 0.58, 0.18]
-        head.orientation = simd_quatf(angle: -0.12, axis: [1, 0, 0])
+        head.position = [0.012, g + 0.59, 0.14]
+        head.orientation = simd_quatf(angle: -0.10, axis: [1, 0, 0])
 
-        // Sensor blades (ears) — offset pair, soft ridge language
-        let leftEar = ear(name: "LeftEar", x: -0.055, y: g + 0.70, z: 0.10, color: palette.bodySecondary)
+        // Optional snout accent for facing readability
+        let snout = model(
+            name: "Snout",
+            mesh: LiraMeshGeometry.sphere(radius: 0.04, segments: 10, rings: 8),
+            color: palette.bodySecondary,
+            roughness: 0.42
+        )
+        snout.scale = SIMD3<Float>(0.55, 0.42, 1.15)
+        snout.position = [0.015, g + 0.56, 0.30]
+
+        // Sensor blades (real wedge meshes, not scaled spheres)
+        let leftEar = model(
+            name: "LeftEar",
+            mesh: LiraMeshGeometry.sensorBlade(height: 0.15, width: 0.03, depth: 0.05),
+            color: palette.bodySecondary,
+            roughness: 0.5
+        )
+        leftEar.position = [-0.055, g + 0.68, 0.08]
         leftEar.orientation = simd_quatf(angle: 0.35, axis: [0, 0, 1])
-            * simd_quatf(angle: -0.2, axis: [1, 0, 0])
-        let rightEar = ear(name: "RightEar", x: 0.06, y: g + 0.69, z: 0.09, color: palette.bodySecondary)
-        rightEar.orientation = simd_quatf(angle: -0.28, axis: [0, 0, 1])
-            * simd_quatf(angle: -0.18, axis: [1, 0, 0])
+            * simd_quatf(angle: -0.15, axis: [1, 0, 0])
 
-        // Hind mass / haunch
+        let rightEar = model(
+            name: "RightEar",
+            mesh: LiraMeshGeometry.sensorBlade(height: 0.14, width: 0.028, depth: 0.048),
+            color: palette.bodySecondary,
+            roughness: 0.5
+        )
+        rightEar.position = [0.062, g + 0.67, 0.075]
+        rightEar.orientation = simd_quatf(angle: -0.28, axis: [0, 0, 1])
+            * simd_quatf(angle: -0.12, axis: [1, 0, 0])
+
         let haunch = model(
             name: "Haunch",
-            mesh: .generateSphere(radius: 0.10),
+            mesh: LiraMeshGeometry.sphere(radius: 0.10, segments: 12, rings: 10),
             color: palette.bodySecondary,
             roughness: 0.55
         )
-        haunch.scale = SIMD3<Float>(0.85, 0.95, 1.1)
-        haunch.position = [0, g + 0.22, -0.10]
+        haunch.scale = SIMD3<Float>(0.88, 1.02, 1.18)
+        haunch.position = [-0.02, g + 0.22, -0.12]
 
-        // Soft tail mass behind body
         let tail = model(
             name: "Tail",
-            mesh: .generateSphere(radius: 0.09),
+            mesh: LiraMeshGeometry.sphere(radius: 0.09, segments: 12, rings: 10),
             color: palette.fringe,
             roughness: 0.38
         )
-        tail.scale = SIMD3<Float>(0.4, 0.5, 1.55)
-        tail.position = [0, g + 0.26, -0.26]
+        tail.scale = SIMD3<Float>(0.38, 0.48, 1.65)
+        tail.position = [-0.015, g + 0.25, -0.28]
         tail.orientation = simd_quatf(angle: .pi / 5.5, axis: [1, 0, 0])
 
-        // A3 Filament plume — long trailing path stream
-        let filament = model(
-            name: "Filament",
-            mesh: .generateSphere(radius: 0.055),
+        // A3 multi-segment filament (base + mid + tip) for wave animation
+        let filament = Entity()
+        filament.name = "Filament"
+        filament.position = [0.04, g + 0.35, -0.42]
+        filament.orientation = simd_quatf(angle: LiraARMotion.filamentBasePitch, axis: [1, 0.12, 0])
+
+        let filBase = model(
+            name: LiraARMotion.filamentBaseName,
+            mesh: LiraMeshGeometry.filamentSegment(radius: 0.04, length: 0.16),
             color: palette.filament,
             roughness: 0.28
         )
-        filament.scale = SIMD3<Float>(0.28, 0.28, 2.8)
-        filament.position = [0.03, g + 0.34, -0.48]
-        filament.orientation = simd_quatf(angle: .pi / 4.2, axis: [1, 0.12, 0])
+        filBase.scale = SIMD3<Float>(0.022, 0.022, 0.09)
+        filBase.position = [0, 0, -0.08]
 
-        // Filament tip (glowing path residue) — child of Filament for hierarchy clarity
+        let filMid = model(
+            name: LiraARMotion.filamentMidName,
+            mesh: LiraMeshGeometry.filamentSegment(radius: 0.035, length: 0.18),
+            color: palette.filament.withAlphaComponent(0.95),
+            roughness: 0.26
+        )
+        filMid.scale = SIMD3<Float>(0.018, 0.018, 0.10)
+        filMid.position = [0, 0, -0.28]
+
         let filamentTip = model(
-            name: "FilamentTip",
-            mesh: .generateSphere(radius: 0.04),
+            name: LiraARMotion.filamentTipName,
+            mesh: LiraMeshGeometry.filamentSegment(radius: 0.028, length: 0.14),
             color: palette.fringe.withAlphaComponent(0.9),
             roughness: 0.22
         )
-        filamentTip.scale = SIMD3<Float>(0.7, 0.7, 1.2)
-        filamentTip.position = [0, 0, -0.55]
+        filamentTip.scale = SIMD3<Float>(0.014, 0.014, 0.08)
+        filamentTip.position = [0, 0, -0.48]
+
+        filament.addChild(filBase)
+        filament.addChild(filMid)
         filament.addChild(filamentTip)
 
-        // A2 Bond core — amber chest ember
+        // A2 Bond core
+        let glow = max(0.75, min(1.4, configuration.glowIntensity))
         let core = model(
             name: "CoreGlow",
-            mesh: .generateSphere(radius: 0.042),
+            mesh: LiraMeshGeometry.sphere(radius: 0.044, segments: 12, rings: 10),
             color: palette.bondCore,
             roughness: 0.15,
             metallic: 0.2
         )
-        core.position = [0, g + 0.33, 0.18]
-        let glow = max(0.75, min(1.4, configuration.glowIntensity))
+        core.position = [0.01, g + 0.34, 0.19]
         core.scale = SIMD3<Float>(repeating: glow)
 
-        // Soft outer glow shell around core (readability outdoors later)
         let coreHalo = model(
             name: "CoreHalo",
-            mesh: .generateSphere(radius: 0.055),
+            mesh: LiraMeshGeometry.sphere(radius: 0.058, segments: 12, rings: 10),
             color: palette.bondCore.withAlphaComponent(0.35),
             roughness: 0.8
         )
-        coreHalo.position = [0, g + 0.33, 0.18]
+        coreHalo.position = [0.01, g + 0.34, 0.19]
         coreHalo.scale = SIMD3<Float>(repeating: glow * 1.15)
 
         let indicator = model(
             name: "StatusIndicator",
-            mesh: .generateSphere(radius: 0.02),
+            mesh: LiraMeshGeometry.sphere(radius: 0.02, segments: 8, rings: 6),
             color: palette.indicator,
             roughness: 0.25
         )
-        indicator.position = [0, g + 0.80, 0.10]
+        indicator.position = [0.02, g + 0.82, 0.12]
 
-        // Hunter pressure ghost (A3) — geometry/asymmetry, not gore. Off unless alert.
         let hunterEcho = model(
             name: LiraARMotion.hunterEchoNodeName,
-            mesh: .generateSphere(radius: 0.14),
+            mesh: LiraMeshGeometry.sphere(radius: 0.14, segments: 12, rings: 10),
             color: palette.body.withAlphaComponent(0.22),
             roughness: 0.75
         )
-        hunterEcho.scale = SIMD3<Float>(0.72, 1.35, 1.0)
-        hunterEcho.position = [0.04, g + 0.28, -0.08]
+        hunterEcho.scale = SIMD3<Float>(0.70, 1.32, 0.98)
+        hunterEcho.position = [0.05, g + LiraARMotion.hunterEchoBaseYAboveGround, -0.09]
         hunterEcho.isEnabled = false
 
-        [shadow, body, chest, head, leftEar, rightEar, haunch, tail, filament, coreHalo, core, indicator, hunterEcho]
+        [shadow, body, chest, head, snout, leftEar, rightEar, haunch, tail, filament, coreHalo, core, indicator, hunterEcho]
             .forEach { root.addChild($0) }
 
         root.scale = SIMD3<Float>(repeating: configuration.companionHeightMeters / 0.72)
         return root
-    }
-
-    private func ear(name: String, x: Float, y: Float, z: Float, color: UIColor) -> ModelEntity {
-        let entity = model(
-            name: name,
-            mesh: .generateSphere(radius: 0.065),
-            color: color,
-            roughness: 0.5
-        )
-        // Blade-like sensor: tall, thin, short depth
-        entity.scale = SIMD3<Float>(0.35, 1.45, 0.55)
-        entity.position = [x, y, z]
-        return entity
     }
 
     private func model(
@@ -250,7 +268,6 @@ struct CompanionEntityFactory {
     }
 }
 
-// Keep static material references used by tests
 extension CompanionEntityFactory {
     enum EchoMaterial {
         static var body: UIColor { SkinPalette(skin: .dawn).body }
