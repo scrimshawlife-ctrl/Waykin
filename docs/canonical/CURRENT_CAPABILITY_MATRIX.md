@@ -16,13 +16,13 @@
 | Real-walk-to-AR commands | **Implemented** | Binding | Device tracking quality still requires evidence |
 | Path progress (semantic) | **Implemented (v1.1+summary)** | Binding | Not navigation-grade |
 | HealthKit read enrichment | **Implemented (v1.1+energy)** | Binding | Optional steps/distance read; Demo never blocked |
-| HealthKit authorization/query hardening | **Planned** | Near term | Fix state semantics, race, provenance, refresh lifecycle, and device evidence |
-| HealthKit workout writing | **Not implemented** | Reference | Requires explicit issue, write authorization, duplicate protection, and failure fallback |
-| Apple Watch app target | **Not implemented** | Reference | No watchOS target or Watch UI may be claimed |
-| Apple Watch workout session | **Not implemented** | Reference | Requires workout lifecycle, live builder, and paired-device evidence |
-| Workout-session mirroring | **Not implemented** | Reference | Preserve iPhone gameplay authority and idempotent reconciliation |
-| WatchConnectivity semantic sync | **Not implemented** | Reference | Non-authoritative state only; session ID + revision required |
-| Live heart-rate/effort enrichment | **Not implemented** | Reference | Raw metrics may not directly select events or raise coercive pressure |
+| HealthKit authorization/query hardening | **Near term** | Supporting | Issue-scoped only; fix state semantics, race, provenance, refresh lifecycle, device evidence |
+| HealthKit workout writing | Deferred | Reference only | Requires explicit issue, write authorization, duplicate protection, and failure fallback |
+| Apple Watch app target | Deferred | Reference only | No watchOS target or Watch UI may be claimed |
+| Apple Watch workout session | Deferred | Reference only | Requires workout lifecycle, live builder, and paired-device evidence |
+| Workout-session mirroring | Deferred | Reference only | Preserve iPhone gameplay authority and idempotent reconciliation |
+| WatchConnectivity semantic sync | Deferred | Reference only | Non-authoritative state only; session ID + revision required |
+| Live heart-rate/effort enrichment | Deferred | Reference only | Raw metrics may not directly select events or raise coercive pressure |
 | Outdoor physical AR QA | Partial | Near term | Device evidence only (non-blocking) |
 | AI Director | Deferred | Reference only | Do not implement |
 | Experience Pack runtime | Deferred | Reference only | Preserve seam only |
