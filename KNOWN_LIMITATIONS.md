@@ -58,7 +58,7 @@ The recorded route is measurement support for the active Companion Walk only. It
 
 - Walking is the MVP focus.
 - Event variety is intentionally bounded.
-- Bundled WAV files are deterministic engineering placeholders, not production sound design.
+- Bundled WAV cues are produced sound design (owner-rendered, 2026-07-19); physical audibility, loudness balance, and outdoor masking remain NOT_COMPUTABLE until device walks.
 - No advanced spatial audio is implemented; the adapter uses only restrained stereo pan.
 - AR remains isolated to the `WaykinARLab` engineering target; its deterministic living-companion presentation is simulator-validated and is not part of the Companion Walk runtime.
 - Physical-device AR presentation, placement readability, and usability remain `NOT_COMPUTABLE` pending direct evidence.
