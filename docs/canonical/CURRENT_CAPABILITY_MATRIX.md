@@ -23,7 +23,9 @@
 | Workout-session mirroring | Deferred | Reference only | Preserve iPhone gameplay authority and idempotent reconciliation |
 | WatchConnectivity semantic sync | Deferred | Reference only | Non-authoritative state only; session ID + revision required |
 | Live heart-rate/effort enrichment | Deferred | Reference only | Raw metrics may not directly select events or raise coercive pressure |
-| Outdoor physical AR QA | Partial | Near term | Device evidence only (non-blocking) |
+| Outdoor physical AR QA | Partial | Binding evidence | PARTIAL receipt 2026-07-20; full PASS requires #41 re-walk on tip SHA (blocking further outdoor PASS claims) |
+| Glasses glance adapter | Implemented (flag default off) | Supporting | Mock/transport; physical glasses NOT_COMPUTABLE |
+| Companion presentation matrix | Implemented | Binding | Shared behavior/distance/AR string authority |
 | Conversation Director | **Release candidate** | Reference only | Define provider-neutral contracts and evidence gate before implementation |
 | Pathfinder Director | **Release candidate** | Reference only | AI proposes route intent only; authoritative routing remains outside the model |
 | Grok provider adapter | Candidate | Reference only | Replaceable adapter; no hard-coded dependency or direct state mutation |

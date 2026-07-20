@@ -31,7 +31,7 @@ The current product is a solo-developer MVP vertical slice. Complexity belongs i
 - Bond is the single persistent progression metric.
 - Pursuit is bounded pressure, not a generalized enemy framework.
 - Seeded behavior must remain reproducible.
-- `WaykinCore` must not depend on ARKit, RealityKit, SwiftUI, MapKit, SwiftData, or audio filenames.
+- `WaykinCore` must not gain **new** dependencies on ARKit, RealityKit, SwiftUI, MapKit, or audio filenames. Existing isolation baseline exceptions (today: SwiftData persistence + CoreLocation sample adapter seams checked by `scripts/check_core_framework_isolation.sh`) are grandfathered only; do not expand them without an explicit issue.
 - Presentation adapters may realize semantic state but may not become alternate gameplay authorities.
 - Physical-device behavior is not validated without direct device evidence.
 - Safety, pause, and stop behavior take precedence over dramatic pressure.

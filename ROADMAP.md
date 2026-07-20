@@ -17,9 +17,11 @@ Waykin advances by proving one bounded layer before promoting the next. This roa
 | Walking session loop | IMPLEMENTED | Continue regression coverage |
 | Lira companion runtime | IMPLEMENTED | Preserve one-companion scope |
 | Bond progression | IMPLEMENTED | Validate memory and persistence behavior |
-| Semantic audio | VALIDATION | Physical-device playback evidence |
-| Real-walk movement integrity | VALIDATION | Repeated outdoor walk receipts |
-| HealthKit read enrichment | IMPLEMENTED | Harden authorization/query semantics and collect device evidence |
+| Semantic audio (produced WAVs) | VALIDATION | Physical outdoor audibility / interruption evidence |
+| Real-walk movement integrity | VALIDATION | Repeated outdoor walk receipts (#41) |
+| Path progress (semantic) | IMPLEMENTED | Not navigation-grade; outdoor path feel open |
+| AR app adapter + real-walk commands | IMPLEMENTED (frozen) | Outdoor tracking re-walk (#41 PARTIAL historically) |
+| HealthKit read enrichment | IMPLEMENTED | Code hardened (#104); physical HK evidence open |
 | Local session memories | IMPLEMENTED | Preserve concise, privacy-bounded format |
 | Deterministic Demo Mode | IMPLEMENTED | Keep parity with the canonical loop |
 
@@ -32,28 +34,25 @@ Waykin advances by proving one bounded layer before promoting the next. This roa
 - Review privacy-filtered receipts against subjective notes.
 - Calibrate only from direct device evidence.
 
-### 2. AR Presentation
+### 2. AR Outdoor Evidence
 
 - Preserve `WaykinCore` as ARKit/RealityKit-free.
-- Complete app-target rendering of existing semantic commands.
-- Validate placement, tracking loss, interruption recovery, battery, and thermal behavior on device.
-- Do not create alternate AR gameplay truth.
+- App-target AR command bridge and MVP freeze are **shipped** (maintenance/defects only).
+- Validate placement continuity, tracking loss, interruption recovery, battery, and thermal behavior **on device** after mitigations.
+- Do not create alternate AR gameplay truth or continuous walker re-anchor without product ratification.
 
 ### 3. Experience Tuning
 
-- Replace engineering tones with production sound design.
-- Tune event weights and cooldowns without adding a narrative engine.
+- Production cue WAVs are **shipped**; outdoor loudness and masking remain open.
+- Event weights already light-tuned for companion-first pacing; revise only from outdoor receipts.
 - Improve Lira presentation while preserving stable semantic behavior.
 - Remove deprecated compatibility surfaces only through migration issues.
 
-### 4. HealthKit V1 Hardening
+### 4. HealthKit Device Evidence
 
-- Correct read-authorization semantics without claiming access HealthKit cannot prove.
-- Fix enrichment ordering so real-session context always receives the result.
-- Distinguish no data, unavailable service, unreadable data, and query failure.
-- Clarify that the existing previous-hour step band measures recent activity volume rather than live cadence.
-- Add bounded refresh lifecycle and direct-device evidence.
-- Decide whether daily walking distance has a bounded product purpose.
+- Code-side read hardening (#104) is **shipped** (request completion vs availability, ordered refresh, soft energy only).
+- Collect physical-device authorization, empty-sample, denial, and lifecycle evidence.
+- Preserve: previous-hour step band = activity volume, not live cadence; Demo never blocked by Health.
 
 ## Post-MVP AI Director Release Candidates
 

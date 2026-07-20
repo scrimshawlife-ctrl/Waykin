@@ -24,6 +24,6 @@ Demo Mode uses the same deterministic walking loop as the core package and does 
 
 ## Real Walk Path
 
-The `Start Real Walk` button starts the physical-device Core Location path for manual validation. It requests When-In-Use location authorization only when the real walk starts.
+The primary **Begin Walk** button starts the physical-device Core Location path for manual validation. It requests When-In-Use location authorization only when the real walk starts. **Demo Walk** is the secondary deterministic path (UITests use `waykin.beginWalk` on Demo).
 
 Physical GPS behavior, outdoor route accuracy, battery impact, and physical audio behavior remain `NOT_COMPUTABLE` until directly observed on device.

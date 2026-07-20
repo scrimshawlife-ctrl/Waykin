@@ -78,8 +78,10 @@ Demo Mode runs the same deterministic loop without physical movement or location
 | Semantic audio cues | ✅ Implemented | Device playback still requires direct evidence |
 | Deterministic Demo Mode | ✅ Implemented | Package-testable |
 | Local session memories | ✅ Implemented | Concise, privacy-bounded facts |
-| Real-walk Core Location wiring | 🟡 Validation | Outdoor behavior requires device receipts |
-| AR presentation contracts | 🟡 In progress | AR device behavior remains evidence-gated |
+| Real-walk Core Location wiring | 🟡 Validation | Outdoor GPS requires device receipts (#41) |
+| AR app adapter (MVP) | ✅ Implemented (frozen) | Presentation-only; outdoor tracking PARTIAL / re-walk |
+| Path progress + session map | ✅ Implemented | Semantic path, not navigation-grade |
+| HealthKit read enrichment | ✅ Implemented | Soft context; physical HK evidence open |
 | Multiplayer, marketplace, LiveOps | 🔒 Deferred | Outside current scope |
 | Generalized AI Director | 🔒 Future reference | Not current implementation authority |
 
@@ -175,28 +177,32 @@ Future-state specifications are reference material until promoted through an acc
 
 ## Validation Status
 
-The following results were recorded on **July 16, 2026** and apply only to the tested repository state:
+Workflow badges report the current `main` branch state. Re-run locally:
 
-| Layer | Command or protocol | Recorded result |
+```bash
+make validate          # package + generation + native app build
+make test              # Swift package tests (count changes over time)
+# optional: make validate-simulator
+```
+
+| Layer | Command or protocol | How to read |
 |---|---|---|
-| Swift package build | `make build` | PASS |
-| Swift package tests | `make test` | PASS — 40 tests |
-| Native app tests | Focused `xcodebuild test` | PASS — 58 tests |
-| Canonical harness | `make validate` | PASS, including native app build |
-| Simulator UI | `make validate-simulator` | PASS — 6 UI tests |
-| Physical GPS walk | Manual protocol | `NOT_COMPUTABLE` in that receipt |
-| Physical audio playback | Manual protocol | `NOT_COMPUTABLE` in that receipt |
+| Swift package | `make build` / `make test` | CI + local; counts are not frozen in this table |
+| Canonical harness | `make validate` | Required before merge claims |
+| Simulator UI | `make validate-simulator` / UITests | Sim evidence only |
+| Outdoor AR (historical) | Device receipt 2026-07-20 | **PARTIAL** — continuity/audio notes; not GPS FAIL |
+| Outdoor COH PASS | Issue #41 re-walk on tip SHA | Open until daylight device evidence |
 
-Workflow badges report the current `main` branch state. Dated validation claims are historical evidence, not permanent guarantees. Do not claim GPS, device audio, battery, thermal, outdoor usability, interruption recovery, or AR behavior without direct device evidence.
+Do not claim GPS, outdoor audio loudness, battery, thermal, outdoor usability, interruption recovery, or outdoor AR quality without direct device evidence on a named build.
 
 ## Roadmap
 
 Waykin progresses by proving one bounded layer before promoting the next:
 
-1. **Physical loop proof** — repeated outdoor movement and audio evidence.
-2. **AR presentation** — app-target rendering without moving gameplay truth out of `WaykinCore`.
-3. **Experience tuning** — sound design, event tuning, and refined Lira presentation.
-4. **Future systems** — considered only through explicit promotion after MVP evidence gates.
+1. **Physical loop proof** — outdoor GPS, audio audibility, and interruption evidence (#41).
+2. **AR outdoor evidence** — re-walk continuity + COH after code mitigations (app-target AR already frozen for engineering).
+3. **Experience tuning** — outdoor balance of produced cues and event weights from device receipts (engineering tones already replaced).
+4. **Future systems** — Watch / AI Directors only through explicit promotion after MVP evidence gates.
 
 See [`ROADMAP.md`](ROADMAP.md) for milestones, status labels, and promotion gates.
 

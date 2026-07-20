@@ -23,7 +23,7 @@ When instructions conflict, follow `docs/governance/DOCUMENT_AUTHORITY.md`.
 
 ## Architecture Rules
 
-- Keep `WaykinCore` independent from ARKit, RealityKit, SwiftUI, MapKit, SwiftData, and audio filenames.
+- Keep `WaykinCore` free of ARKit, RealityKit, SwiftUI, MapKit, and audio filenames. Do not add new platform imports. Grandfathered baseline exceptions (see `scripts/core_isolation_baseline.txt` and `scripts/check_core_framework_isolation.sh`) are the only allowed CoreLocation/SwiftData seams until an issue removes them.
 - Preserve deterministic behavior where it already exists.
 - Preserve movement, Bond, persistence, field-receipt, safety, and semantic-audio ownership unless the issue explicitly authorizes a change.
 - Presentation and device adapters consume semantic state; they do not own gameplay truth.
