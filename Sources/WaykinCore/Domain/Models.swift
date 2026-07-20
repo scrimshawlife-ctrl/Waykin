@@ -462,12 +462,20 @@ public struct DemoScenario {
     public let expectedOutcome: String
 }
 
-// MARK: - Presentation
+// MARK: - Presentation (legacy demo-controller only)
+//
+// `MapPresentationState` / `MapEntity` / this `Coordinate` are retained for
+// `DemoSessionController.presentationState` only. They are **not** the App
+// MapKit surface. Product session maps use App-layer `WalkPathTrace` and
+// `PlannedWalkRoute` (#121 / #155 / #179). Do not extend these types for new
+// map features; prefer App presentation types.
+
 public struct Coordinate: Codable, Equatable {
     public let lat: Double
     public let lon: Double
 }
 
+/// Legacy entity payload for demo `MapPresentationState` only — not MapKit.
 public struct MapEntity: Identifiable, Equatable {
     public let id: UUID
     public let role: String
@@ -475,6 +483,8 @@ public struct MapEntity: Identifiable, Equatable {
     public let relativeDistanceMeters: Double?
 }
 
+/// Legacy demo-controller presentation bag. Not used by App MapKit maps.
+/// See App `WalkPathTrace` / `PlannedWalkRoute` for session chrome.
 public struct MapPresentationState {
     public var userCoordinate: Coordinate?
     public var route: [Coordinate]
