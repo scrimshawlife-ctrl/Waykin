@@ -2,9 +2,10 @@
 
 ```yaml
 document_id: WAYKIN-PATHFINDING-001
-version: 0.2
+version: 0.3
 status: IMPLEMENTED_V1_1
 navigation_grade: false
+session_map_breadcrumb: RATIFIED_PRESENTATION_ONLY
 ```
 
 ## Scope
@@ -16,6 +17,18 @@ Semantic **path progress** along an active Companion Walk:
 - integrity pressure 0…1 for presentation (rival/hunter lean)
 
 **Not** turn-by-turn navigation, route planning, or map product expansion.
+
+### Session map presentation (#121 — ratified)
+
+App-layer only (`WalkPathTrace` / `GPSSignalPresentation` / map camera follow):
+
+| Allowed | Not allowed |
+| ------- | ----------- |
+| In-session breadcrumb of accepted fixes (dedup/capped, ephemeral) | Persisted route history |
+| GPS signal chip from existing `LiveLocationSignalState` | Navigation / guidance chrome |
+| Smooth map camera follow (Reduce Motion honored) | Corridor geometry / pathfinding v2 |
+
+Outdoor map readability remains `NOT_COMPUTABLE` pending Issue #41.
 
 ## Core API
 
