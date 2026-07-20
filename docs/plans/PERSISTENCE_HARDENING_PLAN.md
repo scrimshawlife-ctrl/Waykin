@@ -20,6 +20,19 @@ Before WP-DB1 implementation begins, pin the exact `main` SHA and record:
 - current receipt-storage path and retention bound;
 - clean-worktree status.
 
+### Baseline receipt (WP-DB1 start)
+
+| Field | Value |
+| ----- | ----- |
+| `main` SHA | `8f25dc2` (post PR #183 docs) |
+| Date UTC | 2026-07-20T07:38:37Z |
+| Swift | 6.3.2 |
+| Xcode | 26.5 |
+| Package tests | 100 → 105 after WP-DB1/DB2 |
+| Schema | `WaykinSchemaV1` (1.0.0); store `Application Support/Waykin/Waykin.store` |
+| Receipts | App Support `Waykin/FieldTestReceipts` (max 20, schema 4) |
+| UserDefaults keys (known) | Lira skin, appearance, onboarding completed |
+
 ## Work Packages
 
 ### WP-DB1 — Canonical Persistence Foundation
