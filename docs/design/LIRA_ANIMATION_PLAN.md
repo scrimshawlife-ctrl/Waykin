@@ -9,7 +9,8 @@ style: spectral_living_familiar
 direction: DIRECTION_ACCEPTED
 audio_first: true
 outdoor_qa: NOT_COMPUTABLE
-skeletal_animation_library: NOT_SHIPPED
+skeletal_animation_library: JOINT_HIERARCHY_SHIPPED
+dcc_skinned_skeletal: NOT_SHIPPED
 runtime_animation_resource_clips: SHIPPED
 procedural_mesh_mid_lod: SHIPPED
 ```
@@ -43,8 +44,9 @@ This plan binds animation to existing state machines:
 | **Session mid** | Home + active walk | Still swap + soft pulse/orbit | Stills + light SwiftUI pulse |
 | **AR mid** | RealityKit companion | Root pose + A1 head + A2 breath + A3 multi-seg sway + ears/tail/bob + hunter echo + spawn | **Procedural channels shipped** |
 | **AR mid mesh** | Procedural factory | `LiraMeshGeometry` MeshDescriptor (tapered head, sensor blades, filament segments) | **Shipped** |
-| **AR mid clips** | Runtime `AnimationResource` | `LiraARAnimationLibrary` FromToBy (optional lab / one-shot; renderer still pure-function) | **Shipped** |
-| **AR hero** (later) | Optional USDZ | Skeletal clips / DCC AnimationLibrary | **Not shipped** (DCC U1+) |
+| **AR mid clips** | Runtime `AnimationResource` | `LiraARAnimationLibrary` FromToBy (optional lab / one-shot) | **Shipped** |
+| **AR mid skeletal** | Joint-hierarchy puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` (default on spawn) | **Shipped** |
+| **AR hero** (later) | Optional USDZ | DCC skinned skeletal / bone export | **Not shipped** (DCC) |
 | **Marketing hero** | Promo | Optional, out of runtime loop | Quality-pass stills optional |
 
 ## Session 2D animation (priority 1)
@@ -105,8 +107,9 @@ This plan binds animation to existing state machines:
 | **Hunter echo** | `HunterEcho` node | Only in alert | **Shipped** |
 | **Spawn coalesce** | Whole root | Scale settle on spawn | **Shipped** |
 | **Celebrate** | Root | Bounded duration (reducer) | **Shipped** |
-| **Runtime clips** | Optional bind targets | `LiraARAnimationLibrary` (idle/follow/alert/celebrate/spawn) | **Shipped** (not primary driver) |
-| **Skeletal clips** | USDZ bones | DCC AnimationLibrary | **Not shipped** |
+| **Runtime clips** | Optional bind targets | `LiraARAnimationLibrary` (idle/follow/alert/celebrate/spawn) | **Shipped** (lab / single-node) |
+| **Skeletal puppet** | Joint paths on `LiraRoot` | `LiraSkeletalPlayer` multi-joint groups; default driver when installed | **Shipped** |
+| **DCC skinned** | USDZ bones + weights | Artist AnimationLibrary | **Not shipped** |
 
 ### Timing budget (AR)
 
@@ -122,11 +125,12 @@ This plan binds animation to existing state machines:
 | Phase | Work |
 | ----- | ---- |
 | U0 | Hierarchy A1–A3 validated by `LiraARAssetLoader` (**shipped path**) |
-| U1 | Author idle / walk / alert clips in DCC; export with same bone names |
-| U2 | RealityKit `AnimationResource` playback mapped from `CompanionPresentationState` |
-| U3 | Skin materials remain runtime remap; clips shared |
+| U1a | Joint-hierarchy skeletal AnimationLibrary + player (**shipped** — puppet, not skinned) |
+| U1b | Author idle / walk / alert clips in DCC; export with same joint/bone names |
+| U2 | RealityKit playback mapped from `CompanionPresentationState` (**shipped** for puppet) |
+| U3 | Skin materials remain runtime remap; clips shared (**shipped**) |
 
-Until U1, **do not block** on skeletal; drive procedural locals.
+Procedural pure-function locals remain the fallback when `skeletalPlaybackEnabled` is false or install fails.
 
 ### Exit criteria (AR)
 
@@ -168,8 +172,9 @@ Until U1, **do not block** on skeletal; drive procedural locals.
 | **A3** | Hunter echo (AR + session) | **Done** (indoor) |
 | **A4** | Spawn coalesce (scale factor) | **Done** (indoor; root pose snaps) |
 | **A4b** | MeshDescriptor mid-LOD + multi-seg filament + ears/tail/bob | **Done** (`LiraMeshGeometry` + factory) |
-| **A4c** | Runtime `AnimationResource` clip library | **Done** (`LiraARAnimationLibrary`; renderer remains pure-function) |
-| **A5** | USDZ skeletal AnimationLibrary (optional) | Artist mesh + DCC |
+| **A4c** | Runtime `AnimationResource` clip library | **Done** (`LiraARAnimationLibrary`) |
+| **A5** | Joint-hierarchy skeletal AnimationLibrary + player | **Done** (`LiraSkeletal*` + renderer default) |
+| **A5b** | DCC skinned skeletal (optional) | Artist mesh + bone export |
 | **A6** | Outdoor motion QA notes | Device walk |
 
 ## Test strategy
