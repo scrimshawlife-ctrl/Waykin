@@ -73,16 +73,11 @@ jobs:
         run: |
           set -euo pipefail
           # Gate App unit tests + UI tests so presentation regressions cannot merge
-          # invisible to CI (see issue #204).
-          #
-          # TEMPORARY skip — issue #203:
-          # CanonicalARRuntimeIntegrationTests fails 10/21 on clean main (order-dependent).
-          # Keep the merge gate green while #203 is ruled (re-ratify vs runtime repair).
-          # Remove -skip-testing when #203 is closed.
+          # invisible to CI (see issue #204). Full AR integration suite included
+          # after #203 re-ratification.
           xcodebuild \
             -project Waykin.xcodeproj \
             -scheme Waykin \
             -sdk iphonesimulator \
             -destination '${{ steps.sim.outputs.destination }}' \
-            -skip-testing:WaykinTests/CanonicalARRuntimeIntegrationTests \
             test
