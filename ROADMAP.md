@@ -7,6 +7,7 @@ Waykin advances by proving one bounded layer before promoting the next. This roa
 - **IMPLEMENTED** — present in the repository.
 - **VALIDATION** — implemented but awaiting required simulator or device evidence.
 - **NEAR TERM** — eligible for issue-scoped promotion after current gates pass.
+- **RELEASE CANDIDATE** — a bounded post-MVP product candidate with defined gates, but no implementation authority until promoted.
 - **FUTURE** — preserved as design reference only.
 
 ## Current Vertical Slice
@@ -54,6 +55,44 @@ Waykin advances by proving one bounded layer before promoting the next. This roa
 - Add bounded refresh lifecycle and direct-device evidence.
 - Decide whether daily walking distance has a bounded product purpose.
 
+## Post-MVP AI Director Release Candidates
+
+**Authority: RELEASE_CANDIDATE_REFERENCE_ONLY.** These candidates are product-planning targets, not implementation authorization. The deterministic Waykin runtime remains complete and functional without cloud AI.
+
+### RC-AI-01 — Conversation Director
+
+Use a provider-neutral AI Director, with Grok as one replaceable adapter candidate, to propose bounded Lira dialogue from approved semantic context.
+
+Promotion gates:
+
+1. Provider-neutral request/response contracts and deterministic fallbacks.
+2. Privacy review of every transmitted field.
+3. Validation, length, frequency, interruption, and content-consistency controls.
+4. Provider timeout, outage, malformed-response, and prompt-injection tests.
+5. Physical-device latency, audio coexistence, battery, network, and cost evidence.
+6. Explicit user control to disable cloud AI and clear retained AI-related data.
+
+The model may propose dialogue. It may not change movement, events, pursuit, Bond, memories, rewards, session outcome, or safety controls.
+
+### RC-AI-02 — Pathfinder Director
+
+Use the AI Director to propose experiential route intent and rank mapping-provider-supplied candidate places. An approved routing service remains authoritative for geometry, legality, reachability, closures, and return-path feasibility.
+
+Promotion gates:
+
+1. Conversation-independent provider-neutral AI contracts.
+2. Route-intent schema with confidence and explicit assumptions.
+3. Authoritative map validation of every accepted candidate.
+4. Rejection of fabricated, unreachable, restricted, private, or unsupported locations.
+5. Immediate cancellation, rerouting, pause, and return controls.
+6. Physical-device privacy, latency, battery, network, and degraded-mode evidence.
+
+The model may suggest where an experience should lead. It may not act as turn-by-turn navigation, generate authoritative geometry, alter movement acceptance, or own session outcome.
+
+Conversation and Pathfinder receive independent ship/no-ship decisions. Neither requires promotion of a generalized autonomous world director.
+
+See `docs/design/AI_DIRECTOR_RELEASE_CANDIDATES.md` for the bounded architecture, non-goals, promotion sequence, and evidence requirements.
+
 ## Apple Watch Reference Sequence (FUTURE / REFERENCE ONLY)
 
 **Authority: REFERENCE_ONLY.** This section does **not** authorize implementation, target creation, or entitlement expansion. Status is deferred foresight until a promoted GitHub issue and architecture review exist.
@@ -81,7 +120,7 @@ The following remain non-authorizing until promoted through `docs/governance/SPE
 - Multiplayer and social systems
 - Marketplace or creator SDK
 - Economy and LiveOps
-- Generalized AI Director or generative runtime
+- Generalized autonomous world director beyond the two bounded AI release candidates
 - AR-glasses dependency
 
 ## Decision Rule
@@ -93,4 +132,4 @@ A future capability becomes implementable only when:
 3. Canonical scope and architecture documents are updated when necessary.
 4. Architecture review or an ADR approves material boundary changes.
 
-See `WAYKIN_SPEC.md`, `docs/design/HEALTHKIT.md`, `docs/canonical/CURRENT_CAPABILITY_MATRIX.md`, and `docs/governance/DOCUMENT_AUTHORITY.md`.
+See `WAYKIN_SPEC.md`, `docs/design/AI_DIRECTOR_RELEASE_CANDIDATES.md`, `docs/design/HEALTHKIT.md`, `docs/canonical/CURRENT_CAPABILITY_MATRIX.md`, and `docs/governance/DOCUMENT_AUTHORITY.md`.
