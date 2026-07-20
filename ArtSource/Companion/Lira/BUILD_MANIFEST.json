@@ -1,7 +1,7 @@
 {
   "asset": "Lira_AR_Base",
   "variant": "Dawn",
-  "status": "STATIC_SOURCE_READY_USDZ_NOT_YET_VALIDATED",
+  "status": "MID_LOD_USDZ_PACKAGED_V1_1",
   "coordinate_system": "+Y up, +Z forward",
   "canonical_height_meters": 0.72,
   "ground_offset_meters": 0.02,
@@ -17,26 +17,33 @@
     "GroundShadow",
     "StatusIndicator"
   ],
-  "source_statistics": {
-    "vertices": 5808,
-    "triangles": 11512
-  },
+  "optional_nodes": [
+    "Snout",
+    "Chest",
+    "Haunch",
+    "CoreHalo",
+    "FilamentTip",
+    "HunterEcho"
+  ],
   "source_formats": [
-    "glb",
-    "obj"
+    "usda",
+    "usdz"
   ],
   "runtime_target": "App/Resources/Companion/Lira/Lira_AR_Base.usdz",
-  "runtime_included": false,
+  "runtime_included": true,
+  "source_of_truth": "docs/assets/companion/ar/src/Lira_AR_Base.usda",
+  "build_script": "scripts/build_lira_usdz.sh",
   "validation": {
     "required_node_generation": "PASS",
-    "usdz_conversion": "NOT_RUN",
-    "realitykit_load": "NOT_RUN",
+    "usdz_conversion": "PASS_V1_1",
+    "realitykit_load": "SIMULATOR_TEST_COVERED",
     "physical_device": "NOT_RUN",
-    "outdoor_readability": "NOT_RUN"
+    "outdoor_readability": "NOT_RUN",
+    "animation_library": "NOT_SHIPPED_PROCEDURAL_MOTION_ONLY"
   },
   "provenance": {
-    "OBSERVED": "Dimensions, palette, hierarchy names, and visual anchors derive from the Waykin repository contracts.",
-    "INFERRED": "Irregular softened surfaces and controlled asymmetry implement the requested hand-sculpted character treatment.",
-    "SPECULATIVE": "Animation topology, UV layout, USDZ material fidelity, outdoor readability, and device performance require later validation."
+    "OBSERVED": "v1.1 USDA prim hierarchy with soft asymmetry, Snout facing cue, required A1–A3 nodes, packaged via usdzip into app Resources.",
+    "INFERRED": "Prim-sculpt mid-LOD approximates hand-sculpted Living Familiar until binary GLB artist mesh is promoted.",
+    "SPECULATIVE": "Full skeletal AnimationLibrary clips, UV layout fidelity, and outdoor AR readability require device validation."
   }
 }

@@ -57,6 +57,17 @@ final class LiraARMotionTests: XCTestCase {
         XCTAssertLessThan(offset.z, 0, "echo sits behind")
     }
 
+    func testHeadAttentionYawIsBoundedAndInvestigateLeansLeft() {
+        let investigate = LiraARMotion.headAttentionYawRadians(elapsed: 2, state: .investigate)
+        let idle = LiraARMotion.headAttentionYawRadians(elapsed: 2, state: .idle)
+        XCTAssertLessThan(investigate, 0, "investigate looks slightly off-axis")
+        XCTAssertGreaterThan(investigate, -0.35)
+        XCTAssertLessThan(abs(idle), 0.12)
+        let plant = LiraARMotion.rootPlantEase(progress: 0.5)
+        XCTAssertGreaterThan(plant, 0.4)
+        XCTAssertLessThan(plant, 0.6)
+    }
+
     func testSpawnCoalesceProgressAndScale() {
         XCTAssertEqual(LiraARMotion.spawnCoalesceProgress(elapsed: 0, duration: 0.7), 0, accuracy: 0.001)
         XCTAssertEqual(LiraARMotion.spawnCoalesceProgress(elapsed: 0.7, duration: 0.7), 1, accuracy: 0.001)

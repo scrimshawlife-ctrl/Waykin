@@ -2,13 +2,14 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-ANIM-PLAN-001
-version: 0.1
-status: DRAFT
+version: 0.2
+status: PARTIAL_IMPLEMENTED
 companion: Lira
 style: spectral_living_familiar
 direction: DIRECTION_ACCEPTED
 audio_first: true
 outdoor_qa: NOT_COMPUTABLE
+skeletal_animation_library: NOT_SHIPPED
 ```
 
 ## Purpose
@@ -38,9 +39,9 @@ This plan binds animation to existing state machines:
 | --- | ------- | --------------- | ------ |
 | **Glyph** | Chips / icons | None or 1-frame core pulse | Stills shipped |
 | **Session mid** | Home + active walk | Still swap + soft pulse/orbit | Stills + light SwiftUI pulse |
-| **AR mid** | RealityKit companion | Root pose table + local A2/A3 idle | Root transforms shipped |
-| **AR hero** (later) | Optional USDZ | Skeletal clips or RealityKit AnimationLibrary | Not started |
-| **Marketing hero** | Promo | Optional, out of runtime loop | Optional |
+| **AR mid** | RealityKit companion | Root pose + A1 head + A2 breath + A3 sway + hunter echo + spawn | **Procedural channels shipped** |
+| **AR hero** (later) | Optional USDZ | Skeletal clips / AnimationLibrary | **Not shipped** (DCC U1+) |
+| **Marketing hero** | Promo | Optional, out of runtime loop | Quality-pass stills optional |
 
 ## Session 2D animation (priority 1)
 
@@ -52,11 +53,11 @@ This plan binds animation to existing state machines:
 
 ### Planned clips (still-based, no sheet required)
 
-| Clip ID | Trigger | Motion | Duration | Reduced motion |
-| ------- | ------- | ------ | -------- | -------------- |
-| `S_pose_crossfade` | Pose change | Opacity crossfade between stills | 180–280ms | Hard cut or 80ms |
-| `S_core_pulse` | Idle / bond | A2-scale 1.0↔1.06 on still or orbit | 1.6s loop | Static |
-| `S_filament_drift` | Guide / follow | Subtle offset of filament via Canvas overlay only if still lacks motion | 2.4s loop | Off |
+| Clip ID | Trigger | Motion | Duration | Reduced motion | Status |
+| ------- | ------- | ------ | -------- | -------------- | ------ |
+| `S_pose_crossfade` | Pose change | Opacity crossfade between stills | 180–280ms | Hard cut or 80ms | **Shipped** |
+| `S_core_pulse` | Idle / bond | Presence scale pulse + period helper | 1.6s loop | Static | **Shipped** |
+| `S_filament_drift` | Guide / follow | Offset helper for still/orbit language | 2.4s loop | Off | **Helpers shipped** |
 | `S_manifest` | Opening / manifesting | Opacity 0→1 + scale 0.92→1 | 700ms | ≤120ms fade | **Shipped** |
 | `S_hunter_echo` | Pursuit close | Delayed second silhouette, cool fringe | While pressure | Static hunter still | **Shipped** |
 | `S_bond_orbit` | Bond event | Bond ring continuous spin 1.2s | Loop while bond | Static ring | **Shipped** |
@@ -91,13 +92,14 @@ This plan binds animation to existing state machines:
 
 | Channel | Nodes | Behaviors |
 | ------- | ----- | --------- |
-| **Root plant** | `LiraRoot` | Existing state table; add ease-in-out 200ms (optional) |
-| **A2 breath** | `CoreGlow`, `CoreHalo` | Idle emissive scale loop 1.8s |
-| **A3 sway** | `Filament`, `FilamentTip` | Low-amplitude pitch/yaw noise; cool faster in alert |
-| **Head attention** | `Head` | Yaw toward spatial intent when investigate |
-| **Hunter echo** | Duplicate root or delayed `Body` opacity | Only in alert; ≤0.15 opacity ghost |
-| **Spawn coalesce** | Whole root | Scale/opacity on first spawnCompanion |
-| **Celebrate** | Root | Keep bounded duration; no infinite spin |
+| **Root plant** | `LiraRoot` | Existing state table; `rootPlantEase` helper | **Shipped** |
+| **A2 breath** | `CoreGlow`, `CoreHalo` | Idle scale loop | **Shipped** |
+| **A3 sway** | `Filament` | Pitch sway; faster in alert | **Shipped** |
+| **Head attention** | `Head` | Yaw/pitch by state | **Shipped** |
+| **Hunter echo** | `HunterEcho` node | Only in alert | **Shipped** |
+| **Spawn coalesce** | Whole root | Scale settle on spawn | **Shipped** |
+| **Celebrate** | Root | Bounded duration (reducer) | **Shipped** |
+| **Skeletal clips** | USDZ bones | AnimationLibrary | **Not shipped** |
 
 ### Timing budget (AR)
 

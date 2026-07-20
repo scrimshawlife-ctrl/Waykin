@@ -53,4 +53,17 @@ final class LiraSessionMotionTests: XCTestCase {
         XCTAssertEqual(LiraSessionMotion.bondOrbitLineWidth(pose: .bond), 6)
         XCTAssertEqual(LiraSessionMotion.bondOrbitLineWidth(pose: .guide), 5)
     }
+
+    func testCorePulseAndFilamentDriftHelpers() {
+        let core = LiraSessionMotion.corePulsePeriod(reduceMotion: false)
+        XCTAssertNotNil(core)
+        XCTAssertEqual(core!, 1.6, accuracy: 0.001)
+        XCTAssertNil(LiraSessionMotion.corePulsePeriod(reduceMotion: true))
+        let drift = LiraSessionMotion.filamentDriftPeriod(reduceMotion: false)
+        XCTAssertNotNil(drift)
+        XCTAssertEqual(drift!, 2.4, accuracy: 0.001)
+        XCTAssertNil(LiraSessionMotion.filamentDriftPeriod(reduceMotion: true))
+        XCTAssertEqual(LiraSessionMotion.filamentDriftOffsetX(progress: 0, reduceMotion: true), 0, accuracy: 0.001)
+        XCTAssertNotEqual(LiraSessionMotion.filamentDriftOffsetX(progress: 0.25, reduceMotion: false), 0)
+    }
 }

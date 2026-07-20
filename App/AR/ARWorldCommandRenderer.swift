@@ -321,6 +321,10 @@ final class ARWorldCommandRenderer {
         if let filament = entity.findEntity(named: "Filament") {
             filament.orientation = LiraARMotion.filamentOrientation(elapsed: elapsed, state: state)
         }
+        // A1 head attention yaw (investigate / follow / gentle idle).
+        if let head = entity.findEntity(named: "Head") {
+            head.orientation = LiraARMotion.headOrientation(elapsed: elapsed, state: state)
+        }
 
         // Hunter echo ghost — pressure only, optional node (procedural mid-LOD).
         if let echo = entity.findEntity(named: LiraARMotion.hunterEchoNodeName) {
