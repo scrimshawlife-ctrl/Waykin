@@ -109,6 +109,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
     let realLocationProvider: any RealLocationProviding
     let pathProgressEngine = PathProgressEngine()
     let healthMetricsProvider: any HealthMetricsProviding
+    /// Glasses glance presentation surface (#115). Default-off Null adapter.
+    let glassesGlanceAdapter: any GlassesGlanceAdapter
 
     var companion: Companion
     var activeRecommendation: ExperienceRecommendation?
@@ -197,6 +199,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         movementEngine: MovementEngine = MovementEngine(),
         realLocationProvider: any RealLocationProviding = RealLocationProvider(),
         healthMetricsProvider: (any HealthMetricsProviding)? = nil,
+        glassesGlanceAdapter: (any GlassesGlanceAdapter)? = nil,
         fieldTestReceiptStore: (any FieldTestReceiptStoring)? = FileFieldTestReceiptStore.applicationSupport(),
         fieldTestNow: @escaping @MainActor () -> Date = Date.init
     ) {
@@ -212,6 +215,17 @@ final class WaykinAppModel: CanonicalARCommandSource {
             self.healthMetricsProvider = NullHealthMetricsProvider()
         } else {
             self.healthMetricsProvider = HealthKitMetricsProvider()
+        }
+        // Glasses glance: default-off; prefer mock when UI testing so no Meta claims.
+        if let glassesGlanceAdapter {
+            self.glassesGlanceAdapter = glassesGlanceAdapter
+        } else if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+            self.glassesGlanceAdapter = GlassesGlanceAdapterFactory.make(
+                enabled: GlassesGlanceFeature.isEnabled,
+                preferMockTransport: true
+            )
+        } else {
+            self.glassesGlanceAdapter = GlassesGlanceAdapterFactory.make()
         }
         self.fieldTestReceiptStore = fieldTestReceiptStore
         self.fieldTestNow = fieldTestNow
@@ -317,6 +331,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             }
             demoMessage = "Walking with Lira..."
             path.append(AppRoute.activeSession(scenario))
+            Task { await self.startGlassesGlanceSession() }
         } catch {
             demoMessage = "Failed to start demo"
         }
@@ -331,6 +346,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             activeFieldTestReceipt?.recordSessionTransition(from: .active, to: .paused, at: now)
             activeFieldTestReceipt?.recordAudioLifecycle("pause", at: now)
         }
+        publishGlassesGlance()
     }
 
     func resumeDemo() {
@@ -342,6 +358,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             activeFieldTestReceipt?.recordSessionTransition(from: .paused, to: .active, at: now)
             activeFieldTestReceipt?.recordAudioLifecycle("resume", at: now)
         }
+        publishGlassesGlance()
     }
 
     func advanceDemo() {
@@ -378,6 +395,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 event: demoController.currentEvent
             ))
         }
+        publishGlassesGlance()
     }
 
     func runDemoToEnd() {
@@ -389,6 +407,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
     func endDemo() {
         emitARWorldCommands(arCommandMapper.clear())
+        endGlassesGlanceSession()
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
         let didCompleteScenario = demoController.currentScenario.map {
@@ -547,6 +566,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             demoMessage = "Waiting for a reliable location fix..."
             path.append(AppRoute.activeSession(.calmDayWalk))
             scheduleHealthRefreshForRealWalk(periodic: true)
+            Task { await self.startGlassesGlanceSession() }
         } catch {
             failRealWalk(
                 message: "The real walk could not start. Demo Walk is still available.",
@@ -568,6 +588,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             realWalkState = .paused
             lifecycleSuspendedRealWalk = false
             cancelHealthRefresh()
+            publishGlassesGlance()
         } catch {
             failRealWalk(message: "The real walk could not be paused safely.", outcome: .invalidState, errorCategory: .invalidState)
         }
@@ -586,6 +607,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             realWalkState = .active
             lifecycleSuspendedRealWalk = false
             scheduleHealthRefreshForRealWalk(periodic: true)
+            publishGlassesGlance()
         } catch {
             failRealWalk(message: "The real walk could not resume safely.", outcome: .invalidState, errorCategory: .invalidState)
         }
@@ -594,6 +616,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
     func endRealSession() {
         guard isLiveSessionActive else { return }
         cancelHealthRefresh()
+        endGlassesGlanceSession()
         emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
@@ -753,6 +776,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 self.pathProgressEngine.recordRejected()
             }
             self.pathProgress = self.pathProgressEngine.snapshot
+            self.publishGlassesGlance()
 
             guard let snapshot = result.snapshot,
                   let state = self.realExperienceState,
@@ -981,6 +1005,26 @@ final class WaykinAppModel: CanonicalARCommandSource {
         guard arWorldCommandHandlerOwner == owner else { return }
         arWorldCommandHandlerOwner = nil
         arWorldCommandHandler = nil
+    }
+
+    // MARK: - Glasses glance (#115)
+
+    private func startGlassesGlanceSession() async {
+        guard glassesGlanceAdapter.isEnabled else { return }
+        await glassesGlanceAdapter.startSession()
+        publishGlassesGlance()
+    }
+
+    private func publishGlassesGlance() {
+        guard glassesGlanceAdapter.isEnabled else { return }
+        // Only publish during an active walk surface (demo or live).
+        let sessionLive = demoController.isRunning || isLiveSessionActive
+        guard sessionLive else { return }
+        glassesGlanceAdapter.publish(GlassesGlanceSnapshot.from(activePresencePresentation))
+    }
+
+    private func endGlassesGlanceSession() {
+        glassesGlanceAdapter.endSession()
     }
 
     private func emitARWorldCommands(_ commands: [ARWorldCommand]) {
