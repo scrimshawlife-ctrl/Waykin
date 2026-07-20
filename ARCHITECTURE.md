@@ -44,6 +44,42 @@ SessionMemory + Bond
 
 Persistence supports Bond and concise memories. It is not a generalized backend or content platform.
 
+## Canonical Persistence Architecture
+
+Waykin uses a local-first SwiftData architecture for durable product state. The database supports Lira identity, Bond, concise memories, and approved completed-session summaries. It does not own gameplay authority and does not become a telemetry lake, content platform, or network dependency.
+
+```text
+WaykinCore domain state
+      ↓
+Persistence repository protocols
+      ↓
+SwiftData persistence actor
+      ↓
+Versioned SwiftData schema
+      ↓
+Application Support / Waykin / Waykin.store
+```
+
+Storage is separated by semantics:
+
+- SwiftData: Lira, Bond, concise memories, and structured completed-session state.
+- UserDefaults/AppStorage: onboarding, appearance, cosmetic selection, and small preferences.
+- Application Support JSON: bounded field-test receipts and exportable diagnostic evidence.
+- Caches: reconstructable or downloaded assets.
+- Keychain: future credentials and provider secrets.
+- Memory only by default: raw movement samples, route geometry, transient events, HealthKit reads, AR anchors, and renderer transforms.
+
+The persistent schema must be versioned before public durable data accumulates. All container creation must route through one factory. Production persistence failures must be explicit rather than silently represented as durable success. Canonical Lira lookup and session completion writes must be deterministic and idempotent. SwiftData access should be serialized through a `ModelActor` behind domain repository protocols.
+
+CloudKit, remote databases, user accounts, and backend synchronization remain deferred until a separate product requirement and architecture decision justify them.
+
+See:
+
+- `docs/design/PERSISTENCE_ARCHITECTURE.md`
+- `docs/decisions/ADR-0003-local-first-swiftdata-persistence.md`
+- `docs/plans/PERSISTENCE_HARDENING_PLAN.md`
+- `docs/plans/PERSISTENCE_HARDENING_CHECKLIST.md`
+
 ## Local Field Receipt
 
 ```text
