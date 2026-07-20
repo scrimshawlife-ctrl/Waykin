@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-ANIM-PLAN-001
-version: 0.2
+version: 0.3
 status: PARTIAL_IMPLEMENTED
 companion: Lira
 style: spectral_living_familiar
@@ -10,6 +10,8 @@ direction: DIRECTION_ACCEPTED
 audio_first: true
 outdoor_qa: NOT_COMPUTABLE
 skeletal_animation_library: NOT_SHIPPED
+runtime_animation_resource_clips: SHIPPED
+procedural_mesh_mid_lod: SHIPPED
 ```
 
 ## Purpose
@@ -39,8 +41,10 @@ This plan binds animation to existing state machines:
 | --- | ------- | --------------- | ------ |
 | **Glyph** | Chips / icons | None or 1-frame core pulse | Stills shipped |
 | **Session mid** | Home + active walk | Still swap + soft pulse/orbit | Stills + light SwiftUI pulse |
-| **AR mid** | RealityKit companion | Root pose + A1 head + A2 breath + A3 sway + hunter echo + spawn | **Procedural channels shipped** |
-| **AR hero** (later) | Optional USDZ | Skeletal clips / AnimationLibrary | **Not shipped** (DCC U1+) |
+| **AR mid** | RealityKit companion | Root pose + A1 head + A2 breath + A3 multi-seg sway + ears/tail/bob + hunter echo + spawn | **Procedural channels shipped** |
+| **AR mid mesh** | Procedural factory | `LiraMeshGeometry` MeshDescriptor (tapered head, sensor blades, filament segments) | **Shipped** |
+| **AR mid clips** | Runtime `AnimationResource` | `LiraARAnimationLibrary` FromToBy (optional lab / one-shot; renderer still pure-function) | **Shipped** |
+| **AR hero** (later) | Optional USDZ | Skeletal clips / DCC AnimationLibrary | **Not shipped** (DCC U1+) |
 | **Marketing hero** | Promo | Optional, out of runtime loop | Quality-pass stills optional |
 
 ## Session 2D animation (priority 1)
@@ -90,16 +94,19 @@ This plan binds animation to existing state machines:
 
 ### Planned channels (procedural entity first)
 
-| Channel | Nodes | Behaviors |
-| ------- | ----- | --------- |
+| Channel | Nodes | Behaviors | Status |
+| ------- | ----- | --------- | ------ |
 | **Root plant** | `LiraRoot` | Existing state table; `rootPlantEase` helper | **Shipped** |
 | **A2 breath** | `CoreGlow`, `CoreHalo` | Idle scale loop | **Shipped** |
-| **A3 sway** | `Filament` | Pitch sway; faster in alert | **Shipped** |
+| **A3 sway** | `Filament` + `FilamentBase/Mid/Tip` | Base orientation + phase-shifted segment pitch | **Shipped** |
 | **Head attention** | `Head` | Yaw/pitch by state | **Shipped** |
+| **Ears / tail** | `LeftEar`, `RightEar`, `Tail` | Flutter / sway | **Shipped** |
+| **Body bob** | `Body` | Soft vertical rest+offset (includes ground offset) | **Shipped** |
 | **Hunter echo** | `HunterEcho` node | Only in alert | **Shipped** |
 | **Spawn coalesce** | Whole root | Scale settle on spawn | **Shipped** |
 | **Celebrate** | Root | Bounded duration (reducer) | **Shipped** |
-| **Skeletal clips** | USDZ bones | AnimationLibrary | **Not shipped** |
+| **Runtime clips** | Optional bind targets | `LiraARAnimationLibrary` (idle/follow/alert/celebrate/spawn) | **Shipped** (not primary driver) |
+| **Skeletal clips** | USDZ bones | DCC AnimationLibrary | **Not shipped** |
 
 ### Timing budget (AR)
 
@@ -160,7 +167,9 @@ Until U1, **do not block** on skeletal; drive procedural locals.
 | **A2** | AR A2 breath + A3 sway (procedural) | **Done** (`LiraARMotion` + renderer advance) |
 | **A3** | Hunter echo (AR + session) | **Done** (indoor) |
 | **A4** | Spawn coalesce (scale factor) | **Done** (indoor; root pose snaps) |
-| **A5** | USDZ AnimationLibrary (optional) | Artist mesh |
+| **A4b** | MeshDescriptor mid-LOD + multi-seg filament + ears/tail/bob | **Done** (`LiraMeshGeometry` + factory) |
+| **A4c** | Runtime `AnimationResource` clip library | **Done** (`LiraARAnimationLibrary`; renderer remains pure-function) |
+| **A5** | USDZ skeletal AnimationLibrary (optional) | Artist mesh + DCC |
 | **A6** | Outdoor motion QA notes | Device walk |
 
 ## Test strategy

@@ -318,20 +318,47 @@ final class ARWorldCommandRenderer {
             let breath = LiraARMotion.coreBreathScale(elapsed: elapsed, state: state)
             halo.scale = SIMD3<Float>(repeating: breath * 1.15)
         }
+
+        // A3 filament base + multi-segment wave
         if let filament = entity.findEntity(named: "Filament") {
             filament.orientation = LiraARMotion.filamentOrientation(elapsed: elapsed, state: state)
+            if let mid = filament.findEntity(named: LiraARMotion.filamentMidName) {
+                let pitch = LiraARMotion.filamentSegmentPitch(elapsed: elapsed, segmentIndex: 1, state: state)
+                mid.orientation = simd_quatf(angle: pitch, axis: [1, 0, 0])
+            }
+            if let tip = filament.findEntity(named: LiraARMotion.filamentTipName) {
+                let pitch = LiraARMotion.filamentSegmentPitch(elapsed: elapsed, segmentIndex: 2, state: state)
+                tip.orientation = simd_quatf(angle: pitch, axis: [1, 0.05, 0])
+            }
         }
-        // A1 head attention yaw (investigate / follow / gentle idle).
+
+        // A1 head attention
         if let head = entity.findEntity(named: "Head") {
             head.orientation = LiraARMotion.headOrientation(elapsed: elapsed, state: state)
         }
 
-        // Hunter echo ghost — pressure only, optional node (procedural mid-LOD).
+        // Ears / tail / body bob
+        if let left = entity.findEntity(named: "LeftEar") {
+            left.orientation = LiraARMotion.earOrientation(elapsed: elapsed, isLeft: true, state: state)
+        }
+        if let right = entity.findEntity(named: "RightEar") {
+            right.orientation = LiraARMotion.earOrientation(elapsed: elapsed, isLeft: false, state: state)
+        }
+        if let tail = entity.findEntity(named: "Tail") {
+            tail.orientation = LiraARMotion.tailOrientation(elapsed: elapsed, state: state)
+        }
+        if let body = entity.findEntity(named: "Body") {
+            var p = body.position
+            p.y = LiraARMotion.bodyPositionY(elapsed: elapsed, state: state)
+            body.position = p
+        }
+
+        // Hunter echo ghost
         if let echo = entity.findEntity(named: LiraARMotion.hunterEchoNodeName) {
             let show = LiraARMotion.showsHunterEcho(state: state)
             echo.isEnabled = show
             if show {
-                echo.position = LiraARMotion.hunterEchoOffset(elapsed: elapsed)
+                echo.position = LiraARMotion.hunterEchoPosition(elapsed: elapsed)
             }
         }
     }
