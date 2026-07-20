@@ -26,7 +26,7 @@ Last updated: 2026-07-20
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Issue #115 — Ray-Ban Display glance adapter (Meta DAT) | Expansion-gate proposal; new surface + third-party SDK | Product-owner ratify / defer / reject before any code |
+| — | — | — |
 
 ## Blocked
 
@@ -39,6 +39,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Outcome | Evidence |
 |---|---|---|
+| Issue #115 — glasses glance adapter | Expansion ratified; mock-first adapter shipped (flag default off) | PR pending close with merge |
 | Issue #47 — agent coordination board | Complete | PR #48 merged; Project #1 live; closed 2026-07-20 |
 | Issue #46 — AR command replay + soak | Complete | `ARCommandReplaySoakTests` + docs |
 | Issue #104 — HealthKit V1 hardening | Complete | PR #106 |
