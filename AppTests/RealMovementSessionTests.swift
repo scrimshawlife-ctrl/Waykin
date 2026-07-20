@@ -188,8 +188,12 @@ final class RealMovementSessionTests: XCTestCase {
     func testFakeHealthEnrichmentSurfacesOnRealWalkStart() async throws {
         let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
         let health = FakeHealthMetricsProvider(
-            authorizationState: .authorized,
-            enrichment: ActivityEnrichment(stepCadenceBand: .high, stepCountWindow: 3_000)
+            authorizationState: .requestCompleted,
+            enrichment: ActivityEnrichment(
+                stepCadenceBand: .high,
+                stepCountWindow: 3_000,
+                stepVolumeAvailability: .present
+            )
         )
         let model = try makeModel(provider: provider, health: health)
         model.startRealCompanionWalk()
@@ -201,6 +205,7 @@ final class RealMovementSessionTests: XCTestCase {
         }
 
         XCTAssertEqual(model.activityEnrichment.stepCadenceBand, .high)
+        XCTAssertEqual(model.activityEnrichment.stepVolumeAvailability, .present)
         XCTAssertGreaterThan(health.refreshCount, 0)
         XCTAssertGreaterThan(model.activePresencePresentation.energyHint, 0)
     }
@@ -241,7 +246,7 @@ final class RealMovementSessionTests: XCTestCase {
     }
 }
 
-private final class FakeRealLocationProvider: RealLocationProviding {
+final class FakeRealLocationProvider: RealLocationProviding {
     var onLocationSample: ((LocationSample) -> Void)?
     var onAuthorizationChange: ((CLAuthorizationStatus) -> Void)?
     var onSignalStateChange: ((LiveLocationSignalState) -> Void)?

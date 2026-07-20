@@ -3,7 +3,7 @@
 ```yaml
 document_id: WAYKIN-HEALTHKIT-001
 version: 1.0
-status: IMPLEMENTED_V1_1_WITH_WATCH_REFERENCE
+status: IMPLEMENTED_V1_HARDENED_WITH_WATCH_REFERENCE
 authority: REFERENCE
 required_for_demo: false
 ```
@@ -44,13 +44,13 @@ An Apple Watch may indirectly contribute samples to the HealthKit store, but tha
 
 Before Apple Watch implementation is promoted:
 
-1. Replace the misleading definitive read-authorization state with request-completion and per-metric availability states.
-2. Fix the start-time race where enrichment may complete before `realExperienceContext` exists.
-3. Distinguish query failure, no data, unavailable service, and unreadable data.
-4. Rename or clarify the current one-hour step-volume band; it is not live cadence.
-5. Add bounded periodic refresh during active real walks, with cancellation on pause or end and one outstanding query maximum.
-6. Give daily walking distance a bounded semantic purpose or remove the unnecessary read permission.
-7. Add direct-device evidence for authorization, denial, empty samples, refresh, and lifecycle behavior.
+1. ~~Replace the misleading definitive read-authorization state with request-completion and per-metric availability states.~~ **Done (#104)** — `requestCompleted` + per-metric `ActivityMetricAvailability`.
+2. ~~Fix the start-time race where enrichment may complete before `realExperienceContext` exists.~~ **Done (#104)**.
+3. ~~Distinguish query failure, no data, unavailable service, and unreadable data.~~ **Done (#104)** — internal only; receipts still band + denied flag.
+4. ~~Rename or clarify the current one-hour step-volume band; it is not live cadence.~~ **Done (#104)** — documented as recent-hour step volume.
+5. ~~Add bounded periodic refresh during active real walks, with cancellation on pause or end and one outstanding query maximum.~~ **Done (#104)** — 120s interval, generation cancel, single in-flight query.
+6. ~~Give daily walking distance a bounded semantic purpose or remove the unnecessary read permission.~~ **Done (#104)** — soft energy fallback when step volume unknown.
+7. Add direct-device evidence for authorization, denial, empty samples, refresh, and lifecycle behavior. **Still NOT_COMPUTABLE** without a named-device protocol.
 
 ## Apple Watch Authority Contract
 

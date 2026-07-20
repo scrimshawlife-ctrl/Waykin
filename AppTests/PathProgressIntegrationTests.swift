@@ -40,10 +40,15 @@ final class PathProgressIntegrationTests: XCTestCase {
 
     func testFakeHealthProviderReturnsDeterministicEnrichment() async {
         let provider = FakeHealthMetricsProvider(
-            authorizationState: .authorized,
-            enrichment: ActivityEnrichment(stepCadenceBand: .moderate, stepCountWindow: 900)
+            authorizationState: .notDetermined,
+            enrichment: ActivityEnrichment(
+                stepCadenceBand: .moderate,
+                stepCountWindow: 900,
+                stepVolumeAvailability: .present
+            )
         )
         await provider.requestAuthorizationIfNeeded()
+        XCTAssertEqual(provider.authorizationState, .requestCompleted)
         let enrichment = await provider.refreshEnrichment()
         XCTAssertEqual(enrichment.stepCadenceBand, .moderate)
         XCTAssertEqual(enrichment.stepCountWindow, 900)
@@ -52,8 +57,8 @@ final class PathProgressIntegrationTests: XCTestCase {
         XCTAssertGreaterThan(enrichment.energyHint, 0)
     }
 
-    func testHealthKitCadenceBands() {
-        XCTAssertEqual(HealthKitMetricsProvider.cadenceBand(stepsLastHour: nil), .unknown)
+    func testHealthKitStepVolumeBands() {
+        XCTAssertEqual(HealthKitMetricsProvider.stepVolumeBand(stepsLastHour: nil), .unknown)
         XCTAssertEqual(HealthKitMetricsProvider.cadenceBand(stepsLastHour: 50), .low)
         XCTAssertEqual(HealthKitMetricsProvider.cadenceBand(stepsLastHour: 500), .moderate)
         XCTAssertEqual(HealthKitMetricsProvider.cadenceBand(stepsLastHour: 5_000), .high)
