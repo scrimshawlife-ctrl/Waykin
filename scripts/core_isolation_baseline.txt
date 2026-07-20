@@ -12,3 +12,4 @@ Location/MovementIntegrity.swift|CoreLocation
 Location/RealLocationProvider.swift|CoreLocation
 Persistence/PersistenceStore.swift|SwiftData
 Persistence/WaykinPersistenceActor.swift|SwiftData
+Persistence/PersistenceRecovery.swift|SwiftData

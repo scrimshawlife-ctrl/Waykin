@@ -13,6 +13,8 @@ public enum PersistenceError: Error, Equatable, Sendable {
     case migrationFailed(String)
     case duplicateSessionMemory(UUID)
     case unavailable
+    /// Open failed after recovery attempt; original store should be quarantined, not deleted.
+    case recoveryRequired
 }
 
 // MARK: - Availability (WP-DB1)

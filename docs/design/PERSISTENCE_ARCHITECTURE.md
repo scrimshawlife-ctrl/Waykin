@@ -123,6 +123,8 @@ The persistence suite must cover:
 - receipt-file separation
 - corruption recovery that never silently destroys user data
 
+**WP-DB5:** See [PERSISTENCE_RECOVERY.md](PERSISTENCE_RECOVERY.md) and `PersistenceRecovery` (`diagnose`, `quarantineStore`, `openFreshAfterQuarantine`). Tests in `PersistenceLifecycleTests`.
+
 ## CloudKit Promotion Gate
 
 CloudKit remains deferred until an approved requirement exists, such as multi-device Bond/history continuity, reinstall recovery, independent durable Watch writes, account-backed personalization, or support-visible server state. Promotion requires a separate ADR covering conflict policy, deletion propagation, entitlements, privacy, offline states, migration, and device evidence.

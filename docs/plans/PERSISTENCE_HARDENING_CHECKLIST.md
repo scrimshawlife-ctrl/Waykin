@@ -41,14 +41,14 @@
 
 ## P1 Validation
 
-- [ ] Reopen test passes.
-- [ ] Seeded migration test passes.
-- [ ] Interrupted completion remains idempotent.
-- [ ] Duplicate completion remains idempotent.
-- [ ] Production and test stores remain isolated.
-- [ ] Reset behavior is explicit and tested.
-- [ ] Corruption/migration failure preserves data and exposes recovery state.
-- [ ] Field receipts remain separate and bounded.
+- [x] Reopen test passes. (`PersistenceLifecycleTests` + reopen suite)
+- [x] Seeded migration test passes. (legacy plain schema → versioned factory)
+- [x] Interrupted completion remains idempotent.
+- [x] Duplicate completion remains idempotent.
+- [x] Production and test stores remain isolated.
+- [x] Reset behavior is explicit and tested.
+- [x] Corruption/migration failure preserves data and exposes recovery state. (`PersistenceRecovery`)
+- [x] Field receipts remain separate and bounded.
 
 ## P2 Cloud Gate
 
