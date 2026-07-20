@@ -7,6 +7,8 @@ status: PROCEDURAL_MID_SHIPPED
 usdz: ASYNC_LOAD_WIRED
 mesh_descriptor: SHIPPED
 runtime_animation_clips: SHIPPED
+skeletal_joint_hierarchy: SHIPPED
+dcc_skinned_skeletal: NOT_SHIPPED
 direction: spectral_living_familiar
 ```
 
@@ -18,7 +20,8 @@ direction: spectral_living_familiar
 | AR mid-LOD | Procedural Living Familiar (`CompanionEntityFactory`) | **Shipped** |
 | AR mesh primitives | `LiraMeshGeometry` (tapered head, sensor blades, filament segments) | **Shipped** |
 | AR local motion | `LiraARMotion` multi-seg filament, ears/tail, body bob, hunter echo | **Shipped** |
-| AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** (optional; renderer pure-function primary) |
+| AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** (lab / single-node) |
+| AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` (multi-joint groups) | **Shipped** (default on spawn; pure-function fallback) |
 | AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
 | AR USDZ asset | `App/Resources/Companion/Lira/Lira_AR_Base.usdz` | **Packaged mid-LOD v1.1 (sculpted prims)** |
 | USDA source | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | Rebuild: `scripts/build_lira_usdz.sh` |

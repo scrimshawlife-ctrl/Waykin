@@ -18,6 +18,7 @@ final class ARWorldCommandRenderer {
     private let placementResolver: ARPlacementResolver
     private let assetLoader: LiraARAssetLoader
     private let diagnostics: ARDiagnosticRecorder
+    private let skeletalPlayer = LiraSkeletalPlayer()
 
     private(set) var companionState: CompanionPresentationState = .idle
     private(set) var lastCompanionTransition: CompanionStateTransition?
@@ -28,6 +29,11 @@ final class ARWorldCommandRenderer {
     private(set) var spawnCoalesceElapsed: TimeInterval = 0
     private var isSpawningCoalesce = false
 
+    /// When true (default), install joint-hierarchy skeletal clips on spawn and
+    /// drive ambient joints via RealityKit playback instead of pure-function locals.
+    /// Hunter echo + spawn scale always remain procedural.
+    var skeletalPlaybackEnabled: Bool = true
+
     /// Cosmetic Lira skin applied on next spawn.
     var companionSkin: LiraSkin {
         get { assetLoader.skin }
@@ -36,6 +42,12 @@ final class ARWorldCommandRenderer {
 
     /// Runtime LOD source (procedural vs preloaded USDZ).
     var companionLODDescription: String { assetLoader.activeLODDescription }
+
+    /// Whether skeletal AnimationLibrary is installed and driving ambient joints.
+    var isSkeletalDriving: Bool { skeletalPlayer.isDriving }
+
+    /// Active skeletal clip id when driving, else nil.
+    var activeSkeletalClip: LiraSkeletalAnimationLibrary.ClipID? { skeletalPlayer.activeClip }
 
     init(
         registry: AREntityRegistry,
@@ -63,6 +75,7 @@ final class ARWorldCommandRenderer {
         case .spawnCompanion(let presentation):
             diagnostics.record(.placementAttempted, detail: "companion")
             let entity = assetLoader.makeLira()
+            prepareSkeletalPlayback(on: entity)
             let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
                 ? elapsedInCompanionState
                 : 0
@@ -84,10 +97,15 @@ final class ARWorldCommandRenderer {
             ) else {
                 diagnostics.record(.placementDeferred, detail: "companion")
                 isSpawningCoalesce = false
+                skeletalPlayer.clear()
                 return .deferred("companion")
             }
             diagnostics.record(replacing ? .entityReplaced : .entityCreated, detail: "companion")
             diagnostics.record(.placementSucceeded, detail: "companion")
+            // Ambient skeletal clip for resolved state (spawn scale stays procedural).
+            if skeletalPlayer.isDriving {
+                skeletalPlayer.play(state: transition.resolvedState, on: entity)
+            }
             if replacing {
                 accept(transition, elapsed: elapsed)
             } else {
@@ -169,6 +187,7 @@ final class ARWorldCommandRenderer {
 
     @discardableResult
     func clearSession() -> ARCommandResult {
+        skeletalPlayer.clear()
         placementResolver.clear()
         diagnostics.record(.sessionCleared)
         companionState = .idle
@@ -199,7 +218,11 @@ final class ARWorldCommandRenderer {
               let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
             return
         }
-        applyLocalMotion(to: companion, state: companionState, elapsed: localMotionElapsed)
+        if skeletalPlayer.isDriving {
+            applyHunterEcho(to: companion, state: companionState, elapsed: localMotionElapsed)
+        } else {
+            applyLocalMotion(to: companion, state: companionState, elapsed: localMotionElapsed)
+        }
         applySpawnCoalesce(to: companion, state: companionState)
     }
 
@@ -287,7 +310,19 @@ final class ARWorldCommandRenderer {
                 SimpleMaterial(color: presentation.indicatorColor, isMetallic: false)
             ]
         }
-        applyLocalMotion(to: entity, state: state, elapsed: localMotionElapsed)
+        if skeletalPlayer.isDriving {
+            skeletalPlayer.play(state: state, on: entity)
+            // Hunter echo remains procedural; ambient joints owned by skeletal clips.
+            applyHunterEcho(to: entity, state: state, elapsed: localMotionElapsed)
+        } else {
+            applyLocalMotion(to: entity, state: state, elapsed: localMotionElapsed)
+        }
+    }
+
+    private func prepareSkeletalPlayback(on entity: Entity) {
+        skeletalPlayer.clear()
+        guard skeletalPlaybackEnabled else { return }
+        _ = skeletalPlayer.install(on: entity)
     }
 
     private func applySpawnCoalesce(to entity: Entity, state: CompanionPresentationState) {
@@ -353,7 +388,14 @@ final class ARWorldCommandRenderer {
             body.position = p
         }
 
-        // Hunter echo ghost
+        applyHunterEcho(to: entity, state: state, elapsed: elapsed)
+    }
+
+    private func applyHunterEcho(
+        to entity: Entity,
+        state: CompanionPresentationState,
+        elapsed: TimeInterval
+    ) {
         if let echo = entity.findEntity(named: LiraARMotion.hunterEchoNodeName) {
             let show = LiraARMotion.showsHunterEcho(state: state)
             echo.isEnabled = show
