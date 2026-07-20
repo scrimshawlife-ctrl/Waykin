@@ -67,6 +67,17 @@ Waykin documentation is organized by **authority**, **maturity**, and **evidence
 
 A green build does not validate GPS, device audio, battery, thermal behavior, outdoor usability, interruption recovery, or AR tracking. Those claims require their corresponding protocols.
 
+## Legal
+
+| Document | Purpose |
+|---|---|
+| [`legal/README.md`](legal/README.md) | Legal index (privacy, terms, safety, notices) |
+| [`legal/PRIVACY.md`](legal/PRIVACY.md) | Privacy notice (draft for product review) |
+| [`legal/TERMS.md`](legal/TERMS.md) | Terms of use (draft for product review) |
+| [`legal/SAFETY.md`](legal/SAFETY.md) | Outdoor movement safety brief (in-app) |
+| [`legal/NOTICES.md`](legal/NOTICES.md) | Apache 2.0 and third-party notices |
+| [`../LICENSE`](../LICENSE) | Apache License 2.0 source license |
+
 ## Collaboration
 
 | Document or template | Purpose |
