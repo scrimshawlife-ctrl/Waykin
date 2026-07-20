@@ -78,7 +78,7 @@ Apple Watch may indirectly contribute samples to HealthKit, but that is not impl
 
 - Walking is the MVP focus.
 - Event variety is intentionally bounded.
-- Bundled WAV files are deterministic engineering placeholders, not production sound design.
+- Bundled WAV cues are produced sound design (owner-rendered, 2026-07-19); physical audibility, loudness balance, and outdoor masking remain NOT_COMPUTABLE until device walks.
 - No advanced spatial audio is implemented; the adapter uses only restrained stereo pan.
 - AR remains isolated to the `WaykinARLab` engineering target.
 - Physical-device AR presentation remains `NOT_COMPUTABLE` pending evidence.
