@@ -29,5 +29,7 @@ DerivedData/
 .idea/
 .vscode/
 
-# Grok local install copies (canonical pack is skills/; re-run skills/install.sh)
-.grok/
+# Grok local state — keep committed skills so every collaborator gets them on clone
+.grok/*
+!.grok/skills/
+!.grok/skills/**

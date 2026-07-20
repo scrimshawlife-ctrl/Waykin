@@ -24,7 +24,8 @@ installer: skills/install.sh
 | waykin-release | `/waykin-release` | `~/.grok/skills/waykin-release` | `.grok/skills/waykin-release` | OK |
 
 Canonical source tree: `skills/` (committed).  
-Install copies: `~/.grok/skills` + `.grok/skills` (local; `.grok/` gitignored).
+**Team discovery path:** `.grok/skills/waykin-*` is **tracked in git** so every collaborator (including `prabu-openclaw`) gets skills after `git pull` when CWD is Waykin.  
+Optional personal copy: `~/.grok/skills` via `./skills/install.sh --user-only`.
 
 ## Dependencies detected
 

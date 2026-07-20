@@ -38,6 +38,12 @@ Use only:
 
 Never claim physical GPS, device audio, AR tracking, interruption recovery, battery, thermal, or outdoor usability behavior without direct device evidence.
 
+## Grok Build Skills (shared)
+
+Repo-tracked skills live in `.grok/skills/waykin-*` and are available to **every collaborator** after `git pull` (no personal install required when CWD is Waykin). Source pack: `skills/`. Optional: `./skills/install.sh --user-only`.
+
+Prefer slash skills for repeatable work: `/waykin-validate`, `/waykin-build`, `/waykin-pr-review`, `/waykin-ar-debug`, `/waykin-device-testing`, etc. Skills must not invent outdoor PASS or bypass issue scope.
+
 ## Required Validation
 
 ```bash

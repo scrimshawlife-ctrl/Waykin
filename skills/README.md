@@ -2,17 +2,30 @@
 
 Installable engineering skills bound to **this repository**, not generic Swift advice.
 
-## Install
+## Team use (Prabu and every collaborator)
+
+**Tracked install path:** `.grok/skills/waykin-*` is **committed** so Grok discovers skills after a normal `git clone` / `git pull` when CWD is the Waykin repo. No private machine-only install is required for shared work.
+
+```bash
+git pull --ff-only origin main
+# Open Grok Build with workspace = Waykin root
+# Slash: /waykin-validate , /waykin-build , ...
+./skills/install.sh --check   # optional verify
+```
+
+## Install (optional personal copy)
 
 ```bash
 cd /path/to/Waykin
-./skills/install.sh
+./skills/install.sh              # user + refresh repo .grok/skills
+./skills/install.sh --user-only  # ~/.grok/skills only (any CWD later)
+./skills/install.sh --repo-only  # refresh committed discovery path
 ```
 
-Installs into:
+Paths:
 
-- `~/.grok/skills/waykin-*` (user, all sessions)
-- `.grok/skills/waykin-*` (repo-local, highest priority when CWD is Waykin)
+- `~/.grok/skills/waykin-*` — personal (all projects)
+- `.grok/skills/waykin-*` — **team**, tracked in git
 
 ## Skills
 

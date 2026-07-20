@@ -29,6 +29,34 @@ make validate
 
 Run `make validate-simulator` when the task changes simulator-visible behavior.
 
+### Grok Build skill pack (all collaborators)
+
+Waykin ships repo-specific Grok skills under `.grok/skills/waykin-*` (tracked in git).  
+**After clone or pull, Grok discovers them automatically** when the working directory is the Waykin repo — no per-user install required for team members (including `prabu-openclaw`).
+
+Optional personal copy (any machine, any CWD):
+
+```bash
+./skills/install.sh --user-only   # → ~/.grok/skills/waykin-*
+./skills/install.sh --check       # verify discovery files
+```
+
+| Slash | Use for |
+|-------|---------|
+| `/waykin-build` | Package + App build / diagnose |
+| `/waykin-validate` | Full `make validate` report |
+| `/waykin-ui-review` | SwiftUI vs UIUX + practice docs |
+| `/waykin-device-testing` | Device / outdoor #41 readiness |
+| `/waykin-ar-debug` | Product AR stack |
+| `/waykin-audio` | Semantic audio + App player |
+| `/waykin-healthkit` | Optional HK enrichment |
+| `/waykin-performance` | Hot paths / jank prioritization |
+| `/waykin-pr-review` | PR verdict PASS / REQUEST CHANGES |
+| `/waykin-release` | RC / TestFlight checklist |
+
+Canonical source + reinstall: [`skills/README.md`](../../skills/README.md).  
+Skills invoke existing `scripts/*` and Makefile targets — they do not replace them.
+
 ## Work Selection
 
 Do not begin from a chat message or broad design document. Start from an assigned GitHub issue containing:
