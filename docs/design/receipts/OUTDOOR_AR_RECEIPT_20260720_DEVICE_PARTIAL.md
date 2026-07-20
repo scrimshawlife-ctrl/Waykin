@@ -53,12 +53,14 @@ gps_failure: NOT_CLAIMED
 2. Companion **disappeared** after roughly **10–15 meters** of walk.
 3. **Closing and reopening** the AR portion restored the companion in front of the walker after a short delay.
 4. **Menu navigation felt awkward.**
+5. **Session elapsed clock advanced about two seconds at a time** (not smooth 1s ticks).
 
 ## INFERRED
 
 - AR session re-entry can **recover** presentation after loss.
 - **Continuous companion presence** and any expectation of **follow-the-walker** behavior are **not established** on device.
 - This is a **recoverable AR continuity** problem plus a **separate usability** finding.
+- Elapsed HUD was coupled to sparse GPS sample intervals (`distanceFilter = 2` m + sample-driven `elapsedTime`), not wall-clock presentation — **presentation clock defect**, not GPS failure.
 
 ## NOT_COMPUTABLE
 
@@ -80,8 +82,9 @@ Confirm product intent before coding “AR follow”: either document world-plan
 | Issue | Scope |
 | ----- | ----- |
 | #41 | Parent validation — remains open, **PARTIAL** |
-| (new) AR continuity defect | Disappearance after ~10–15 m; re-entry recovers |
-| (new) Session menu UX audit | Awkward navigation before further outdoor AR testing |
+| #125 | AR continuity (disappear ~10–15 m; re-entry recovers) |
+| #126 | Session menu UX audit |
+| #128 | Session elapsed clock ~2s steps on real walk |
 
 ## Overall
 
@@ -96,10 +99,11 @@ gps_failure_claimed: false
 blockers: |
   AR continuity defect; menu UX awkward — pause further outdoor AR claims until defects triaged.
 follow_ups: |
-  1. Bounded AR continuity investigation (diagnostics + anchor lifecycle)
-  2. Focused menu flow audit
-  3. Product decision: world-plant vs follow semantics
-  4. Resume outdoor packet after fixes or explicit design acceptance of world-plant
+  1. Bounded AR continuity investigation (diagnostics + anchor lifecycle) — #125
+  2. Focused menu flow audit — #126
+  3. Session presentation elapsed wall-clock — #128
+  4. Product decision: world-plant vs follow semantics
+  5. Resume outdoor packet after fixes or explicit design acceptance of world-plant
 signed_by: operator-report + agent record
 signed_at: 2026-07-20
 ```
