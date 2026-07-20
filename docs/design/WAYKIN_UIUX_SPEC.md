@@ -226,7 +226,7 @@ until receipts say otherwise.
 4. ~~Chip component unification~~ — **done** (#149)
 5. ~~Icon authority + screenshot scaffolding~~ — **done** (#150)
 6. Outdoor re-walk Pass COH (#41) — **device / daylight**
-7. Optional: expand sim screenshot set (day/night × session/AR) under #150 script
+7. ~~Sim screenshot matrix day/night × home/session/summary~~ — **done tooling + set** (#194; AR frame still manual/sim-only)
 
 ## Ratification asks
 

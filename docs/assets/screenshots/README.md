@@ -13,21 +13,22 @@
 ## How to capture (simulator)
 
 ```bash
-# 1. Build + install (or run from Xcode on the named sim)
-xcodebuild -scheme Waykin \
-  -destination 'platform=iOS Simulator,name=iPhone 17' \
-  -derivedDataPath /tmp/waykin-dd build
-
-# 2. Capture
+# Home day + night (installs Debug build if needed)
 ./scripts/capture_sim_screenshots.sh "iPhone 17"
+
+# Full matrix: Home / Active Session / Summary × day + night (UI test driven)
+WAYKIN_CAPTURE_FULL=1 ./scripts/capture_sim_screenshots.sh "iPhone 17"
 ```
 
-Manually add day/night variants and session/AR frames when exercising Demo Walk; label each RECEIPT with `evidence_class: SIMULATOR`.
+Each run writes `docs/assets/screenshots/sim_<UTC>_<sha>/` with PNGs + `RECEIPT.md` (`evidence_class: SIMULATOR`).
+
+AR full-screen chrome is still **manual** in-sim if needed; do not treat as outdoor AR evidence.
 
 ## Outdoor
 
 Physical-device screenshots belong under `docs/design/receipts/` with Issue #41 outdoor protocol — not here as outdoor proof.
 
-## Status
+## Related
 
-Home auto-capture may exist after running the script. Empty root (aside from this README) means no automated set has been committed yet.
+- Residual candidate audit: [`docs/design/UI_CANDIDATE_RESIDUAL_AUDIT.md`](../../design/UI_CANDIDATE_RESIDUAL_AUDIT.md)
+- Issue #194

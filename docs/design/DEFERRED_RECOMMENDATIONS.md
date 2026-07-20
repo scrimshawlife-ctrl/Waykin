@@ -30,7 +30,7 @@ Parked from post–`ARTIST_BLEND_HERO_DCC_MID_LOD` recommendations. Resume after
 
 | Priority | Recommendation | Why |
 | -------- | -------------- | --- |
-| 2 | Sim screenshot matrix (day/night × home/session/AR) | Cheap UIUX evidence |
+| 2 | ~~Sim screenshot matrix (day/night × home/session/summary)~~ | **Done** issue #194 tooling + SIMULATOR set; AR frame still optional/manual |
 | 3 | Device **indoor** AR smoke of DCC hybrid chrome (`dcc`/`hybrid`/`puppet`) | Confirms USD anim names map |
 | 4 | Freehand weight paint pass | Only if outdoor shows joint tearing |
 | 5 | Slim DCC package (~5MB → anim-only sidecars) | Size optimization |

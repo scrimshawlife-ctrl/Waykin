@@ -433,6 +433,11 @@ final class WaykinAppModel: CanonicalARCommandSource {
         } else if !shouldReset {
             self.appearancePreference = .system
         }
+        // Capture / UI test force: -WAYKIN_APPEARANCE day|night|system
+        if let idx = args.firstIndex(of: "-WAYKIN_APPEARANCE"), idx + 1 < args.count,
+           let forced = AppearancePreference(rawValue: args[idx + 1].lowercased()) {
+            self.appearancePreference = forced
+        }
         persistenceMemoryCount = (try? persistenceStore.memoryCount()) ?? 0
         persistenceStorePathHash = String((try? PersistenceConfiguration.persistentStoreURL().path.hashValue) ?? 0)
         if let appAudioPlayer = self.audioPlayer as? AppAudioCuePlayer {

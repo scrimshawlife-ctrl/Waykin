@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-20 (persistence WP-DB1/DB2; UI partial; outdoor parked)
+Last updated: 2026-07-20 (post splash #184, UI practice #193, persistence DB1–DB5; track: sim matrix + residual #194)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,36 +10,37 @@ Last updated: 2026-07-20 (persistence WP-DB1/DB2; UI partial; outdoor parked)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **Persistence hardening WP-DB1–DB5** | — | **DB1–DB5 shipping** (migration + recovery) | [PERSISTENCE_HARDENING_PLAN.md](../plans/PERSISTENCE_HARDENING_PLAN.md) · [PERSISTENCE_RECOVERY.md](../design/PERSISTENCE_RECOVERY.md) |
-| **UI CANDIDATE_v0.2 Phase 4** | — | **Partial** — waves 1–3 + onboarding/legal on main; checklist polish remains | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
 | Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
+| Indoor device AR smoke (hybrid/DCC) | — | **Next when phone available** | Deferred recs #3 |
+
+## Recently completed (main)
+
+| Work | Evidence |
+|---|---|
+| Persistence WP-DB1–DB5 | PRs #186–#192 · recovery quarantine |
+| Time-aware splash + Waykin display font | PR #184 |
+| UI engineering practice under existing authority | PR #193 · closed #169 as superseded |
+| Map hygiene + session clear | PR #180 |
+| Debug receipts / operator strip / AR presentation summary | PR #182 |
+| Sim screenshot matrix + candidate residual audit | Issue #194 · SIMULATOR set under `docs/assets/screenshots/` |
 
 ## Intake
 
 | Work | Reason |
 |---|---|
 | WP-DB6 CloudKit evaluation ADR | Only if product requires multi-device restore |
-| UI checklist polish + sim screenshot matrix | Non-outdoor product evidence |
-| HO residual icons / production-board density | Design package alignment |
+| Optional DM Sans bundle / extra SVG icons | Only with dedicated issue; not blocking |
+| HO residual production-board density | Align only where glanceability improves |
 
 ## Blocked
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| #41 outdoor PASS | Device + daylight; **explicitly parked** for UI pivot | Outdoor packet + COH when human resumes |
-
-## Completed (recent AR ladder — context)
-
-| Item | Evidence |
-|---|---|
-| Hero weights + DCC clips mid-LOD | PR #171 · tip `f0e6762` |
-| Non-outdoor AR polish | PR #168 |
-| Artist blend → armature → skin | PRs #160–#166 |
-| Coupling / maps / menus / docs sync | PRs #138–#158 |
+| #41 outdoor PASS | Device + daylight | Outdoor packet + COH when human resumes |
 
 ## Parked recommendations
 
-See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — outdoor #41 first when resumed; sim screenshots; DCC package slim-down; RC/FUTURE; Orc cleanup.
+See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — outdoor #41 first when resumed; DCC package slim-down; RC/FUTURE; Orc cleanup.
 
 ## Explicitly deferred (FUTURE / RC)
 
@@ -50,3 +51,13 @@ See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — out
 ## Preservation
 
 `wip/ar3-local-preservation` is not merge authority.
+
+## UI authority (quick)
+
+| Need | Doc |
+|---|---|
+| Product surfaces | [WAYKIN_UIUX_SPEC.md](../design/WAYKIN_UIUX_SPEC.md) |
+| Tokens / candidate package | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
+| Practice + PR receipt | [UI_ENGINEERING_PRACTICE.md](../design/UI_ENGINEERING_PRACTICE.md) · [UI_CHANGE_VALIDATION_RECEIPT.md](../design/UI_CHANGE_VALIDATION_RECEIPT.md) |
+| Residual audit | [UI_CANDIDATE_RESIDUAL_AUDIT.md](../design/UI_CANDIDATE_RESIDUAL_AUDIT.md) |
+| Conflicts | [DOCUMENT_AUTHORITY.md](../governance/DOCUMENT_AUTHORITY.md) |
