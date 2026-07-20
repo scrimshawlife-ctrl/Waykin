@@ -28,7 +28,7 @@ spectral_fx: A2_CoreGlow_A3_Filament_GroundShadow
 | AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
 | AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** (entity-bind) |
 | AR USDZ load | `LiraARAssetLoader` + hierarchy **promote** for incomplete meshes | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **MESHY_TEXTURED_STATIC_V1** (~40 MB textured) |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **MESHY_TEXTURED_STATIC_V1** (~9.6 MB compressed; ArtSource full-res) |
 | Blender armature | `LiraArmature` 25 bones | **Shipped** (`build_lira_armature.py`) |
 | Heat-map skin | Auto-weights Body/Head/ears/legs; FX rigid | **Shipped** (`skin_lira_armature.py`) |
 | Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |
@@ -121,9 +121,10 @@ Root
 
 ```bash
 ./scripts/check_lira_usdz_integrity.sh
+./scripts/compress_lira_meshy_usdz.sh   # after re-import from ArtSource
 ```
 
-Verifies root / nested / docs USDZ byte-match and evidence markers.
+Verifies root / nested / docs USDZ byte-match, evidence markers, and runtime size budget (≤20 MB hard / ~12 MB soft).
 
 ## Dual motion stack
 

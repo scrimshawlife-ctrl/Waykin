@@ -52,6 +52,11 @@ final class LiraARAssetLoader {
             } else {
                 Self.normalizeVisualHeight(root, targetHeightMeters: 0.72)
             }
+            // Place A2/A3/shadow from Body bounds after scale (Meshy static mesh).
+            if Self.isAuthoredBodyStaticMesh(root) {
+                Self.plantBodyOnGround(root)
+                Self.layoutSpectralFXAnchors(on: root)
+            }
             template = root
             source = .usdz(url.lastPathComponent)
             // After FX install, model count is high — use promote flag + Body-only mesh heuristic.
@@ -449,6 +454,50 @@ final class LiraARAssetLoader {
         let factor = targetHeightMeters / height
         guard factor.isFinite, factor > 0.01, abs(factor - 1) > 0.05 else { return }
         root.scale *= factor
+    }
+
+    /// Shift Body so the lowest bound sits on y≈0 (Meshy meshes are often origin-centered).
+    static func plantBodyOnGround(_ root: Entity) {
+        guard let body = root.findEntity(named: "Body") else { return }
+        let bounds = body.visualBounds(relativeTo: root)
+        let minY = bounds.center.y - bounds.extents.y * 0.5
+        guard minY.isFinite else { return }
+        if abs(minY) > 0.001 {
+            body.position.y -= minY
+        }
+    }
+
+    /// Position spectral FX anchors from Body visual bounds so A2/A3 sit on the mesh.
+    /// Call after height normalize + `plantBodyOnGround`. No-op without Body geometry.
+    static func layoutSpectralFXAnchors(on root: Entity) {
+        guard let body = root.findEntity(named: "Body") else { return }
+        let bounds = body.visualBounds(relativeTo: root)
+        let e = bounds.extents
+        let c = bounds.center
+        guard e.y.isFinite, e.y > 0.05 else { return }
+
+        let minY = c.y - e.y * 0.5
+        let maxY = c.y + e.y * 0.5
+        // Chest ember slightly forward of torso center (A2).
+        let chestY = minY + e.y * 0.52
+        let chestZ = c.z + e.z * 0.22
+        let headY = minY + e.y * 0.88
+        let backZ = c.z - e.z * 0.35
+
+        root.findEntity(named: "CoreGlow")?.position = SIMD3(c.x, chestY, chestZ)
+        root.findEntity(named: "CoreHalo")?.position = SIMD3(c.x, chestY + 0.01, chestZ)
+        root.findEntity(named: "Head")?.position = SIMD3(c.x, headY, c.z + e.z * 0.15)
+        root.findEntity(named: "LeftEar")?.position = SIMD3(c.x - e.x * 0.22, headY + 0.04, c.z + e.z * 0.05)
+        root.findEntity(named: "RightEar")?.position = SIMD3(c.x + e.x * 0.22, headY + 0.04, c.z + e.z * 0.05)
+        root.findEntity(named: "Tail")?.position = SIMD3(c.x, minY + e.y * 0.35, backZ)
+        root.findEntity(named: "Filament")?.position = SIMD3(c.x, minY + e.y * 0.48, backZ)
+        root.findEntity(named: "GroundShadow")?.position = SIMD3(c.x, 0.008, c.z)
+        root.findEntity(named: "StatusIndicator")?.position = SIMD3(c.x, maxY + 0.04, c.z)
+        root.findEntity(named: LiraARMotion.hunterEchoNodeName)?.position = SIMD3(
+            c.x + e.x * 0.15,
+            chestY,
+            c.z - e.z * 0.15
+        )
     }
 
     /// Heuristic: single-mesh textured exports (Meshy) vs multi-part procedural/artist.
