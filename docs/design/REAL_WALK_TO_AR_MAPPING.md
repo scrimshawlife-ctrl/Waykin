@@ -2,9 +2,9 @@
 
 ```yaml
 document_id: WAYKIN-REAL-WALK-AR-MAP-001
-version: 1.0
+version: 1.1
 status: OBSERVED_IN_CODE
-device_ar_tracking: NOT_COMPUTABLE
+device_ar_tracking: PARTIAL_DEVICE_2026_07_20
 ```
 
 ## Owner
@@ -44,10 +44,14 @@ Mapper: `CanonicalARWorldCommandMapper`.
 
 | Gap | Severity | Notes |
 | --- | -------- | ----- |
-| Physical AR tracking quality | NOT_COMPUTABLE | Issue #41 |
-| Outdoor glare readability | NOT_COMPUTABLE | Outdoor QA deferred |
-| USDZ is mid-LOD spheres | Acceptable | Procedural fallback if load fails |
-| No skeletal AnimationLibrary | Optional later | C6 art track |
+| Physical AR continuity (~10–15 m loss) | **PARTIAL device** | OBSERVED disappear; re-open recovers — #125 |
+| World-plant vs “follow walker” expectation | Design decision | Placement is ground-plane anchor; presentation `.follow` is local pose — not continuous re-anchor |
+| Outdoor glare readability | NOT_COMPUTABLE | Outdoor UI checklist incomplete |
+| Menu / AR entry UX awkward | PARTIAL device | #126 flow audit |
+| GPS failure | **Not claimed** | Device report is AR presentation, not GPS integrity |
+| USDZ mid-LOD | Acceptable | Procedural fallback if load fails |
+
+Device receipt: `docs/design/receipts/OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md` · parent #41.
 
 ## Tests that prove the bridge
 
