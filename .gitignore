@@ -28,3 +28,6 @@ DerivedData/
 # IDE
 .idea/
 .vscode/
+
+# Grok local install copies (canonical pack is skills/; re-run skills/install.sh)
+.grok/
