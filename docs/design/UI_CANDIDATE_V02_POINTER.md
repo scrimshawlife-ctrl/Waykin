@@ -30,11 +30,14 @@ Sibling package **Waykin-Design** (not auto-merged into app):
 
 In-repo UIUX (older / complementary):
 
-- [WAYKIN_UIUX_SPEC.md](WAYKIN_UIUX_SPEC.md)
+- [WAYKIN_UIUX_SPEC.md](WAYKIN_UIUX_SPEC.md) — product surface law (Demo/Real, AR, B7)
 - [WAYKIN_UIUX_SPEC_MOCKUPS.html](WAYKIN_UIUX_SPEC_MOCKUPS.html)
 - [docs/assets/BRAND_GUIDE.md](../assets/BRAND_GUIDE.md)
+- [UI_ENGINEERING_PRACTICE.md](UI_ENGINEERING_PRACTICE.md) — how App presentation is structured/reviewed (SUPPORTING)
+- [UI_CHANGE_VALIDATION_RECEIPT.md](UI_CHANGE_VALIDATION_RECEIPT.md) — material UI PR receipt
 
 Prefer **CANDIDATE_v0.2** when the two diverge on tokens, chrome density, or screen graph.
+Product surface contracts (Begin Walk primary, AR full-screen cover, companion crosswalk) still follow `WAYKIN_UIUX_SPEC` unless an approved issue changes them.
 
 ## App already partial
 
