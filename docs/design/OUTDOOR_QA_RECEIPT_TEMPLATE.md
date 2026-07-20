@@ -75,6 +75,23 @@ Complete `SIMULATOR_PREFLIGHT.md` first (optional but recommended).
 | R2 | PASS / FAIL / NA | |
 | R3 | PASS / FAIL / NA | |
 
+### Pass COH — Multi-surface coherence (#143)
+
+Score the **same walk moment** across surfaces. PASS only with OBSERVED on named SHA.
+
+| Moment (note wall-clock or event) | Heard cue? (basename/kind) | UI phrase | Still pose / graphicsPath | AR state + Continuity note | Agree? |
+| --------------------------------- | -------------------------- | --------- | ------------------------- | -------------------------- | ------ |
+| quietInterval / rest | | | | | Y / N / partial |
+| lead / companionMovesAhead | | | | | Y / N / partial |
+| bondMoment | | | | | Y / N / partial |
+| path strained (GPS integrity) | | | | | Y / N / partial |
+| path offPath | | | | | Y / N / partial |
+| pursuit begins / intensifies | | | | | Y / N / partial |
+| AR walk 10–15 m continuity | n/a | n/a | n/a | Continuity: | Y / N / partial |
+
+Evidence class for COH overall: OBSERVED / PARTIAL / NOT_COMPUTABLE  
+Notes (disagreements):
+
 ### Pass D — Hunt / pressure tone
 
 | ID | Result | Notes |

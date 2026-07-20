@@ -54,6 +54,17 @@ Hunter language: distortion, delayed echo, asymmetry — not gore.
 - **REAL** — Captured simulator or physical-device output. None is implied by a concept asset.
 - **PRODUCTION CANDIDATE** — Tokens and marks imported into App presentation; not proof of outdoor QA.
 
+## Icon and raster authority (#150)
+
+| Layer | Authority | Notes |
+| ----- | --------- | ----- |
+| **SVG masters** | `docs/assets/brand/production/*.svg` | Design source for app icon + bond filament mark |
+| **Reference rasters** | `docs/assets/brand/production/appicon-rasters/` | Review/export reference; not compiled by Xcode |
+| **Build truth** | `App/Resources/Assets.xcassets` (AppIcon + imagesets) | What the binary ships |
+| **In-app icons** | `App/Theme/WKIcons.swift` | SF Symbol / vector presentation tokens |
+
+Do not edit only one side. Pipeline: SVG → reference rasters (optional) → xcassets import → App. Concept PNGs under `docs/assets/brand/` without a production path are **not** build authority.
+
 ## Current Repository Assets
 
 | Path | Class | Purpose | Product claims |

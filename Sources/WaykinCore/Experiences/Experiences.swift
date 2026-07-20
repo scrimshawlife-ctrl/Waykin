@@ -138,18 +138,39 @@ public struct CompanionWalkExperience: WaykinExperience {
             walkState.pursuitState = Self.nextPursuitState(current: walkState.pursuitState, event: event)
         }
 
+        // Shared matrix: behavior + distance for commands and runtime (#139, #142).
+        let resolved = CompanionPresentationMatrix.resolve(event: event, moving: movement.isMoving)
+        let behavior = resolved.behavior
+
+        // Event cues first; when silent, couple produced assets to companion behavior changes (#130).
         var audioLayer = AudioExperienceLayer()
-        let cue = audioLayer.cue(for: event, now: movement.timestamp)
+        var cue = audioLayer.cue(for: event, now: movement.timestamp)
+        if cue == nil {
+            if let transitionCue = AudioExperienceLayer.cueForBehaviorTransition(
+                from: walkState.lastPresentedBehavior,
+                to: behavior,
+                sessionElapsed: walkState.movementSeconds,
+                lastBehaviorAudioElapsed: walkState.lastBehaviorAudioElapsed,
+                intensity: max(worldState.energy, 0.4)
+            ) {
+                cue = transitionCue
+                walkState.lastBehaviorAudioElapsed = walkState.movementSeconds
+            }
+        }
+        walkState.lastPresentedBehavior = behavior.rawValue
         walkState.activeAudioCues = cue.map { [$0] } ?? []
         walkState.worldState = worldState
 
-        let behavior = Self.behavior(for: event, moving: movement.isMoving)
         let tone = Self.message(for: event, timeContext: timeContext, pursuitState: walkState.pursuitState)
         let newState = ExperienceSessionState(runtimeState: .companionWalk(walkState), narrative: event.map { [$0.debugLabel] } ?? [])
 
         return ExperienceUpdate(
             state: newState,
-            companionCommands: [.showMessage(tone), .setBehavior(behavior.rawValue)],
+            companionCommands: [
+                .showMessage(tone),
+                .setBehavior(behavior.rawValue),
+                .setRelativeDistance(resolved.relativeDistance)
+            ],
             audioCues: cue.map { [$0.kind.rawValue] } ?? [],
             semanticAudioCues: cue.map { [$0] } ?? [],
             narrativeEvents: event.map { [$0.kind.rawValue] } ?? [],
@@ -209,22 +230,6 @@ public struct CompanionWalkExperience: WaykinExperience {
             return current == .approaching || current == .close
         default:
             return true
-        }
-    }
-
-    private static func behavior(for event: WorldEvent?, moving: Bool) -> CompanionBehaviorState {
-        guard let event else { return moving ? .follow : .observe }
-        switch event.kind {
-        case .companionDrawsNear, .bondMoment:
-            return .drawNear
-        case .companionMovesAhead, .pursuitFades:
-            return .lead
-        case .quietInterval:
-            return .rest
-        case .companionObserves, .familiarPlaceStirs, .distantPresence:
-            return .observe
-        case .pursuitBegins, .pursuitIntensifies:
-            return .follow
         }
     }
 

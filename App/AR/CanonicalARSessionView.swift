@@ -30,6 +30,8 @@ final class CanonicalARSessionRuntime {
     private(set) var companionState: CompanionPresentationState = .idle
     private(set) var lastResult = "Waiting for AR session"
     private(set) var companionLODDescription = "procedural_living_familiar_mid"
+    /// #125: placement continuity note (ok_present / planted_* / replant_*).
+    private(set) var companionContinuityNote = "none"
     var pendingCommandSnapshot: [ARWorldCommand] { pendingCommands }
 
     init(renderCommand: ((ARWorldCommand, ARView) -> ARCommandResult)? = nil) {
@@ -151,6 +153,7 @@ final class CanonicalARSessionRuntime {
             guard case .deferred = result else {
                 pendingCommands.remove(at: index)
                 companionState = renderer.companionState
+                companionContinuityNote = renderer.companionContinuityNote
                 continue
             }
 
@@ -195,42 +198,112 @@ final class CanonicalARSessionRuntime {
 struct CanonicalARSessionView: View {
     let appModel: any CanonicalARCommandSource
     var liraSkin: LiraSkin = .dawn
+    /// Mirrored walk controls (#126) so Pause/End stay reachable without leaving AR.
+    var isPaused: Bool = false
+    var onPause: (() -> Void)?
+    var onResume: (() -> Void)?
+    var onEnd: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.wkTheme) private var theme
     @State private var runtime = CanonicalARSessionRuntime()
 
     var body: some View {
-        ZStack(alignment: .top) {
+        ZStack {
             CanonicalARCameraView(runtime: runtime, appModel: appModel)
                 .ignoresSafeArea()
 
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("AR: \(runtime.capabilityState.rawValue)")
-                    Text("Lira: \(runtime.companionState.rawValue)")
-                    Text("Form: \(liraSkin.displayName)")
-                    Text("LOD: \(runtime.companionLODDescription)")
-                        .accessibilityIdentifier("waykin.ar.canonical.lod")
-                    Text(runtime.lastResult)
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("AR: \(runtime.capabilityState.rawValue)")
+                        Text("Lira: \(runtime.companionState.rawValue)")
+                        Text("Form: \(liraSkin.displayName)")
+                        Text("LOD: \(runtime.companionLODDescription)")
+                            .accessibilityIdentifier("waykin.ar.canonical.lod")
+                        // #133: mid-LOD is sphere prims / procedural — not marketing hero art.
+                        Text("AR mesh: mid-LOD (not hero sculpt)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("waykin.ar.canonical.meshClass")
+                        // #125: continuity plant note for outdoor QA (not a quality claim).
+                        Text("Continuity: \(runtime.companionContinuityNote)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("waykin.ar.canonical.continuity")
+                        // #147: human hint from the same note (no new gameplay truth).
+                        if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
+                            Text(hint)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .accessibilityIdentifier("waykin.ar.canonical.continuityHint")
+                        }
+                        Text(runtime.lastResult)
+                    }
+                    .font(.caption.weight(.semibold))
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(arStatusAccessibilityLabel)
+                    .accessibilityIdentifier("waykin.ar.canonical.status")
+
+                    Spacer()
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Close AR companion")
+                    .accessibilityIdentifier("waykin.ar.canonical.close")
                 }
-                .font(.caption.weight(.semibold))
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(
-                    "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName), LOD: \(runtime.companionLODDescription)"
-                )
-                .accessibilityIdentifier("waykin.ar.canonical.status")
+                .padding(12)
+                .background(.ultraThinMaterial)
 
                 Spacer()
 
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .frame(width: 44, height: 44)
+                // Bottom mirrored session controls (#126).
+                if onPause != nil || onResume != nil || onEnd != nil {
+                    HStack(spacing: 12) {
+                        if isPaused {
+                            Button {
+                                onResume?()
+                            } label: {
+                                WKIconLabel(title: "Resume", icon: .resume)
+                                    .frame(minWidth: 48, minHeight: 48)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(theme.guide)
+                            .accessibilityLabel("Resume walk")
+                            .accessibilityIdentifier("waykin.ar.session.resume")
+                        } else {
+                            Button {
+                                onPause?()
+                            } label: {
+                                WKIconLabel(title: "Pause", icon: .pause)
+                                    .frame(minWidth: 48, minHeight: 48)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(theme.pause)
+                            .accessibilityLabel("Pause walk")
+                            .accessibilityIdentifier("waykin.ar.session.pause")
+                        }
+
+                        Button {
+                            onEnd?()
+                        } label: {
+                            WKIconLabel(title: "End", icon: .stop)
+                                .frame(minWidth: 48, minHeight: 48)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(theme.textSecondary)
+                        .accessibilityLabel("End walk")
+                        .accessibilityIdentifier("waykin.ar.session.end")
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial)
+                    .accessibilityIdentifier("waykin.ar.session.controls")
                 }
-                .accessibilityLabel("Close AR companion")
             }
-            .padding(12)
-            .background(.ultraThinMaterial)
         }
         .onAppear {
             runtime.setCompanionSkin(liraSkin)
@@ -238,6 +311,21 @@ struct CanonicalARSessionView: View {
         .onChange(of: liraSkin) { _, newSkin in
             runtime.setCompanionSkin(newSkin)
         }
+    }
+
+    private var arStatusAccessibilityLabel: String {
+        var parts = [
+            "AR: \(runtime.capabilityState.rawValue)",
+            "Lira: \(runtime.companionState.rawValue)",
+            "Form: \(liraSkin.displayName)",
+            "LOD: \(runtime.companionLODDescription)",
+            "mesh mid-LOD not hero sculpt",
+            "Continuity: \(runtime.companionContinuityNote)"
+        ]
+        if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
+            parts.append(hint)
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

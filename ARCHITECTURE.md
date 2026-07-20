@@ -114,6 +114,37 @@ The reconstructed AR baseline adds an isolated `WaykinARLab` target with camera 
 
 The contract remains presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth. Physical walking and the production Companion Walk loop are not connected to AR in this baseline.
 
+## AI Director Release-Candidate Boundary
+
+The post-MVP Conversation Director and Pathfinder Director are release-candidate references, not current runtime systems.
+
+```text
+WaykinCore canonical state
+      ↓ bounded, privacy-reviewed context projection
+Provider-neutral AIDirector contract
+      ↓
+Replaceable provider adapter (Grok candidate)
+      ↓ untrusted proposal
+Validation / policy / timeout / rate-limit boundary
+      ↓
+Accepted semantic proposal or deterministic fallback
+```
+
+The AI boundary follows these rules:
+
+- `WaykinCore` remains provider-agnostic and owns movement, events, Lira state, pursuit, Bond, memories, rewards, and session outcome.
+- Grok is a replaceable adapter candidate, not a hard-coded dependency.
+- Every model response is untrusted input and must be schema-validated, sanitized, bounded, and rejectable.
+- Provider timeout, outage, refusal, malformed output, or disabled cloud AI must degrade to authored local dialogue, deterministic route behavior, or silence.
+- Raw coordinates, unrestricted route history, raw HealthKit samples, and private memory text are excluded unless a separate privacy and architecture decision authorizes them.
+- Model output may not directly invoke AR, audio, persistence, rewards, movement, event generation, or state mutation.
+
+For Conversation, the model may propose one bounded Lira utterance plus semantic delivery metadata. It may not create durable personal profiles, write memories, change Bond, or provide navigational or safety instructions.
+
+For Pathfinder, the model may propose route style and rank points of interest supplied by an approved mapping provider. MapKit or another approved routing service remains authoritative for route geometry, legality, reachability, closures, constraints, and return-path feasibility.
+
+See `docs/design/AI_DIRECTOR_RELEASE_CANDIDATES.md` for promotion gates, evidence requirements, and non-goals.
+
 ## Retained Compatibility
 
 The repository still contains deprecated proof-of-concept runtime types for Orc Pursuit and Future Self. They are retained only as temporary source/API compatibility while the current product surface, recommendations, Demo Mode, variants, and tests are consolidated around Companion Walk. Future deletion or migration should follow `docs/SOLO_MVP_SCOPE.md`.
@@ -130,5 +161,7 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 - Physical-device validation of AR placement, tracking loss, interruption recovery, and battery impact.
 - HealthKit workout writing.
 - watchOS target, workout sessions, workout mirroring, WatchConnectivity, heart-rate enrichment, Watch controls, and Watch haptics.
+- Provider-neutral AI Director contracts, privacy projection, validation, deterministic fallback, and provider substitution.
+- Conversation Director and Pathfinder Director prototypes after promotion.
 
-The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, generative AI, wearable implementation beyond the approved reference seam, and generalized narrative infrastructure.
+The architecture deliberately defers backend services, accounts, multiplayer, creator tools, marketplaces, AI implementation beyond the approved release-candidate references, wearable implementation beyond the approved reference seam, and generalized narrative infrastructure.

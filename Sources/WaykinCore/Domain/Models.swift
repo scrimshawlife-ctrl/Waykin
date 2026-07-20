@@ -235,6 +235,10 @@ public struct CompanionWalkState: Codable, Equatable {
     public var lastEventElapsedByKind: [WorldEventKind: TimeInterval]
     public var eventHistory: [WorldEvent]
     public var activeAudioCues: [AudioCue]
+    /// Last companion behavior raw value presented this session (audio coupling #130).
+    public var lastPresentedBehavior: String?
+    /// Session elapsed when a behavior-transition cue was last accepted.
+    public var lastBehaviorAudioElapsed: TimeInterval?
 
     public init(
         accumulatedBondProgress: Double,
@@ -247,7 +251,9 @@ public struct CompanionWalkState: Codable, Equatable {
         lastEventElapsed: TimeInterval? = nil,
         lastEventElapsedByKind: [WorldEventKind: TimeInterval] = [:],
         eventHistory: [WorldEvent] = [],
-        activeAudioCues: [AudioCue] = []
+        activeAudioCues: [AudioCue] = [],
+        lastPresentedBehavior: String? = nil,
+        lastBehaviorAudioElapsed: TimeInterval? = nil
     ) {
         self.accumulatedBondProgress = accumulatedBondProgress
         self.movementSeconds = movementSeconds
@@ -260,6 +266,59 @@ public struct CompanionWalkState: Codable, Equatable {
         self.lastEventElapsedByKind = lastEventElapsedByKind
         self.eventHistory = eventHistory
         self.activeAudioCues = activeAudioCues
+        self.lastPresentedBehavior = lastPresentedBehavior
+        self.lastBehaviorAudioElapsed = lastBehaviorAudioElapsed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case accumulatedBondProgress
+        case movementSeconds
+        case milestoneIndex
+        case tone
+        case worldState
+        case pursuitState
+        case lastEvent
+        case lastEventElapsed
+        case lastEventElapsedByKind
+        case eventHistory
+        case activeAudioCues
+        case lastPresentedBehavior
+        case lastBehaviorAudioElapsed
+    }
+
+    // Decode defaults for mid-session schema evolution (behavior audio fields are session-local).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        accumulatedBondProgress = try container.decode(Double.self, forKey: .accumulatedBondProgress)
+        movementSeconds = try container.decode(TimeInterval.self, forKey: .movementSeconds)
+        milestoneIndex = try container.decode(Int.self, forKey: .milestoneIndex)
+        tone = try container.decode(String.self, forKey: .tone)
+        worldState = try container.decodeIfPresent(WorldState.self, forKey: .worldState)
+        pursuitState = try container.decodeIfPresent(PursuitState.self, forKey: .pursuitState) ?? .inactive
+        lastEvent = try container.decodeIfPresent(WorldEvent.self, forKey: .lastEvent)
+        lastEventElapsed = try container.decodeIfPresent(TimeInterval.self, forKey: .lastEventElapsed)
+        lastEventElapsedByKind = try container.decodeIfPresent([WorldEventKind: TimeInterval].self, forKey: .lastEventElapsedByKind) ?? [:]
+        eventHistory = try container.decodeIfPresent([WorldEvent].self, forKey: .eventHistory) ?? []
+        activeAudioCues = try container.decodeIfPresent([AudioCue].self, forKey: .activeAudioCues) ?? []
+        lastPresentedBehavior = try container.decodeIfPresent(String.self, forKey: .lastPresentedBehavior)
+        lastBehaviorAudioElapsed = try container.decodeIfPresent(TimeInterval.self, forKey: .lastBehaviorAudioElapsed)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(accumulatedBondProgress, forKey: .accumulatedBondProgress)
+        try container.encode(movementSeconds, forKey: .movementSeconds)
+        try container.encode(milestoneIndex, forKey: .milestoneIndex)
+        try container.encode(tone, forKey: .tone)
+        try container.encodeIfPresent(worldState, forKey: .worldState)
+        try container.encode(pursuitState, forKey: .pursuitState)
+        try container.encodeIfPresent(lastEvent, forKey: .lastEvent)
+        try container.encodeIfPresent(lastEventElapsed, forKey: .lastEventElapsed)
+        try container.encode(lastEventElapsedByKind, forKey: .lastEventElapsedByKind)
+        try container.encode(eventHistory, forKey: .eventHistory)
+        try container.encode(activeAudioCues, forKey: .activeAudioCues)
+        try container.encodeIfPresent(lastPresentedBehavior, forKey: .lastPresentedBehavior)
+        try container.encodeIfPresent(lastBehaviorAudioElapsed, forKey: .lastBehaviorAudioElapsed)
     }
 }
 

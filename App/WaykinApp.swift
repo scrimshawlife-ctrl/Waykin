@@ -167,6 +167,14 @@ final class WaykinAppModel: CanonicalARCommandSource {
     static let healthRefreshIntervalNanoseconds: UInt64 = 120_000_000_000
     private var activeFieldTestReceipt: FieldTestReceiptBuilder?
     private var lastObservedMovementState: MovementState = .idle
+    /// Wall-clock pause accounting for **presentation** elapsed (#128). Core `session.elapsedTime` stays sample-driven.
+    @ObservationIgnored private var accumulatedRealPausedDuration: TimeInterval = 0
+    @ObservationIgnored private var currentRealPauseStartedAt: Date?
+    /// Presentation start (fieldTestNow), not MovementEngine.startedAt, so HUD clock is continuous even when GPS samples are sparse.
+    @ObservationIgnored private var presentationSessionStartedAt: Date?
+    /// Path soft-audio coupling (#140): last relation and session elapsed when path cue accepted.
+    @ObservationIgnored private var lastPathRelationForAudio: PathRelation = .establishing
+    @ObservationIgnored private var lastPathAudioElapsed: TimeInterval?
 
     var activePresencePresentation: CompanionPresencePresentation {
         let usesPhysicalRuntime = isLiveSessionActive
@@ -185,7 +193,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pursuitState: walkState?.pursuitState ?? .inactive,
             eventKind: walkState?.lastEvent?.kind,
             audioCueKind: walkState?.activeAudioCues.first?.kind,
-            elapsedSeconds: session?.elapsedTime ?? 0,
+            elapsedSeconds: presentationElapsedSeconds(session: session, usesPhysicalRuntime: usesPhysicalRuntime),
             distanceMeters: session?.distanceMeters ?? 0,
             isPaused: usesPhysicalRuntime ? realWalkState == .paused : demoController.isPaused,
             isOpening: usesPhysicalRuntime ? liveAcceptedCount == 0 : demoController.tickIndex == 0,
@@ -195,6 +203,42 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathIntegrityPressure: pathProgress.integrityPressure,
             energyHint: activityEnrichment.energyHint
         )
+    }
+
+    /// Smooth HUD clock for real walks (wall time − pauses). Demo keeps sample/tick elapsed.
+    func presentationElapsedSeconds(
+        session: MovementSession? = nil,
+        usesPhysicalRuntime: Bool? = nil,
+        now: Date? = nil
+    ) -> TimeInterval {
+        let session = session ?? movementEngine.currentSession
+        let physical = usesPhysicalRuntime ?? isLiveSessionActive
+        let now = now ?? fieldTestNow()
+        guard physical, session != nil, let started = presentationSessionStartedAt else {
+            return session?.elapsedTime ?? 0
+        }
+        var paused = accumulatedRealPausedDuration
+        if realWalkState == .paused, let pauseStart = currentRealPauseStartedAt {
+            paused += max(0, now.timeIntervalSince(pauseStart))
+        }
+        return max(0, now.timeIntervalSince(started) - paused)
+    }
+
+    private func resetPresentationElapsedClock() {
+        accumulatedRealPausedDuration = 0
+        currentRealPauseStartedAt = nil
+        presentationSessionStartedAt = nil
+    }
+
+    private func beginPresentationPause(at now: Date) {
+        currentRealPauseStartedAt = now
+    }
+
+    private func endPresentationPause(at now: Date) {
+        if let pauseStart = currentRealPauseStartedAt {
+            accumulatedRealPausedDuration += max(0, now.timeIntervalSince(pauseStart))
+        }
+        currentRealPauseStartedAt = nil
     }
 
     init(
@@ -317,6 +361,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             audioPlayer.stopAll(fadeOut: false)
             pathProgressEngine.reset(isDemo: true)
             pathProgress = pathProgressEngine.snapshot
+            lastPathRelationForAudio = pathProgress.relation
+            lastPathAudioElapsed = nil
             activityEnrichment = .empty
             try demoController.start(scenarioID: scenario)
             emitARWorldCommands(arCommandMapper.spawn(
@@ -386,17 +432,31 @@ final class WaykinAppModel: CanonicalARCommandSource {
         if let event = demoController.currentEvent {
             activeFieldTestReceipt?.recordWorldEvent(event)
         }
+        var playedEventOrBehaviorCue = false
         if let cue = demoController.currentAudioCue {
             activeFieldTestReceipt?.recordAudioCue(
                 cue,
                 at: movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
             )
             audioPlayer.handle([cue])
+            playedEventOrBehaviorCue = true
+        }
+        if !playedEventOrBehaviorCue {
+            playPathSoftAudioIfNeeded(
+                pursuitState: demoController.companionWalkState?.pursuitState ?? .inactive,
+                sessionElapsed: movementEngine.currentSession?.elapsedTime ?? Double(demoController.tickIndex),
+                at: movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
+            )
+        } else {
+            lastPathRelationForAudio = pathProgress.relation
         }
         if let scenario, tickIndex < scenario.ticks.count {
             emitARWorldCommands(arCommandMapper.update(
                 companionRuntime: demoController.companionRuntime,
-                event: demoController.currentEvent
+                event: demoController.currentEvent,
+                pursuitState: demoController.companionWalkState?.pursuitState ?? .inactive,
+                pathRelation: pathProgress.relation,
+                pathIntegrityPressure: pathProgress.integrityPressure
             ))
         }
         publishGlassesGlance()
@@ -540,6 +600,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             audioPlayer.stopAll(fadeOut: false)
             pathProgressEngine.reset(isDemo: false)
             pathProgress = pathProgressEngine.snapshot
+            lastPathRelationForAudio = pathProgress.relation
+            lastPathAudioElapsed = nil
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
             try movementEngine.resumeSession()
             if let session = movementEngine.currentSession {
@@ -557,6 +619,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             liveSignalState = .waitingForFirstFix
             liveAcceptedCount = 0
             liveRejectedCount = 0
+            resetPresentationElapsedClock()
+            presentationSessionStartedAt = fieldTestNow()
             // Context must exist before async Health enrichment can apply energy (#104 race).
             let context = ExperienceContext(
                 timeOfDay: selectedTimeContext,
@@ -590,6 +654,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             let now = fieldTestNow()
             activeFieldTestReceipt?.recordSessionTransition(from: .active, to: .paused, at: now)
             activeFieldTestReceipt?.recordAudioLifecycle("pause", at: now)
+            beginPresentationPause(at: now)
             realWalkState = .paused
             lifecycleSuspendedRealWalk = false
             cancelHealthRefresh()
@@ -609,6 +674,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             let now = fieldTestNow()
             activeFieldTestReceipt?.recordSessionTransition(from: .paused, to: .active, at: now)
             activeFieldTestReceipt?.recordAudioLifecycle("resume", at: now)
+            endPresentationPause(at: now)
             realWalkState = .active
             lifecycleSuspendedRealWalk = false
             scheduleHealthRefreshForRealWalk(periodic: true)
@@ -625,8 +691,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
         emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
+        if realWalkState == .paused {
+            endPresentationPause(at: endedAt)
+        }
         activeFieldTestReceipt?.recordSessionTransition(from: fieldTestState(for: realWalkState), to: .ending, at: endedAt)
         realWalkState = .ending
+        resetPresentationElapsedClock()
         realLocationProvider.stopUpdatingLocation()
         audioPlayer.stopAll(fadeOut: true)
         activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
@@ -786,9 +856,30 @@ final class WaykinAppModel: CanonicalARCommandSource {
             self.pathProgress = self.pathProgressEngine.snapshot
             self.publishGlassesGlance()
 
+            // Path soft audio can fire on reject-only ticks (GPS strain) without a world update (#140).
+            let pursuitForPath: PursuitState = {
+                if case .companionWalk(let walk) = self.realExperienceState?.runtimeState {
+                    return walk.pursuitState
+                }
+                return .inactive
+            }()
+            let pathSessionElapsed: TimeInterval = {
+                if case .companionWalk(let walk) = self.realExperienceState?.runtimeState {
+                    return walk.movementSeconds
+                }
+                return self.movementEngine.currentSession?.elapsedTime ?? 0
+            }()
+
             guard let snapshot = result.snapshot,
                   let state = self.realExperienceState,
-                  let context = self.realExperienceContext else { return }
+                  let context = self.realExperienceContext else {
+                self.playPathSoftAudioIfNeeded(
+                    pursuitState: pursuitForPath,
+                    sessionElapsed: pathSessionElapsed,
+                    at: self.fieldTestNow()
+                )
+                return
+            }
 
             self.liveSignalState = .active
             self.demoMessage = "Walking with Lira..."
@@ -808,8 +899,20 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 }
                 self.emitARWorldCommands(self.arCommandMapper.update(
                     companionRuntime: self.realCompanionRuntime,
-                    event: event
+                    event: event,
+                    pursuitState: walkState.pursuitState,
+                    pathRelation: self.pathProgress.relation,
+                    pathIntegrityPressure: self.pathProgress.integrityPressure
                 ))
+                if update.semanticAudioCues.isEmpty {
+                    self.playPathSoftAudioIfNeeded(
+                        pursuitState: walkState.pursuitState,
+                        sessionElapsed: walkState.movementSeconds,
+                        at: snapshot.timestamp
+                    )
+                } else {
+                    self.lastPathRelationForAudio = self.pathProgress.relation
+                }
             }
             update.semanticAudioCues.forEach {
                 self.activeFieldTestReceipt?.recordAudioCue($0, at: snapshot.timestamp)
@@ -914,6 +1017,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
         realExperienceState = nil
         realExperienceContext = nil
         lifecycleSuspendedRealWalk = false
+        if priorState == .paused {
+            endPresentationPause(at: endedAt)
+        }
+        resetPresentationElapsedClock()
         realWalkState = .failed
         demoMessage = message
         finishFieldTestReceipt(
@@ -997,16 +1104,41 @@ final class WaykinAppModel: CanonicalARCommandSource {
             handler(arCommandMapper.snapshot(
                 companionRuntime: realCompanionRuntime,
                 pursuitState: walkState?.pursuitState ?? .inactive,
-                lastEvent: walkState?.lastEvent
+                lastEvent: walkState?.lastEvent,
+                pathRelation: pathProgress.relation,
+                pathIntegrityPressure: pathProgress.integrityPressure
             ))
         } else if demoController.isRunning {
             handler(arCommandMapper.snapshot(
                 companionRuntime: demoController.companionRuntime,
                 pursuitState: demoController.companionWalkState?.pursuitState ?? .inactive,
-                lastEvent: demoController.currentEvent
+                lastEvent: demoController.currentEvent,
+                pathRelation: pathProgress.relation,
+                pathIntegrityPressure: pathProgress.integrityPressure
             ))
         }
         return owner
+    }
+
+    /// Soft path cues when experience/event audio is silent (#140).
+    private func playPathSoftAudioIfNeeded(
+        pursuitState: PursuitState,
+        sessionElapsed: TimeInterval,
+        at timestamp: Date
+    ) {
+        let previous = lastPathRelationForAudio
+        let next = pathProgress.relation
+        defer { lastPathRelationForAudio = next }
+        guard let cue = PathAudioCoupling.cue(
+            from: previous,
+            to: next,
+            pursuitState: pursuitState,
+            sessionElapsed: sessionElapsed,
+            lastPathAudioElapsed: lastPathAudioElapsed
+        ) else { return }
+        lastPathAudioElapsed = sessionElapsed
+        activeFieldTestReceipt?.recordAudioCue(cue, at: timestamp)
+        audioPlayer.handle([cue])
     }
 
     func detachARWorldCommandHandler(owner: UUID) {
@@ -1201,6 +1333,12 @@ struct HomeView: View {
                         .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("waykin.memory.latest")
+                } else {
+                    Text("Walk with Lira to write your first memory.")
+                        .font(.callout)
+                        .foregroundStyle(theme.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("waykin.memory.emptyInvite")
                 }
 
                 if !appModel.demoMessage.isEmpty {
@@ -1211,15 +1349,32 @@ struct HomeView: View {
                         .accessibilityIdentifier("waykin.status")
                 }
 
+                // #126: product priority — real walk is primary CTA; demo is secondary.
+                Button {
+                    appModel.startRealCompanionWalk()
+                } label: {
+                    WKIconLabel(title: realWalkButtonTitle, icon: .beginSession)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(theme.guide)
+                .disabled(realWalkButtonDisabled)
+                .accessibilityLabel(realWalkButtonTitle)
+                .accessibilityIdentifier("waykin.real.open")
+                .accessibilityIdentifier("waykin.real.activity.walk")
+                .accessibilityIdentifier("waykin.real.experience.companionWalk")
+                .accessibilityIdentifier("waykin.home.beginWalk.real")
+
                 Button {
                     appModel.startDemo(.calmDayWalk)
                 } label: {
-                    WKIconLabel(title: "Begin Walk", icon: .beginSession)
-                        .frame(minWidth: 48, minHeight: 48)
+                    WKIconLabel(title: "Demo Walk", icon: .beginSession)
+                        .frame(maxWidth: .infinity, minHeight: 48)
                 }
-                    .buttonStyle(.borderedProminent)
-                    .tint(theme.guide)
-                    .accessibilityIdentifier("waykin.beginWalk")
+                .buttonStyle(.bordered)
+                .tint(theme.guide)
+                .accessibilityLabel("Demo Walk")
+                .accessibilityIdentifier("waykin.beginWalk")
 
                 if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                     Text("Demo Mode")
@@ -1232,15 +1387,6 @@ struct HomeView: View {
                     .foregroundStyle(theme.guideText)
                     .frame(minHeight: 48)
                     .accessibilityIdentifier("waykin.memory.open")
-
-                // Real device entry point for physical validation (COMPANION_WALK)
-                Button("Start Real Walk") {
-                    appModel.startRealCompanionWalk()
-                }
-                .frame(minHeight: 48)
-                .accessibilityIdentifier("waykin.real.open")
-                .accessibilityIdentifier("waykin.real.activity.walk")
-                .accessibilityIdentifier("waykin.real.experience.companionWalk")
 
                 if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                     VStack(alignment: .leading, spacing: 2) {
@@ -1295,6 +1441,31 @@ struct HomeView: View {
                 .wkThemed()
                 .liraSkin(appModel.selectedLiraSkin)
                 .preferredColorScheme(appModel.appearancePreference.preferredColorScheme)
+        }
+    }
+
+    /// Inline real-walk CTA feedback (#126) — state lives on the button, not a missed status line.
+    private var realWalkButtonTitle: String {
+        switch appModel.realWalkState {
+        case .requestingPermission:
+            return "Allow Location…"
+        case .active, .paused:
+            return "Walk in Progress"
+        case .ending:
+            return "Ending Walk…"
+        case .failed:
+            return "Try Walk Again"
+        case .idle, .completed:
+            return "Begin Walk"
+        }
+    }
+
+    private var realWalkButtonDisabled: Bool {
+        switch appModel.realWalkState {
+        case .requestingPermission, .active, .paused, .ending:
+            return true
+        case .idle, .completed, .failed:
+            return false
         }
     }
 }
@@ -1360,9 +1531,23 @@ struct ActiveSessionView: View {
     let scenario: DemoScenarioID
 
     var body: some View {
+        // Live real walks: refresh HUD ~1 Hz so elapsed advances smoothly (#128).
+        // Demo ticks still drive demo elapsed via model mutations.
+        Group {
+            if appModel.isLiveSessionActive && appModel.realWalkState == .active {
+                TimelineView(.periodic(from: .now, by: 1)) { _ in
+                    sessionContent
+                }
+            } else {
+                sessionContent
+            }
+        }
+    }
+
+    private var sessionContent: some View {
         let presentation = appModel.activePresencePresentation
 
-        ZStack {
+        return ZStack {
             CompanionPresenceStyle.background(for: presentation.pressureIntensity, theme: theme)
                 .ignoresSafeArea()
 
@@ -1371,6 +1556,7 @@ struct ActiveSessionView: View {
                     CompanionPresenceView(presentation: presentation)
                         .liraSkin(appModel.selectedLiraSkin)
 
+                    // #126: AR beside Pause/End for one-handed reach (continuity re-entry).
                     AnyLayout(dynamicTypeSize.isAccessibilitySize
                         ? AnyLayout(VStackLayout(spacing: 12))
                         : AnyLayout(HStackLayout(spacing: 12))) {
@@ -1412,6 +1598,18 @@ struct ActiveSessionView: View {
                         .accessibilityLabel("End walk")
                         .accessibilitySortPriority(1.9)
                         .accessibilityIdentifier("waykin.session.end")
+
+                        Button {
+                            showsARCompanion = true
+                        } label: {
+                            Label("AR", systemImage: "viewfinder")
+                                .frame(minWidth: 48, minHeight: 48)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(theme.guide)
+                        .accessibilityLabel("Open AR companion")
+                        .accessibilitySortPriority(1.8)
+                        .accessibilityIdentifier("waykin.session.openARCompanion")
                     }
                     .frame(maxWidth: .infinity)
 
@@ -1426,14 +1624,15 @@ struct ActiveSessionView: View {
                         .accessibilityIdentifier("waykin.session.runToEnd")
                     } else {
                         let signal = GPSSignalPresentation(state: appModel.liveSignalState)
-                        Label(signal.label, systemImage: signal.symbolName)
-                            .font(.caption)
-                            .foregroundStyle(signal.isProblem ? theme.caution : theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityLabel("GPS status")
-                            .accessibilityValue(signal.accessibilityValue)
-                            .accessibilitySortPriority(1)
-                            .accessibilityIdentifier("waykin.session.liveSignal")
+                        SessionStatusChip(
+                            title: signal.label,
+                            systemImage: signal.symbolName,
+                            tone: signal.isProblem ? .caution : .calm,
+                            accessibilityLabelText: "GPS status",
+                            accessibilityValueText: signal.accessibilityValue,
+                            accessibilityIdentifier: "waykin.session.liveSignal"
+                        )
+                        .accessibilitySortPriority(1)
                     }
 
                     CompactSessionMap(
@@ -1441,16 +1640,6 @@ struct ActiveSessionView: View {
                         longitude: presentation.longitude,
                         trace: appModel.walkPathTrace
                     )
-
-                    Button {
-                        showsARCompanion = true
-                    } label: {
-                        Label("AR Companion", systemImage: "viewfinder")
-                            .frame(minWidth: 48, minHeight: 48)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(theme.guide)
-                    .accessibilityIdentifier("waykin.session.openARCompanion")
                 }
                 .padding(.horizontal, CompanionPresenceStyle.horizontalPadding)
                 .padding(.vertical, 12)
@@ -1458,8 +1647,24 @@ struct ActiveSessionView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(appModel.demoController.isRunning || appModel.isLiveSessionActive)
-        .sheet(isPresented: $showsARCompanion) {
-            CanonicalARSessionView(appModel: appModel, liraSkin: appModel.selectedLiraSkin)
+        // #126: full-screen cover, not swipe-dismissible sheet over Pause/End.
+        .fullScreenCover(isPresented: $showsARCompanion) {
+            CanonicalARSessionView(
+                appModel: appModel,
+                liraSkin: appModel.selectedLiraSkin,
+                isPaused: appModel.activePresencePresentation.isPaused,
+                onPause: {
+                    appModel.isLiveSessionActive ? appModel.pauseRealSession() : appModel.pauseDemo()
+                },
+                onResume: {
+                    appModel.isLiveSessionActive ? appModel.resumeRealSession() : appModel.resumeDemo()
+                },
+                onEnd: {
+                    showsARCompanion = false
+                    appModel.isLiveSessionActive ? appModel.endRealSession() : appModel.endDemo()
+                }
+            )
+            .interactiveDismissDisabled()
         }
     }
 }
@@ -1472,51 +1677,142 @@ struct SessionSummaryView: View {
     var body: some View {
         ZStack {
             theme.backgroundWarm.ignoresSafeArea()
-            VStack(spacing: 16) {
-                Text("Session Summary")
-                    .font(.title)
-                    .foregroundStyle(theme.textPrimary)
-                    .accessibilityIdentifier("waykin.summary.screen")
-                if !appModel.lastClosingPhrase.isEmpty {
-                    Text(appModel.lastClosingPhrase)
-                        .font(.headline)
-                        .foregroundStyle(theme.bondText)
-                        .accessibilityIdentifier("waykin.session.closing")
-                }
-                Text(summary.memory.text)
-                    .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("waykin.summary.memory")
-                if let pathLine = summary.pathPresentationLine {
-                    Text(pathLine)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(theme.guide)
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("Session Summary")
+                        .font(.title)
+                        .foregroundStyle(theme.textPrimary)
+                        .accessibilityIdentifier("waykin.summary.screen")
+
+                    // #148: skin-correct still + bond delta.
+                    LiraSessionFigure(presentation: summaryPresencePresentation)
+                        .frame(maxHeight: 160)
+                        .liraSkin(appModel.selectedLiraSkin)
+                        .accessibilityIdentifier("waykin.summary.lira")
+
+                    HStack(spacing: 10) {
+                        WKBondFilamentMark(size: 28)
+                        Text(bondDeltaText)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(theme.bondText)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Bond change")
+                    .accessibilityValue(bondDeltaText)
+                    .accessibilityIdentifier("waykin.summary.bondDelta")
+
+                    if !appModel.lastClosingPhrase.isEmpty {
+                        Text(appModel.lastClosingPhrase)
+                            .font(.headline)
+                            .foregroundStyle(theme.bondText)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("waykin.session.closing")
+                    }
+                    Text(summary.memory.text)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("waykin.summary.path")
+                        .accessibilityIdentifier("waykin.summary.memory")
+
+                    HStack(spacing: 24) {
+                        summaryMetric(
+                            value: elapsedSummaryText,
+                            label: "Time",
+                            identifier: "waykin.summary.elapsed"
+                        )
+                        summaryMetric(
+                            value: distanceSummaryText,
+                            label: "Distance",
+                            identifier: "waykin.summary.distance"
+                        )
+                    }
+                    .accessibilityIdentifier("waykin.summary.stats")
+
+                    if let pathLine = summary.pathPresentationLine {
+                        Text(pathLine)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(theme.guide)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("waykin.summary.path")
+                    }
+                    if let cadenceLine = summary.cadencePresentationLine {
+                        Text(cadenceLine)
+                            .font(.caption)
+                            .foregroundStyle(theme.textTertiary)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("waykin.summary.cadence")
+                    }
+                    if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                        Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
+                            .accessibilityIdentifier("waykin.summary.memoryWrite")
+                        Text(appModel.latestFieldTestReceiptURL.map {
+                            FileManager.default.fileExists(atPath: $0.path) ? "WRITTEN" : "MISSING"
+                        } ?? "MISSING")
+                        .accessibilityIdentifier("waykin.summary.receiptWrite")
+                    }
+                    Button("Back to Home") { appModel.returnHome() }
+                        .buttonStyle(.borderedProminent)
+                        .tint(theme.guide)
+                        .frame(minHeight: 48)
+                        .accessibilityIdentifier("waykin.summary.home")
                 }
-                if let cadenceLine = summary.cadencePresentationLine {
-                    Text(cadenceLine)
-                        .font(.caption)
-                        .foregroundStyle(theme.textTertiary)
-                        .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("waykin.summary.cadence")
-                }
-                if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
-                    Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
-                        .accessibilityIdentifier("waykin.summary.memoryWrite")
-                    Text(appModel.latestFieldTestReceiptURL.map {
-                        FileManager.default.fileExists(atPath: $0.path) ? "WRITTEN" : "MISSING"
-                    } ?? "MISSING")
-                    .accessibilityIdentifier("waykin.summary.receiptWrite")
-                }
-                Button("Back to Home") { appModel.returnHome() }
-                    .buttonStyle(.borderedProminent)
-                    .tint(theme.guide)
-                    .frame(minHeight: 48)
-                    .accessibilityIdentifier("waykin.summary.home")
+                .padding(24)
             }
-            .padding(24)
         }
+    }
+
+    private var bondDeltaText: String {
+        let delta = summary.bondDelta
+        if delta > 0 { return "Bond +\(delta)" }
+        if delta < 0 { return "Bond \(delta)" }
+        return "Bond held"
+    }
+
+    private var elapsedSummaryText: String {
+        let total = max(0, Int(summary.duration.rounded()))
+        let minutes = total / 60
+        let seconds = total % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private var distanceSummaryText: String {
+        let meters = max(0, Int(summary.distanceMeters.rounded()))
+        return "\(meters) m"
+    }
+
+    /// Settled presence for summary art (#148) — celebrate lean when bond grew.
+    private var summaryPresencePresentation: CompanionPresencePresentation {
+        CompanionPresencePresentation(
+            companionName: appModel.companion.name,
+            bondLevel: appModel.companion.bondLevel,
+            behavior: summary.bondDelta > 0 ? .celebrate : .rest,
+            pursuitState: .inactive,
+            eventKind: summary.bondDelta > 0 ? .bondMoment : .quietInterval,
+            audioCueKind: nil,
+            elapsedSeconds: summary.duration,
+            distanceMeters: summary.distanceMeters,
+            isPaused: false,
+            isOpening: false,
+            latitude: nil,
+            longitude: nil,
+            pathRelation: PathRelation(rawValue: summary.pathRelation ?? "") ?? .onPath,
+            pathIntegrityPressure: 0,
+            energyHint: 0
+        )
+    }
+
+    private func summaryMetric(value: String, label: String, identifier: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.title2.monospacedDigit().bold())
+                .foregroundStyle(theme.textPrimary)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(theme.textSecondary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(label)
+        .accessibilityValue(value)
+        .accessibilityIdentifier(identifier)
     }
 }
 

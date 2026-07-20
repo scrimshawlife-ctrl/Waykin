@@ -26,6 +26,11 @@ struct LiraSessionFigure: View {
     private var pose: LiraSessionPose { LiraSessionPose.resolve(from: presentation) }
     private var skin: LiraSkin { skinOverride ?? environmentSkin }
 
+    /// Outdoor QA / #133: which 2D path is active for current pose×skin.
+    var graphicsPath: LiraStillCatalog.GraphicsPath {
+        LiraStillCatalog.graphicsPath(pose: pose, skin: skin)
+    }
+
     /// Resolved catalog still for current pose×skin when loadable.
     private var targetStillName: String? {
         guard let name = LiraStillCatalog.imageName(pose: pose, skin: skin),
@@ -53,7 +58,7 @@ struct LiraSessionFigure: View {
         .offset(y: presentation.verticalOffset)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(presentation.companionName) presence")
-        .accessibilityValue(pose.accessibilityDescription)
+        .accessibilityValue("\(pose.accessibilityDescription). Graphics \(graphicsPath.diagnosticLabel)")
         .accessibilitySortPriority(5)
         .accessibilityIdentifier("waykin.session.presence")
         .onAppear {

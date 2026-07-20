@@ -60,7 +60,7 @@ The binding product contract is [`WAYKIN_SPEC.md`](WAYKIN_SPEC.md). Future-state
 
 ```text
 Home
-  → Begin Walk
+  → Begin Walk (real) / Demo Walk
   → Active Session
   → Session Summary
   → Memory
