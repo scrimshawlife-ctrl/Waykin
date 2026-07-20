@@ -3,12 +3,20 @@
 ```yaml
 evidence_class: MESHY_TEXTURED_STATIC_V1
 file: Lira_AR_Base.usdz
+runtime_size: ~9.6MB_compressed
 ```
 
-Primary: `App/Resources/Lira_AR_Base.usdz`  
+Primary: `App/Resources/Lira_AR_Base.usdz` (bundled via xcodegen)  
 Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`  
 Docs mirror: `docs/assets/companion/ar/Lira_AR_Base.usdz`  
-Source: `ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz`
+Full-res source: `ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz`  
+
+Recompress after re-import:
+
+```bash
+cp ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz App/Resources/Lira_AR_Base.usdz
+./scripts/compress_lira_meshy_usdz.sh
+```
 
 ## Runtime
 

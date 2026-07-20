@@ -97,6 +97,30 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: promoted), .staticMesh)
     }
 
+    func testLayoutSpectralFXAnchorsPlacesCoreAboveGround() {
+        let bare = Entity()
+        bare.name = CompanionEntityFactory.rootName
+        // Tall box so bounds are well-defined.
+        let mesh = ModelEntity(
+            mesh: .generateBox(size: SIMD3<Float>(0.3, 0.6, 0.25)),
+            materials: [SimpleMaterial(color: .gray, isMetallic: false)]
+        )
+        mesh.name = "body_mesh"
+        bare.addChild(mesh)
+        let promoted = LiraARAssetLoader.promoteIncompleteHierarchy(bare)
+        LiraARAssetLoader.normalizeVisualHeight(promoted.findEntity(named: "Body")!, targetHeightMeters: 0.72)
+        LiraARAssetLoader.plantBodyOnGround(promoted)
+        LiraARAssetLoader.layoutSpectralFXAnchors(on: promoted)
+        let core = promoted.findEntity(named: "CoreGlow")!
+        let filament = promoted.findEntity(named: "Filament")!
+        let shadow = promoted.findEntity(named: "GroundShadow")!
+        XCTAssertGreaterThan(core.position.y, shadow.position.y)
+        XCTAssertGreaterThan(core.position.z, filament.position.z, "ember forward of plume")
+        // After plant: feet ~0, chest mid-torso — meaningful vertical separation.
+        XCTAssertGreaterThan(core.position.y - shadow.position.y, 0.2)
+        XCTAssertGreaterThan(core.position.y, 0.2)
+    }
+
     func testApplySkinAllFormsOnPackagedClone() async throws {
         guard let url = LiraARAssetCatalog.baseUSDZURL else {
             throw XCTSkip("Packaged Lira_AR_Base.usdz not in test host bundle")

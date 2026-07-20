@@ -21,6 +21,16 @@ s3=$(stat -f%z "$DOC" 2>/dev/null || stat -c%s "$DOC")
 [[ "$s1" == "$s3" ]] || fail "root vs docs size $s1 != $s3"
 pass "triple package size match ($s1 bytes)"
 
+# Runtime mid-LOD budget: keep installable without thrash (ArtSource may be full-res).
+# Soft target ~12MB; hard fail above 20MB to catch accidental 4K re-import.
+if [[ "$s1" -gt 20971520 ]]; then
+  fail "runtime usdz too large ($s1 bytes > 20MB); run scripts/compress_lira_meshy_usdz.sh"
+elif [[ "$s1" -gt 12582912 ]]; then
+  echo "WARN: runtime usdz $s1 bytes > 12MB soft budget (still under 20MB hard cap)"
+else
+  pass "runtime size within soft budget ($s1 bytes ≤ 12MB)"
+fi
+
 # Accept artist USD layout OR Meshy static layout (usdc + textures/images).
 if unzip -l "$ROOT_USDZ" | grep -E 'Lira_AR_Base\.usd|textures/|\.usdc|extracted_image_|\.jpg|\.png' >/dev/null; then
   pass "usdz entries present"
