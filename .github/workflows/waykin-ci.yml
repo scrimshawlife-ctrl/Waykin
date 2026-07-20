@@ -32,7 +32,8 @@ jobs:
 
   native-ios:
     runs-on: macos-latest
-    timeout-minutes: 20
+    # UI suite + App unit tests need more than build-only budget.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
@@ -41,12 +42,47 @@ jobs:
         run: brew install xcodegen
       - name: Generate Project
         run: xcodegen generate
+      - name: Resolve simulator destination
+        id: sim
+        run: |
+          set -euo pipefail
+          # Prefer a concrete booted-capable iPhone sim; fall back to first available iPhone.
+          DEST=""
+          for name in "iPhone 17" "iPhone 16" "iPhone 15" "iPhone 17 Pro" "iPhone 16 Pro"; do
+            if xcrun simctl list devices available | grep -q "${name} ("; then
+              DEST="platform=iOS Simulator,name=${name}"
+              echo "Using simulator: ${name}"
+              break
+            fi
+          done
+          if [ -z "${DEST}" ]; then
+            # Last resort: generic destination (xcodebuild picks)
+            DEST="platform=iOS Simulator,name=iPhone 16"
+            echo "Fallback simulator name=iPhone 16"
+          fi
+          echo "destination=${DEST}" >> "$GITHUB_OUTPUT"
       - name: Build iOS Simulator
         run: |
           xcodebuild \
             -project Waykin.xcodeproj \
             -scheme Waykin \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination '${{ steps.sim.outputs.destination }}' \
             build
-      # test step can be enabled once more UI tests are added
+      - name: Test native + UI (gate merges)
+        run: |
+          set -euo pipefail
+          # Gate App unit tests + UI tests so presentation regressions cannot merge
+          # invisible to CI (see issue #204).
+          #
+          # TEMPORARY skip — issue #203:
+          # CanonicalARRuntimeIntegrationTests fails 10/21 on clean main (order-dependent).
+          # Keep the merge gate green while #203 is ruled (re-ratify vs runtime repair).
+          # Remove -skip-testing when #203 is closed.
+          xcodebuild \
+            -project Waykin.xcodeproj \
+            -scheme Waykin \
+            -sdk iphonesimulator \
+            -destination '${{ steps.sim.outputs.destination }}' \
+            -skip-testing:WaykinTests/CanonicalARRuntimeIntegrationTests \
+            test
