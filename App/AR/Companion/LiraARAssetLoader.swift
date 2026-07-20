@@ -144,14 +144,15 @@ final class LiraARAssetLoader {
         let palette = CompanionEntityFactory.SkinPalette(skin: skin)
         func paint(_ entity: Entity) {
             if let model = entity as? ModelEntity {
-                let color = color(for: entity.name, palette: palette)
+                let semantic = semanticName(for: entity)
+                let color = color(for: semantic, palette: palette)
                 let roughness: Float
                 let metallic: Float
-                switch entity.name {
-                case "CoreGlow":
+                switch semantic {
+                case "CoreGlow", "CoreHalo":
                     roughness = 0.15
                     metallic = 0.2
-                case "Filament", "FilamentTip":
+                case "Filament", "FilamentTip", "FilamentBase", "FilamentMid":
                     roughness = 0.28
                     metallic = 0
                 case "GroundShadow":
@@ -176,6 +177,33 @@ final class LiraARAssetLoader {
         paint(root)
     }
 
+    /// Map USD nested mesh names (Sphere_*, Lira_*) back to semantic paint keys.
+    private static func semanticName(for entity: Entity) -> String {
+        let name = entity.name
+        if CompanionEntityFactory.requiredNodeNames.contains(name)
+            || ["CoreHalo", "FilamentTip", "FilamentBase", "FilamentMid", "Chest", "Haunch", "Snout", "HunterEcho"].contains(name)
+        {
+            return name
+        }
+        // Walk parents for a known semantic joint / part name.
+        var parent = entity.parent
+        while let p = parent {
+            if CompanionEntityFactory.requiredNodeNames.contains(p.name)
+                || ["CoreHalo", "FilamentTip", "FilamentBase", "FilamentMid", "Chest", "Haunch", "Snout"].contains(p.name)
+            {
+                return p.name
+            }
+            parent = p.parent
+        }
+        // Artist extras
+        if name.contains("Ear") || name.hasPrefix("Lira_InnerEar") { return name.contains("R") ? "RightEar" : "LeftEar" }
+        if name.hasPrefix("Lira_Eye") || name.hasPrefix("Lira_Temple") || name.hasPrefix("Lira_Forehead") {
+            return "Head"
+        }
+        if name.hasPrefix("Lira_Leg") || name.hasPrefix("Lira_Paw") { return "Body" }
+        return name
+    }
+
     private static func color(
         for name: String,
         palette: CompanionEntityFactory.SkinPalette
@@ -183,7 +211,7 @@ final class LiraARAssetLoader {
         switch name {
         case "CoreGlow", "CoreHalo":
             return palette.bondCore
-        case "Filament", "FilamentTip":
+        case "Filament", "FilamentTip", "FilamentBase", "FilamentMid":
             return palette.filament
         case "Tail":
             return palette.fringe
@@ -193,6 +221,8 @@ final class LiraARAssetLoader {
             return palette.indicator
         case "LeftEar", "RightEar", "Chest", "Haunch":
             return palette.bodySecondary
+        case "HunterEcho":
+            return palette.hunterFilament
         default:
             return palette.body
         }

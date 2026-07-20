@@ -3,16 +3,16 @@
 ```yaml
 lod: AR_mid
 companion: Lira
-rig: Living_Familiar
+evidence_class: ARTIST_BLEND_SKINNED_MID_LOD
 file: Lira_AR_Base.usdz
 ```
 
 ## Packaged asset
 
-Primary bundle path (copied into app): `App/Resources/Lira_AR_Base.usdz`  
+Primary: `App/Resources/Lira_AR_Base.usdz`  
 Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`
 
-Mid-LOD Living Familiar with named anchors:
+Artist multi-mesh + `LiraArmature` + auto-weight heat-map. Named anchors:
 
 | Node | Role |
 | ---- | ---- |
@@ -21,8 +21,6 @@ Mid-LOD Living Familiar with named anchors:
 | `CoreGlow` | A2 bond ember |
 | `Filament` | A3 path plume |
 | `Body`, `LeftEar`, `RightEar`, `Tail`, `GroundShadow`, `StatusIndicator` | Required hierarchy |
-| `HunterEcho` | Optional pressure ghost |
-| `Chest`, `Haunch`, `CoreHalo`, `FilamentTip` | Volume extras |
 
 ## Runtime
 
@@ -30,14 +28,29 @@ Mid-LOD Living Familiar with named anchors:
 2. Load + validate required nodes → clone + skin materials
 3. If load/validation fails → procedural `CompanionEntityFactory`
 
-Rebuild:
+## Rebuild
 
 ```bash
+# Preferred: artist blend + armature + auto-weights
+./scripts/export_lira_blend_to_usdz.sh ArtSource/Companion/Lira/lira.blend
+
+# Fallback generator (GENERATED_MID_LOD USDA only)
 ./scripts/build_lira_usdz.sh
+
+# Integrity
+./scripts/check_lira_usdz_integrity.sh
 ```
 
-Source USDA: `docs/assets/companion/ar/src/Lira_AR_Base.usda`
+## Motion stack (dual)
+
+| Layer | Mechanism |
+| ----- | --------- |
+| Runtime clips | `LiraSkeletalPlayer` binds **entity names** (puppet paths) |
+| Mesh deform | USD heat-map weights on Body/Head/ears/legs |
+| FX | Filament/core rigid bone-parent |
+
+Optional DCC actions: `scripts/author_lira_armature_clips.py` → `LIRA_EXPORT_ANIM=1` on export.
 
 ## Skins
 
-One mesh; Dawn / Veil / Rupture remapped at runtime.
+One mesh package; Dawn / Veil / Rupture remapped at runtime (live re-apply supported).

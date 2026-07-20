@@ -204,6 +204,40 @@ def re_rigid_bind_fx(arm: bpy.types.Object) -> None:
         log(f"rigid FX {o.name} → bone {o.parent_bone}")
 
 
+MAX_INFLUENCES = 4
+MIN_MULTI_BONE_RATIO = 0.15  # Body should blend across joints for mid-LOD heat-map claim
+
+
+def limit_and_normalize_weights(obj: bpy.types.Object, max_influences: int = MAX_INFLUENCES) -> None:
+    """Cap bone influences per vertex and renormalize (mid-LOD quality pass)."""
+    mesh = obj.data
+    # Build list of (vertex_index, [(group_index, weight), ...])
+    for v in mesh.vertices:
+        groups = [(g.group, g.weight) for g in v.groups if g.weight > 1e-5]
+        if not groups:
+            continue
+        groups.sort(key=lambda x: x[1], reverse=True)
+        keep = groups[:max_influences]
+        drop = groups[max_influences:]
+        for gi, _w in drop:
+            try:
+                obj.vertex_groups[gi].remove([v.index])
+            except RuntimeError:
+                pass
+        total = sum(w for _, w in keep) or 1.0
+        for gi, w in keep:
+            obj.vertex_groups[gi].add([v.index], w / total, "REPLACE")
+
+
+def harden_skin_weights(skinned_names: list[str]) -> None:
+    for name in skinned_names:
+        o = bpy.data.objects.get(name)
+        if o is None or o.type != "MESH":
+            continue
+        limit_and_normalize_weights(o)
+        log(f"hardened weights {name} max_influences={MAX_INFLUENCES}")
+
+
 def weight_stats(obj: bpy.types.Object) -> dict:
     """OBSERVED heat-map metrics for provenance."""
     mesh = obj.data
@@ -216,10 +250,12 @@ def weight_stats(obj: bpy.types.Object) -> dict:
         if n > 1:
             multi += 1
         max_influences = max(max_influences, n)
+    verts = max(1, len(mesh.vertices))
     return {
         "verts": len(mesh.vertices),
         "vgroups": len(obj.vertex_groups),
         "multi_bone_verts": multi,
+        "multi_bone_ratio": round(multi / verts, 4),
         "max_influences": max_influences,
     }
 
@@ -238,9 +274,15 @@ def validate_skin() -> dict:
         if len(o.vertex_groups) < 2:
             raise SystemExit(f"{o.name} expected multiple vertex groups, got {len(o.vertex_groups)}")
     stats = {"Body": weight_stats(body), "Head": weight_stats(head)}
-    # Heat-map signal: at least some multi-bone verts on Body or Head
-    if stats["Body"]["multi_bone_verts"] + stats["Head"]["multi_bone_verts"] < 1:
-        log("WARN no multi-bone weighted verts detected (weights may be single-bone only)")
+    body_ratio = stats["Body"]["multi_bone_ratio"]
+    if body_ratio < MIN_MULTI_BONE_RATIO:
+        raise SystemExit(
+            f"Body multi-bone ratio {body_ratio} < {MIN_MULTI_BONE_RATIO} — heat-map quality gate failed"
+        )
+    if stats["Body"]["max_influences"] > MAX_INFLUENCES:
+        raise SystemExit(
+            f"Body max_influences {stats['Body']['max_influences']} > {MAX_INFLUENCES} after harden"
+        )
     log(f"skin stats {stats}")
     return stats
 
@@ -251,6 +293,7 @@ def skin() -> dict:
         raise SystemExit("LiraArmature required before skinning — run build_lira_armature first")
     merge_torso_and_head()
     skinned = skin_meshes_auto(arm)
+    harden_skin_weights(skinned)
     re_rigid_bind_fx(arm)
     stats = validate_skin()
     stats["skinned_objects"] = skinned

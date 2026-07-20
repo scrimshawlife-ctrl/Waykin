@@ -5,4 +5,4 @@ armature=LiraArmature
 bone_bind=heat_map_auto_weights
 body_vgroups=25
 body_multi_bone_verts=1709
-body_max_influences=5
+body_max_influences=4

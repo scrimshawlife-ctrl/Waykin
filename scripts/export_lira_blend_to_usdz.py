@@ -249,13 +249,17 @@ def export_usd(path: Path) -> None:
             o.select_set(True)
     bpy.context.view_layer.objects.active = root
 
+    # Optional DCC clip bake: LIRA_EXPORT_ANIM=1 after author_lira_armature_clips.py
+    import os
+
+    export_anim = os.environ.get("LIRA_EXPORT_ANIM", "").strip() in {"1", "true", "yes"}
     # Blender 5 USD export RNA (no visible_objects_only / export_textures flags)
     try:
         bpy.ops.wm.usd_export(
             filepath=str(path),
             check_existing=False,
             selected_objects_only=True,
-            export_animation=False,
+            export_animation=export_anim,
             export_hair=False,
             export_uvmaps=True,
             export_normals=True,

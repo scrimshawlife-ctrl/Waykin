@@ -170,7 +170,11 @@ final class LiraARMotionTests: XCTestCase {
         XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ)
         let loader = LiraARAssetLoader()
         await loader.preloadFromBundle()
-        // If RealityKit accepts the USDZ, source flips to usdz; otherwise procedural fallback is OK.
+        // Hard requirement for shipped ARTIST_BLEND_SKINNED_MID_LOD package.
+        guard case .usdz = loader.source else {
+            XCTFail("packaged USDZ must load: \(loader.activeLODDescription)")
+            return
+        }
         let entity = loader.makeLira()
         XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
         for name in CompanionEntityFactory.requiredNodeNames {
@@ -179,8 +183,6 @@ final class LiraARMotionTests: XCTestCase {
                 "missing \(name) after preload (source=\(loader.activeLODDescription))"
             )
         }
-        if case .usdz = loader.source {
-            XCTAssertTrue(loader.activeLODDescription.contains("Lira_AR_Base"))
-        }
+        XCTAssertTrue(loader.activeLODDescription.contains("Lira_AR_Base"))
     }
 }

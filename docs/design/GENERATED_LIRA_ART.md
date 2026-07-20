@@ -1,7 +1,7 @@
 # Generated Lira Art Pack
 
 ```yaml
-version: 1.3
+version: 1.4
 style: spectral_living_familiar
 anti: [pokemon, mascot, canid_clone, creature_collectible]
 status: DIRECTION_ACCEPTED
@@ -43,7 +43,7 @@ Assets installed under `App/Resources/Assets.xcassets/LiraStills` (21 imagesets)
 | Surface | Path when “new art used” | Fallback / notes |
 | ------- | ------------------------ | ---------------- |
 | Session 2D | `still:catalog` via `UIImage(named: Lira_Session_*)` | `still:canvas_fallback` Canvas puppet |
-| AR mid-LOD | `generated_usdz:Lira_AR_Base.usdz (usdz_active_generated_mid_lod)` — **GENERATED_MID_LOD** | `procedural_living_familiar_mid (<note>)` — RealityKit factory fallback |
+| AR mid-LOD | `artist_blend_usdz:Lira_AR_Base.usdz (usdz_active_artist_blend_skinned_mid_lod)` — **ARTIST_BLEND_SKINNED_MID_LOD** | `procedural_living_familiar_mid (<note>)` — RealityKit factory fallback; GENERATED USDA via `build_lira_usdz.sh` |
 
 Session HUD shows graphics path; AR chrome shows LOD + “mid-LOD (not hero sculpt)”.
 `LiraStillCatalog` resolves `Lira_Session_{Pose}_{Skin}`; missing names fall back to Canvas puppet (none expected for this pack).
@@ -55,11 +55,12 @@ Session HUD shows graphics path; AR chrome shows LOD + “mid-LOD (not hero scul
 ## Related
 
 - Sign-off: [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md)
-- AR mid-LOD: procedural Living Familiar in `CompanionEntityFactory`; USDZ slot at `App/Resources/Companion/Lira/`
+- AR mid-LOD: packaged artist skinned USDZ (`Lira_AR_Base.usdz`) + permanent procedural fallback in `CompanionEntityFactory`
 
 ## Quality pass
 
 - v1.1: Dawn full set + Guide Veil/Rupture + hero
 - **v1.2: complete Veil + Rupture 7-pose matrix** (full 7×3 quality-passed)
-- AnimationLibrary: not shipped (procedural only)
+- Session stills: full 7×3 matrix
+- AR: skeletal **puppet** clips + skinned mid-LOD package (see LIRA_AR_PRODUCTION_RIG.md)
 

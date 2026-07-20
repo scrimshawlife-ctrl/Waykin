@@ -28,7 +28,9 @@ Pipeline: rename → required placeholders → **build armature** → scale 0.72
 | Script | Role |
 | ------ | ---- |
 | `scripts/build_lira_armature.py` | Bone tree + initial rigid bind |
-| `scripts/skin_lira_armature.py` | Merge Body/Head shells + ARMATURE_AUTO |
+| `scripts/skin_lira_armature.py` | Merge Body/Head shells + ARMATURE_AUTO + influence cap |
+| `scripts/author_lira_armature_clips.py` | Optional DCC Idle/Follow/Alert actions |
+| `scripts/check_lira_usdz_integrity.sh` | Dual package size + evidence check |
 | `scripts/export_lira_blend_to_usdz.py` | Full Blender prep + USD |
 | `scripts/export_lira_blend_to_usdz.sh` | Blender + usdzip → App Resources |
 

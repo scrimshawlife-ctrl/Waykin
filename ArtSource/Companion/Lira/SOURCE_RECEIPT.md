@@ -17,10 +17,11 @@ skin: automatic heat-map weights (ARMATURE_AUTO)
   - Merge **Body+Chest+Neck → Body**, **Head+Snout → Head**
   - Automatic weights on Body/Head/ears/legs/paws/detail
   - Rigid bone-parent FX: CoreGlow/Halo, Filament*, Tail, GroundShadow, StatusIndicator
-- Body heat-map: **1830 verts**, **1709 multi-bone**, max **5** influences
-- Head heat-map: **1830 verts**, **1216 multi-bone**, max **5** influences
+- Quality pass: normalize + max 4 influences per vertex
+- Body heat-map: **1830 verts**, **1709 multi-bone**, max **4** influences (capped quality pass)
+- Head heat-map: **1830 verts**, **1216 multi-bone**, max **4** influences (capped quality pass)
 - USD exports `Skeleton` + `primvars:skel:jointIndices/jointWeights` (SkelBindingAPI)
-- Runtime package: `App/Resources/Lira_AR_Base.usdz` (~754 KB)
+- Runtime package: `App/Resources/Lira_AR_Base.usdz` (~739 KB)
 
 ## INFERRED
 
