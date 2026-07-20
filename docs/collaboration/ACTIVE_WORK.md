@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-20 (debug D5–D7 #196 landing; outdoor #41 parked)
+Last updated: 2026-07-20 (indoor AR smoke armed; Grok skills team handoff; outdoor #41 parked)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -11,7 +11,8 @@ Last updated: 2026-07-20 (debug D5–D7 #196 landing; outdoor #41 parked)
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
 | Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
-| Indoor device AR smoke (hybrid/DCC) | — | **Next when phone available** | Deferred recs #3 |
+| Indoor AR hybrid smoke (DCC/hybrid/puppet) | Human device | **Armed** — pre-device gates PASS on tip; fill PENDING receipt | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
+| Grok skills for collaborators (Prabu) | Team | **Shipped** #198/#199 + handoff doc | [GROK_SKILLS_COLLABORATOR_HANDOFF.md](GROK_SKILLS_COLLABORATOR_HANDOFF.md) |
 
 ## Recently completed (main)
 
@@ -24,6 +25,7 @@ Last updated: 2026-07-20 (debug D5–D7 #196 landing; outdoor #41 parked)
 | Debug receipts / operator strip / AR presentation summary | PR #182 |
 | Sim screenshot matrix + candidate residual audit | Issue #194 · SIMULATOR set under `docs/assets/screenshots/` |
 | Debug D5–D7 map + persistence operator + font soft log | Issue #196 · receipt schema 5 |
+| Grok skill pack (team-tracked `.grok/skills`) | PRs #198–#199 |
 
 ## Intake
 
