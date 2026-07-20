@@ -29,15 +29,17 @@ else
 fi
 
 if [[ -f "$MARKER" ]]; then
-  if grep -E 'ARTIST_BLEND_SKINNED_MID_LOD|ARTIST_BLEND_ARMATURE_MID_LOD|ARTIST_BLEND_MID_LOD' "$MARKER" >/dev/null; then
+  if grep -E 'ARTIST_BLEND_HERO_DCC_MID_LOD|ARTIST_BLEND_SKINNED_MID_LOD|ARTIST_BLEND_ARMATURE_MID_LOD|ARTIST_BLEND_MID_LOD' "$MARKER" >/dev/null; then
     pass "EXPORT_OK evidence marker"
   else
     fail "EXPORT_OK missing known evidence class"
   fi
 fi
 
-# Catalog Swift evidence class should mention SKINNED when package is skinned export
-if grep -q 'ARTIST_BLEND_SKINNED_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
+# Catalog Swift evidence class should match shipped package class
+if grep -q 'ARTIST_BLEND_HERO_DCC_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
+  pass "catalog evidence ARTIST_BLEND_HERO_DCC_MID_LOD"
+elif grep -q 'ARTIST_BLEND_SKINNED_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
   pass "catalog evidence ARTIST_BLEND_SKINNED_MID_LOD"
 fi
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Export artist lira.blend → runtime Lira_AR_Base.usdz (ARTIST_BLEND_SKINNED_MID_LOD).
+# Export artist lira.blend → runtime Lira_AR_Base.usdz (ARTIST_BLEND_HERO_DCC_MID_LOD).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BLEND="${1:-$HOME/Desktop/lira.blend}"
@@ -32,8 +32,16 @@ if [[ "$BLEND_ABS" != "$ART_BLEND" ]]; then
   cp "$BLEND" "$ART_BLEND"
 fi
 
-echo "=== Blender export (rename + scale + USD) ==="
-"$BLENDER" --background "$BLEND" --python "$PY" -- "$BLEND"
+echo "=== Blender export (rename + scale + hero paint + DCC + USD) ==="
+if ! "$BLENDER" --background "$BLEND" --python "$PY" -- "$BLEND"; then
+  echo "Blender export failed" >&2
+  exit 1
+fi
+if [[ ! -f "$OUT_DIR/EXPORT_OK" ]] || ! grep -q 'ARTIST_BLEND_HERO_DCC_MID_LOD' "$OUT_DIR/EXPORT_OK"; then
+  echo "EXPORT_OK missing HERO_DCC evidence (Blender prep incomplete)" >&2
+  cat "$OUT_DIR/EXPORT_OK" 2>/dev/null || true
+  exit 1
+fi
 
 USD=$(ls "$OUT_DIR"/Lira_AR_Base.usd "$OUT_DIR"/Lira_AR_Base.usdc 2>/dev/null | head -1 || true)
 if [[ -z "${USD:-}" ]]; then
@@ -70,9 +78,21 @@ rm -f "$APP_OUT" "$NESTED" "$DOC_OUT"
 mkdir -p "$(dirname "$NESTED")"
 cp "$APP_OUT" "$NESTED"
 cp "$APP_OUT" "$DOC_OUT"
+# Also ship standalone clip USDZs for tooling / future DCC-only loads
+CLIP_DIR="$ROOT/App/Resources/Companion/Lira/Clips"
+mkdir -p "$CLIP_DIR"
+rm -f "$CLIP_DIR"/Lira_*.usdz
+for clip_usd in "$USD_DIR"/Lira_Idle.usd "$USD_DIR"/Lira_Follow.usd "$USD_DIR"/Lira_Investigate.usd \
+  "$USD_DIR"/Lira_Alert.usd "$USD_DIR"/Lira_Celebrate.usd "$USD_DIR"/Lira_Spawn.usd; do
+  if [[ -f "$clip_usd" ]]; then
+    base=$(basename "$clip_usd" .usd)
+    (cd "$(dirname "$clip_usd")" && usdzip "$CLIP_DIR/${base}.usdz" "$(basename "$clip_usd")")
+  fi
+done
 ls -la "$APP_OUT"
 unzip -l "$APP_OUT" | sed -n '1,30p'
-echo "evidence_class=ARTIST_BLEND_SKINNED_MID_LOD"
+ls -la "$CLIP_DIR" 2>/dev/null || true
+echo "evidence_class=ARTIST_BLEND_HERO_DCC_MID_LOD"
 echo "wrote $APP_OUT"
 echo "wrote $NESTED"
 echo "wrote $DOC_OUT"

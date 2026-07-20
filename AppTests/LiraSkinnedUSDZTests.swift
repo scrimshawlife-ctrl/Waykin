@@ -2,12 +2,12 @@ import RealityKit
 import XCTest
 @testable import WaykinApp
 
-/// Hard asserts on packaged ARTIST_BLEND_SKINNED_MID_LOD (not soft procedural fallback).
+/// Hard asserts on packaged ARTIST_BLEND_HERO_DCC_MID_LOD (not soft procedural fallback).
 @MainActor
-final class LiraSkinnedUSDZTests: XCTestCase {
+final class LiraHeroDCCUSDZTests: XCTestCase {
     func testPackagedEvidenceClassIsSkinnedMidLOD() {
-        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_SKINNED_MID_LOD")
-        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("ARTIST_BLEND_SKINNED_MID_LOD"))
+        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_HERO_DCC_MID_LOD")
+        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("ARTIST_BLEND_HERO_DCC_MID_LOD"))
         XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ)
     }
 
@@ -40,6 +40,25 @@ final class LiraSkinnedUSDZTests: XCTestCase {
         XCTAssertEqual(player.activeClip, .alert)
         player.clear()
         XCTAssertFalse(player.isDriving)
+    }
+
+    func testSkeletalPlayerReportsClipSource() async throws {
+        guard let url = LiraARAssetCatalog.baseUSDZURL else {
+            throw XCTSkip("no package")
+        }
+        let loader = LiraARAssetLoader()
+        await loader.preloadFromBundle(usdzURL: url)
+        guard case .usdz = loader.source else {
+            XCTFail(loader.activeLODDescription)
+            return
+        }
+        let entity = loader.makeLira()
+        let player = LiraSkeletalPlayer()
+        XCTAssertTrue(player.install(on: entity))
+        // At least puppet fill; DCC idle may upgrade to hybrid/dcc when present.
+        XCTAssertNotEqual(player.clipSource, .none)
+        XCTAssertTrue(player.sourceDescription.contains("clips"))
+        player.clear()
     }
 
     func testApplySkinAllFormsOnPackagedClone() async throws {

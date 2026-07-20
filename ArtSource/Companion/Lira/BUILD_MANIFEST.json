@@ -1,92 +1,78 @@
 {
   "asset": "Lira_AR_Base",
   "variant": "Dawn",
-  "status": "MID_LOD_USDZ_ARTIST_BLEND_SKINNED_V1",
-  "evidence_class": "ARTIST_BLEND_SKINNED_MID_LOD",
+  "status": "MID_LOD_USDZ_ARTIST_BLEND_HERO_DCC_V1",
+  "evidence_class": "ARTIST_BLEND_HERO_DCC_MID_LOD",
   "source_blend": "ArtSource/Companion/Lira/lira.blend",
   "prepared_blend": "ArtSource/Companion/Lira/Lira_AR_Base_prepared.blend",
+  "with_clips_blend": "ArtSource/Companion/Lira/Lira_AR_Base_with_clips.blend",
   "armature": {
     "object": "LiraArmature",
     "bone_count": 25,
-    "bind": "heat_map_auto_weights",
+    "bind": "hero_region_paint",
     "skinned_weights": true,
     "scripts": [
       "scripts/build_lira_armature.py",
-      "scripts/skin_lira_armature.py"
+      "scripts/skin_lira_armature.py",
+      "scripts/paint_lira_hero_weights.py",
+      "scripts/author_lira_armature_clips.py"
     ]
   },
   "skin": {
-    "merge": [
-      "Body+Chest+Neck\u2192Body",
-      "Head+Snout+Nose\u2192Head"
-    ],
-    "auto_weight_meshes": [
-      "Body",
-      "Head",
-      "LeftEar",
-      "RightEar",
-      "legs",
-      "paws",
-      "detail"
-    ],
-    "rigid_fx": [
-      "CoreGlow",
-      "CoreHalo",
-      "Filament*",
-      "Tail",
-      "GroundShadow",
-      "StatusIndicator"
-    ],
+    "merge": ["Body+Chest+Neck→Body", "Head+Snout+Nose→Head"],
+    "auto_weight": true,
+    "hero_paint": "distance_region_falloff+smooth+cap4",
     "body": {
       "verts": 1830,
       "vgroups": 25,
-      "multi_bone_verts": 1709,
-      "max_influences": 4,
-      "multi_bone_ratio": 0.9339
+      "multi_bone_verts": 1830,
+      "multi_bone_ratio": 1.0,
+      "max_influences": 4
     },
     "head": {
       "verts": 1830,
       "vgroups": 25,
-      "multi_bone_verts": 1216,
-      "max_influences": 4,
-      "multi_bone_ratio": 0.6645
-    },
-    "quality_pass": "normalize_cap_4_influences"
+      "multi_bone_verts": 1830,
+      "multi_bone_ratio": 1.0,
+      "max_influences": 4
+    }
   },
-  "coordinate_system": "+Y up after USD convert_orientation",
-  "canonical_height_meters": 0.72,
-  "root_node": "LiraRoot",
-  "required_nodes": [
-    "Body",
-    "Head",
-    "LeftEar",
-    "RightEar",
-    "Tail",
-    "Filament",
-    "CoreGlow",
-    "GroundShadow",
-    "StatusIndicator"
+  "dcc_clips": [
+    "Lira_Idle",
+    "Lira_Follow",
+    "Lira_Investigate",
+    "Lira_Alert",
+    "Lira_Celebrate",
+    "Lira_Spawn"
   ],
-  "export": {
-    "script": "scripts/export_lira_blend_to_usdz.sh",
-    "blender": "Blender 5.2 USD export + SkelBindingAPI",
-    "package": "usdzip"
+  "runtime": {
+    "clip_source": "dcc_overlay_puppet_fill",
+    "puppet_fallback": true
+  },
+  "package": {
+    "usdz_bytes": 5003008,
+    "entries": [
+      "Lira_AR_Base.usd",
+      "Lira_Idle.usd",
+      "Lira_Follow.usd",
+      "Lira_Investigate.usd",
+      "Lira_Alert.usd",
+      "Lira_Celebrate.usd",
+      "Lira_Spawn.usd",
+      "textures/color_040609.exr"
+    ],
+    "standalone_clips": "App/Resources/Companion/Lira/Clips/"
   },
   "validation": {
-    "required_nodes_prep": "PASS",
-    "armature_bones": "PASS_25",
-    "heat_map_weights": "PASS_AUTO",
+    "required_nodes": "PASS",
+    "hero_paint_gate": "PASS",
+    "dcc_actions": "PASS_6",
     "usdz_package": "PASS",
-    "usdz_skeleton_prim": "PASS",
-    "usdz_skel_joint_weights": "PASS",
-    "skeletal_puppet_bind": "NAME_COMPATIBLE",
-    "physical_device": "NOT_RUN",
-    "outdoor_readability": "NOT_RUN",
-    "heat_map_quality_gate": "PASS"
+    "outdoor_readability": "NOT_RUN"
   },
   "provenance": {
-    "OBSERVED": "Auto-weight heat-map + influence cap 4; Body multi-bone ratio ~0.93; USD SkelBindingAPI; ~739KB USDZ after harden.",
-    "INFERRED": "Mid-LOD deformation suitable for bone-driven motion; puppet entity clips still bind by name on semantic meshes/FX.",
-    "NOT_COMPUTABLE": "Artist hand-painted weights; outdoor AR; DCC performance clip library."
+    "OBSERVED": "Hero region paint multi-bone ratio 1.0 on Body/Head; 6 DCC actions + NLA; SkelAnimation Lira_Idle in main USD; per-clip USD sidecars in package (~5MB).",
+    "INFERRED": "Runtime prefers DCC animations when RealityKit surfaces them; puppet fill for missing IDs.",
+    "NOT_COMPUTABLE": "Outdoor AR; freehand artist weight strokes (this is reproducible hero paint, not tablet log)."
   }
 }

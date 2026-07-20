@@ -3,7 +3,7 @@
 ```yaml
 lod: AR_mid
 companion: Lira
-evidence_class: ARTIST_BLEND_SKINNED_MID_LOD
+evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
 file: Lira_AR_Base.usdz
 ```
 
