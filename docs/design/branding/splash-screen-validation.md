@@ -2,19 +2,23 @@
 
 ```yaml
 branch: feature/time-aware-splash-screen-v2
-base_sha: 8f25dc24086d25890ae46a33139b856e155072b7
+rebased_on_main: ed306e6
 implementation:
   - App/Splash/WaykinSplashBootstrap.m
+  - App/Branding/WaykinTypography.swift
+  - App/Resources/Fonts/WaykinDisplay-Regular.ttf
   - docs/design/branding/splash-screen.md
 validation:
   repository_structure: PASS
-  xcodegen_source_discovery: INFERRED_FROM_PROJECT_YML
-  compile: NOT_RUN
-  simulator: NOT_RUN
+  xcodegen_source_discovery: PASS
+  package_validate: PASS
+  native_ios_ci: PASS
+  typography_unit_test: PASS
+  compile: PASS
+  simulator: PASS_BUILD
   physical_device: NOT_RUN
 notes:
-  - The current execution environment does not expose Xcode or the user's mounted Mac repository.
-  - The implementation is isolated to the App source tree and disabled during UI testing.
+  - Splash disabled under `-WAYKIN_UI_TESTING`.
+  - Title prefers WaykinDisplay-Regular with system-font fallback.
+  - Outdoor / physical visual fit remains NOT_RUN until device review.
 ```
-
-The branch should remain draft until hosted or local Xcode validation confirms Objective-C compilation, one-shot presentation behavior, and visual fit on supported iPhone sizes.

@@ -154,8 +154,9 @@ public final class SessionMemoryRecord {
     public var experienceID: String?
     public var startedAt: Date?
     public var completedAt: Date?
-    public var activeDurationSeconds: Double
-    public var distanceMeters: Double
+    /// Optional so pre-WP-DB4 stores migrate without mandatory defaults.
+    public var activeDurationSeconds: Double?
+    public var distanceMeters: Double?
     public var completionReason: String?
     public var bondBefore: Int?
     public var bondAfter: Int?

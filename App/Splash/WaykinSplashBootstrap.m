@@ -93,12 +93,21 @@ static UIView *WaykinLightNightArtwork(CGRect frame) {
     return view;
 }
 
+/// Prefer bundled Waykin Display for brand titles; system medium as fallback.
+static UIFont *WaykinBrandFont(CGFloat size, UIFontWeight weight) {
+    UIFont *display = [UIFont fontWithName:@"WaykinDisplay-Regular" size:size];
+    if (display != nil) {
+        return display;
+    }
+    return [UIFont systemFontOfSize:size weight:weight];
+}
+
 static UILabel *WaykinLabel(NSString *text, CGFloat size, UIFontWeight weight, UIColor *color) {
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
     label.text = text;
     label.textAlignment = NSTextAlignmentCenter;
     label.textColor = color;
-    label.font = [UIFont systemFontOfSize:size weight:weight];
+    label.font = WaykinBrandFont(size, weight);
     label.adjustsFontSizeToFitWidth = YES;
     label.minimumScaleFactor = 0.75;
     return label;

@@ -32,6 +32,7 @@ style: Regular
 postscript_name: WaykinDisplay-Regular
 version: 0.1
 embedding_fsType: 0
+# Regenerate with tools/font/build_font.py; verify with shasum -a 256.
 sha256: 8ef0c71774ca4c5813ad3162690aec32723c0bb22c1028fb34ecdc16764c2d5f
 ```
 
