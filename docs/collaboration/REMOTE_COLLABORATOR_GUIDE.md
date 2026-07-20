@@ -55,7 +55,15 @@ Optional personal copy (any machine, any CWD):
 | `/waykin-release` | RC / TestFlight checklist |
 
 Canonical source + reinstall: [`skills/README.md`](../../skills/README.md).  
+**Prabu / team one-pager:** [`GROK_SKILLS_COLLABORATOR_HANDOFF.md`](GROK_SKILLS_COLLABORATOR_HANDOFF.md).  
 Skills invoke existing `scripts/*` and Makefile targets — they do not replace them.
+
+### Indoor AR hybrid smoke (when phone available, not outdoor)
+
+```bash
+bash scripts/indoor_ar_smoke_prep.sh
+# then follow docs/design/INDOOR_AR_HYBRID_SMOKE.md on device
+```
 
 ## Work Selection
 

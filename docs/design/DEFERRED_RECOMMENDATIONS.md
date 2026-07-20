@@ -31,7 +31,7 @@ Parked from post–`ARTIST_BLEND_HERO_DCC_MID_LOD` recommendations. Resume after
 | Priority | Recommendation | Why |
 | -------- | -------------- | --- |
 | 2 | ~~Sim screenshot matrix (day/night × home/session/summary)~~ | **Done** issue #194 tooling + SIMULATOR set; AR frame still optional/manual |
-| 3 | Device **indoor** AR smoke of DCC hybrid chrome (`dcc`/`hybrid`/`puppet`) | Confirms USD anim names map |
+| 3 | Device **indoor** AR smoke of DCC hybrid chrome (`dcc`/`hybrid`/`puppet`) | **Armed** — protocol [`INDOOR_AR_HYBRID_SMOKE.md`](INDOOR_AR_HYBRID_SMOKE.md) + `scripts/indoor_ar_smoke_prep.sh`; human device rows PENDING |
 | 4 | Freehand weight paint pass | Only if outdoor shows joint tearing |
 | 5 | Slim DCC package (~5MB → anim-only sidecars) | Size optimization |
 | 6 | RC/FUTURE features | Directors, Watch, Path/Health v2 — need promotion |
