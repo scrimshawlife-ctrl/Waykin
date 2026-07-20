@@ -77,4 +77,23 @@ enum LiraSessionMotion {
     static func showsHunterEcho(pose: LiraSessionPose) -> Bool {
         pose.showsEchoSilhouette
     }
+
+    // MARK: - Core pulse / filament drift (still presentation)
+
+    /// A2 soft pulse period for bond/guide stills when motion allowed.
+    static func corePulsePeriod(reduceMotion: Bool) -> TimeInterval? {
+        reduceMotion ? nil : 1.6
+    }
+
+    /// Filament drift period (guide/follow language on still + orbit).
+    static func filamentDriftPeriod(reduceMotion: Bool) -> TimeInterval? {
+        reduceMotion ? nil : 2.4
+    }
+
+    /// Horizontal still offset (points) for subtle filament-side drift at progress 0…1.
+    static func filamentDriftOffsetX(progress: Double, reduceMotion: Bool) -> CGFloat {
+        guard !reduceMotion else { return 0 }
+        let p = progress.isFinite ? progress : 0
+        return CGFloat(2.5 * sin(p * .pi * 2))
+    }
 }

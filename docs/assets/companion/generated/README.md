@@ -26,3 +26,9 @@ Dawn, Veil, Rupture under `glyphs/`
 - Regenerated for less Pokémon / mascot read
 - App asset catalog: `App/Resources/Assets.xcassets/LiraStills` + `LiraGlyph`
 - Spec: `docs/design/GENERATED_LIRA_ART.md`
+
+## Quality pass v1.1 (2026-07-19)
+
+Production refine pass on Dawn full 7-pose set, Guide (Veil/Rupture), and Hero Guide Dawn.
+Installed into `LiraStills` imagesets for the upgraded names. Remaining Veil/Rupture non-guide poses retain prior spectral masters until a follow-up pass.
+

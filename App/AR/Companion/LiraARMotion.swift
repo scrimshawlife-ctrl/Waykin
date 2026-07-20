@@ -42,6 +42,40 @@ enum LiraARMotion {
         return simd_quatf(angle: pitch, axis: axis)
     }
 
+    // MARK: - Head attention (A1)
+
+    /// Soft head yaw toward investigate / follow spatial intent (radians, Y-up).
+    static func headAttentionYawRadians(elapsed: TimeInterval, state: CompanionPresentationState) -> Float {
+        let t = Self.safeElapsed(elapsed)
+        let target: Float
+        switch state {
+        case .investigate: target = -0.22
+        case .follow: target = 0.10
+        case .alert: target = 0.06
+        case .celebrate: target = 0.14 * sin(Float(t) * 1.6)
+        default: target = 0.04 * sin(Float(t) * 0.9)
+        }
+        // Ease toward target with a gentle settle (deterministic from elapsed only).
+        let settle = min(1, Float(t) * 2.5)
+        return target * settle
+    }
+
+    static func headOrientation(elapsed: TimeInterval, state: CompanionPresentationState) -> simd_quatf {
+        let yaw = headAttentionYawRadians(elapsed: elapsed, state: state)
+        let pitch: Float = state == .investigate ? -0.18 : -0.12
+        let qPitch = simd_quatf(angle: pitch, axis: [1, 0, 0])
+        let qYaw = simd_quatf(angle: yaw, axis: [0, 1, 0])
+        return qYaw * qPitch
+    }
+
+    // MARK: - Root ease (presentation plant blend)
+
+    /// 0…1 ease for root plant transitions (200ms nominal when deltaElapsed known).
+    static func rootPlantEase(progress: Float) -> Float {
+        let p = min(1, max(0, progress))
+        return p * p * (3 - 2 * p)
+    }
+
     // MARK: - Hunter echo (A3)
 
     static func showsHunterEcho(state: CompanionPresentationState) -> Bool {
