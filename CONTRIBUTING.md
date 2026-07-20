@@ -20,6 +20,8 @@ The master documentation pack includes future-state designs. Those documents pre
 
 Remote collaborators must read [`docs/collaboration/REMOTE_COLLABORATOR_GUIDE.md`](docs/collaboration/REMOTE_COLLABORATOR_GUIDE.md) before beginning implementation.
 
+**Grok skills:** pull `main` and open Grok in the Waykin repo — `.grok/skills/waykin-*` are tracked for the whole team. Optional personal install: `./skills/install.sh --user-only`. See [`skills/README.md`](skills/README.md).
+
 Every agent-assisted task should begin with a completed [`docs/collaboration/AGENT_TASK_PACKET_TEMPLATE.md`](docs/collaboration/AGENT_TASK_PACKET_TEMPLATE.md). Use [`docs/collaboration/ACTIVE_WORK.md`](docs/collaboration/ACTIVE_WORK.md) to prevent overlapping file ownership and record active handoffs.
 
 Ordinary branches must start from current `main`. Stacked branches require an explicit issue dependency and must be reconciled or retargeted after the parent work merges.

@@ -1,7 +1,7 @@
 # Waykin Validation Makefile
 # Canonical targets for build, test, and validation.
 
-.PHONY: generate build test demo validate validate-collaboration validate-simulator clean-generated check-core-isolation test-core-isolation check-lira-usdz
+.PHONY: generate build test demo validate validate-collaboration validate-simulator clean-generated check-core-isolation test-core-isolation check-lira-usdz install-skills check-skills
 
 generate:
 	@rm -rf Waykin.xcodeproj
@@ -37,3 +37,10 @@ validate-simulator:
 clean-generated:
 	rm -rf Waykin.xcodeproj
 	find . -name "*.xcodeproj" -prune -o -name "DerivedData" -type d -prune -o -print 2>/dev/null | head -5 || true
+
+# Grok skill pack (team: .grok/skills tracked; optional ~/.grok/skills)
+install-skills:
+	@./skills/install.sh
+
+check-skills:
+	@./skills/install.sh --check
