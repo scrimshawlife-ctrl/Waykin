@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Export artist lira.blend → runtime Lira_AR_Base.usdz (ARTIST_BLEND_ARMATURE_MID_LOD).
+# Export artist lira.blend → runtime Lira_AR_Base.usdz (ARTIST_BLEND_SKINNED_MID_LOD).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BLEND="${1:-$HOME/Desktop/lira.blend}"
@@ -72,7 +72,7 @@ cp "$APP_OUT" "$NESTED"
 cp "$APP_OUT" "$DOC_OUT"
 ls -la "$APP_OUT"
 unzip -l "$APP_OUT" | sed -n '1,30p'
-echo "evidence_class=ARTIST_BLEND_ARMATURE_MID_LOD"
+echo "evidence_class=ARTIST_BLEND_SKINNED_MID_LOD"
 echo "wrote $APP_OUT"
 echo "wrote $NESTED"
 echo "wrote $DOC_OUT"

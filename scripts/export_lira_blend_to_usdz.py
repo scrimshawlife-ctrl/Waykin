@@ -2,9 +2,9 @@
 """
 Export Desktop/repo lira.blend → runtime Lira_AR_Base.usdz with Waykin node names.
 
-Evidence class: ARTIST_BLEND_ARMATURE_MID_LOD
-  (hand-authored multi-mesh + generated Blender armature bone hierarchy;
-   rigid bone-parent bind — not merged heat-map skin weights).
+Evidence class: ARTIST_BLEND_SKINNED_MID_LOD
+  (hand-authored multi-mesh + LiraArmature + auto-weight heat-map skin on
+   Body/Head/ears/legs; FX filament/core remain rigid bone-parent).
 
 Requires: Blender 3+ with USD export (wm.usd_export).
 Invoked by: scripts/export_lira_blend_to_usdz.sh
@@ -308,6 +308,21 @@ def validate_armature() -> None:
     log(f"armature validated bones={len(bones)}")
 
 
+def skin_armature() -> dict:
+    """Load scripts/skin_lira_armature.py and run skin() after scale."""
+    path = ROOT / "scripts" / "skin_lira_armature.py"
+    if not path.is_file():
+        raise SystemExit(f"missing skin script: {path}")
+    spec = importlib.util.spec_from_file_location("skin_lira_armature", path)
+    if spec is None or spec.loader is None:
+        raise SystemExit("cannot load skin_lira_armature")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    stats = mod.skin()
+    log(f"skin complete multi_body={stats.get('Body')}")
+    return stats
+
+
 def main() -> None:
     if not BLEND.is_file():
         raise SystemExit(f"blend not found: {BLEND}")
@@ -320,11 +335,14 @@ def main() -> None:
     rename_objects()
     reparent_under_root(root)
     create_missing_required(root)
-    # Real Blender armature + bone-parent multi-mesh (rigid mid-LOD bind).
+    # Armature + rigid bind first (anchors bones to mesh centers).
     build_armature()
+    # Scale before heat-map so weights sit on final metric geometry.
     scale_to_canonical_height(root)
-    validate_names()
     validate_armature()
+    # Merge torso + automatic weights (Body/Head/ears/legs).
+    skin_stats = skin_armature()
+    validate_names()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     usd_path = OUT_DIR / "Lira_AR_Base.usd"
@@ -337,10 +355,14 @@ def main() -> None:
     log(f"saved prepared blend {prepared}")
 
     # Write marker for shell packaging
+    body_stats = skin_stats.get("Body", {})
     marker = OUT_DIR / "EXPORT_OK"
     marker.write_text(
-        f"usd={usd_path}\nblend={BLEND}\nevidence=ARTIST_BLEND_ARMATURE_MID_LOD\n"
-        f"armature=LiraArmature\nbone_bind=rigid_parent\n",
+        f"usd={usd_path}\nblend={BLEND}\nevidence=ARTIST_BLEND_SKINNED_MID_LOD\n"
+        f"armature=LiraArmature\nbone_bind=heat_map_auto_weights\n"
+        f"body_vgroups={body_stats.get('vgroups')}\n"
+        f"body_multi_bone_verts={body_stats.get('multi_bone_verts')}\n"
+        f"body_max_influences={body_stats.get('max_influences')}\n",
         encoding="utf-8",
     )
     log("done")

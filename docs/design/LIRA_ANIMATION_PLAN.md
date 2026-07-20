@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-ANIM-PLAN-001
-version: 0.5
+version: 0.6
 status: MID_LOD_COMPLETE
 companion: Lira
 style: spectral_living_familiar
@@ -13,9 +13,11 @@ session_ambient_motion: SHIPPED
 route_polyline_reveal: SHIPPED
 skeletal_animation_library: JOINT_HIERARCHY_SHIPPED
 blender_armature_rigid_bind: SHIPPED
-dcc_skinned_weights: NOT_SHIPPED
+heat_map_auto_weights: SHIPPED
+dcc_hand_painted_weights: NOT_SHIPPED
 generated_mid_lod_usdz: SHIPPED_V1_2
 artist_blend_armature_usdz: SHIPPED_V1
+artist_blend_skinned_usdz: SHIPPED_V1
 runtime_animation_resource_clips: SHIPPED
 procedural_mesh_mid_lod: SHIPPED
 ```
@@ -114,8 +116,9 @@ This plan binds animation to existing state machines:
 | **Celebrate** | Root | Bounded duration (reducer) | **Shipped** |
 | **Runtime clips** | Optional bind targets | `LiraARAnimationLibrary` (idle/follow/alert/celebrate/spawn) | **Shipped** (lab / single-node) |
 | **Skeletal puppet** | Joint paths on `LiraRoot` | `LiraSkeletalPlayer` multi-joint groups; default driver when installed | **Shipped** |
-| **Blender armature** | `LiraArmature` + USD Skeleton | Rigid bone-parent multi-mesh (`build_lira_armature.py`) | **Shipped** |
-| **DCC heat-map skin** | Merged mesh + weights | Artist weight paint + DCC AnimationLibrary | **Not shipped** |
+| **Blender armature** | `LiraArmature` + USD Skeleton | Bone hierarchy (`build_lira_armature.py`) | **Shipped** |
+| **Heat-map auto-skin** | Body/Head/ears/legs weights | `skin_lira_armature.py` ARMATURE_AUTO | **Shipped** |
+| **Hand-painted skin** | Artist paint pass | Hero close-up weights | **Not shipped** |
 
 ### Timing budget (AR)
 
@@ -132,8 +135,9 @@ This plan binds animation to existing state machines:
 | ----- | ---- |
 | U0 | Hierarchy A1–A3 validated by `LiraARAssetLoader` (**shipped path**) |
 | U1a | Joint-hierarchy skeletal AnimationLibrary + player (**shipped** — puppet bind paths) |
-| U1a+ | Blender `LiraArmature` rigid bone-parent + USD Skeleton (**shipped**) |
-| U1b | Author idle / walk / alert clips in DCC on `LiraArmature`; optional heat-map weights |
+| U1a+ | Blender `LiraArmature` + USD Skeleton (**shipped**) |
+| U1a++ | Auto-weight heat-map skin on Body/Head/ears/legs (**shipped**) |
+| U1b | Author idle / walk / alert clips in DCC; optional hand-painted weights |
 | U2 | RealityKit playback mapped from `CompanionPresentationState` (**shipped** for puppet) |
 | U3 | Skin materials remain runtime remap; clips shared (**shipped**) |
 
@@ -182,8 +186,9 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 | **A4c** | Runtime `AnimationResource` clip library | **Done** (`LiraARAnimationLibrary`) |
 | **A5** | Joint-hierarchy skeletal AnimationLibrary + player | **Done** (`LiraSkeletal*` + renderer default) |
 | **A5+** | Session ambient drift/pulse + route polyline reveal | **Done** (#157) |
-| **A5b** | Blender armature rigid bind on artist multi-mesh | **Done** (`LiraArmature` + export) |
-| **A5c** | Heat-map skinned weights (optional) | **Blocked** — needs merged mesh + weight paint |
+| **A5b** | Blender armature on artist multi-mesh | **Done** (`LiraArmature` + export) |
+| **A5c** | Heat-map auto-weights (merge torso + ARMATURE_AUTO) | **Done** (`skin_lira_armature.py`) |
+| **A5d** | Hand-painted hero weights (optional) | **Optional** — artist paint pass |
 | **A6** | Outdoor motion QA notes | Device walk (#41) |
 
 ## Test strategy

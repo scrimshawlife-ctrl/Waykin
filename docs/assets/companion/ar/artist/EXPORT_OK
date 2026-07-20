@@ -1,5 +1,8 @@
 usd=/Users/appliedalchemylabs/Waykin/docs/assets/companion/ar/artist/Lira_AR_Base.usd
 blend=ArtSource/Companion/Lira/lira.blend
-evidence=ARTIST_BLEND_ARMATURE_MID_LOD
+evidence=ARTIST_BLEND_SKINNED_MID_LOD
 armature=LiraArmature
-bone_bind=rigid_parent
+bone_bind=heat_map_auto_weights
+body_vgroups=25
+body_multi_bone_verts=1709
+body_max_influences=5
