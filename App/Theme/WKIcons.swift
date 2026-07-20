@@ -4,11 +4,14 @@ import SwiftUI
 /// Template-style shapes: tint with `.foregroundStyle` / theme colors.
 /// Source language: Waykin-Design 07_Icons v0.2 (24×24, stroke 1.75, round caps).
 enum WKIcon: String, CaseIterable, Identifiable {
+    // Nav
     case home
     case beginSession
     case companion
     case bond
+    case history
     case settings
+    // Session controls
     case pause
     case resume
     case stop
@@ -16,8 +19,27 @@ enum WKIcon: String, CaseIterable, Identifiable {
     case companionBehind
     case caution
     case sanctuary
-    case trail
     case audio
+    case haptics
+    case safetyPause
+    case trackingLoss
+    case routeCertainty
+    // Modes
+    case trail
+    case race
+    case hunt
+    // Companion states
+    case guide
+    case rival
+    case hunter
+    case dormant
+    case recovering
+    case bonded
+    // System
+    case location
+    case battery
+    case motion
+    case permissionRequired
 
     var id: String { rawValue }
 
@@ -27,6 +49,7 @@ enum WKIcon: String, CaseIterable, Identifiable {
         case .beginSession: "Begin session"
         case .companion: "Companion"
         case .bond: "Bond"
+        case .history: "History"
         case .settings: "Settings"
         case .pause: "Pause"
         case .resume: "Resume"
@@ -35,8 +58,24 @@ enum WKIcon: String, CaseIterable, Identifiable {
         case .companionBehind: "Companion behind"
         case .caution: "Caution"
         case .sanctuary: "Sanctuary"
-        case .trail: "Trail"
         case .audio: "Audio"
+        case .haptics: "Haptics"
+        case .safetyPause: "Safety pause"
+        case .trackingLoss: "Tracking loss"
+        case .routeCertainty: "Route certainty"
+        case .trail: "Trail"
+        case .race: "Race"
+        case .hunt: "Hunt"
+        case .guide: "Guide"
+        case .rival: "Rival"
+        case .hunter: "Hunter"
+        case .dormant: "Dormant"
+        case .recovering: "Recovering"
+        case .bonded: "Bonded"
+        case .location: "Location"
+        case .battery: "Battery"
+        case .motion: "Motion"
+        case .permissionRequired: "Permission required"
         }
     }
 }
@@ -198,6 +237,132 @@ private extension WKIcon {
                 path.addCurve(to: CGPoint(x: 15, y: 15), control1: CGPoint(x: 16.5, y: 10), control2: CGPoint(x: 16.5, y: 14))
                 path.move(to: CGPoint(x: 17, y: 7))
                 path.addCurve(to: CGPoint(x: 17, y: 17), control1: CGPoint(x: 19.5, y: 9), control2: CGPoint(x: 19.5, y: 15))
+            }
+        case .history:
+            WKIconCanvas { path in
+                path.addArc(center: CGPoint(x: 12, y: 12), radius: 7, startAngle: .degrees(-90), endAngle: .degrees(200), clockwise: false)
+                path.move(to: CGPoint(x: 12, y: 8))
+                path.addLine(to: CGPoint(x: 12, y: 12.5))
+                path.addLine(to: CGPoint(x: 15, y: 14))
+            }
+        case .haptics:
+            WKIconCanvas { path in
+                path.addRoundedRect(in: CGRect(x: 8, y: 5, width: 8, height: 14), cornerSize: CGSize(width: 2, height: 2))
+                path.move(to: CGPoint(x: 5, y: 9))
+                path.addLine(to: CGPoint(x: 5, y: 15))
+                path.move(to: CGPoint(x: 19, y: 9))
+                path.addLine(to: CGPoint(x: 19, y: 15))
+            }
+        case .safetyPause:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 5, y: 5, width: 14, height: 14))
+                path.move(to: CGPoint(x: 10, y: 9))
+                path.addLine(to: CGPoint(x: 10, y: 15))
+                path.move(to: CGPoint(x: 14, y: 9))
+                path.addLine(to: CGPoint(x: 14, y: 15))
+            }
+        case .trackingLoss:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 8, y: 8, width: 8, height: 8))
+                path.move(to: CGPoint(x: 12, y: 4))
+                path.addLine(to: CGPoint(x: 12, y: 6.5))
+                path.move(to: CGPoint(x: 12, y: 17.5))
+                path.addLine(to: CGPoint(x: 12, y: 20))
+                path.move(to: CGPoint(x: 4, y: 12))
+                path.addLine(to: CGPoint(x: 6.5, y: 12))
+                path.move(to: CGPoint(x: 17.5, y: 12))
+                path.addLine(to: CGPoint(x: 20, y: 12))
+                path.move(to: CGPoint(x: 7, y: 7))
+                path.addLine(to: CGPoint(x: 17, y: 17))
+            }
+        case .routeCertainty:
+            WKIconCanvas { path in
+                path.move(to: CGPoint(x: 5, y: 16))
+                path.addCurve(to: CGPoint(x: 19, y: 8), control1: CGPoint(x: 10, y: 18), control2: CGPoint(x: 14, y: 6))
+                path.addEllipse(in: CGRect(x: 16.5, y: 6.5, width: 3, height: 3))
+            }
+        case .race:
+            WKIconCanvas { path in
+                path.move(to: CGPoint(x: 5, y: 16))
+                path.addLine(to: CGPoint(x: 10, y: 8))
+                path.addLine(to: CGPoint(x: 14, y: 14))
+                path.addLine(to: CGPoint(x: 19, y: 6))
+            }
+        case .hunt:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 7, y: 7, width: 10, height: 10))
+                path.addEllipse(in: CGRect(x: 10, y: 10, width: 4, height: 4))
+                path.move(to: CGPoint(x: 12, y: 4))
+                path.addLine(to: CGPoint(x: 12, y: 7))
+            }
+        case .guide:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 8.5, y: 5, width: 7, height: 7))
+                path.move(to: CGPoint(x: 7, y: 18))
+                path.addCurve(to: CGPoint(x: 17, y: 18), control1: CGPoint(x: 7, y: 14), control2: CGPoint(x: 17, y: 14))
+                path.move(to: CGPoint(x: 12, y: 13))
+                path.addLine(to: CGPoint(x: 12, y: 20))
+            }
+        case .rival:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 8.5, y: 5, width: 7, height: 7))
+                path.move(to: CGPoint(x: 7, y: 18))
+                path.addCurve(to: CGPoint(x: 17, y: 18), control1: CGPoint(x: 7, y: 14), control2: CGPoint(x: 17, y: 14))
+                path.move(to: CGPoint(x: 16, y: 9))
+                path.addLine(to: CGPoint(x: 20, y: 7))
+            }
+        case .hunter:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 8.5, y: 12, width: 7, height: 7))
+                path.move(to: CGPoint(x: 7, y: 11))
+                path.addCurve(to: CGPoint(x: 17, y: 11), control1: CGPoint(x: 7, y: 14), control2: CGPoint(x: 17, y: 14))
+                path.move(to: CGPoint(x: 5, y: 8))
+                path.addCurve(to: CGPoint(x: 8, y: 5), control1: CGPoint(x: 5, y: 6), control2: CGPoint(x: 6.5, y: 5))
+            }
+        case .dormant:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 6, y: 6, width: 12, height: 12))
+                path.addEllipse(in: CGRect(x: 10, y: 10, width: 4, height: 4))
+            }
+        case .recovering:
+            WKIconCanvas { path in
+                path.addArc(center: CGPoint(x: 12, y: 12), radius: 7, startAngle: .degrees(20), endAngle: .degrees(300), clockwise: false)
+                path.move(to: CGPoint(x: 16, y: 6))
+                path.addLine(to: CGPoint(x: 19, y: 6))
+                path.addLine(to: CGPoint(x: 19, y: 9))
+            }
+        case .bonded:
+            WKIconCanvas { path in
+                path.addArc(center: CGPoint(x: 12, y: 12), radius: 7, startAngle: .degrees(-50), endAngle: .degrees(200), clockwise: false)
+                path.addEllipse(in: CGRect(x: 8, y: 10, width: 4, height: 4))
+                path.addEllipse(in: CGRect(x: 12.5, y: 9, width: 4, height: 4))
+            }
+        case .location:
+            WKIconCanvas { path in
+                path.addEllipse(in: CGRect(x: 8, y: 5, width: 8, height: 8))
+                path.move(to: CGPoint(x: 12, y: 13))
+                path.addLine(to: CGPoint(x: 12, y: 20))
+                path.addEllipse(in: CGRect(x: 10.5, y: 7.5, width: 3, height: 3))
+            }
+        case .battery:
+            WKIconCanvas { path in
+                path.addRoundedRect(in: CGRect(x: 5, y: 8, width: 12, height: 8), cornerSize: CGSize(width: 1.5, height: 1.5))
+                path.addRoundedRect(in: CGRect(x: 17, y: 10, width: 2, height: 4), cornerSize: CGSize(width: 0.5, height: 0.5))
+                path.addRoundedRect(in: CGRect(x: 7, y: 10, width: 6, height: 4), cornerSize: CGSize(width: 0.5, height: 0.5))
+            }
+        case .motion:
+            WKIconCanvas { path in
+                path.move(to: CGPoint(x: 5, y: 15))
+                path.addLine(to: CGPoint(x: 9, y: 9))
+                path.addLine(to: CGPoint(x: 13, y: 13))
+                path.addLine(to: CGPoint(x: 19, y: 7))
+            }
+        case .permissionRequired:
+            WKIconCanvas { path in
+                path.addRoundedRect(in: CGRect(x: 6, y: 4, width: 12, height: 16), cornerSize: CGSize(width: 2, height: 2))
+                path.move(to: CGPoint(x: 12, y: 9))
+                path.addLine(to: CGPoint(x: 12, y: 13))
+                path.addEllipse(in: CGRect(x: 11.4, y: 14.8, width: 1.2, height: 1.2))
             }
         }
     }

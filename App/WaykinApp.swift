@@ -1249,7 +1249,7 @@ struct HomeView: View {
             theme.background.ignoresSafeArea()
 
             ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: WKTokens.Space.lg) {
                 HStack {
                     WKBondFilamentMark(size: 40)
                     Spacer()
@@ -1258,15 +1258,15 @@ struct HomeView: View {
                     } label: {
                         WKIconView(icon: .settings, size: 22)
                             .foregroundStyle(theme.textSecondary)
-                            .frame(minWidth: 48, minHeight: 48)
+                            .frame(minWidth: WKTokens.Space.minTouch, minHeight: WKTokens.Space.minTouch)
                     }
                     .accessibilityLabel("Settings")
                     .accessibilityIdentifier("waykin.home.settings")
                 }
-                .padding(.top, 4)
+                .padding(.top, WKTokens.Space.xs)
 
                 Text("Waykin")
-                    .font(.largeTitle.bold())
+                    .font(WKTokens.TypeScale.title)
                     .foregroundStyle(theme.textPrimary)
                     .accessibilityIdentifier("waykin.home")
 
@@ -1275,10 +1275,19 @@ struct HomeView: View {
                     .frame(maxHeight: 200)
                     .accessibilityIdentifier("waykin.home.lira")
 
-                HStack(spacing: 10) {
+                // Bond orbital (relationship viz — not XP bar)
+                HStack(spacing: WKTokens.Space.md) {
+                    WKBondOrbitalRing(bondLevel: appModel.companion.bondLevel, size: 56)
+                    VStack(alignment: .leading, spacing: WKTokens.Space.xxs) {
+                        Text(appModel.companion.name)
+                            .font(.headline)
+                            .foregroundStyle(theme.textPrimary)
+                        Text("Bond \(appModel.companion.bondLevel)")
+                            .font(WKTokens.TypeScale.caption)
+                            .foregroundStyle(theme.bondText)
+                    }
+                    Spacer(minLength: 0)
                     LiraGlyphView(size: 36, skin: appModel.selectedLiraSkin)
-                    Text("\(appModel.companion.name) • Bond \(appModel.companion.bondLevel)")
-                        .foregroundStyle(theme.bondText)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Companion \(appModel.companion.name), Bond \(appModel.companion.bondLevel)")
@@ -1330,10 +1339,10 @@ struct HomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("waykin.home.skin.line")
                 }
-                .padding(12)
+                .padding(WKTokens.Space.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(theme.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: WKTokens.Radius.medium, style: .continuous))
 
                 if let lastMemory = memoryRecords.first {
                     Text(lastMemory.text)
@@ -1342,11 +1351,16 @@ struct HomeView: View {
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("waykin.memory.latest")
                 } else {
-                    Text("Walk with Lira to write your first memory.")
-                        .font(.callout)
-                        .foregroundStyle(theme.textTertiary)
-                        .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("waykin.memory.emptyInvite")
+                    // Empty history: soft invite + Begin CTA nearby (component library)
+                    VStack(spacing: WKTokens.Space.sm) {
+                        WKIconView(icon: .history, size: 28)
+                            .foregroundStyle(theme.textTertiary)
+                        Text("Walk with Lira to write your first memory.")
+                            .font(.callout)
+                            .foregroundStyle(theme.textTertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .accessibilityIdentifier("waykin.memory.emptyInvite")
                 }
 
                 if !appModel.demoMessage.isEmpty {
@@ -1358,6 +1372,7 @@ struct HomeView: View {
                 }
 
                 // #126: product priority — real walk is primary CTA; demo is secondary.
+                // Primary CTA in lower half (one-handed / production board)
                 Button {
                     appModel.startRealCompanionWalk()
                 } label: {
@@ -1367,6 +1382,7 @@ struct HomeView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(theme.guide)
                 .disabled(realWalkButtonDisabled)
+                .opacity(realWalkButtonDisabled ? theme.disabledOpacity : 1)
                 .accessibilityLabel(realWalkButtonTitle)
                 .accessibilityIdentifier("waykin.real.open")
                 .accessibilityIdentifier("waykin.real.activity.walk")
@@ -1377,7 +1393,7 @@ struct HomeView: View {
                     appModel.startDemo(.calmDayWalk)
                 } label: {
                     WKIconLabel(title: "Demo Walk", icon: .beginSession)
-                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .frame(maxWidth: .infinity, minHeight: WKTokens.Space.minTouch)
                 }
                 .buttonStyle(.bordered)
                 .tint(theme.guide)
@@ -1391,10 +1407,14 @@ struct HomeView: View {
                         .accessibilityIdentifier("waykin.demo.mode")
                 }
 
-                Button("Memory History") { appModel.path.append(AppRoute.memoryHistory) }
-                    .foregroundStyle(theme.guideText)
-                    .frame(minHeight: 48)
-                    .accessibilityIdentifier("waykin.memory.open")
+                Button {
+                    appModel.path.append(AppRoute.memoryHistory)
+                } label: {
+                    WKIconLabel(title: "Memory History", icon: .history)
+                        .frame(minHeight: WKTokens.Space.minTouch)
+                }
+                .foregroundStyle(theme.guideText)
+                .accessibilityIdentifier("waykin.memory.open")
 
                 if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
                     VStack(alignment: .leading, spacing: 2) {
@@ -1437,7 +1457,8 @@ struct HomeView: View {
                     .foregroundStyle(theme.textTertiary)
                 }
             }
-            .padding(24)
+            .padding(.horizontal, WKTokens.Space.screenMarginX)
+            .padding(.vertical, WKTokens.Space.lg)
             }
         }
         .sheet(isPresented: Binding(
@@ -1481,6 +1502,7 @@ struct HomeView: View {
 struct SettingsView: View {
     @Environment(WaykinAppModel.self) private var appModel
     @Environment(\.wkTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -1500,7 +1522,7 @@ struct SettingsView: View {
                                         .foregroundStyle(theme.guide)
                                 }
                             }
-                            .frame(minHeight: 44)
+                            .frame(minHeight: WKTokens.Space.minTouch)
                         }
                         .accessibilityIdentifier("waykin.settings.appearance.\(preference.rawValue)")
                     }
@@ -1514,8 +1536,55 @@ struct SettingsView: View {
                         .foregroundStyle(theme.textTertiary)
                 }
 
+                // Minimal settings surface from CANDIDATE_v0.2 checklist G
+                Section("Comfort") {
+                    HStack(spacing: WKTokens.Space.sm) {
+                        WKIconView(icon: .motion, size: 18)
+                            .foregroundStyle(theme.textSecondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Reduce Motion")
+                                .foregroundStyle(theme.textPrimary)
+                            Text(reduceMotion
+                                 ? "On — system preference. Ambient loops pause."
+                                 : "Off — follows system Settings → Accessibility.")
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                        }
+                    }
+                    .frame(minHeight: WKTokens.Space.minTouch)
+                    .accessibilityIdentifier("waykin.settings.reduceMotion")
+
+                    HStack(spacing: WKTokens.Space.sm) {
+                        WKIconView(icon: .audio, size: 18)
+                            .foregroundStyle(theme.textSecondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Audio")
+                                .foregroundStyle(theme.textPrimary)
+                            Text("Cues follow the walk. Mute via device volume or silent switch.")
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                        }
+                    }
+                    .frame(minHeight: WKTokens.Space.minTouch)
+                    .accessibilityIdentifier("waykin.settings.audio")
+
+                    HStack(spacing: WKTokens.Space.sm) {
+                        WKIconView(icon: .haptics, size: 18)
+                            .foregroundStyle(theme.textSecondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Haptics")
+                                .foregroundStyle(theme.textPrimary)
+                            Text("Uses system haptics when available. No extra intensity control yet.")
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                        }
+                    }
+                    .frame(minHeight: WKTokens.Space.minTouch)
+                    .accessibilityIdentifier("waykin.settings.haptics")
+                }
+
                 Section {
-                    Text("Day and night use Echo tokens (not a simple invert). Outdoor glare still needs a device walk.")
+                    Text("Day and night use Echo WK_TOKENS_v0.2 (not a simple invert). Outdoor glare still needs a device walk (#41).")
                         .font(.caption)
                         .foregroundStyle(theme.textTertiary)
                 }
@@ -1556,25 +1625,50 @@ struct ActiveSessionView: View {
     private var sessionContent: some View {
         let presentation = appModel.activePresencePresentation
 
+        let chrome = WKSessionChromeState.resolve(
+            behavior: presentation.behavior,
+            pursuit: presentation.pursuitState,
+            isPaused: presentation.isPaused,
+            isOpening: presentation.isOpening,
+            pathRelation: presentation.pathRelation,
+            gpsProblem: appModel.isLiveSessionActive
+                && GPSSignalPresentation(state: appModel.liveSignalState).isProblem
+        )
+
         return ZStack {
             CompanionPresenceStyle.background(for: presentation.pressureIntensity, theme: theme)
                 .ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: CompanionPresenceStyle.sectionSpacing) {
+                    // Sparse active chrome: state + relation (production board)
+                    HStack {
+                        WKStateChip(state: chrome)
+                        Spacer()
+                        relationChip(for: presentation)
+                    }
+                    .accessibilityIdentifier("waykin.session.chromeRow")
+
+                    Text(chrome.chipLabel)
+                        .font(.system(size: WKTokens.TypeScale.displayMin, weight: .semibold))
+                        .minimumScaleFactor(0.85)
+                        .foregroundStyle(chrome.color(in: theme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("waykin.session.stateDisplay")
+
                     CompanionPresenceView(presentation: presentation)
                         .liraSkin(appModel.selectedLiraSkin)
 
-                    // #126: AR beside Pause/End for one-handed reach (continuity re-entry).
+                    // #126: Pause/End in thumb zone; End calm/neutral never alarm red.
                     AnyLayout(dynamicTypeSize.isAccessibilitySize
-                        ? AnyLayout(VStackLayout(spacing: 12))
-                        : AnyLayout(HStackLayout(spacing: 12))) {
+                        ? AnyLayout(VStackLayout(spacing: WKTokens.Space.md))
+                        : AnyLayout(HStackLayout(spacing: WKTokens.Space.md))) {
                         if presentation.isPaused {
                             Button {
                                 appModel.isLiveSessionActive ? appModel.resumeRealSession() : appModel.resumeDemo()
                             } label: {
                                 WKIconLabel(title: "Resume", icon: .resume)
-                                    .frame(minWidth: 48, minHeight: 48)
+                                    .frame(minWidth: WKTokens.Space.minTouch, minHeight: WKTokens.Space.minTouch)
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(theme.guide)
@@ -1586,21 +1680,20 @@ struct ActiveSessionView: View {
                                 appModel.isLiveSessionActive ? appModel.pauseRealSession() : appModel.pauseDemo()
                             } label: {
                                 WKIconLabel(title: "Pause", icon: .pause)
-                                    .frame(minWidth: 48, minHeight: 48)
+                                    .frame(minWidth: WKTokens.Space.minTouch, minHeight: WKTokens.Space.minTouch)
                             }
                             .buttonStyle(.bordered)
-                            .tint(theme.pause)
+                            .tint(chrome == .safetyPause ? theme.safetyPause : theme.pause)
                             .accessibilityLabel("Pause walk")
                             .accessibilitySortPriority(2)
                             .accessibilityIdentifier("waykin.session.pause")
                         }
 
-                        // End is calm/neutral — never alarm red (design: stop is always okay)
                         Button {
                             appModel.isLiveSessionActive ? appModel.endRealSession() : appModel.endDemo()
                         } label: {
                             WKIconLabel(title: "End", icon: .stop)
-                                .frame(minWidth: 48, minHeight: 48)
+                                .frame(minWidth: WKTokens.Space.minTouch, minHeight: WKTokens.Space.minTouch)
                         }
                         .buttonStyle(.bordered)
                         .tint(theme.textSecondary)
@@ -1611,8 +1704,8 @@ struct ActiveSessionView: View {
                         Button {
                             showsARCompanion = true
                         } label: {
-                            Label("AR", systemImage: "viewfinder")
-                                .frame(minWidth: 48, minHeight: 48)
+                            WKIconLabel(title: "AR", icon: .companion)
+                                .frame(minWidth: WKTokens.Space.minTouch, minHeight: WKTokens.Space.minTouch)
                         }
                         .buttonStyle(.bordered)
                         .tint(theme.guide)
@@ -1625,7 +1718,7 @@ struct ActiveSessionView: View {
                     if !appModel.isLiveSessionActive {
                         Button { appModel.runDemoToEnd() } label: {
                             Text("Run to End")
-                                .frame(minWidth: 48, minHeight: 48)
+                                .frame(minWidth: WKTokens.Space.minTouch, minHeight: WKTokens.Space.minTouch)
                         }
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
@@ -1635,7 +1728,7 @@ struct ActiveSessionView: View {
                         let signal = GPSSignalPresentation(state: appModel.liveSignalState)
                         SessionStatusChip(
                             title: signal.label,
-                            systemImage: signal.symbolName,
+                            wkIcon: signal.isProblem ? .trackingLoss : .location,
                             tone: signal.isProblem ? .caution : .calm,
                             accessibilityLabelText: "GPS status",
                             accessibilityValueText: signal.accessibilityValue,
@@ -1693,6 +1786,32 @@ struct ActiveSessionView: View {
             .wkThemed()
             .preferredColorScheme(appModel.appearancePreference.preferredColorScheme)
         }
+    }
+
+    @ViewBuilder
+    private func relationChip(for presentation: CompanionPresencePresentation) -> some View {
+        let (title, icon): (String, WKIcon) = {
+            if presentation.pursuitState == .close || presentation.pursuitState == .approaching {
+                return ("PRESSURE", .companionBehind)
+            }
+            switch presentation.pathRelation {
+            case .onPath, .recovered: return ("NEAR", .companion)
+            case .strained, .offPath: return ("BEHIND", .companionBehind)
+            case .establishing:
+                switch presentation.behavior {
+                case .lead: return ("AHEAD", .companionAhead)
+                default: return ("NEAR", .companion)
+                }
+            }
+        }()
+        SessionStatusChip(
+            title: title,
+            wkIcon: icon,
+            tone: title == "PRESSURE" ? .emphasis : .calm,
+            accessibilityLabelText: "Companion relation",
+            accessibilityValueText: title,
+            accessibilityIdentifier: "waykin.session.relationChip"
+        )
     }
 }
 

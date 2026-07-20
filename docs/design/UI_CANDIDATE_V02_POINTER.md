@@ -72,3 +72,8 @@ Prefer **CANDIDATE_v0.2** when the two diverge on tokens, chrome density, or scr
 ## Parked elsewhere
 
 AR outdoor + size/DCC follow-ups: [DEFERRED_RECOMMENDATIONS.md](DEFERRED_RECOMMENDATIONS.md)
+
+## In-repo snapshot
+
+- Tokens JSON: `docs/design/ui_candidate_v0.2/WK_TOKENS_v0.2.json`
+- Checklist copy: `docs/design/ui_candidate_v0.2/INTEGRATION_CHECKLIST.md`

@@ -1,0 +1,215 @@
+{
+  "meta": {
+    "asset_id": "WK_TOKENS_v0.2",
+    "version": "0.2",
+    "status": "PRODUCTION_CANDIDATE",
+    "primary_direction": "Echo",
+    "locked": true,
+    "locked_date": "2026-07-19"
+  },
+  "color": {
+    "background": {
+      "day": {
+        "primary": "#E4E8EC",
+        "warm": "#F2EDE6",
+        "inverse": "#12151C"
+      },
+      "night": {
+        "primary": "#12151C",
+        "deep": "#0C0E12",
+        "warm_void": "#1A1614"
+      }
+    },
+    "surface": {
+      "day": {
+        "primary": "#F7F5F2",
+        "secondary": "#EBEEF1"
+      },
+      "night": {
+        "primary": "#1E2430",
+        "secondary": "#181C26"
+      }
+    },
+    "text": {
+      "day": {
+        "primary": "#141820",
+        "secondary": "#4A535E",
+        "secondary_soft": "#5C6570",
+        "tertiary": "#8A929C",
+        "inverse": "#F7F5F2",
+        "disabled_opacity": 0.35
+      },
+      "night": {
+        "primary": "#E6EAF0",
+        "secondary": "#9AA3B0",
+        "tertiary": "#7A8494",
+        "inverse": "#141820",
+        "disabled_opacity": 0.32
+      }
+    },
+    "semantic": {
+      "bond": {
+        "day": "#D4A45A",
+        "day_text": "#8A6428",
+        "night": "#B8894A"
+      },
+      "guide": {
+        "day": "#3F8F8A",
+        "day_text": "#2F6F6B",
+        "night": "#4A9E98"
+      },
+      "rival": {
+        "day": "#D17A4A",
+        "day_text": "#A34E28",
+        "night": "#C46B3A"
+      },
+      "hunter": {
+        "day": "#5C4E7A",
+        "day_text": "#4A3E66",
+        "night": "#6A5A8A",
+        "filament_day": "#7B8C9E",
+        "filament_night": "#8A97A8"
+      },
+      "sanctuary": {
+        "day": "#A8C4B5",
+        "day_deep": "#5F7F72",
+        "night": "#5F7F72"
+      },
+      "caution": {
+        "day": "#E0B040",
+        "night": "#E0B040"
+      },
+      "pause": {
+        "day": "#5C6570",
+        "night": "#9AA3B0"
+      },
+      "safety_pause": {
+        "day": "#5F7F72",
+        "night": "#6F8F82"
+      }
+    },
+    "focus": {
+      "day": "#3F8F8A",
+      "night": "#4A9E98"
+    }
+  },
+  "typography": {
+    "font_primary": "DM Sans",
+    "fallbacks": [
+      "Source Sans 3",
+      "ui-sans-serif",
+      "system-ui",
+      "sans-serif"
+    ],
+    "display": {
+      "size_pt": 36,
+      "weight": 600,
+      "line_height": 1.1
+    },
+    "title": {
+      "size_pt": 24,
+      "weight": 600,
+      "line_height": 1.2
+    },
+    "body": {
+      "size_pt": 16,
+      "weight": 400,
+      "line_height": 1.45
+    },
+    "caption": {
+      "size_pt": 12,
+      "weight": 500,
+      "line_height": 1.35
+    },
+    "numeric": {
+      "size_pt": 20,
+      "weight": 500,
+      "features": [
+        "tabular-nums"
+      ]
+    }
+  },
+  "spacing": {
+    "2xs": 2,
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48,
+    "screen_margin_x": 24,
+    "min_touch_target": 48
+  },
+  "radius": {
+    "small": 8,
+    "medium": 14,
+    "large": 20,
+    "capsule": 999,
+    "icon_container": 12
+  },
+  "motion": {
+    "fast_ms": 120,
+    "standard_ms": 220,
+    "slow_ms": 360,
+    "manifestation_ms": 700,
+    "sanctuary_ms": 800,
+    "bond_ms": 500,
+    "pursuit_pulse_ms": 900,
+    "easing_standard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "reduced_motion": "static_state_art_or_crossfade_lte_120ms"
+  },
+  "iconography": {
+    "grid_px": 24,
+    "stroke_px": 1.75,
+    "cap": "round",
+    "join": "round",
+    "corner": "round"
+  },
+  "semantic_state_map": {
+    "dormant": {
+      "color": "neutral",
+      "icon": "dormant"
+    },
+    "manifesting": {
+      "color": "bond",
+      "icon": "companion"
+    },
+    "guide": {
+      "color": "guide",
+      "icon": "companion_ahead"
+    },
+    "rival": {
+      "color": "rival",
+      "icon": "rival"
+    },
+    "hunter": {
+      "color": "hunter",
+      "icon": "companion_behind"
+    },
+    "sanctuary": {
+      "color": "sanctuary",
+      "icon": "sanctuary"
+    },
+    "bond_update": {
+      "color": "bond",
+      "icon": "bond"
+    },
+    "pause": {
+      "color": "pause",
+      "icon": "pause"
+    },
+    "safety_pause": {
+      "color": "safety_pause",
+      "icon": "safety_pause"
+    },
+    "caution": {
+      "color": "caution",
+      "icon": "caution"
+    },
+    "tracking_loss": {
+      "color": "caution",
+      "icon": "tracking_loss"
+    }
+  }
+}
