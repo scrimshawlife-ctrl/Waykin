@@ -47,3 +47,10 @@ Assets installed under `App/Resources/Assets.xcassets/LiraStills` (21 imagesets)
 
 - Sign-off: [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md)
 - AR mid-LOD: procedural Living Familiar in `CompanionEntityFactory`; USDZ slot at `App/Resources/Companion/Lira/`
+
+## Quality pass
+
+- v1.1: Dawn full set + Guide Veil/Rupture + hero
+- **v1.2: complete Veil + Rupture 7-pose matrix** (full 7×3 quality-passed)
+- AnimationLibrary: not shipped (procedural only)
+
