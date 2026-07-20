@@ -140,19 +140,59 @@ public final class CompanionRecord {
 public final class SessionMemoryRecord {
     @Attribute(.unique)
     public var id: UUID
-    /// Durable completion idempotency key (WP-DB2).
+    /// Durable completion idempotency key (WP-DB2 / WP-DB4).
     @Attribute(.unique)
     public var sessionID: UUID
     public var scenarioID: String?
     public var text: String
     public var createdAt: Date
+    // WP-DB4 structured aggregate fields (optional for legacy rows).
+    public var walkMode: String?
+    public var activityType: String?
+    public var experienceID: String?
+    public var startedAt: Date?
+    public var completedAt: Date?
+    public var activeDurationSeconds: Double
+    public var distanceMeters: Double
+    public var completionReason: String?
+    public var bondBefore: Int?
+    public var bondAfter: Int?
+    public var pathRelation: String?
 
-    public init(id: UUID = UUID(), sessionID: UUID, scenarioID: String? = nil, text: String, createdAt: Date = Date()) {
+    public init(
+        id: UUID = UUID(),
+        sessionID: UUID,
+        scenarioID: String? = nil,
+        text: String,
+        createdAt: Date = Date(),
+        walkMode: String? = nil,
+        activityType: String? = nil,
+        experienceID: String? = nil,
+        startedAt: Date? = nil,
+        completedAt: Date? = nil,
+        activeDurationSeconds: Double = 0,
+        distanceMeters: Double = 0,
+        completionReason: String? = nil,
+        bondBefore: Int? = nil,
+        bondAfter: Int? = nil,
+        pathRelation: String? = nil
+    ) {
         self.id = id
         self.sessionID = sessionID
         self.scenarioID = scenarioID
         self.text = text
         self.createdAt = createdAt
+        self.walkMode = walkMode
+        self.activityType = activityType
+        self.experienceID = experienceID
+        self.startedAt = startedAt
+        self.completedAt = completedAt
+        self.activeDurationSeconds = max(0, activeDurationSeconds.isFinite ? activeDurationSeconds : 0)
+        self.distanceMeters = max(0, distanceMeters.isFinite ? distanceMeters : 0)
+        self.completionReason = completionReason
+        self.bondBefore = bondBefore.map { max(0, $0) }
+        self.bondAfter = bondAfter.map { max(0, $0) }
+        self.pathRelation = pathRelation
     }
 }
 
