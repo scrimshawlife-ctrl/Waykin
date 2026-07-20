@@ -2,9 +2,9 @@
 """
 Export Desktop/repo lira.blend → runtime Lira_AR_Base.usdz with Waykin node names.
 
-Evidence class: ARTIST_BLEND_SKINNED_MID_LOD
-  (hand-authored multi-mesh + LiraArmature + auto-weight heat-map skin on
-   Body/Head/ears/legs; FX filament/core remain rigid bone-parent).
+Evidence class: ARTIST_BLEND_HERO_DCC_MID_LOD
+  (artist multi-mesh + LiraArmature + hero region weight paint + DCC action
+   clips Idle/Follow/Investigate/Alert/Celebrate/Spawn; FX rigid bone-parent).
 
 Requires: Blender 3+ with USD export (wm.usd_export).
 Invoked by: scripts/export_lira_blend_to_usdz.sh
@@ -249,10 +249,11 @@ def export_usd(path: Path) -> None:
             o.select_set(True)
     bpy.context.view_layer.objects.active = root
 
-    # Optional DCC clip bake: LIRA_EXPORT_ANIM=1 after author_lira_armature_clips.py
+    # DCC clips ship by default; set LIRA_EXPORT_ANIM=0 to strip animation.
     import os
 
-    export_anim = os.environ.get("LIRA_EXPORT_ANIM", "").strip() in {"1", "true", "yes"}
+    anim_env = os.environ.get("LIRA_EXPORT_ANIM", "1").strip().lower()
+    export_anim = anim_env not in {"0", "false", "no", "off"}
     # Blender 5 USD export RNA (no visible_objects_only / export_textures flags)
     try:
         bpy.ops.wm.usd_export(
@@ -312,19 +313,92 @@ def validate_armature() -> None:
     log(f"armature validated bones={len(bones)}")
 
 
-def skin_armature() -> dict:
-    """Load scripts/skin_lira_armature.py and run skin() after scale."""
-    path = ROOT / "scripts" / "skin_lira_armature.py"
+def _load_mod(name: str, path: Path):
     if not path.is_file():
-        raise SystemExit(f"missing skin script: {path}")
-    spec = importlib.util.spec_from_file_location("skin_lira_armature", path)
+        raise SystemExit(f"missing script: {path}")
+    spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise SystemExit("cannot load skin_lira_armature")
+        raise SystemExit(f"cannot load {name}")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    return mod
+
+
+def skin_armature() -> dict:
+    """Load scripts/skin_lira_armature.py and run skin() after scale."""
+    mod = _load_mod("skin_lira_armature", ROOT / "scripts" / "skin_lira_armature.py")
     stats = mod.skin()
     log(f"skin complete multi_body={stats.get('Body')}")
     return stats
+
+
+def hero_paint() -> dict:
+    """Region-aware hero weight paint on top of auto-skin."""
+    mod = _load_mod("paint_lira_hero_weights", ROOT / "scripts" / "paint_lira_hero_weights.py")
+    stats = mod.paint()
+    log(f"hero paint complete Body={stats.get('Body')}")
+    return stats
+
+
+def author_dcc_clips() -> list[str]:
+    """Author Blender actions + NLA tracks for presentation states."""
+    mod = _load_mod("author_lira_armature_clips", ROOT / "scripts" / "author_lira_armature_clips.py")
+    names = mod.author()
+    log(f"dcc clips authored {names}")
+    return names
+
+
+def export_clip_animation_usds(out_dir: Path, clip_names: list[str]) -> list[Path]:
+    """
+    Export one USD per DCC action so RealityKit can discover multiple animations.
+    Main package only binds the active action; sidecar clip USDs are zipped in.
+    """
+    arm = bpy.data.objects.get("LiraArmature")
+    if arm is None or not arm.animation_data:
+        return []
+    written: list[Path] = []
+    # Select armature hierarchy for lean clip packages
+    bpy.ops.object.select_all(action="DESELECT")
+    arm.select_set(True)
+    for o in bpy.data.objects:
+        if o.parent == arm or (o.parent and o.parent.type == "ARMATURE"):
+            o.select_set(True)
+    bpy.context.view_layer.objects.active = arm
+    for name in clip_names:
+        action = bpy.data.actions.get(name)
+        if action is None:
+            continue
+        arm.animation_data.action = action
+        path = out_dir / f"{name}.usd"
+        try:
+            bpy.ops.wm.usd_export(
+                filepath=str(path),
+                check_existing=False,
+                selected_objects_only=True,
+                export_animation=True,
+                export_hair=False,
+                export_uvmaps=False,
+                export_normals=True,
+                export_materials=False,
+                use_instancing=False,
+                evaluation_mode="RENDER",
+                convert_orientation=True,
+                relative_paths=True,
+                root_prim_path=f"/{name}",
+                export_armatures=True,
+                convert_scene_units="METERS",
+                meters_per_unit=1.0,
+            )
+            if path.is_file():
+                written.append(path)
+                log(f"clip usd {path.name}")
+        except Exception as e:
+            log(f"WARN clip export {name}: {e}")
+    # Restore idle as default active
+    idle = bpy.data.actions.get("Lira_Idle")
+    if idle is not None:
+        arm.animation_data.action = idle
+    return written
 
 
 def main() -> None:
@@ -344,28 +418,39 @@ def main() -> None:
     # Scale before heat-map so weights sit on final metric geometry.
     scale_to_canonical_height(root)
     validate_armature()
-    # Merge torso + automatic weights (Body/Head/ears/legs).
+    # Merge torso + automatic weights, then hero region paint.
     skin_stats = skin_armature()
+    hero_stats = hero_paint()
+    clip_names = author_dcc_clips()
     validate_names()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     usd_path = OUT_DIR / "Lira_AR_Base.usd"
     export_usd(usd_path)
+    # Per-clip animation USDs (active action only ships one SkelAnimation in main file).
+    clip_usd_paths = export_clip_animation_usds(OUT_DIR, clip_names)
 
     # Also save a prepared blend into ArtSource for provenance
     ARTSOURCE.mkdir(parents=True, exist_ok=True)
     prepared = ARTSOURCE / "Lira_AR_Base_prepared.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(prepared))
     log(f"saved prepared blend {prepared}")
+    # Mirror with_clips alias for tooling
+    with_clips = ARTSOURCE / "Lira_AR_Base_with_clips.blend"
+    bpy.ops.wm.save_as_mainfile(filepath=str(with_clips))
+    log(f"saved clips blend {with_clips}")
 
     # Write marker for shell packaging
-    body_stats = skin_stats.get("Body", {})
+    body_stats = hero_stats.get("Body") or skin_stats.get("Body", {})
     marker = OUT_DIR / "EXPORT_OK"
     marker.write_text(
-        f"usd={usd_path}\nblend={BLEND}\nevidence=ARTIST_BLEND_SKINNED_MID_LOD\n"
-        f"armature=LiraArmature\nbone_bind=heat_map_auto_weights\n"
+        f"usd={usd_path}\nblend={BLEND}\nevidence=ARTIST_BLEND_HERO_DCC_MID_LOD\n"
+        f"armature=LiraArmature\nbone_bind=hero_region_paint\n"
+        f"dcc_clips={','.join(clip_names)}\n"
+        f"clip_usds={','.join(p.name for p in clip_usd_paths)}\n"
         f"body_vgroups={body_stats.get('vgroups')}\n"
         f"body_multi_bone_verts={body_stats.get('multi_bone_verts')}\n"
+        f"body_multi_bone_ratio={body_stats.get('multi_bone_ratio')}\n"
         f"body_max_influences={body_stats.get('max_influences')}\n",
         encoding="utf-8",
     )

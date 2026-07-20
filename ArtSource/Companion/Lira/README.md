@@ -1,6 +1,6 @@
 # Lira hand-sculpted AR mid-LOD source
 
-Status: **ARTIST_BLEND_SKINNED_MID_LOD** (v1.2 — armature + auto-weight heat-map).  
+Status: **ARTIST_BLEND_HERO_DCC_MID_LOD** (v1.2 — armature + auto-weight heat-map).  
 Fallback generator remains GENERATED_MID_LOD via `./scripts/build_lira_usdz.sh`.
 
 ## Runtime contract
@@ -23,7 +23,7 @@ Fallback generator remains GENERATED_MID_LOD via `./scripts/build_lira_usdz.sh`.
 ./scripts/export_lira_blend_to_usdz.sh ~/Desktop/lira.blend
 ```
 
-Pipeline: rename → required placeholders → **build armature** → scale 0.72m → **merge torso + auto-weights** → USD → usdzip.
+Pipeline: rename → armature → scale → auto-skin → **hero paint** → **DCC clips** → USD (+ clip USDs) → usdzip.
 
 | Script | Role |
 | ------ | ---- |
@@ -36,7 +36,15 @@ Pipeline: rename → required placeholders → **build armature** → scale 0.72
 
 ## Scope boundary
 
-- Evidence: **ARTIST_BLEND_SKINNED_MID_LOD**
+- Evidence: **ARTIST_BLEND_HERO_DCC_MID_LOD**
 - Auto-weight heat-map: **shipped**
 - Hand-painted weights / outdoor AR: **not shipped**
 - Procedural RealityKit factory remains permanent fallback
+
+
+### Hero weights + DCC
+
+- `scripts/paint_lira_hero_weights.py` — region distance paint
+- `scripts/author_lira_armature_clips.py` — 6 presentation actions
+- Clips dir: `App/Resources/Companion/Lira/Clips/`
+- Runtime: DCC overlay + puppet fill (`LiraSkeletalPlayer`)

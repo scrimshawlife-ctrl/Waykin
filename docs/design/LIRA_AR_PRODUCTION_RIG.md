@@ -3,16 +3,19 @@
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
 version: 0.6
-status: ARTIST_BLEND_SKINNED_MID_LOD_SHIPPED
-usdz: ARTIST_BLEND_SKINNED_MID_LOD_V1
+status: ARTIST_BLEND_HERO_DCC_MID_LOD_SHIPPED
+usdz: ARTIST_BLEND_HERO_DCC_MID_LOD_V1
 mesh_descriptor: SHIPPED
 runtime_animation_clips: SHIPPED
 skeletal_joint_hierarchy: SHIPPED
 blender_armature_rigid_bind: SHIPPED
 heat_map_auto_weights: SHIPPED
-dcc_hand_painted_weights: NOT_SHIPPED
+hero_region_weights: SHIPPED
+dcc_action_clips: SHIPPED
+hero_region_weights: SHIPPED
+dcc_action_clips: SHIPPED
 direction: spectral_living_familiar
-evidence_class: ARTIST_BLEND_SKINNED_MID_LOD
+evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
 source_blend: ArtSource/Companion/Lira/lira.blend
 armature: LiraArmature
 ```
@@ -28,7 +31,7 @@ armature: LiraArmature
 | AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
 | AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** |
 | AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_SKINNED_MID_LOD** (~754 KB) |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_HERO_DCC_MID_LOD** (~754 KB) |
 | Blender armature | `LiraArmature` 25 bones | **Shipped** (`build_lira_armature.py`) |
 | Heat-map skin | Auto-weights Body/Head/ears/legs; FX rigid | **Shipped** (`skin_lira_armature.py`) |
 | Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |
@@ -71,7 +74,7 @@ Skeletal clips bind via `AnimationBindTarget.entity(name)` on semantic nodes (pu
 ./scripts/build_lira_usdz.sh
 ```
 
-Evidence class **ARTIST_BLEND_SKINNED_MID_LOD**: multi-mesh Living Familiar + `LiraArmature` + automatic heat-map weights on Body/Head/ears/legs (USD `SkelBindingAPI`). FX filament/core stay rigid bone-parent. Hand-painted weights are **not** shipped.
+Evidence class **ARTIST_BLEND_HERO_DCC_MID_LOD**: multi-mesh Living Familiar + `LiraArmature` + automatic heat-map weights on Body/Head/ears/legs (USD `SkelBindingAPI`). FX filament/core stay rigid bone-parent. Hand-painted weights are **not** shipped.
 
 ## Armature joint tree (Blender)
 
@@ -117,3 +120,11 @@ Verifies root / nested / docs USDZ byte-match and evidence markers.
 | **Reduce Motion** | Stops skeletal loops; rest poses + short spawn coalesce |
 
 Do not claim DCC SkinnedMesh clip playback unless `LIRA_EXPORT_ANIM=1` packages authored actions and a dedicated runtime player is added.
+
+
+## Hero weights + DCC (v1.3)
+
+- `paint_lira_hero_weights.py`: region falloff + smooth + cap 4
+- `author_lira_armature_clips.py`: Idle/Follow/Investigate/Alert/Celebrate/Spawn
+- Package includes per-clip USD sidecars; runtime overlays DCC on puppet fill
+- `LIRA_EXPORT_ANIM=0` strips animation from export if needed

@@ -4,10 +4,10 @@ import XCTest
 /// GENERATED_MID_LOD package + joint token contract (#159).
 @MainActor
 final class LiraGeneratedMidLODTests: XCTestCase {
-    func testPackagedEvidenceClassIsArtistBlendSkinnedMidLOD() {
+    func testPackagedEvidenceClassIsArtistBlendHeroDCCMidLOD() {
         // Runtime package: artist blend + LiraArmature auto-weight heat-map (#165).
-        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_SKINNED_MID_LOD")
-        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("ARTIST_BLEND_SKINNED_MID_LOD"))
+        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_HERO_DCC_MID_LOD")
+        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("ARTIST_BLEND_HERO_DCC_MID_LOD"))
     }
 
     func testUSDASourceDeclaresGeneratedClassAndJoints() throws {

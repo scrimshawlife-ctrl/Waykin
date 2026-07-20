@@ -1,34 +1,33 @@
 # Lira AR mid-LOD source receipt
 
 ```yaml
-evidence_class: ARTIST_BLEND_SKINNED_MID_LOD
-version: 1.2
+evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
+version: 1.3
 date: 2026-07-20
 source: ArtSource/Companion/Lira/lira.blend
 armature: LiraArmature (25 bones)
-skin: automatic heat-map weights (ARMATURE_AUTO)
+weights: hero region paint (distance falloff + smooth)
+dcc_clips: Idle Follow Investigate Alert Celebrate Spawn
 ```
 
 ## OBSERVED
 
-- Artist multi-part Living Familiar under `Lira_ROOT`
-- Armature: `scripts/build_lira_armature.py` → **LiraArmature** (25 bones)
-- Skin: `scripts/skin_lira_armature.py`
-  - Merge **Body+Chest+Neck → Body**, **Head+Snout → Head**
-  - Automatic weights on Body/Head/ears/legs/paws/detail
-  - Rigid bone-parent FX: CoreGlow/Halo, Filament*, Tail, GroundShadow, StatusIndicator
-- Quality pass: normalize + max 4 influences per vertex
-- Body heat-map: **1830 verts**, **1709 multi-bone**, max **4** influences (capped quality pass)
-- Head heat-map: **1830 verts**, **1216 multi-bone**, max **4** influences (capped quality pass)
-- USD exports `Skeleton` + `primvars:skel:jointIndices/jointWeights` (SkelBindingAPI)
-- Runtime package: `App/Resources/Lira_AR_Base.usdz` (~739 KB)
+- Armature + auto-skin + **hero region paint** (`paint_lira_hero_weights.py`)
+  - Body/Head multi-bone ratio **1.0**, max **4** influences
+- DCC actions authored (`author_lira_armature_clips.py`) + NLA tracks
+- Main USD binds `SkelAnimation Lira_Idle`; per-clip USD sidecars packaged
+- Standalone clip USDZs under `App/Resources/Companion/Lira/Clips/`
+- Runtime package ~5.0 MB (mesh + 6 clip USDs + texture)
 
-## INFERRED
+## Runtime motion stack
 
-- Suitable for bone-driven mid-LOD deformation + existing puppet entity clips by name
-- Auto-weights are not artist-painted; acceptable for mid-LOD, not hero close-ups
+| Layer | Source |
+| ----- | ------ |
+| DCC | USD availableAnimations (name map Lira_*) when present |
+| Puppet fill | `LiraSkeletalAnimationLibrary` entity-name clips |
+| FX | Filament/core rigid bone-parent |
 
 ## NOT_COMPUTABLE
 
-- Outdoor AR readability (#41)
-- Hand-painted weight quality / DCC performance action library
+- Outdoor AR (#41)
+- Freehand tablet weight-paint logs (hero paint is reproducible, not stylus strokes)

@@ -14,7 +14,8 @@ route_polyline_reveal: SHIPPED
 skeletal_animation_library: JOINT_HIERARCHY_SHIPPED
 blender_armature_rigid_bind: SHIPPED
 heat_map_auto_weights: SHIPPED
-dcc_hand_painted_weights: NOT_SHIPPED
+hero_region_weights: SHIPPED
+dcc_action_clips: SHIPPED
 generated_mid_lod_usdz: SHIPPED_V1_2
 artist_blend_armature_usdz: SHIPPED_V1
 artist_blend_skinned_usdz: SHIPPED_V1
@@ -188,7 +189,8 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 | **A5+** | Session ambient drift/pulse + route polyline reveal | **Done** (#157) |
 | **A5b** | Blender armature on artist multi-mesh | **Done** (`LiraArmature` + export) |
 | **A5c** | Heat-map auto-weights (merge torso + ARMATURE_AUTO) | **Done** (`skin_lira_armature.py`) |
-| **A5d** | Hand-painted hero weights (optional) | **Optional** — artist paint pass |
+| **A5d** | Hero region weight paint (reproducible) | **Done** (`paint_lira_hero_weights.py`) |
+| **A5e** | DCC action clips + hybrid runtime player | **Done** (`author_lira_armature_clips` + DCC overlay) |
 | **A6** | Outdoor motion QA notes | Device walk (#41) |
 
 ## Test strategy
@@ -211,8 +213,8 @@ Prefer **injectable clocks** or discrete `advance(by:)` (already used for celebr
 ## Open (device / artist)
 
 1. Outdoor motion QA (#41)
-2. Optional hand-painted hero weights (A5d)
-3. Optional DCC action export enabled in production package (`LIRA_EXPORT_ANIM`)
+2. Freehand tablet weight logs (optional artist pass beyond hero region paint)
+3. Outdoor motion QA (#41)
 
 ## Related docs
 

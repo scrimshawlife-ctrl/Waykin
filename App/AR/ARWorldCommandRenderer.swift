@@ -70,13 +70,17 @@ final class ARWorldCommandRenderer {
     /// #125 continuity diagnostic from placement resolver.
     var companionContinuityNote: String { placementResolver.lastContinuityNote }
 
-    /// Compact operator chrome line (LOD + clip + reduce motion).
+    /// Compact operator chrome line (LOD + clip source + reduce motion).
     var motionDiagnosticsLine: String {
         let lod = companionLODDescription
         let clip = activeSkeletalClip?.rawValue ?? (reduceMotionEnabled ? "reduce_motion" : "procedural_locals")
         let driving = isSkeletalDriving ? "skel_on" : "skel_off"
-        return "\(lod) | \(driving) | clip=\(clip)"
+        let src = skeletalPlayer.sourceDescription
+        return "\(lod) | \(driving) | \(src) | clip=\(clip)"
     }
+
+    /// DCC vs puppet clip install source.
+    var skeletalClipSource: LiraSkeletalPlayer.ClipSource { skeletalPlayer.clipSource }
 
     init(
         registry: AREntityRegistry,
