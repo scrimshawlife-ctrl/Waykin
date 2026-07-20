@@ -16,6 +16,19 @@ shipped surface as of `main@ee17f5a`, and (B) the comprehensive UI/UX design
 that unifies them. Nothing here authorizes implementation by itself — each
 change ships as a bounded issue.
 
+## How this fits other UI docs
+
+| Need | Document | Class |
+|---|---|---|
+| **Product surfaces** (Home/Demo/Real, AR, B7 crosswalk, components) | **This file** | DESIGN_REFERENCE |
+| Tokens / candidate chrome package | [`UI_CANDIDATE_V02_POINTER.md`](UI_CANDIDATE_V02_POINTER.md) | ACTIVE_PIVOT |
+| SwiftUI practice, DoD, prohibited patterns | [`UI_ENGINEERING_PRACTICE.md`](UI_ENGINEERING_PRACTICE.md) | SUPPORTING |
+| Material UI PR evidence template | [`UI_CHANGE_VALIDATION_RECEIPT.md`](UI_CHANGE_VALIDATION_RECEIPT.md) | SUPPORTING |
+| Outdoor physical proof | [`OUTDOOR_QA_CHECKLIST.md`](OUTDOOR_QA_CHECKLIST.md), #41 | Evidence gate |
+| Conflicts | [`DOCUMENT_AUTHORITY.md`](../governance/DOCUMENT_AUTHORITY.md) | Binding precedence |
+
+Engineering practice docs **must not** override screen contracts, Demo/Real priority, AR modality, or companion state meaning defined here. Walking remains the only primary activity unless product scope documents change.
+
 ---
 
 # Part A — Audit

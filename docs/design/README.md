@@ -2,6 +2,18 @@
 
 Visual system imports and production follow-ons for the app repository.
 
+## UI product vs engineering practice
+
+| Doc | Purpose | Class |
+| --- | ------- | ----- |
+| [WAYKIN_UIUX_SPEC.md](WAYKIN_UIUX_SPEC.md) | Product UI surfaces, Demo/Real, AR modality, B7 crosswalk | DESIGN_REFERENCE |
+| [UI_CANDIDATE_V02_POINTER.md](UI_CANDIDATE_V02_POINTER.md) | Design package tokens/chrome integration | ACTIVE_PIVOT |
+| [UI_ENGINEERING_PRACTICE.md](UI_ENGINEERING_PRACTICE.md) | Supporting SwiftUI practice, DoD, prohibited patterns | SUPPORTING |
+| [UI_CHANGE_VALIDATION_RECEIPT.md](UI_CHANGE_VALIDATION_RECEIPT.md) | Material UI PR / RC evidence checklist | SUPPORTING |
+| [OUTDOOR_QA_CHECKLIST.md](OUTDOOR_QA_CHECKLIST.md) | Outdoor device UI checks (#41) | Evidence gate |
+
+## Integration and art track
+
 | Doc | Purpose |
 | --- | ------- |
 | [ECHO_THEME_IMPORT.md](ECHO_THEME_IMPORT.md) | Tokens Phase 4 step 1 |

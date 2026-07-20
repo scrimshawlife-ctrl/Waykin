@@ -40,6 +40,16 @@ Waykin documentation is organized by **authority**, **maturity**, and **evidence
 | [`../DEMO_SCRIPT.md`](../DEMO_SCRIPT.md) | Terminal demo and iOS simulator flows |
 | [`assets/runtime-architecture.svg`](assets/runtime-architecture.svg) | Reusable runtime architecture diagram |
 
+## Design and UI presentation
+
+| Document | Purpose |
+|---|---|
+| [`design/WAYKIN_UIUX_SPEC.md`](design/WAYKIN_UIUX_SPEC.md) | Product UI surfaces, Demo/Real, AR modality, companion crosswalk |
+| [`design/UI_CANDIDATE_V02_POINTER.md`](design/UI_CANDIDATE_V02_POINTER.md) | Design-package tokens/chrome integration pivot |
+| [`design/UI_ENGINEERING_PRACTICE.md`](design/UI_ENGINEERING_PRACTICE.md) | Supporting SwiftUI practice and definition of done |
+| [`design/UI_CHANGE_VALIDATION_RECEIPT.md`](design/UI_CHANGE_VALIDATION_RECEIPT.md) | Material UI PR / release evidence checklist |
+| [`design/README.md`](design/README.md) | Full design-doc index (art, outdoor, continuation) |
+
 ### Runtime Boundary
 
 <p align="center">
