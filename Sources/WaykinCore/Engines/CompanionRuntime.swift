@@ -1,6 +1,6 @@
 import Foundation
 
-public enum CompanionBehaviorState: String, Codable {
+public enum CompanionBehaviorState: String, Codable, Sendable {
     case idle, follow, lead, celebrate, observe, drawNear, rest
 }
 
@@ -15,7 +15,7 @@ public struct CompanionRuntime {
         case .setBehavior(let b):
             self.state = CompanionBehaviorState(rawValue: b) ?? .follow
         case .setRelativeDistance(let d):
-            self.relativeDistance = d
+            self.relativeDistance = d.isFinite && d > 0 ? d : relativeDistance
         case .showMessage, .setThreatLevel:
             break
         }
@@ -23,20 +23,8 @@ public struct CompanionRuntime {
 
     public mutating func apply(event: WorldEvent?) {
         guard let event else { return }
-
-        switch event.kind {
-        case .companionDrawsNear, .bondMoment:
-            state = .drawNear
-            relativeDistance = 1.2
-        case .companionMovesAhead, .pursuitFades:
-            state = .lead
-            relativeDistance = 4.0
-        case .companionObserves, .familiarPlaceStirs, .quietInterval, .distantPresence:
-            state = .observe
-            relativeDistance = 2.5
-        case .pursuitBegins, .pursuitIntensifies:
-            state = .follow
-            relativeDistance = 1.8
-        }
+        let resolved = CompanionPresentationMatrix.resolve(eventKind: event.kind)
+        state = resolved.behavior
+        relativeDistance = resolved.relativeDistance
     }
 }
