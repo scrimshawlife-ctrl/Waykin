@@ -4,6 +4,8 @@ public protocol FieldTestReceiptStoring {
     @discardableResult
     func save(_ receipt: FieldTestReceipt) throws -> URL
     func loadLatest() throws -> FieldTestReceipt?
+    /// Latest receipt plus its on-disk URL (for operator export / share).
+    func loadLatestStored() throws -> (url: URL, receipt: FieldTestReceipt)?
 }
 
 public enum FieldTestReceiptStoreError: Error, Equatable {
@@ -80,12 +82,16 @@ public final class FileFieldTestReceiptStore: FieldTestReceiptStoring {
     }
 
     public func loadLatest() throws -> FieldTestReceipt? {
+        try loadLatestStored()?.receipt
+    }
+
+    public func loadLatestStored() throws -> (url: URL, receipt: FieldTestReceipt)? {
         try decodedReceipts().max { lhs, rhs in
             if lhs.receipt.startedAt == rhs.receipt.startedAt {
                 return lhs.receipt.receiptID.uuidString < rhs.receipt.receiptID.uuidString
             }
             return lhs.receipt.startedAt < rhs.receipt.startedAt
-        }?.receipt
+        }
     }
 
     private func enforceRetention() throws {

@@ -178,6 +178,14 @@ final class WaykinAppModel: CanonicalARCommandSource {
     var persistenceStorePathHash: String = ""
     private(set) var latestFieldTestReceiptURL: URL?
     private(set) var fieldTestReceiptError: FieldTestReceiptStoreError?
+    /// Last loaded/saved field-test receipt for Settings operator export (D2).
+    private(set) var latestFieldTestReceipt: FieldTestReceipt?
+    /// Privacy-safe AR presentation snapshot accumulated this session (D1).
+    private(set) var sessionARPresentationSummary = FieldTestARPresentationSummary.empty
+    /// Last semantic audio cue kind (operator strip; D3).
+    private(set) var lastOperatorAudioCueKind: String = "—"
+    /// Last movement disposition code (operator strip; D3).
+    private(set) var lastOperatorMovementDisposition: String = "—"
 
     // Live real-session state (physical device)
     private(set) var realWalkState: RealWalkSessionState = .idle
@@ -373,10 +381,42 @@ final class WaykinAppModel: CanonicalARCommandSource {
         if let appAudioPlayer = self.audioPlayer as? AppAudioCuePlayer {
             appAudioPlayer.setDiagnosticHandler { [weak self] diagnostic in
                 self?.activeFieldTestReceipt?.recordAudioDiagnostic(diagnostic)
+                if let cue = diagnostic.cueKind {
+                    self?.lastOperatorAudioCueKind = cue.rawValue
+                }
+                WaykinLog.audio.debug("\(diagnostic.kind.rawValue, privacy: .public)")
             }
         }
         configureRealLocationCallbacks()
         refreshRecommendation()
+        refreshLatestFieldTestReceiptFromStore()
+    }
+
+    /// Load latest on-disk receipt for Settings export (D2).
+    func refreshLatestFieldTestReceiptFromStore() {
+        guard let fieldTestReceiptStore else {
+            latestFieldTestReceipt = nil
+            return
+        }
+        do {
+            if let stored = try fieldTestReceiptStore.loadLatestStored() {
+                latestFieldTestReceiptURL = stored.url
+                latestFieldTestReceipt = stored.receipt
+                fieldTestReceiptError = nil
+            }
+        } catch let error as FieldTestReceiptStoreError {
+            fieldTestReceiptError = error
+        } catch {
+            fieldTestReceiptError = .readFailed
+        }
+    }
+
+    /// Privacy-safe AR snapshot from product AR runtime (D1).
+    func ingestARPresentationDiagnostics(_ summary: FieldTestARPresentationSummary) {
+        sessionARPresentationSummary.merge(from: summary)
+        WaykinLog.ar.debug(
+            "ingest opened=\(summary.arSessionOpened) lod=\(summary.finalLODDescription ?? "nil", privacy: .public)"
+        )
     }
 
     /// Home-stage presentation: Lira in guide pose for presence (not a live session).
@@ -419,6 +459,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             lastPathRelationForAudio = pathProgress.relation
             lastPathAudioElapsed = nil
             clearSessionMapPresentation()
+            resetOperatorDiagnosticsForNewSession()
             activityEnrichment = .empty
             try demoController.start(scenarioID: scenario)
             emitARWorldCommands(arCommandMapper.spawn(
@@ -482,6 +523,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
             )
             pathProgressEngine.recordAccepted(snapshot)
             pathProgress = pathProgressEngine.snapshot
+            lastOperatorMovementDisposition = "accepted"
+            WaykinLog.path.debug(
+                "demo accept relation=\(self.pathProgress.relation.rawValue, privacy: .public) pressure=\(self.pathProgress.integrityPressure)"
+            )
             // Synthetic demo breadcrumb for the session map (#179). Same
             // spacing/cap as real walks; presentation-only, not measurement.
             if let point = movementEngine.currentSession?.routePoints.last {
@@ -499,6 +544,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 cue,
                 at: movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
             )
+            lastOperatorAudioCueKind = cue.kind.rawValue
             audioPlayer.handle([cue])
             playedEventOrBehaviorCue = true
         }
@@ -612,6 +658,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             return
         }
         clearSessionMapPresentation()
+        resetOperatorDiagnosticsForNewSession()
         if fieldTestReceiptStore != nil {
             activeFieldTestReceipt = FieldTestReceiptBuilder(
                 sessionID: UUID(),
@@ -909,6 +956,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
             self.liveAcceptedCount = self.movementEngine.acceptedSampleCount
             self.liveRejectedCount = self.movementEngine.rejectedSampleCount
 
+            self.lastOperatorMovementDisposition = result.diagnostic.disposition.rawValue
+            WaykinLog.movement.debug(
+                "ingest \(result.diagnostic.disposition.rawValue, privacy: .public) accepted=\(self.liveAcceptedCount) rejected=\(self.liveRejectedCount)"
+            )
             if let snapshot = result.snapshot {
                 self.pathProgressEngine.recordAccepted(snapshot)
                 if let point = self.movementEngine.currentSession?.routePoints.last {
@@ -917,7 +968,13 @@ final class WaykinAppModel: CanonicalARCommandSource {
             } else if result.diagnostic.disposition != .awaitingFreshAnchor {
                 self.pathProgressEngine.recordRejected()
             }
+            let previousRelation = self.pathProgress.relation
             self.pathProgress = self.pathProgressEngine.snapshot
+            if self.pathProgress.relation != previousRelation {
+                WaykinLog.path.info(
+                    "relation \(previousRelation.rawValue, privacy: .public)->\(self.pathProgress.relation.rawValue, privacy: .public)"
+                )
+            }
             self.publishGlassesGlance()
 
             // Path soft audio can fire on reject-only ticks (GPS strain) without a world update (#140).
@@ -980,6 +1037,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             }
             update.semanticAudioCues.forEach {
                 self.activeFieldTestReceipt?.recordAudioCue($0, at: snapshot.timestamp)
+                self.lastOperatorAudioCueKind = $0.kind.rawValue
             }
             self.audioPlayer.handle(update.semanticAudioCues)
         }
@@ -1211,6 +1269,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         ) else { return }
         lastPathAudioElapsed = sessionElapsed
         activeFieldTestReceipt?.recordAudioCue(cue, at: timestamp)
+        lastOperatorAudioCueKind = cue.kind.rawValue
         audioPlayer.handle([cue])
     }
 
@@ -1254,6 +1313,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
         lastObservedMovementState = state
     }
 
+    private func resetOperatorDiagnosticsForNewSession() {
+        sessionARPresentationSummary = .empty
+        lastOperatorAudioCueKind = "—"
+        lastOperatorMovementDisposition = "—"
+    }
+
     private func finishFieldTestReceipt(
         session: MovementSession?,
         outcome: FieldTestOutcome,
@@ -1265,6 +1330,14 @@ final class WaykinAppModel: CanonicalARCommandSource {
     ) {
         guard let builder = activeFieldTestReceipt else { return }
         activeFieldTestReceipt = nil
+        var arSummary = sessionARPresentationSummary
+        if arSummary.sessionStillDiagnosticLabel == nil {
+            let stillLabel = LiraStillCatalog.graphicsPath(
+                pose: LiraSessionPose.resolve(from: activePresencePresentation),
+                skin: selectedLiraSkin
+            ).diagnosticLabel
+            arSummary.sessionStillDiagnosticLabel = stillLabel
+        }
         let receipt = builder.finish(
             session: session,
             outcome: outcome,
@@ -1274,16 +1347,23 @@ final class WaykinAppModel: CanonicalARCommandSource {
             errorCategory: errorCategory,
             endedAt: endedAt,
             pathProgress: pathProgress,
-            activityEnrichment: activityEnrichment
+            activityEnrichment: activityEnrichment,
+            arPresentation: arSummary
         )
         guard let fieldTestReceiptStore else { return }
         do {
             latestFieldTestReceiptURL = try fieldTestReceiptStore.save(receipt)
+            latestFieldTestReceipt = receipt
             fieldTestReceiptError = nil
+            WaykinLog.receipt.info(
+                "saved outcome=\(outcome.rawValue, privacy: .public) arOpened=\(arSummary.arSessionOpened)"
+            )
         } catch let error as FieldTestReceiptStoreError {
             fieldTestReceiptError = error
+            WaykinLog.receipt.error("save failed \(String(describing: error), privacy: .public)")
         } catch {
             fieldTestReceiptError = .writeFailed
+            WaykinLog.receipt.error("save failed writeFailed")
         }
     }
 
@@ -1678,10 +1758,69 @@ struct SettingsView: View {
                     .accessibilityIdentifier("waykin.settings.replayOnboarding")
                 }
 
+                // D2: local field-test receipt status + optional share (privacy-filtered JSON).
+                Section("Field-test receipts") {
+                    HStack {
+                        Text("Latest receipt")
+                            .foregroundStyle(theme.textPrimary)
+                        Spacer()
+                        Text(latestReceiptStatusLabel)
+                            .foregroundStyle(theme.textSecondary)
+                            .accessibilityIdentifier("waykin.settings.receipt.status")
+                    }
+                    .frame(minHeight: WKTokens.Space.minTouch)
+
+                    if let receipt = appModel.latestFieldTestReceipt {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Mode: \(receipt.mode.rawValue) · \(receipt.outcome.rawValue)")
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                            Text("AR opened: \(receipt.summary.arPresentation.arSessionOpened ? "yes" : "no")")
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                            if let lod = receipt.summary.arPresentation.finalLODDescription {
+                                Text("LOD: \(lod)")
+                                    .font(.caption2)
+                                    .foregroundStyle(theme.textTertiary)
+                                    .lineLimit(2)
+                            }
+                        }
+                        .accessibilityIdentifier("waykin.settings.receipt.detail")
+                    }
+
+                    Button {
+                        appModel.refreshLatestFieldTestReceiptFromStore()
+                    } label: {
+                        Text("Refresh from disk")
+                            .foregroundStyle(theme.guideText)
+                            .frame(minHeight: WKTokens.Space.minTouch)
+                    }
+                    .accessibilityIdentifier("waykin.settings.receipt.refresh")
+
+                    if let url = appModel.latestFieldTestReceiptURL,
+                       FileManager.default.fileExists(atPath: url.path) {
+                        ShareLink(item: url) {
+                            Text("Share latest receipt JSON")
+                                .frame(minHeight: WKTokens.Space.minTouch)
+                        }
+                        .accessibilityIdentifier("waykin.settings.receipt.share")
+                    }
+
+                    Text("Receipts stay on this device (max 20). They omit GPS coordinates. Timestamps can reveal when you walked.")
+                        .font(.caption)
+                        .foregroundStyle(theme.textTertiary)
+                }
+
                 Section {
                     Text("Day and night use Echo WK_TOKENS_v0.2 (not a simple invert). Outdoor glare still needs a device walk (#41).")
                         .font(.caption)
                         .foregroundStyle(theme.textTertiary)
+                    if OperatorDebugFeature.isEnabled {
+                        Text("Operator strip is on (DEBUG build or -WAYKIN_OPERATOR_DEBUG).")
+                            .font(.caption2)
+                            .foregroundStyle(theme.textTertiary)
+                            .accessibilityIdentifier("waykin.settings.operatorDebug")
+                    }
                 }
             }
             .navigationTitle("Settings")
@@ -1691,7 +1830,24 @@ struct SettingsView: View {
                         .accessibilityIdentifier("waykin.settings.done")
                 }
             }
+            .onAppear {
+                appModel.refreshLatestFieldTestReceiptFromStore()
+            }
         }
+    }
+
+    private var latestReceiptStatusLabel: String {
+        if appModel.fieldTestReceiptError != nil {
+            return "Error"
+        }
+        if let url = appModel.latestFieldTestReceiptURL,
+           FileManager.default.fileExists(atPath: url.path) {
+            return "Written"
+        }
+        if appModel.latestFieldTestReceipt != nil {
+            return "In memory"
+        }
+        return "Missing"
     }
 }
 
@@ -1715,6 +1871,34 @@ struct ActiveSessionView: View {
                 sessionContent
             }
         }
+    }
+
+    /// D3: compact operator strip — not product chrome; DEBUG / launch flag only.
+    @ViewBuilder
+    private func operatorDebugStrip(presentation: CompanionPresencePresentation) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Operator")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(theme.textTertiary)
+            Text("Path: \(presentation.pathRelation.rawValue) · pressure \(String(format: "%.2f", presentation.pathIntegrityPressure))")
+            Text("GPS: \(appModel.liveAcceptedCount) ok / \(appModel.liveRejectedCount) rej · last \(appModel.lastOperatorMovementDisposition)")
+            Text("Audio: \(appModel.lastOperatorAudioCueKind)")
+            if appModel.sessionARPresentationSummary.arSessionOpened {
+                Text("AR LOD: \(appModel.sessionARPresentationSummary.finalLODDescription ?? "—")")
+                Text("AR cont: \(appModel.sessionARPresentationSummary.finalContinuityNote ?? "—")")
+            } else {
+                Text("AR: not opened this session")
+            }
+        }
+        .font(.caption2.monospaced())
+        .foregroundStyle(theme.textTertiary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(theme.surface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityIdentifier("waykin.session.operatorStrip")
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Operator diagnostics")
     }
 
     private var sessionContent: some View {
@@ -1839,6 +2023,10 @@ struct ActiveSessionView: View {
                         plannedRoute: appModel.plannedWalkRoute,
                         onOpenFullMap: { showsFullMap = true }
                     )
+
+                    if OperatorDebugFeature.isEnabled {
+                        operatorDebugStrip(presentation: presentation)
+                    }
                 }
                 .padding(.horizontal, CompanionPresenceStyle.horizontalPadding)
                 .padding(.vertical, 12)

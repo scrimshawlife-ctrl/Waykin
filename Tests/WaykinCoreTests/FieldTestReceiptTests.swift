@@ -71,6 +71,73 @@ final class FieldTestReceiptTests: XCTestCase {
         XCTAssertEqual(decoded.summary.activityStepCadenceBand, receipt.summary.activityStepCadenceBand)
     }
 
+    func testARPresentationSummaryRoundTripWithoutCoordinatesOrPaths() throws {
+        let builder = makeBuilder()
+        let ar = FieldTestARPresentationSummary(
+            arSessionOpened: true,
+            finalLODDescription: "artist_usdz:Lira_AR_Base",
+            meshEvidenceClass: "ARTIST_BLEND_HERO_DCC_MID_LOD",
+            finalContinuityNote: "planted_camera:replant_missing+camera_fallback",
+            finalCapabilityState: "tracking",
+            motionDiagnosticsLine: "dcc:idle hybrid",
+            sessionStillDiagnosticLabel: "still:catalog",
+            placementDeferredCount: 2,
+            continuityReplantCount: 3,
+            entityReplacementCount: 1,
+            companionPlaced: true
+        )
+        let receipt = builder.finish(
+            session: session(),
+            outcome: .completed,
+            endingBond: 13,
+            memoryWritten: true,
+            persistence: .succeeded,
+            endedAt: startedAt.addingTimeInterval(20),
+            arPresentation: ar
+        )
+        XCTAssertEqual(receipt.schemaVersion, 4)
+        XCTAssertTrue(receipt.summary.arPresentation.arSessionOpened)
+        XCTAssertEqual(receipt.summary.arPresentation.continuityReplantCount, 3)
+        XCTAssertEqual(receipt.summary.arPresentation.finalLODDescription, "artist_usdz:Lira_AR_Base")
+
+        let data = try JSONEncoder().encode(receipt)
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8)).lowercased()
+        XCTAssertTrue(json.contains("arpresentation"))
+        XCTAssertTrue(json.contains("continuityreplantcount"))
+        XCTAssertFalse(json.contains("latitude"))
+        XCTAssertFalse(json.contains("/private/"))
+        XCTAssertFalse(json.contains("clerror"))
+
+        let decoded = try JSONDecoder().decode(FieldTestReceipt.self, from: data)
+        XCTAssertEqual(decoded.summary.arPresentation, receipt.summary.arPresentation)
+    }
+
+    func testLegacySchema3WithoutARPresentationDecodesEmpty() throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: try encoder.encode(completedReceipt()),
+            options: []
+        ) as? [String: Any])
+        object["schemaVersion"] = 3
+        var summary = try XCTUnwrap(object["summary"] as? [String: Any])
+        summary.removeValue(forKey: "arPresentation")
+        object["summary"] = summary
+        let legacyData = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(FieldTestReceipt.self, from: legacyData)
+        XCTAssertEqual(decoded.summary.arPresentation, .empty)
+        XCTAssertFalse(decoded.summary.arPresentation.arSessionOpened)
+    }
+
+    func testARLabelSanitizesAbsolutePaths() {
+        let ar = FieldTestARPresentationSummary(
+            finalLODDescription: "/private/var/containers/Lira_AR_Base.usdz"
+        )
+        XCTAssertEqual(ar.finalLODDescription, "Lira_AR_Base.usdz")
+    }
+
     func testLegacyReceiptWithoutPathFieldsDecodesWithDefaults() throws {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601

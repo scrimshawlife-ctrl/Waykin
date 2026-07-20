@@ -1,4 +1,5 @@
 import Foundation
+import WaykinCore
 
 enum ARDiagnosticKind: String, Codable, Sendable {
     case sessionStarted
@@ -42,6 +43,17 @@ final class ARDiagnosticRecorder {
             placementFailureCount: events.filter { $0.kind == .placementDeferred }.count,
             cleanupSucceeded: events.last?.kind == .sessionCleared,
             stateTransitions: events.filter { $0.kind == .stateChanged }.map(\.detail)
+        )
+    }
+
+    /// Privacy-safe counts for field-test AR presentation summary (no coordinates).
+    var fieldTestPresentationSummary: FieldTestARPresentationSummary {
+        FieldTestARPresentationSummary(
+            arSessionOpened: events.contains { $0.kind == .sessionStarted },
+            placementDeferredCount: events.filter { $0.kind == .placementDeferred }.count,
+            continuityReplantCount: events.filter { $0.kind == .continuityReplant }.count,
+            entityReplacementCount: events.filter { $0.kind == .entityReplaced }.count,
+            companionPlaced: events.contains { $0.kind == .entityCreated && $0.detail == "companion" }
         )
     }
 }

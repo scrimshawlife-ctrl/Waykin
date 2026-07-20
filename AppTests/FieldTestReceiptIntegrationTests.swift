@@ -299,6 +299,11 @@ private final class ReceiptCaptureStore: FieldTestReceiptStoring {
     }
 
     func loadLatest() throws -> FieldTestReceipt? { receipts.last }
+
+    func loadLatestStored() throws -> (url: URL, receipt: FieldTestReceipt)? {
+        guard let receipt = receipts.last else { return nil }
+        return (URL(fileURLWithPath: "/tmp/\(receipt.receiptID.uuidString).json"), receipt)
+    }
 }
 
 private final class ReceiptLocationProvider: RealLocationProviding {
