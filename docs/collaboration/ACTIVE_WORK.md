@@ -20,6 +20,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
+| Issue #133 — new graphical assets not perceived outdoors | UNASSIGNED | — | stills catalog / AR USDZ loader diagnostics, docs | Ready | #41 PARTIAL; sphere mid-LOD + Canvas fallback |
 | Issue #130 — audio ↔ companion actions + produced cues not perceived | UNASSIGNED | — | AudioExperienceLayer, AppAudioCuePlayer, session wiring, docs | Ready | #41 PARTIAL; event-only audio architecture |
 | Issue #125 — AR continuity (disappear ~10–15 m) | UNASSIGNED | — | `App/AR/**`, AppTests, docs | Ready (IMPLEMENT after claim) | #41 PARTIAL receipt |
 | Issue #126 — session/AR menu UX audit | UNASSIGNED | — | App session chrome, docs | Ready (audit first) | #41 PARTIAL; before more outdoor AR |
