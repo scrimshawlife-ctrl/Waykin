@@ -1,0 +1,42 @@
+{
+  "asset": "Lira_AR_Base",
+  "variant": "Dawn",
+  "status": "STATIC_SOURCE_READY_USDZ_NOT_YET_VALIDATED",
+  "coordinate_system": "+Y up, +Z forward",
+  "canonical_height_meters": 0.72,
+  "ground_offset_meters": 0.02,
+  "root_node": "LiraRoot",
+  "required_nodes": [
+    "Body",
+    "Head",
+    "LeftEar",
+    "RightEar",
+    "Tail",
+    "Filament",
+    "CoreGlow",
+    "GroundShadow",
+    "StatusIndicator"
+  ],
+  "source_statistics": {
+    "vertices": 5808,
+    "triangles": 11512
+  },
+  "source_formats": [
+    "glb",
+    "obj"
+  ],
+  "runtime_target": "App/Resources/Companion/Lira/Lira_AR_Base.usdz",
+  "runtime_included": false,
+  "validation": {
+    "required_node_generation": "PASS",
+    "usdz_conversion": "NOT_RUN",
+    "realitykit_load": "NOT_RUN",
+    "physical_device": "NOT_RUN",
+    "outdoor_readability": "NOT_RUN"
+  },
+  "provenance": {
+    "OBSERVED": "Dimensions, palette, hierarchy names, and visual anchors derive from the Waykin repository contracts.",
+    "INFERRED": "Irregular softened surfaces and controlled asymmetry implement the requested hand-sculpted character treatment.",
+    "SPECULATIVE": "Animation topology, UV layout, USDZ material fidelity, outdoor readability, and device performance require later validation."
+  }
+}
