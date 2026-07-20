@@ -41,16 +41,20 @@ Product surface contracts (Begin Walk primary, AR full-screen cover, companion c
 
 ## App already partial
 
+Live residual detail: [UI_CANDIDATE_RESIDUAL_AUDIT.md](UI_CANDIDATE_RESIDUAL_AUDIT.md) (issue #194).
+
 | Area | Status in Waykin app |
 | ---- | -------------------- |
-| Echo tokens day/night | **Partial** — `App/Theme/WKTokens.swift` cites `WK_TOKENS_v0.2` |
+| Echo tokens day/night | **Aligned** — `App/Theme/WKTokens.swift` vs `WK_TOKENS_v0.2` |
 | `WKTheme` injector | **Present** |
-| Reduce motion (session + AR) | **Partial / substantial** |
+| Reduce motion (session + AR) | **Substantial** |
 | Lira companion stills + AR mid-LOD | **Shipped** (separate art ladder) |
-| Full icon set from candidate | **Audit vs** `WKIcons.swift` + SVG import |
-| Screen graph (Home→…→Bond) | **Partial** — product screens exist; align to Stage 6 IDs |
-| Mode cards Trail/Race/Hunt | **Product modes exist**; match component library |
-| Bond viz (orbital, not XP) | **Check vs** bond summary UI |
+| Core Echo icons | **Shipped** as `WKIcon` shapes; full SVG pack not required |
+| Screen graph (Home→session→summary) | **Shipped** walk loop |
+| Mode cards Trail/Race/Hunt | Icons/labels only — **not** new MVP activities |
+| Bond viz (orbital, not XP) | **Partial** filament/summary (not full production-board orbital) |
+| Sim day/night matrix | **Tooling + captures** via `scripts/capture_sim_screenshots.sh` |
+| Typography DM Sans | **Not bundled** — system body + WaykinDisplay splash |
 
 ## Phase 4 integration order (from runbook)
 
