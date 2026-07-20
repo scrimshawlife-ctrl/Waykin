@@ -2,44 +2,48 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-20 (night non-outdoor wave complete)
+Last updated: 2026-07-20 (pivot: UI CANDIDATE_v0.2; AR recs parked)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
 ## Active
 
-| Issue / PR | Owner | Status | Dependency |
+| Work | Owner | Status | Dependency |
 |---|---|---|---|
-| Issue #41 — outdoor / physical validation | — | **Blocked until daylight** | Re-walk on main tip; Pass COH |
+| **UI CANDIDATE_v0.2 Phase 4 integration** | — | **Active pivot** | Design package `Waykin-Design/11_Approved-Exports/CANDIDATE_v0.2/` · pointer [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
+| Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 
 ## Intake
 
 | Work | Reason |
 |---|---|
-| — | — |
+| HO-001–005 from design handoff | READY_FOR_IMPLEMENTATION in design package |
+| Icon set / production board screens | Align app chrome to Stage 6 + component library |
 
 ## Blocked
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| #41 outdoor PASS | Device + daylight | Outdoor packet + COH receipt |
+| #41 outdoor PASS | Device + daylight; **explicitly parked** for UI pivot | Outdoor packet + COH when human resumes |
 
-## Completed (this wave)
+## Completed (recent AR ladder — context)
 
 | Item | Evidence |
 |---|---|
-| #125 continuity code + #130 audio coupling | PR #138 |
-| #139–#143 systemwide coupling | PR #145 |
-| #126 menu UX | PR #146 |
-| #147–#150 non-outdoor polish | PR #151 |
-| UIUX visual companions | PR #144 |
-| Sim preflight + screenshots scaffolding | receipts + `scripts/capture_sim_screenshots.sh` |
+| Hero weights + DCC clips mid-LOD | PR #171 · tip `f0e6762` |
+| Non-outdoor AR polish | PR #168 |
+| Artist blend → armature → skin | PRs #160–#166 |
+| Coupling / maps / menus / docs sync | PRs #138–#158 |
 
-## Explicitly deferred (outdoor / FUTURE)
+## Parked recommendations
 
-- Physical GPS, outdoor audio loudness, outdoor AR PASS, outdoor glare
+See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — outdoor #41 first when resumed; sim screenshots; DCC package slim-down; RC/FUTURE; Orc cleanup.
+
+## Explicitly deferred (FUTURE / RC)
+
 - Pathfinding v2, Health v2, Watch, AI Directors RC, multi-companion
 - Removing deprecated Orc/FutureSelf surfaces (needs migration issue)
+- Marketplace / multiplayer
 
 ## Preservation
 

@@ -2,12 +2,13 @@
 
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
-version: 3.2
+version: 3.3
 date: 2026-07-20
-status: NON_OUTDOOR_POLISH_COMPLETE_NEXT_41
-goal: outdoor_device_evidence_on_main_tip
-outdoor_qa: BLOCKED_ON_DAYLIGHT_REWALK
-ar_status: FROZEN_MAINTENANCE_ONLY
+status: PIVOT_UI_CANDIDATE_V02
+goal: integrate_WK_EXPORT_CANDIDATE_v0.2_into_app
+outdoor_qa: PARKED_SEE_DEFERRED_RECOMMENDATIONS
+ar_status: FROZEN_MAINTENANCE_ONLY_UNLESS_41
+ui_package: Waykin-Design/11_Approved-Exports/CANDIDATE_v0.2/
 authority_note: ACTIVE_WORK.md is the live coordination snapshot
 ```
 
@@ -24,10 +25,19 @@ authority_note: ACTIVE_WORK.md is the live coordination snapshot
 | Menu UX + non-outdoor UI polish | **Done** (#126/#147–#150) |
 | Engineering doc sync vs code | **This wave** |
 
-## Next wave — Outdoor re-walk (#41)
+## Active wave — UI CANDIDATE_v0.2 Phase 4
 
-1. Install tip SHA on physical iPhone in daylight.
-2. Run outdoor session packet + Pass COH column.
+Pointer: [UI_CANDIDATE_V02_POINTER.md](UI_CANDIDATE_V02_POINTER.md)
+
+1. Verify tokens / day-night vs `App/Theme/WKTokens.swift` (HO-001).
+2. Home + Begin + settings chrome vs production board.
+3. Active session + pause + safety pause density.
+4. Icons from candidate SVG set.
+5. Mode cards / bond viz / summary alignment.
+
+## Parked wave — Outdoor re-walk (#41)
+
+See [DEFERRED_RECOMMENDATIONS.md](DEFERRED_RECOMMENDATIONS.md). Resume when human requests outdoor.
 3. Record OBSERVED continuity, produced/path audio, menu/AR full-screen feel.
 4. Open new defect issues only if needed; do not invent PASS from sim.
 
