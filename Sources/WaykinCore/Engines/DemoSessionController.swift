@@ -18,6 +18,9 @@ public final class DemoSessionController {
     public private(set) var isRunning = false
     public private(set) var isPaused = false
     public private(set) var tickIndex = 0
+    /// Legacy Core presentation bag for package/demo diagnostics only.
+    /// App MapKit uses `WalkPathTrace` / `PlannedWalkRoute` on `WaykinAppModel`
+    /// (#121 / #155 / #179) — do not wire this into SwiftUI maps.
     public private(set) var presentationState = MapPresentationState(userCoordinate: nil, route: [], entities: [], statusText: "")
     public private(set) var companionRuntime = CompanionRuntime()
     public private(set) var currentEvent: WorldEvent?

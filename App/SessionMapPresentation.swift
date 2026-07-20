@@ -20,9 +20,11 @@ struct TracePoint: Equatable {
 
 /// Presentation-side walked-path trace for the *current* session only.
 ///
-/// Not a route recording: spacing-deduped, hard-capped, reset on session end,
-/// never persisted, never exposed to VoiceOver as coordinates. The measured
-/// route (movement truth) remains owned by the core movement engine.
+/// Not a route recording: spacing-deduped, hard-capped, reset on session
+/// start / end / fail (`WaykinAppModel.clearSessionMapPresentation`), never
+/// persisted, never exposed to VoiceOver as coordinates. Fed by accepted real
+/// GPS fixes and demo synthetic `routePoints` (#179). The measured route
+/// (movement truth) remains owned by the core movement engine.
 struct WalkPathTrace: Equatable {
     static let maxPoints = 400
     static let minSpacingMeters: Double = 4

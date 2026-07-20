@@ -1,10 +1,12 @@
 import CoreLocation
+import SwiftData
 import WaykinCore
 import XCTest
 @testable import WaykinApp
 
-/// Issue #121: GPS/maps presentation surfaces — walked-path trace semantics
-/// and GPS signal presentation.
+/// Issue #121 / #155 / #179: GPS/maps presentation surfaces — walked-path
+/// trace semantics, GPS signal presentation, session lifecycle clear, demo
+/// synthetic breadcrumb.
 final class SessionMapPresentationTests: XCTestCase {
 
     // MARK: Walked-path trace
@@ -191,6 +193,145 @@ final class SessionMapPresentationTests: XCTestCase {
         } else {
             XCTFail("Expected failed status for invalid origin")
         }
+    }
+
+    // MARK: Session lifecycle (#179)
+
+    @MainActor
+    func testDemoTicksAppendSyntheticWalkPathTrace() throws {
+        let model = try makeMapModel()
+        model.startDemo(.calmDayWalk)
+        XCTAssertTrue(model.walkPathTrace.isEmpty)
+
+        model.advanceDemo()
+        model.advanceDemo()
+        // Demo simulate steps ~56 m/tick → above 4 m spacing floor.
+        XCTAssertGreaterThanOrEqual(model.walkPathTrace.count, 2)
+        XCTAssertEqual(
+            model.walkPathTrace.count,
+            model.movementEngine.currentSession?.routePoints.count ?? -1
+        )
+    }
+
+    @MainActor
+    func testEndDemoClearsWalkPathTraceAndPlannedRoute() throws {
+        let model = try makeMapModel()
+        model.startDemo(.calmDayWalk)
+        model.advanceDemo()
+        model.plannedWalkRoute = PlannedWalkRoute(
+            destinationName: "Park",
+            destinationLatitude: 37.78,
+            destinationLongitude: -122.41,
+            polyline: [
+                TracePoint(latitude: 37.77, longitude: -122.42),
+                TracePoint(latitude: 37.78, longitude: -122.41)
+            ],
+            distanceMeters: 900,
+            expectedTravelTime: 600,
+            status: .ready
+        )
+        XCTAssertFalse(model.walkPathTrace.isEmpty)
+        XCTAssertTrue(model.plannedWalkRoute.isReady)
+
+        model.endDemo()
+
+        XCTAssertTrue(model.walkPathTrace.isEmpty)
+        XCTAssertEqual(model.plannedWalkRoute.status, .none)
+        XCTAssertTrue(model.plannedWalkRoute.polyline.isEmpty)
+    }
+
+    @MainActor
+    func testEndRealSessionClearsWalkPathTraceAndPlannedRoute() throws {
+        let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
+        let model = try makeMapModel(provider: provider)
+        model.startRealCompanionWalk()
+        let now = Date().addingTimeInterval(-10)
+        provider.emit(sample(at: now))
+        provider.emit(sample(at: now.addingTimeInterval(2), northMeters: 8, speed: 1.2))
+        provider.emit(sample(at: now.addingTimeInterval(4), northMeters: 16, speed: 1.2))
+        model.plannedWalkRoute = PlannedWalkRoute(
+            destinationName: "Cafe",
+            destinationLatitude: 37.78,
+            destinationLongitude: -122.41,
+            polyline: [
+                TracePoint(latitude: 37.77, longitude: -122.42),
+                TracePoint(latitude: 37.78, longitude: -122.41)
+            ],
+            distanceMeters: 400,
+            expectedTravelTime: 300,
+            status: .ready
+        )
+        XCTAssertFalse(model.walkPathTrace.isEmpty)
+        XCTAssertTrue(model.plannedWalkRoute.isReady)
+
+        model.endRealSession()
+
+        XCTAssertTrue(model.walkPathTrace.isEmpty)
+        XCTAssertEqual(model.plannedWalkRoute.status, .none)
+    }
+
+    @MainActor
+    func testFailRealWalkClearsWalkPathTraceAndPlannedRoute() throws {
+        let provider = FakeRealLocationProvider(status: .authorizedWhenInUse)
+        let model = try makeMapModel(provider: provider)
+        model.startRealCompanionWalk()
+        let now = Date().addingTimeInterval(-10)
+        provider.emit(sample(at: now))
+        provider.emit(sample(at: now.addingTimeInterval(2), northMeters: 8, speed: 1.2))
+        model.plannedWalkRoute = PlannedWalkRoute(
+            destinationName: "Hill",
+            destinationLatitude: 37.79,
+            destinationLongitude: -122.40,
+            polyline: [
+                TracePoint(latitude: 37.77, longitude: -122.42),
+                TracePoint(latitude: 37.79, longitude: -122.40)
+            ],
+            distanceMeters: 1200,
+            expectedTravelTime: 800,
+            status: .ready
+        )
+        XCTAssertFalse(model.walkPathTrace.isEmpty)
+        XCTAssertTrue(model.plannedWalkRoute.isReady)
+
+        provider.emitSignal(.failed("internal detail"))
+
+        XCTAssertEqual(model.realWalkState, .failed)
+        XCTAssertTrue(model.walkPathTrace.isEmpty)
+        XCTAssertEqual(model.plannedWalkRoute.status, .none)
+        XCTAssertFalse(model.demoMessage.contains("internal detail"))
+    }
+
+    @MainActor
+    private func makeMapModel(
+        provider: FakeRealLocationProvider = FakeRealLocationProvider(status: .authorizedWhenInUse)
+    ) throws -> WaykinAppModel {
+        let schema = Schema([CompanionRecord.self, SessionMemoryRecord.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        return WaykinAppModel(
+            persistenceStore: PersistenceStore(modelContainer: container),
+            movementEngine: MovementEngine(
+                integrityConfiguration: MovementIntegrityConfiguration(speedWindowSize: 1)
+            ),
+            realLocationProvider: provider,
+            healthMetricsProvider: NullHealthMetricsProvider(),
+            fieldTestReceiptStore: nil
+        )
+    }
+
+    private func sample(
+        at timestamp: Date,
+        northMeters: Double = 0,
+        speed: Double = 1.0
+    ) -> LocationSample {
+        LocationSample(
+            timestamp: timestamp,
+            latitude: 37.7749 + northMeters / 111_111,
+            longitude: -122.4194,
+            altitude: 10,
+            horizontalAccuracy: 5,
+            reportedSpeedMetersPerSecond: speed
+        )
     }
 }
 

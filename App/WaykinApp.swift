@@ -183,11 +183,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
     private(set) var realWalkState: RealWalkSessionState = .idle
     var isLiveSessionActive: Bool { realWalkState == .active || realWalkState == .paused }
     var liveSignalState: LiveLocationSignalState = .waitingForAuthorization
-    /// Presentation-only breadcrumb of the current real walk (#121):
-    /// derived from accepted movement fixes, capped, reset per session,
-    /// never persisted.
+    /// Presentation-only breadcrumb of the current session (#121 / #179):
+    /// real accepted GPS fixes and demo synthetic route points, capped,
+    /// reset on session start/end/fail, never persisted.
     private(set) var walkPathTrace = WalkPathTrace()
     /// Session planned walking route (presentation guide only; #155).
+    /// Cleared on session start/end/fail with the breadcrumb (#179).
     var plannedWalkRoute: PlannedWalkRoute = .empty
     @ObservationIgnored let walkRoutePlanner = WalkRoutePlanner()
     var liveAcceptedCount: Int = 0
@@ -417,8 +418,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathProgress = pathProgressEngine.snapshot
             lastPathRelationForAudio = pathProgress.relation
             lastPathAudioElapsed = nil
-            walkPathTrace.reset()
-            plannedWalkRoute = .empty
+            clearSessionMapPresentation()
             activityEnrichment = .empty
             try demoController.start(scenarioID: scenario)
             emitARWorldCommands(arCommandMapper.spawn(
@@ -482,6 +482,11 @@ final class WaykinAppModel: CanonicalARCommandSource {
             )
             pathProgressEngine.recordAccepted(snapshot)
             pathProgress = pathProgressEngine.snapshot
+            // Synthetic demo breadcrumb for the session map (#179). Same
+            // spacing/cap as real walks; presentation-only, not measurement.
+            if let point = movementEngine.currentSession?.routePoints.last {
+                walkPathTrace.append(latitude: point.latitude, longitude: point.longitude)
+            }
             activeFieldTestReceipt?.recordMovementSnapshot(snapshot)
             recordObservedMovementState(snapshot.isMoving ? .moving : .paused, at: timestamp)
         }
@@ -526,7 +531,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
     }
 
     func endDemo() {
-        plannedWalkRoute = .empty
+        clearSessionMapPresentation()
         emitARWorldCommands(arCommandMapper.clear())
         endGlassesGlanceSession()
         lastClosingPhrase = activePresencePresentation.closingPhrase
@@ -606,8 +611,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             demoMessage = "A walk is already in progress."
             return
         }
-        walkPathTrace.reset()
-        plannedWalkRoute = .empty
+        clearSessionMapPresentation()
         if fieldTestReceiptStore != nil {
             activeFieldTestReceipt = FieldTestReceiptBuilder(
                 sessionID: UUID(),
@@ -747,7 +751,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         guard isLiveSessionActive else { return }
         cancelHealthRefresh()
         endGlassesGlanceSession()
-        plannedWalkRoute = .empty
+        clearSessionMapPresentation()
         emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
@@ -1055,11 +1059,20 @@ final class WaykinAppModel: CanonicalARCommandSource {
         }
     }
 
+    /// Clears ephemeral session map surfaces (breadcrumb + planned route).
+    /// Called on start (fresh slate) and on end/fail so chrome never shows a
+    /// prior walk after the session is over (#179).
+    private func clearSessionMapPresentation() {
+        walkPathTrace.reset()
+        plannedWalkRoute = .empty
+    }
+
     private func failRealWalk(
         message: String,
         outcome: FieldTestOutcome,
         errorCategory: FieldTestErrorCategory
     ) {
+        clearSessionMapPresentation()
         emitARWorldCommands(arCommandMapper.clear())
         let endedAt = fieldTestNow()
         let priorState = realWalkState
