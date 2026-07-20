@@ -32,7 +32,9 @@ enum WKTokens {
         static let sanctuaryText = Color(wkHex: 0x5F7F72)
         static let caution = Color(wkHex: 0xE0B040)
         static let pause = Color(wkHex: 0x5C6570)
+        static let safetyPause = Color(wkHex: 0x5F7F72)
         static let focus = Color(wkHex: 0x3F8F8A)
+        static let disabledOpacity = 0.35
     }
 
     // MARK: - Night (indigo-earth)
@@ -56,7 +58,56 @@ enum WKTokens {
         static let sanctuaryText = Color(wkHex: 0xA8C4B5)
         static let caution = Color(wkHex: 0xE0B040)
         static let pause = Color(wkHex: 0x9AA3B0)
+        static let safetyPause = Color(wkHex: 0x6F8F82)
         static let focus = Color(wkHex: 0x4A9E98)
+        static let disabledOpacity = 0.32
+    }
+
+    // MARK: - Spacing / radius (pt) — CANDIDATE_v0.2
+
+    enum Space {
+        static let xxs: CGFloat = 2
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 24
+        static let xxl: CGFloat = 32
+        static let xxxl: CGFloat = 48
+        static let screenMarginX: CGFloat = 24
+        static let minTouch: CGFloat = 48
+    }
+
+    enum Radius {
+        static let small: CGFloat = 8
+        static let medium: CGFloat = 14
+        static let large: CGFloat = 20
+        static let capsule: CGFloat = 999
+        static let iconContainer: CGFloat = 12
+    }
+
+    // MARK: - Type scale (Dynamic Type aware via system fonts)
+
+    enum TypeScale {
+        /// Session state display — design 36pt; floor ~28pt outdoor glance.
+        static let displayMin: CGFloat = 28
+        static let display: Font = .system(size: 36, weight: .semibold, design: .default)
+        static let title: Font = .system(size: 24, weight: .semibold, design: .default)
+        static let body: Font = .system(size: 16, weight: .regular, design: .default)
+        static let caption: Font = .system(size: 12, weight: .medium, design: .default)
+        static let numeric: Font = .system(size: 20, weight: .medium, design: .default).monospacedDigit()
+    }
+
+    // MARK: - Motion (seconds)
+
+    enum Motion {
+        static let fast: TimeInterval = 0.12
+        static let standard: TimeInterval = 0.22
+        static let slow: TimeInterval = 0.36
+        static let manifestation: TimeInterval = 0.70
+        static let sanctuary: TimeInterval = 0.80
+        static let bond: TimeInterval = 0.50
+        static let reducedCrossfadeMax: TimeInterval = 0.12
     }
 
     // MARK: - Semantic hex (tests / documentation)
@@ -69,6 +120,8 @@ enum WKTokens {
         static let dayHunter = "5C4E7A"
         static let dayTextPrimary = "141820"
         static let nightTextPrimary = "E6EAF0"
+        static let daySafetyPause = "5F7F72"
+        static let nightSafetyPause = "6F8F82"
     }
 }
 
@@ -95,7 +148,14 @@ struct WKTheme: Equatable {
     var sanctuaryText: Color { isNight ? WKTokens.Night.sanctuaryText : WKTokens.Day.sanctuaryText }
     var caution: Color { isNight ? WKTokens.Night.caution : WKTokens.Day.caution }
     var pause: Color { isNight ? WKTokens.Night.pause : WKTokens.Day.pause }
+    var safetyPause: Color { isNight ? WKTokens.Night.safetyPause : WKTokens.Day.safetyPause }
     var focus: Color { isNight ? WKTokens.Night.focus : WKTokens.Day.focus }
+    var surfaceSecondary: Color {
+        isNight ? WKTokens.Night.surfaceSecondary : WKTokens.Day.surfaceSecondary
+    }
+    var disabledOpacity: Double {
+        isNight ? WKTokens.Night.disabledOpacity : WKTokens.Day.disabledOpacity
+    }
 
     /// Active-session field: mist/indigo foundation with hunter pressure wash (never color-alone for meaning).
     func sessionBackground(pressure: Double) -> Color {

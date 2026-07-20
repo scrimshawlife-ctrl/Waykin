@@ -10,7 +10,7 @@ Last updated: 2026-07-20 (pivot: UI CANDIDATE_v0.2; AR recs parked)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **UI CANDIDATE_v0.2 Phase 4 integration** | — | **Active pivot** | Design package `Waykin-Design/11_Approved-Exports/CANDIDATE_v0.2/` · pointer [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
+| **UI CANDIDATE_v0.2 Phase 4 integration** | — | **In progress** — tokens/space/type + full icon inventory + home/session chrome | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
 | Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 
 ## Intake

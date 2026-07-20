@@ -45,4 +45,14 @@ final class WKTokensTests: XCTestCase {
         _ = CompanionPresenceStyle.background(for: 0.2, theme: night)
         _ = CompanionPresenceStyle.background(for: 0.5) // legacy fallback
     }
+
+    func testSpacingRadiusMotionMatchCandidateV02() {
+        XCTAssertEqual(WKTokens.Space.screenMarginX, 24)
+        XCTAssertEqual(WKTokens.Space.minTouch, 48)
+        XCTAssertEqual(WKTokens.Radius.medium, 14)
+        XCTAssertEqual(WKTokens.Radius.large, 20)
+        XCTAssertEqual(WKTokens.Motion.fast, 0.12, accuracy: 0.001)
+        XCTAssertEqual(WKTokens.Motion.manifestation, 0.70, accuracy: 0.001)
+        XCTAssertEqual(WKTokens.TypeScale.displayMin, 28)
+    }
 }
