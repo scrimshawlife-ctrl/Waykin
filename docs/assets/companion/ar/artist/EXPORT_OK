@@ -1,11 +1,5 @@
-usd=/Users/appliedalchemylabs/Waykin/docs/assets/companion/ar/artist/Lira_AR_Base.usd
-blend=ArtSource/Companion/Lira/lira.blend
-evidence=ARTIST_BLEND_HERO_DCC_MID_LOD
-armature=LiraArmature
-bone_bind=hero_region_paint
-dcc_clips=Lira_Idle,Lira_Follow,Lira_Investigate,Lira_Alert,Lira_Celebrate,Lira_Spawn
-clip_usds=Lira_Idle.usd,Lira_Follow.usd,Lira_Investigate.usd,Lira_Alert.usd,Lira_Celebrate.usd,Lira_Spawn.usd
-body_vgroups=25
-body_multi_bone_verts=1830
-body_multi_bone_ratio=1.0
-body_max_influences=4
+source=ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz
+origin=Meshy_AI_image_to_3d_texture
+evidence=MESHY_TEXTURED_STATIC_V1
+note=static_textured_mesh_no_skeleton;runtime_promotes_A1A3_markers;puppet_animation
+ignore_walk_usdz=Meshy_AI_Animation_Walking.usdz
