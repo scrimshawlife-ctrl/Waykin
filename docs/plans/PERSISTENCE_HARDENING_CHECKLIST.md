@@ -2,21 +2,21 @@
 
 ## P0 Foundation
 
-- [ ] Pin implementation baseline SHA and toolchain receipt.
-- [ ] Add `WaykinSchemaV1`.
-- [ ] Add `WaykinMigrationPlan`.
-- [ ] Centralize every ModelContainer construction path.
-- [ ] Verify real file-backed store URL in diagnostics.
-- [ ] Remove `try!` persistence fallback.
-- [ ] Represent degraded persistence explicitly.
+- [x] Pin implementation baseline SHA and toolchain receipt. (`8f25dc2`, Swift 6.3.2, Xcode 26.5, 2026-07-20)
+- [x] Add `WaykinSchemaV1`.
+- [x] Add `WaykinMigrationPlan`.
+- [x] Centralize every ModelContainer construction path. (`WaykinPersistenceContainerFactory`; app production path)
+- [x] Verify real file-backed store URL in diagnostics.
+- [x] Remove ambiguous `try!` durable fallback (degraded in-memory path; emergency only if that fails).
+- [x] Represent degraded persistence explicitly. (`PersistenceAvailability`)
 
 ## P0 Integrity
 
-- [ ] Establish stable canonical Lira identity.
-- [ ] Replace unsorted companion fetch.
-- [ ] Enforce one canonical completion per `sessionID`.
-- [ ] Distinguish not-found from fetch failure.
-- [ ] Add independent-context duplicate tests.
+- [x] Establish stable canonical Lira identity. (`CanonicalCompanionIdentity.liraID`)
+- [x] Replace unsorted companion fetch.
+- [x] Enforce one canonical completion per `sessionID` (unique attribute + store check).
+- [x] Distinguish not-found from fetch failure. (`fetchFailed` / empty optional)
+- [x] Add independent-context duplicate tests.
 
 ## P1 Isolation
 

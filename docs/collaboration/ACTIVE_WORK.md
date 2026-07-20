@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-20 (pivot: UI CANDIDATE_v0.2; AR recs parked)
+Last updated: 2026-07-20 (persistence WP-DB1/DB2; UI partial; outdoor parked)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,15 +10,17 @@ Last updated: 2026-07-20 (pivot: UI CANDIDATE_v0.2; AR recs parked)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **UI CANDIDATE_v0.2 Phase 4 integration** | — | **Wave 3** — onboarding + legal docs | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) · [legal/](../legal/README.md) |
+| **Persistence hardening WP-DB1–DB2** | — | **In progress / shipping** | [PERSISTENCE_HARDENING_PLAN.md](../plans/PERSISTENCE_HARDENING_PLAN.md) · ADR-0003 |
+| **UI CANDIDATE_v0.2 Phase 4** | — | **Partial** — waves 1–3 + onboarding/legal on main; checklist polish remains | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
 | Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 
 ## Intake
 
 | Work | Reason |
 |---|---|
-| HO-001–005 from design handoff | READY_FOR_IMPLEMENTATION in design package |
-| Icon set / production board screens | Align app chrome to Stage 6 + component library |
+| WP-DB3–DB5 (repos, ModelActor, session aggregate, migration suite) | Next after DB1/DB2 lands |
+| UI checklist polish + sim screenshot matrix | Non-outdoor product evidence |
+| HO residual icons / production-board density | Design package alignment |
 
 ## Blocked
 

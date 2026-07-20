@@ -35,33 +35,48 @@ struct WaykinApp: App {
     @State private var appModel: WaykinAppModel
 
     init() {
-        do {
-            let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
-            var shouldReset = false
-            let args = ProcessInfo.processInfo.arguments
-            if let idx = args.firstIndex(of: "-WAYKIN_RESET_STATE"), idx + 1 < args.count {
+        var shouldReset = false
+        let args = ProcessInfo.processInfo.arguments
+        if let idx = args.firstIndex(of: "-WAYKIN_RESET_STATE"), idx + 1 < args.count {
             let val = args[idx + 1].trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             shouldReset = (val == "YES" || val == "TRUE" || val == "1")
         }
 
-            let container: ModelContainer
-            if isUITesting {
-                container = try PersistenceStore.makeFileBackedContainer(reset: shouldReset)
-            } else {
-                let url = try PersistenceConfiguration.persistentStoreURL()
-                let schema = Schema([CompanionRecord.self, SessionMemoryRecord.self])
-                let config = ModelConfiguration(schema: schema, url: url)
-                container = try ModelContainer(for: schema, configurations: config)
-            }
+        // WP-DB1: single factory path; never claim file-backed durability on fallback.
+        do {
+            let (container, storeURL) = try WaykinPersistenceContainerFactory.makeFileBacked(reset: shouldReset)
             self.container = container
-
-            let store = PersistenceStore(modelContainer: container)
+            let store = PersistenceStore(
+                modelContainer: container,
+                storeURL: storeURL,
+                availability: .availableFileBacked
+            )
             self._appModel = State(initialValue: WaykinAppModel(persistenceStore: store))
         } catch {
-            // Fallback for non-critical paths; UI tests will fail explicitly if file-backed required
-            let fallbackContainer = try! ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self)
-            self.container = fallbackContainer
-            self._appModel = State(initialValue: WaykinAppModel(persistenceStore: PersistenceStore(modelContainer: fallbackContainer)))
+            // Explicit degraded mode: in-memory substitute (no try!).
+            if let ephemeral = try? WaykinPersistenceContainerFactory.makeInMemory() {
+                self.container = ephemeral
+                let store = PersistenceStore(
+                    modelContainer: ephemeral,
+                    storeURL: nil,
+                    availability: .degraded
+                )
+                self._appModel = State(initialValue: WaykinAppModel(persistenceStore: store))
+            } else {
+                // Absolute last resort: pure domain memory without SwiftData @Query backing.
+                // ModelContainer still required by .modelContainer — create empty in-memory via Schema.
+                let schema = WaykinPersistenceContainerFactory.schema()
+                let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                // If this throws the process cannot present the app shell.
+                let emergency = try! ModelContainer(for: schema, configurations: [config])
+                self.container = emergency
+                let store = PersistenceStore(
+                    modelContainer: emergency,
+                    storeURL: nil,
+                    availability: .failed
+                )
+                self._appModel = State(initialValue: WaykinAppModel(persistenceStore: store))
+            }
         }
     }
 
@@ -345,11 +360,35 @@ final class WaykinAppModel: CanonicalARCommandSource {
             UserDefaults.standard.removeObject(forKey: Self.onboardingStorageKey)
         }
 
-        if let loaded = try? persistenceStore.loadCompanion() {
-            self.companion = loaded
-        } else {
-            self.companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])
-            _ = try? persistenceStore.saveCompanion(self.companion)
+        // WP-DB1/DB2: map store availability + load canonical Lira (not random UUID).
+        switch persistenceStore.availability {
+        case .availableFileBacked:
+            self.persistenceMode = "FILE_BACKED"
+            self.persistenceLoadState = .loaded
+        case .availableInMemory:
+            self.persistenceMode = "IN_MEMORY"
+            self.persistenceLoadState = .loaded
+        case .degraded:
+            self.persistenceMode = "DEGRADED_IN_MEMORY"
+            self.persistenceLoadState = .failed
+        case .failed:
+            self.persistenceMode = "FAILED"
+            self.persistenceLoadState = .failed
+        }
+
+        do {
+            if let loaded = try persistenceStore.loadCompanion() {
+                self.companion = loaded
+            } else {
+                self.companion = CanonicalCompanionIdentity.defaultCompanion()
+                try persistenceStore.saveCompanion(self.companion)
+            }
+        } catch {
+            self.companion = CanonicalCompanionIdentity.defaultCompanion()
+            if persistenceStore.availability == .availableFileBacked
+                || persistenceStore.availability == .availableInMemory {
+                self.persistenceLoadState = .failed
+            }
         }
         if shouldReset {
             self.selectedLiraSkin = .dawn
