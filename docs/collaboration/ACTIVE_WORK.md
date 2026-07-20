@@ -20,6 +20,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
+| Issue #128 — session elapsed ~2s steps | Grok | `fix/session-elapsed-presentation-clock` | App presentation clock + tests | In Progress | #41 PARTIAL (not GPS failure) |
 | Issue #125 — AR continuity (disappear ~10–15 m) | UNASSIGNED | — | `App/AR/**`, AppTests, docs | Ready (IMPLEMENT after claim) | #41 PARTIAL receipt |
 | Issue #126 — session/AR menu UX audit | UNASSIGNED | — | App session chrome, docs | Ready (audit first) | #41 PARTIAL; before more outdoor AR |
 

@@ -167,6 +167,11 @@ final class WaykinAppModel: CanonicalARCommandSource {
     static let healthRefreshIntervalNanoseconds: UInt64 = 120_000_000_000
     private var activeFieldTestReceipt: FieldTestReceiptBuilder?
     private var lastObservedMovementState: MovementState = .idle
+    /// Wall-clock pause accounting for **presentation** elapsed (#128). Core `session.elapsedTime` stays sample-driven.
+    @ObservationIgnored private var accumulatedRealPausedDuration: TimeInterval = 0
+    @ObservationIgnored private var currentRealPauseStartedAt: Date?
+    /// Presentation start (fieldTestNow), not MovementEngine.startedAt, so HUD clock is continuous even when GPS samples are sparse.
+    @ObservationIgnored private var presentationSessionStartedAt: Date?
 
     var activePresencePresentation: CompanionPresencePresentation {
         let usesPhysicalRuntime = isLiveSessionActive
@@ -185,7 +190,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pursuitState: walkState?.pursuitState ?? .inactive,
             eventKind: walkState?.lastEvent?.kind,
             audioCueKind: walkState?.activeAudioCues.first?.kind,
-            elapsedSeconds: session?.elapsedTime ?? 0,
+            elapsedSeconds: presentationElapsedSeconds(session: session, usesPhysicalRuntime: usesPhysicalRuntime),
             distanceMeters: session?.distanceMeters ?? 0,
             isPaused: usesPhysicalRuntime ? realWalkState == .paused : demoController.isPaused,
             isOpening: usesPhysicalRuntime ? liveAcceptedCount == 0 : demoController.tickIndex == 0,
@@ -195,6 +200,42 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathIntegrityPressure: pathProgress.integrityPressure,
             energyHint: activityEnrichment.energyHint
         )
+    }
+
+    /// Smooth HUD clock for real walks (wall time − pauses). Demo keeps sample/tick elapsed.
+    func presentationElapsedSeconds(
+        session: MovementSession? = nil,
+        usesPhysicalRuntime: Bool? = nil,
+        now: Date? = nil
+    ) -> TimeInterval {
+        let session = session ?? movementEngine.currentSession
+        let physical = usesPhysicalRuntime ?? isLiveSessionActive
+        let now = now ?? fieldTestNow()
+        guard physical, session != nil, let started = presentationSessionStartedAt else {
+            return session?.elapsedTime ?? 0
+        }
+        var paused = accumulatedRealPausedDuration
+        if realWalkState == .paused, let pauseStart = currentRealPauseStartedAt {
+            paused += max(0, now.timeIntervalSince(pauseStart))
+        }
+        return max(0, now.timeIntervalSince(started) - paused)
+    }
+
+    private func resetPresentationElapsedClock() {
+        accumulatedRealPausedDuration = 0
+        currentRealPauseStartedAt = nil
+        presentationSessionStartedAt = nil
+    }
+
+    private func beginPresentationPause(at now: Date) {
+        currentRealPauseStartedAt = now
+    }
+
+    private func endPresentationPause(at now: Date) {
+        if let pauseStart = currentRealPauseStartedAt {
+            accumulatedRealPausedDuration += max(0, now.timeIntervalSince(pauseStart))
+        }
+        currentRealPauseStartedAt = nil
     }
 
     init(
@@ -557,6 +598,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             liveSignalState = .waitingForFirstFix
             liveAcceptedCount = 0
             liveRejectedCount = 0
+            resetPresentationElapsedClock()
+            presentationSessionStartedAt = fieldTestNow()
             // Context must exist before async Health enrichment can apply energy (#104 race).
             let context = ExperienceContext(
                 timeOfDay: selectedTimeContext,
@@ -590,6 +633,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             let now = fieldTestNow()
             activeFieldTestReceipt?.recordSessionTransition(from: .active, to: .paused, at: now)
             activeFieldTestReceipt?.recordAudioLifecycle("pause", at: now)
+            beginPresentationPause(at: now)
             realWalkState = .paused
             lifecycleSuspendedRealWalk = false
             cancelHealthRefresh()
@@ -609,6 +653,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             let now = fieldTestNow()
             activeFieldTestReceipt?.recordSessionTransition(from: .paused, to: .active, at: now)
             activeFieldTestReceipt?.recordAudioLifecycle("resume", at: now)
+            endPresentationPause(at: now)
             realWalkState = .active
             lifecycleSuspendedRealWalk = false
             scheduleHealthRefreshForRealWalk(periodic: true)
@@ -625,8 +670,12 @@ final class WaykinAppModel: CanonicalARCommandSource {
         emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
+        if realWalkState == .paused {
+            endPresentationPause(at: endedAt)
+        }
         activeFieldTestReceipt?.recordSessionTransition(from: fieldTestState(for: realWalkState), to: .ending, at: endedAt)
         realWalkState = .ending
+        resetPresentationElapsedClock()
         realLocationProvider.stopUpdatingLocation()
         audioPlayer.stopAll(fadeOut: true)
         activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
@@ -914,6 +963,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
         realExperienceState = nil
         realExperienceContext = nil
         lifecycleSuspendedRealWalk = false
+        if priorState == .paused {
+            endPresentationPause(at: endedAt)
+        }
+        resetPresentationElapsedClock()
         realWalkState = .failed
         demoMessage = message
         finishFieldTestReceipt(
@@ -1360,9 +1413,23 @@ struct ActiveSessionView: View {
     let scenario: DemoScenarioID
 
     var body: some View {
+        // Live real walks: refresh HUD ~1 Hz so elapsed advances smoothly (#128).
+        // Demo ticks still drive demo elapsed via model mutations.
+        Group {
+            if appModel.isLiveSessionActive && appModel.realWalkState == .active {
+                TimelineView(.periodic(from: .now, by: 1)) { _ in
+                    sessionContent
+                }
+            } else {
+                sessionContent
+            }
+        }
+    }
+
+    private var sessionContent: some View {
         let presentation = appModel.activePresencePresentation
 
-        ZStack {
+        return ZStack {
             CompanionPresenceStyle.background(for: presentation.pressureIntensity, theme: theme)
                 .ignoresSafeArea()
 
