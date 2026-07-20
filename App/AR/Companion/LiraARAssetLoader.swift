@@ -17,9 +17,13 @@ final class LiraARAssetLoader {
     private var template: Entity?
     var skin: LiraSkin = .dawn
 
-    /// Load optional artist USDZ from the app bundle. Safe to call repeatedly.
-    func preloadFromBundle() async {
-        guard let url = LiraARAssetCatalog.baseUSDZURL else {
+    /// Load optional artist USDZ. Safe to call repeatedly.
+    ///
+    /// - Parameter usdzURL: Defaults to the packaged catalog URL. Pass `nil` (or an
+    ///   unreadable URL) from tests to exercise procedural fallback without requiring
+    ///   the app bundle to omit `Lira_AR_Base.usdz`.
+    func preloadFromBundle(usdzURL: URL? = LiraARAssetCatalog.baseUSDZURL) async {
+        guard let url = usdzURL else {
             clearTemplate(reason: .procedural)
             return
         }

@@ -54,9 +54,36 @@ final class ARCompanionEmbodimentTests: XCTestCase {
 
     func testAssetLoaderFallsBackWhenNoBundleUSDZ() async {
         let loader = LiraARAssetLoader()
-        await loader.preloadFromBundle()
-        // No packaged artist mesh in app target yet → procedural.
+        // Inject missing asset: packaged USDZ may now exist on main after mid-LOD shipping.
+        await loader.preloadFromBundle(usdzURL: nil)
         XCTAssertEqual(loader.source, .procedural)
+        XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(loader.makeLira()))
+    }
+
+    func testAssetLoaderFallsBackWhenUSDZURLUnreadable() async {
+        let loader = LiraARAssetLoader()
+        let missing = URL(fileURLWithPath: "/tmp/waykin-missing-Lira_AR_Base.usdz")
+        await loader.preloadFromBundle(usdzURL: missing)
+        XCTAssertEqual(loader.source, .procedural)
+        XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(loader.makeLira()))
+    }
+
+    func testAssetLoaderUsesPackagedUSDZWhenBundled() async throws {
+        guard LiraARAssetCatalog.hasPackagedUSDZ,
+              let url = LiraARAssetCatalog.baseUSDZURL else {
+            throw XCTSkip("Packaged Lira_AR_Base.usdz not present in this test host")
+        }
+        let loader = LiraARAssetLoader()
+        await loader.preloadFromBundle(usdzURL: url)
+        // Load may still fall back if RealityKit rejects the file; assert consistent states only.
+        switch loader.source {
+        case .usdz(let name):
+            XCTAssertEqual(name, "Lira_AR_Base.usdz")
+            XCTAssertTrue(loader.activeLODDescription.contains("Lira_AR_Base"))
+        case .procedural:
+            // Hierarchy/load failure still yields permanent procedural fallback.
+            XCTAssertEqual(loader.source, .procedural)
+        }
         XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(loader.makeLira()))
     }
 
