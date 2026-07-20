@@ -2,9 +2,9 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-19
+Last updated: 2026-07-20
 
-> **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow state:** [GitHub Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · **Repository snapshot and protocol:** this ledger · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
+> **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) (closed completed; PR #48) · **Live workflow state:** [GitHub Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · **Repository snapshot and protocol:** this ledger · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
 ## Rules
 
@@ -20,38 +20,42 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| — | — | — | — | Idle | #104 HealthKit hardening; #101 audio (Prabu); outdoor/AR device blocked |
+| — | — | — | — | Idle | No Ready implementation claim |
+
+## Intake (not Ready)
+
+| Work | Reason | Required resolution |
+|---|---|---|
+| Issue #115 — Ray-Ban Display glance adapter (Meta DAT) | Expansion-gate proposal; new surface + third-party SDK | Product-owner ratify / defer / reject before any code |
 
 ## Blocked
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Issue #41 — physical AR validation | Physical device access is unavailable | Execute the evidence-only protocol on the named device and exact build; all unobserved fields remain `NOT_COMPUTABLE` |
+| Issue #41 — physical AR validation | Physical device access unavailable | Evidence-only protocol on named device + exact build (`main` tip at triage: `86da7ad`); unobserved fields stay `NOT_COMPUTABLE` |
 | Outdoor QA receipt | Device walk deferred by product owner | Fill `OUTDOOR_QA_RECEIPT_TEMPLATE.md` on named device |
 
-## Completed
+## Completed (recent)
 
-| Issue | Outcome | Evidence |
+| Issue / PR | Outcome | Evidence |
 |---|---|---|
-| Issue #35 — living-companion presentation | Complete | PR #40 merged as `4c645395`; Issue #35 closed completed |
-| Issue #42 — canonical runtime AR integration | Complete | PR #45 merged as `16af4d2`; Issue #42 closed completed |
-| Issue #46 — AR command replay + soak | Complete | `ARCommandReplaySoakTests` + `docs/AR_REPLAY_VALIDATION.md` |
-| Issue #50 — Echo theme tokens | Complete | PR #51 merged as `c5f97e4` |
-| Issue #52 — Echo icons + Bond Filament | Complete | PR #53 merged as `54582c4` |
-| Issue #55 — App Icon + Lira Echo + outdoor QA | Complete | PR #56 merged as `63d632e` |
-| Issue #57 — Lira art pipeline + outdoor receipt | Complete | PR #58 merged |
-| Issue #59 — Lira session-mid puppet | Complete | PR #60 merged |
-| Issue #61 — Lira skins + Home presence | Complete | PR #62 merged |
-| Issue #63 — AR skins, appearance, stills, sim | Complete | PR #64 merged |
-| Issue #66 — Dawn stills + glyph LOD | Complete | PR #67 merged |
-| Issue #68 — Veil/Rupture still matrix (SVG) | Complete | PR #69 merged |
-| Issue #70 — spectral Lira generated art | Complete | PR #71 merged as `89f251a` |
-| Issue #72 — complete Veil/Rupture AI poses | Complete | PR #73 merged as `e0f2479` |
-| Issue #74 — sim walk preflight + a11y | Complete | PR #75 merged as `fdb269e` |
+| Issue #47 — agent coordination board | Complete | PR #48 merged; Project #1 live; closed 2026-07-20 |
+| Issue #46 — AR command replay + soak | Complete | `ARCommandReplaySoakTests` + docs |
+| Issue #104 — HealthKit V1 hardening | Complete | PR #106 |
+| Issue #101 — produced audio cues | Complete | PR #108 |
+| Issue #107 / #110 — test defect repairs | Complete | PRs #109, #113 |
+| PR #112 — USDZ v1.1 + AR motion + still quality | Complete | merged |
+| PR #114 — Veil/Rupture still quality | Complete | merged |
+| PR #116 — MeshDescriptor mid-LOD mesh + animation channels | Complete | merged |
+| PR #117 — joint-hierarchy skeletal AnimationLibrary | Complete | merged (`86da7ad`) |
+
+## Historical completed (abridged)
+
+Earlier closed issues (#35, #42, #50–#90 art/AR indoor ladder, etc.) remain in GitHub closed-issue history. Prefer Project #1 **Completed Receipts** for workflow state.
 
 ## Preservation Boundary
 
-The local `wip/ar3-local-preservation` branch remains an isolated preservation surface. It is not merge authority for Issue #46 or any later work.
+The local `wip/ar3-local-preservation` branch remains an isolated preservation surface. It is not merge authority.
 
 ## Handoff Entry Template
 
