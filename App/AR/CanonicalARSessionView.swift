@@ -230,13 +230,18 @@ struct CanonicalARSessionView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .accessibilityIdentifier("waykin.ar.canonical.continuity")
+                        // #147: human hint from the same note (no new gameplay truth).
+                        if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
+                            Text(hint)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .accessibilityIdentifier("waykin.ar.canonical.continuityHint")
+                        }
                         Text(runtime.lastResult)
                     }
                     .font(.caption.weight(.semibold))
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel(
-                        "AR: \(runtime.capabilityState.rawValue), Lira: \(runtime.companionState.rawValue), Form: \(liraSkin.displayName), LOD: \(runtime.companionLODDescription), mesh mid-LOD not hero sculpt, Continuity: \(runtime.companionContinuityNote)"
-                    )
+                    .accessibilityLabel(arStatusAccessibilityLabel)
                     .accessibilityIdentifier("waykin.ar.canonical.status")
 
                     Spacer()
@@ -306,6 +311,21 @@ struct CanonicalARSessionView: View {
         .onChange(of: liraSkin) { _, newSkin in
             runtime.setCompanionSkin(newSkin)
         }
+    }
+
+    private var arStatusAccessibilityLabel: String {
+        var parts = [
+            "AR: \(runtime.capabilityState.rawValue)",
+            "Lira: \(runtime.companionState.rawValue)",
+            "Form: \(liraSkin.displayName)",
+            "LOD: \(runtime.companionLODDescription)",
+            "mesh mid-LOD not hero sculpt",
+            "Continuity: \(runtime.companionContinuityNote)"
+        ]
+        if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
+            parts.append(hint)
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

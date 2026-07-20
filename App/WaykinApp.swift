@@ -1624,14 +1624,15 @@ struct ActiveSessionView: View {
                         .accessibilityIdentifier("waykin.session.runToEnd")
                     } else {
                         let signal = GPSSignalPresentation(state: appModel.liveSignalState)
-                        Label(signal.label, systemImage: signal.symbolName)
-                            .font(.caption)
-                            .foregroundStyle(signal.isProblem ? theme.caution : theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityLabel("GPS status")
-                            .accessibilityValue(signal.accessibilityValue)
-                            .accessibilitySortPriority(1)
-                            .accessibilityIdentifier("waykin.session.liveSignal")
+                        SessionStatusChip(
+                            title: signal.label,
+                            systemImage: signal.symbolName,
+                            tone: signal.isProblem ? .caution : .calm,
+                            accessibilityLabelText: "GPS status",
+                            accessibilityValueText: signal.accessibilityValue,
+                            accessibilityIdentifier: "waykin.session.liveSignal"
+                        )
+                        .accessibilitySortPriority(1)
                     }
 
                     CompactSessionMap(
@@ -1676,51 +1677,142 @@ struct SessionSummaryView: View {
     var body: some View {
         ZStack {
             theme.backgroundWarm.ignoresSafeArea()
-            VStack(spacing: 16) {
-                Text("Session Summary")
-                    .font(.title)
-                    .foregroundStyle(theme.textPrimary)
-                    .accessibilityIdentifier("waykin.summary.screen")
-                if !appModel.lastClosingPhrase.isEmpty {
-                    Text(appModel.lastClosingPhrase)
-                        .font(.headline)
-                        .foregroundStyle(theme.bondText)
-                        .accessibilityIdentifier("waykin.session.closing")
-                }
-                Text(summary.memory.text)
-                    .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("waykin.summary.memory")
-                if let pathLine = summary.pathPresentationLine {
-                    Text(pathLine)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(theme.guide)
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("Session Summary")
+                        .font(.title)
+                        .foregroundStyle(theme.textPrimary)
+                        .accessibilityIdentifier("waykin.summary.screen")
+
+                    // #148: skin-correct still + bond delta.
+                    LiraSessionFigure(presentation: summaryPresencePresentation)
+                        .frame(maxHeight: 160)
+                        .liraSkin(appModel.selectedLiraSkin)
+                        .accessibilityIdentifier("waykin.summary.lira")
+
+                    HStack(spacing: 10) {
+                        WKBondFilamentMark(size: 28)
+                        Text(bondDeltaText)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(theme.bondText)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Bond change")
+                    .accessibilityValue(bondDeltaText)
+                    .accessibilityIdentifier("waykin.summary.bondDelta")
+
+                    if !appModel.lastClosingPhrase.isEmpty {
+                        Text(appModel.lastClosingPhrase)
+                            .font(.headline)
+                            .foregroundStyle(theme.bondText)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("waykin.session.closing")
+                    }
+                    Text(summary.memory.text)
+                        .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("waykin.summary.path")
+                        .accessibilityIdentifier("waykin.summary.memory")
+
+                    HStack(spacing: 24) {
+                        summaryMetric(
+                            value: elapsedSummaryText,
+                            label: "Time",
+                            identifier: "waykin.summary.elapsed"
+                        )
+                        summaryMetric(
+                            value: distanceSummaryText,
+                            label: "Distance",
+                            identifier: "waykin.summary.distance"
+                        )
+                    }
+                    .accessibilityIdentifier("waykin.summary.stats")
+
+                    if let pathLine = summary.pathPresentationLine {
+                        Text(pathLine)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(theme.guide)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("waykin.summary.path")
+                    }
+                    if let cadenceLine = summary.cadencePresentationLine {
+                        Text(cadenceLine)
+                            .font(.caption)
+                            .foregroundStyle(theme.textTertiary)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("waykin.summary.cadence")
+                    }
+                    if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
+                        Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
+                            .accessibilityIdentifier("waykin.summary.memoryWrite")
+                        Text(appModel.latestFieldTestReceiptURL.map {
+                            FileManager.default.fileExists(atPath: $0.path) ? "WRITTEN" : "MISSING"
+                        } ?? "MISSING")
+                        .accessibilityIdentifier("waykin.summary.receiptWrite")
+                    }
+                    Button("Back to Home") { appModel.returnHome() }
+                        .buttonStyle(.borderedProminent)
+                        .tint(theme.guide)
+                        .frame(minHeight: 48)
+                        .accessibilityIdentifier("waykin.summary.home")
                 }
-                if let cadenceLine = summary.cadencePresentationLine {
-                    Text(cadenceLine)
-                        .font(.caption)
-                        .foregroundStyle(theme.textTertiary)
-                        .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("waykin.summary.cadence")
-                }
-                if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") {
-                    Text(appModel.persistenceMemoryCount > 0 ? "WRITTEN" : "MISSING")
-                        .accessibilityIdentifier("waykin.summary.memoryWrite")
-                    Text(appModel.latestFieldTestReceiptURL.map {
-                        FileManager.default.fileExists(atPath: $0.path) ? "WRITTEN" : "MISSING"
-                    } ?? "MISSING")
-                    .accessibilityIdentifier("waykin.summary.receiptWrite")
-                }
-                Button("Back to Home") { appModel.returnHome() }
-                    .buttonStyle(.borderedProminent)
-                    .tint(theme.guide)
-                    .frame(minHeight: 48)
-                    .accessibilityIdentifier("waykin.summary.home")
+                .padding(24)
             }
-            .padding(24)
         }
+    }
+
+    private var bondDeltaText: String {
+        let delta = summary.bondDelta
+        if delta > 0 { return "Bond +\(delta)" }
+        if delta < 0 { return "Bond \(delta)" }
+        return "Bond held"
+    }
+
+    private var elapsedSummaryText: String {
+        let total = max(0, Int(summary.duration.rounded()))
+        let minutes = total / 60
+        let seconds = total % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private var distanceSummaryText: String {
+        let meters = max(0, Int(summary.distanceMeters.rounded()))
+        return "\(meters) m"
+    }
+
+    /// Settled presence for summary art (#148) — celebrate lean when bond grew.
+    private var summaryPresencePresentation: CompanionPresencePresentation {
+        CompanionPresencePresentation(
+            companionName: appModel.companion.name,
+            bondLevel: appModel.companion.bondLevel,
+            behavior: summary.bondDelta > 0 ? .celebrate : .rest,
+            pursuitState: .inactive,
+            eventKind: summary.bondDelta > 0 ? .bondMoment : .quietInterval,
+            audioCueKind: nil,
+            elapsedSeconds: summary.duration,
+            distanceMeters: summary.distanceMeters,
+            isPaused: false,
+            isOpening: false,
+            latitude: nil,
+            longitude: nil,
+            pathRelation: PathRelation(rawValue: summary.pathRelation ?? "") ?? .onPath,
+            pathIntegrityPressure: 0,
+            energyHint: 0
+        )
+    }
+
+    private func summaryMetric(value: String, label: String, identifier: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.title2.monospacedDigit().bold())
+                .foregroundStyle(theme.textPrimary)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(theme.textSecondary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(label)
+        .accessibilityValue(value)
+        .accessibilityIdentifier(identifier)
     }
 }
 

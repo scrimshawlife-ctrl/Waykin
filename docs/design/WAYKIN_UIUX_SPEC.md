@@ -143,22 +143,23 @@ Lira still in Sanctuary or Bond pose per outcome.
 
 ## B7. Canonical state crosswalk (resolves A2-1)
 
-| Canonical driver | Presentation state | Art still | Audio cue | Pressure ring |
-|---|---|---|---|---|
-| idle / rest | `idle` | **Dormant** | quiet_shift (ambient) | calm |
-| follow / lead / drawNear | `follow` | **Guide** | companion_near / ahead | calm |
-| observe / distantPresence / familiarPlaceStirs / quietInterval | `investigate` | **Manifesting** | distant_presence | low |
-| pursuitBegins / pursuitIntensifies | `alert` | **Hunter** | pursuit_pressure | rising/thick |
-| pursuitFades | `follow` | **Sanctuary** | pursuit_release | fading |
-| bondMoment / celebrate | `celebrate` | **Bond** | bond_motif | calm |
-| (reserved: cadence/challenge surfaces) | — | **Rival** | — | — |
-| path strained/offPath | (no state change) | current still | — | integrity wash |
+**Code authority:** `CompanionPresentationMatrix` + `LiraSessionPose.resolve` + `PathAudioCoupling` (see also `REAL_WALK_TO_AR_MAPPING.md`). This table is the design mirror.
 
-Rules: art stills follow *presentation* state, never raw events. `Rival`
-is reserved (no runtime driver yet — do not wire without a promoted
-issue). Pursuit colors the ring and background wash; it never swaps the
-still by itself. This table is the single authority; code comments should
-cite it.
+| Canonical driver | Core behavior | AR string | Art still | Audio cue | Pressure ring |
+|---|---|---|---|---|---|
+| no event + moving | follow | follow | **Guide** | (behavior/event only) | calm |
+| no event + paused | observe | investigate | **Guide**/dormant | quiet_shift on transition | calm |
+| quietInterval / rest | rest | idle | **Sanctuary** (dormant if paused) | quiet_shift | calm |
+| lead / companionMovesAhead / pursuitFades | lead | follow + far/ahead | **Guide** | companion_ahead / pursuit_release | fading on fade |
+| drawNear / companionDrawsNear | drawNear | follow | **Bond** | companion_near | calm |
+| bondMoment / celebrate | drawNear/celebrate | celebrate | **Bond** | bond_motif | calm |
+| observe / distantPresence / familiarPlaceStirs | observe | investigate | **Guide**/manifesting lean | quiet_shift / distant | low |
+| pursuitBegins / intensifies | follow | alert | **Hunter** | distant / pursuit_pressure | rising/thick |
+| path strained (pursuit quiet) | unchanged | investigate | **Rival** lean | quiet_shift `path:strained` | integrity |
+| path offPath (pursuit quiet) | unchanged | alert | **Hunter** lean | quiet_shift `path:offPath` | integrity |
+| path recovered | unchanged | (matrix) | (matrix) | pursuitRelease `path:recovered` | ease |
+
+Rules: art stills follow presence resolver priority (opening → pursuit → event → path → behavior). `Rival` remains reserved as a dedicated runtime driver; path lean may use rival/hunter stills only as *presentation* pressure.
 
 ## B8. Component library (as-built + gaps)
 
@@ -199,15 +200,13 @@ until receipts say otherwise.
 
 ## B12. Implementation backlog (bounded issue candidates, priority order)
 
-1. Home CTA inversion fix + inline button feedback (#126 deliverable 2 —
-   already scoped, awaiting go)
-2. AR full-screen cover + mirrored controls (#126 deliverable 2)
-3. Canonical screenshot set → `docs/assets/screenshots/` (fills A2-4;
-   simulator day/night × key screens, evidence-classed SIMULATOR)
-4. Summary polish (B5 candidates)
-5. Chip component unification (B8)
-6. Icon-authority note in BRAND_GUIDE (A2-5, one paragraph)
-7. AR continuity hint chrome (B6, gated on #125 ruling)
+1. ~~Home CTA inversion + AR full-screen~~ — **done** (#126 / PR #146)
+2. ~~AR continuity hint chrome~~ — **done** (#147)
+3. ~~Summary polish~~ — **done** (#148)
+4. ~~Chip component unification~~ — **done** (#149)
+5. ~~Icon authority + screenshot scaffolding~~ — **done** (#150)
+6. Outdoor re-walk Pass COH (#41) — **device / daylight**
+7. Optional: expand sim screenshot set (day/night × session/AR) under #150 script
 
 ## Ratification asks
 
