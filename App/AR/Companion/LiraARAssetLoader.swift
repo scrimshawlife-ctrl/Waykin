@@ -38,8 +38,8 @@ final class LiraARAssetLoader {
             }
             template = root
             source = .usdz(url.lastPathComponent)
-            // GENERATED_MID_LOD prim hierarchy — not hand-sculpted hero.
-            loadNote = "usdz_active_generated_mid_lod"
+            // Artist blend mid-LOD (or generated) — not DCC skinned hero.
+            loadNote = "usdz_active_artist_blend_mid_lod"
         } catch {
             clearTemplate(reason: .procedural, note: "load_error")
         }
@@ -106,6 +106,9 @@ final class LiraARAssetLoader {
             // Packaged asset is GENERATED_MID_LOD unless a test injects a custom label.
             if loadNote.contains("test_template") {
                 return "artist_usdz:\(name) (\(loadNote))"
+            }
+            if loadNote.contains("artist_blend") {
+                return "artist_blend_usdz:\(name) (\(loadNote))"
             }
             return "generated_usdz:\(name) (\(loadNote))"
         }

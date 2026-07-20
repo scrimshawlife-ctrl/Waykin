@@ -1,6 +1,7 @@
 # Lira hand-sculpted AR mid-LOD source
 
-Status: **GENERATED_MID_LOD** runtime package (v1.2). Not hand-sculpted artist mesh.
+Status: **ARTIST_BLEND_MID_LOD** runtime package (v1 from `lira.blend`).  
+Fallback generator remains GENERATED_MID_LOD via `./scripts/build_lira_usdz.sh`.
 
 ## Runtime contract
 
@@ -24,18 +25,27 @@ Lira is a mature, slightly uncanny spectral living familiar rather than a mascot
 4. trailing multi-seg path filament;
 5. Dawn palette compatibility with runtime skin remapping.
 
-## Generate and package
+## Artist blend export (preferred)
 
 ```bash
-# regenerate USDA + USDZ (requires python3 + usdzip)
+# requires Blender.app + usdzip
+./scripts/export_lira_blend_to_usdz.sh ~/Desktop/lira.blend
+# or from ArtSource copy:
+./scripts/export_lira_blend_to_usdz.sh ArtSource/Companion/Lira/lira.blend
+```
+
+## Procedural generate (fallback)
+
+```bash
 ./scripts/build_lira_usdz.sh
 ```
 
 | Path | Role |
 | ---- | ---- |
-| `scripts/generate_lira_mid_lod_usda.py` | Source of truth generator |
-| `docs/assets/companion/ar/src/Lira_AR_Base.usda` | Generated USDA |
-| `scripts/build_lira_usdz.sh` | usdzip → App + docs |
+| `lira.blend` | Artist source (this folder) |
+| `scripts/export_lira_blend_to_usdz.py` | Blender rename/scale/USD export |
+| `scripts/export_lira_blend_to_usdz.sh` | Blender + usdzip → App Resources |
+| `scripts/generate_lira_mid_lod_usda.py` | GENERATED_MID_LOD fallback |
 | `BUILD_MANIFEST.json` | Provenance |
 
 ## Future artist drop-in

@@ -4,13 +4,14 @@
 document_id: WAYKIN-LIRA-AR-RIG-001
 version: 0.4
 status: GENERATED_MID_LOD_SHIPPED
-usdz: GENERATED_MID_LOD_V1_2
+usdz: ARTIST_BLEND_MID_LOD_V1
 mesh_descriptor: SHIPPED
 runtime_animation_clips: SHIPPED
 skeletal_joint_hierarchy: SHIPPED
 dcc_skinned_skeletal: NOT_SHIPPED
 direction: spectral_living_familiar
-evidence_class: GENERATED_MID_LOD
+evidence_class: ARTIST_BLEND_MID_LOD
+source_blend: ArtSource/Companion/Lira/lira.blend
 ```
 
 ## What shipped
@@ -24,8 +25,9 @@ evidence_class: GENERATED_MID_LOD
 | AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
 | AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** |
 | AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **GENERATED_MID_LOD v1.2** (joint nesting) |
-| USDA source | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | Generator: `scripts/generate_lira_mid_lod_usda.py` |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_MID_LOD v1** (~432 KB from `lira.blend`) |
+| Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |
+| Generated fallback | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | `scripts/build_lira_usdz.sh` |
 | Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Mid-LOD complete |
 
 ## Anchors (required)
@@ -52,13 +54,17 @@ ARWorldCommandRenderer spawn
 
 Invalid or missing USDZ never blocks spawn — procedural fallback is permanent safety net.
 
-## Generate / rebuild (default mid-LOD)
+## Export / rebuild
 
 ```bash
+# Preferred: artist Blender file
+./scripts/export_lira_blend_to_usdz.sh ArtSource/Companion/Lira/lira.blend
+
+# Fallback: procedural GENERATED_MID_LOD
 ./scripts/build_lira_usdz.sh
 ```
 
-Evidence class **GENERATED_MID_LOD** — not hand-sculpted. Nested joints include `FilamentBase` / `FilamentMid` / `FilamentTip`.
+Evidence class **ARTIST_BLEND_MID_LOD** when exported from blend (multi-mesh Living Familiar; no armature skin weights).
 
 ## Optional artist drop-in (future)
 

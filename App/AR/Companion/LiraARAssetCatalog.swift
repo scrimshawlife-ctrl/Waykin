@@ -30,15 +30,15 @@ enum LiraARAssetCatalog {
     static var hasPackagedUSDZ: Bool { baseUSDZURL != nil }
 
     /// Package presence only — prefer `LiraARAssetLoader.activeLODDescription` at runtime.
-    /// Packaged asset is **GENERATED_MID_LOD** (procedural USDA → usdzip), not hand-sculpted.
+    /// Current package: **ARTIST_BLEND_MID_LOD** (Blender `lira.blend` → USDZ). Fallback generator remains GENERATED_MID_LOD.
     static var packagedLODHint: String {
         if hasPackagedUSDZ {
-            "packaged_usdz:\(baseUSDZName):GENERATED_MID_LOD"
+            "packaged_usdz:\(baseUSDZName):ARTIST_BLEND_MID_LOD"
         } else {
             "procedural_living_familiar_mid"
         }
     }
 
     /// Explicit evidence class for packaged AR asset.
-    static let packagedEvidenceClass = "GENERATED_MID_LOD"
+    static let packagedEvidenceClass = "ARTIST_BLEND_MID_LOD"
 }
