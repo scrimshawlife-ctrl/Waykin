@@ -30,5 +30,10 @@ Dawn, Veil, Rupture under `glyphs/`
 ## Quality pass v1.1 (2026-07-19)
 
 Production refine pass on Dawn full 7-pose set, Guide (Veil/Rupture), and Hero Guide Dawn.
-Installed into `LiraStills` imagesets for the upgraded names. Remaining Veil/Rupture non-guide poses retain prior spectral masters until a follow-up pass.
+
+## Quality pass v1.2 (2026-07-19)
+
+Completed refine for remaining **Veil** and **Rupture** poses (Hunter, Bond, Sanctuary, Dormant, Rival, Manifesting). Full **7×3** session still matrix is quality-passed and installed into `LiraStills`.
+
+**Still deferred:** DCC skeletal AnimationLibrary clips (procedural AR motion only); outdoor device readability.
 
