@@ -1,16 +1,33 @@
 # Real Application Screenshots
 
-**Status:** No high-fidelity simulator screenshots captured.
+**Evidence class:** `SIMULATOR` or `DEVICE` only when a dated receipt is present.
 
-The current Solo MVP UI is a functional but minimal SwiftUI shell focused on:
-- Home entry for Begin Walk and Real Walk validation
-- Basic ActiveSessionView with MapKit
-- Memory history via SwiftData @Query
+## Authority
 
-Real screenshots will be added after:
-- UI refinement pass
-- Physical device validation
+| Kind | Location | Use |
+| ---- | -------- | --- |
+| Capture script | `scripts/capture_sim_screenshots.sh` | Best-effort sim captures after Debug install |
+| Capture folders | `docs/assets/screenshots/sim_<UTC>_<sha>/` | SIMULATOR-classed PNGs + RECEIPT.md |
+| Concept art | `docs/assets/companion/**`, heroes | **Not** product UI evidence |
 
-All current visual assets in `docs/assets/` are **CONCEPT VISUAL** or **ENGINEERING DIAGRAM** and are explicitly labeled as such in the README.
+## How to capture (simulator)
 
-Do not use these placeholders as evidence of polished product UI.
+```bash
+# 1. Build + install (or run from Xcode on the named sim)
+xcodebuild -scheme Waykin \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -derivedDataPath /tmp/waykin-dd build
+
+# 2. Capture
+./scripts/capture_sim_screenshots.sh "iPhone 17"
+```
+
+Manually add day/night variants and session/AR frames when exercising Demo Walk; label each RECEIPT with `evidence_class: SIMULATOR`.
+
+## Outdoor
+
+Physical-device screenshots belong under `docs/design/receipts/` with Issue #41 outdoor protocol — not here as outdoor proof.
+
+## Status
+
+Home auto-capture may exist after running the script. Empty root (aside from this README) means no automated set has been committed yet.

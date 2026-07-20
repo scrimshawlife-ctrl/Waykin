@@ -261,33 +261,26 @@ struct CompanionPresenceView: View {
 
             AnyLayout(dynamicTypeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-                : AnyLayout(HStackLayout(spacing: 24))) {
-                Label {
-                    Text(presentation.pressureLabel)
-                } icon: {
-                    WKIconView(
-                        icon: presentation.pressureIntensity >= 0.45 ? .companionBehind : .companionAhead,
-                        size: 18
-                    )
-                }
-                    .foregroundStyle(pressureTint)
-                    .accessibilityLabel("Path status")
-                    .accessibilityValue(presentation.pressureAccessibilityValue)
-                    .accessibilitySortPriority(4.6)
-                    .accessibilityIdentifier("waykin.session.pressure")
-                Label {
-                    Text(presentation.audioLabel)
-                } icon: {
-                    WKIconView(icon: .audio, size: 18)
-                        .opacity(presentation.audioCueKind == nil ? 0.45 : 1)
-                }
-                    .foregroundStyle(theme.textSecondary)
-                    .accessibilityLabel("Sound status")
-                    .accessibilityValue(presentation.audioLabel)
-                    .accessibilitySortPriority(4.5)
-                    .accessibilityIdentifier("waykin.session.audioCue")
+                : AnyLayout(HStackLayout(spacing: 10))) {
+                SessionStatusChip(
+                    title: presentation.pressureLabel,
+                    wkIcon: presentation.pressureIntensity >= 0.45 ? .companionBehind : .companionAhead,
+                    tone: presentation.pressureIntensity >= 0.45 ? .emphasis : .calm,
+                    accessibilityLabelText: "Path status",
+                    accessibilityValueText: presentation.pressureAccessibilityValue,
+                    accessibilityIdentifier: "waykin.session.pressure"
+                )
+                .accessibilitySortPriority(4.6)
+                SessionStatusChip(
+                    title: presentation.audioLabel,
+                    wkIcon: .audio,
+                    tone: presentation.audioCueKind == nil ? .calm : .emphasis,
+                    accessibilityLabelText: "Sound status",
+                    accessibilityValueText: presentation.audioLabel,
+                    accessibilityIdentifier: "waykin.session.audioCue"
+                )
+                .accessibilitySortPriority(4.5)
             }
-            .font(.callout)
             .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
 
             AnyLayout(dynamicTypeSize.isAccessibilitySize
@@ -308,10 +301,6 @@ struct CompanionPresenceView: View {
             }
             .frame(maxWidth: .infinity, alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .center)
         }
-    }
-
-    private var pressureTint: Color {
-        presentation.pressureIntensity >= 0.45 ? theme.hunter : theme.textSecondary
     }
 
     private var graphicsDiagnosticLabel: String {
