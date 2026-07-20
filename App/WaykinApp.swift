@@ -148,10 +148,17 @@ final class WaykinAppModel: CanonicalARCommandSource {
     private(set) var activityEnrichment: ActivityEnrichment = .empty
     private var realExperienceState: ExperienceSessionState?
     private var realExperienceContext: ExperienceContext?
+    /// Test seam for HealthKit ordering / energy apply (#104).
+    var test_realExperienceContext: ExperienceContext? { realExperienceContext }
     private(set) var realCompanionRuntime = CompanionRuntime()
     @ObservationIgnored private var arWorldCommandHandler: (([ARWorldCommand]) -> Void)?
     @ObservationIgnored private var arWorldCommandHandlerOwner: UUID?
     private var lifecycleSuspendedRealWalk = false
+    /// Cancels in-flight / periodic HealthKit refresh when walk pauses or ends (#104).
+    @ObservationIgnored private var healthRefreshGeneration: UInt64 = 0
+    @ObservationIgnored private var healthRefreshTask: Task<Void, Never>?
+    /// Bounded periodic re-query interval while a real walk is active.
+    static let healthRefreshIntervalNanoseconds: UInt64 = 120_000_000_000
     private var activeFieldTestReceipt: FieldTestReceiptBuilder?
     private var lastObservedMovementState: MovementState = .idle
 
@@ -526,7 +533,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             liveSignalState = .waitingForFirstFix
             liveAcceptedCount = 0
             liveRejectedCount = 0
-            Task { await self.refreshHealthEnrichmentForRealWalk() }
+            // Context must exist before async Health enrichment can apply energy (#104 race).
             let context = ExperienceContext(
                 timeOfDay: selectedTimeContext,
                 activity: .walk,
@@ -539,6 +546,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             lastClosingPhrase = ""
             demoMessage = "Waiting for a reliable location fix..."
             path.append(AppRoute.activeSession(.calmDayWalk))
+            scheduleHealthRefreshForRealWalk(periodic: true)
         } catch {
             failRealWalk(
                 message: "The real walk could not start. Demo Walk is still available.",
@@ -559,6 +567,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             activeFieldTestReceipt?.recordAudioLifecycle("pause", at: now)
             realWalkState = .paused
             lifecycleSuspendedRealWalk = false
+            cancelHealthRefresh()
         } catch {
             failRealWalk(message: "The real walk could not be paused safely.", outcome: .invalidState, errorCategory: .invalidState)
         }
@@ -576,7 +585,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             activeFieldTestReceipt?.recordAudioLifecycle("resume", at: now)
             realWalkState = .active
             lifecycleSuspendedRealWalk = false
-            Task { await self.refreshHealthEnrichmentForRealWalk() }
+            scheduleHealthRefreshForRealWalk(periodic: true)
         } catch {
             failRealWalk(message: "The real walk could not resume safely.", outcome: .invalidState, errorCategory: .invalidState)
         }
@@ -584,6 +593,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
     func endRealSession() {
         guard isLiveSessionActive else { return }
+        cancelHealthRefresh()
         emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
         let endedAt = fieldTestNow()
@@ -858,6 +868,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         emitARWorldCommands(arCommandMapper.clear())
         let endedAt = fieldTestNow()
         let priorState = realWalkState
+        cancelHealthRefresh()
         realLocationProvider.stopUpdatingLocation()
         audioPlayer.stopAll(fadeOut: false)
         activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
@@ -885,20 +896,52 @@ final class WaykinAppModel: CanonicalARCommandSource {
     }
 
     /// Optional HealthKit enrichment for real walks only. Never blocks Demo Mode.
-    private func refreshHealthEnrichmentForRealWalk() async {
-        await healthMetricsProvider.requestAuthorizationIfNeeded()
-        activityEnrichment = await healthMetricsProvider.refreshEnrichment()
-        // Soft energy bias into live experience (presentation/event intensity only).
-        if var context = realExperienceContext {
-            context = ExperienceContext(
-                timeOfDay: context.timeOfDay,
-                activity: context.activity,
-                bondLevel: context.bondLevel,
-                eventSeed: context.eventSeed,
-                activityEnergyHint: activityEnrichment.energyHint
-            )
-            realExperienceContext = context
+    private func cancelHealthRefresh() {
+        healthRefreshGeneration &+= 1
+        healthRefreshTask?.cancel()
+        healthRefreshTask = nil
+    }
+
+    private func scheduleHealthRefreshForRealWalk(periodic: Bool) {
+        cancelHealthRefresh()
+        let generation = healthRefreshGeneration
+        healthRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performHealthEnrichmentIfCurrent(generation: generation)
+            guard periodic else { return }
+            while !Task.isCancelled,
+                  generation == self.healthRefreshGeneration,
+                  self.realWalkState == .active {
+                try? await Task.sleep(nanoseconds: Self.healthRefreshIntervalNanoseconds)
+                guard !Task.isCancelled,
+                      generation == self.healthRefreshGeneration,
+                      self.realWalkState == .active else { return }
+                await self.performHealthEnrichmentIfCurrent(generation: generation)
+            }
         }
+    }
+
+    private func performHealthEnrichmentIfCurrent(generation: UInt64) async {
+        guard generation == healthRefreshGeneration else { return }
+        guard realWalkState == .active else { return }
+        // Context must already exist (set before schedule on start).
+        await healthMetricsProvider.requestAuthorizationIfNeeded()
+        guard generation == healthRefreshGeneration, realWalkState == .active else { return }
+        let enrichment = await healthMetricsProvider.refreshEnrichment()
+        guard generation == healthRefreshGeneration, realWalkState == .active else { return }
+        activityEnrichment = enrichment
+        applyActivityEnergyHintToExperienceContext()
+    }
+
+    private func applyActivityEnergyHintToExperienceContext() {
+        guard let context = realExperienceContext else { return }
+        realExperienceContext = ExperienceContext(
+            timeOfDay: context.timeOfDay,
+            activity: context.activity,
+            bondLevel: context.bondLevel,
+            eventSeed: context.eventSeed,
+            activityEnergyHint: activityEnrichment.energyHint
+        )
     }
 
     private var arCommandMapper: CanonicalARWorldCommandMapper {

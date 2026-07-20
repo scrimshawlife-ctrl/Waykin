@@ -15,8 +15,8 @@
 | AR app adapter (MVP) | **Implemented (frozen)** | Binding | Maintenance/defects only — see `AR_MVP_FREEZE.md` |
 | Real-walk-to-AR commands | **Implemented** | Binding | Device tracking quality still requires evidence |
 | Path progress (semantic) | **Implemented (v1.1+summary)** | Binding | Not navigation-grade |
-| HealthKit read enrichment | **Implemented (v1.1+energy)** | Binding | Optional steps/distance read; Demo never blocked |
-| HealthKit authorization/query hardening | **Near term** | Supporting | Issue-scoped only; fix state semantics, race, provenance, refresh lifecycle, device evidence |
+| HealthKit read enrichment | **Implemented (v1.1 hardened)** | Binding | Optional step-volume + distance; Demo never blocked |
+| HealthKit authorization/query hardening | **Implemented (#104)** | Binding | requestCompleted + metric availability + ordered refresh; device evidence still NOT_COMPUTABLE |
 | HealthKit workout writing | Deferred | Reference only | Requires explicit issue, write authorization, duplicate protection, and failure fallback |
 | Apple Watch app target | Deferred | Reference only | No watchOS target or Watch UI may be claimed |
 | Apple Watch workout session | Deferred | Reference only | Requires workout lifecycle, live builder, and paired-device evidence |

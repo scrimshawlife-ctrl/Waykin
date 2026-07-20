@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| — | — | — | — | Idle | Event weight light tune; outdoor/AR device still blocked |
+| — | — | — | — | Idle | #104 HealthKit hardening; #101 audio (Prabu); outdoor/AR device blocked |
 
 ## Blocked
 
