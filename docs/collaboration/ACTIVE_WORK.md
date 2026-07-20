@@ -20,7 +20,8 @@ Last updated: 2026-07-20
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #41 — outdoor / physical AR validation | Device operator | evidence-only (no product branch) | `docs/design/receipts/**` only | Ready for device walk | Exact `main` build; packet: `OUTDOOR_SESSION_PACKET.md` |
+| Issue #125 — AR continuity (disappear ~10–15 m) | UNASSIGNED | — | `App/AR/**`, AppTests, docs | Ready (IMPLEMENT after claim) | #41 PARTIAL receipt |
+| Issue #126 — session/AR menu UX audit | UNASSIGNED | — | App session chrome, docs | Ready (audit first) | #41 PARTIAL; before more outdoor AR |
 
 ## Intake (not Ready)
 
@@ -32,7 +33,8 @@ Last updated: 2026-07-20
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Issue #41 — physical AR + outdoor QA | Awaiting human device walk | Run `OUTDOOR_SESSION_PACKET.md` on named device; fill pending receipt under `docs/design/receipts/`; unobserved rows stay `NOT_COMPUTABLE` |
+| Issue #41 — outdoor / physical AR validation | **PARTIAL device evidence** recorded; full PASS blocked | Address #125 + #126 (or accept world-plant design); then resume outdoor packet |
+| Further outdoor AR PASS claims | Continuity + menu friction | Do not claim continuous outdoor AR until #125 closed or explicitly accepted |
 
 ## Completed (recent)
 
