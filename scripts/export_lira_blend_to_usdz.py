@@ -2,7 +2,9 @@
 """
 Export Desktop/repo lira.blend → runtime Lira_AR_Base.usdz with Waykin node names.
 
-Evidence class: ARTIST_BLEND_MID_LOD (hand-authored Blender; not DCC skinned weights).
+Evidence class: ARTIST_BLEND_ARMATURE_MID_LOD
+  (hand-authored multi-mesh + generated Blender armature bone hierarchy;
+   rigid bone-parent bind — not merged heat-map skin weights).
 
 Requires: Blender 3+ with USD export (wm.usd_export).
 Invoked by: scripts/export_lira_blend_to_usdz.sh
@@ -10,6 +12,7 @@ Invoked by: scripts/export_lira_blend_to_usdz.sh
 
 from __future__ import annotations
 
+import importlib.util
 import math
 import sys
 from pathlib import Path
@@ -280,6 +283,31 @@ def validate_names() -> None:
     log(f"required nodes present: {REQUIRED}")
 
 
+def build_armature() -> None:
+    """Load scripts/build_lira_armature.py and run build() in this Blender session."""
+    path = ROOT / "scripts" / "build_lira_armature.py"
+    if not path.is_file():
+        raise SystemExit(f"missing armature builder: {path}")
+    spec = importlib.util.spec_from_file_location("build_lira_armature", path)
+    if spec is None or spec.loader is None:
+        raise SystemExit("cannot load build_lira_armature")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.build()
+    log("armature build complete")
+
+
+def validate_armature() -> None:
+    arm = bpy.data.objects.get("LiraArmature")
+    if arm is None or arm.type != "ARMATURE":
+        raise SystemExit("LiraArmature missing after build")
+    bones = {b.name for b in arm.data.bones}
+    for need in ("Body", "Head", "Filament", "CoreGlow", "LeftEar", "RightEar", "Tail"):
+        if need not in bones:
+            raise SystemExit(f"armature missing bone {need}")
+    log(f"armature validated bones={len(bones)}")
+
+
 def main() -> None:
     if not BLEND.is_file():
         raise SystemExit(f"blend not found: {BLEND}")
@@ -292,8 +320,11 @@ def main() -> None:
     rename_objects()
     reparent_under_root(root)
     create_missing_required(root)
+    # Real Blender armature + bone-parent multi-mesh (rigid mid-LOD bind).
+    build_armature()
     scale_to_canonical_height(root)
     validate_names()
+    validate_armature()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     usd_path = OUT_DIR / "Lira_AR_Base.usd"
@@ -307,7 +338,11 @@ def main() -> None:
 
     # Write marker for shell packaging
     marker = OUT_DIR / "EXPORT_OK"
-    marker.write_text(f"usd={usd_path}\nblend={BLEND}\nevidence=ARTIST_BLEND_MID_LOD\n", encoding="utf-8")
+    marker.write_text(
+        f"usd={usd_path}\nblend={BLEND}\nevidence=ARTIST_BLEND_ARMATURE_MID_LOD\n"
+        f"armature=LiraArmature\nbone_bind=rigid_parent\n",
+        encoding="utf-8",
+    )
     log("done")
 
 

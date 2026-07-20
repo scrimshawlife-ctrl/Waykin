@@ -3,9 +3,10 @@ import RealityKit
 
 /// Joint-hierarchy contract for Lira AR mid-LOD skeletal AnimationLibrary.
 ///
-/// This is a **puppet skeleton** (named semantic nodes), not a DCC skinned mesh.
-/// Clips bind to these joint paths from `LiraRoot`. USDZ and procedural factory
-/// share the same names so playback works on either LOD source.
+/// Runtime clips bind to **named semantic entity paths** under `LiraRoot`
+/// (`AnimationBindTarget.entity`), not SkinnedMesh heat-map weights.
+/// Packaged USDZ may include a Blender `LiraArmature` (rigid bone-parent multi-mesh);
+/// procedural factory uses the same joint names without a DCC armature.
 enum LiraSkeletalRig {
     /// Root entity name (matches factory / loader).
     static let rootName = CompanionEntityFactory.rootName

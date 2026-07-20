@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-ANIM-PLAN-001
-version: 0.4
+version: 0.5
 status: MID_LOD_COMPLETE
 companion: Lira
 style: spectral_living_familiar
@@ -12,8 +12,10 @@ outdoor_qa: NOT_COMPUTABLE
 session_ambient_motion: SHIPPED
 route_polyline_reveal: SHIPPED
 skeletal_animation_library: JOINT_HIERARCHY_SHIPPED
-dcc_skinned_skeletal: NOT_SHIPPED
+blender_armature_rigid_bind: SHIPPED
+dcc_skinned_weights: NOT_SHIPPED
 generated_mid_lod_usdz: SHIPPED_V1_2
+artist_blend_armature_usdz: SHIPPED_V1
 runtime_animation_resource_clips: SHIPPED
 procedural_mesh_mid_lod: SHIPPED
 ```
@@ -112,7 +114,8 @@ This plan binds animation to existing state machines:
 | **Celebrate** | Root | Bounded duration (reducer) | **Shipped** |
 | **Runtime clips** | Optional bind targets | `LiraARAnimationLibrary` (idle/follow/alert/celebrate/spawn) | **Shipped** (lab / single-node) |
 | **Skeletal puppet** | Joint paths on `LiraRoot` | `LiraSkeletalPlayer` multi-joint groups; default driver when installed | **Shipped** |
-| **DCC skinned** | USDZ bones + weights | Artist AnimationLibrary | **Not shipped** |
+| **Blender armature** | `LiraArmature` + USD Skeleton | Rigid bone-parent multi-mesh (`build_lira_armature.py`) | **Shipped** |
+| **DCC heat-map skin** | Merged mesh + weights | Artist weight paint + DCC AnimationLibrary | **Not shipped** |
 
 ### Timing budget (AR)
 
@@ -128,8 +131,9 @@ This plan binds animation to existing state machines:
 | Phase | Work |
 | ----- | ---- |
 | U0 | Hierarchy A1–A3 validated by `LiraARAssetLoader` (**shipped path**) |
-| U1a | Joint-hierarchy skeletal AnimationLibrary + player (**shipped** — puppet, not skinned) |
-| U1b | Author idle / walk / alert clips in DCC; export with same joint/bone names |
+| U1a | Joint-hierarchy skeletal AnimationLibrary + player (**shipped** — puppet bind paths) |
+| U1a+ | Blender `LiraArmature` rigid bone-parent + USD Skeleton (**shipped**) |
+| U1b | Author idle / walk / alert clips in DCC on `LiraArmature`; optional heat-map weights |
 | U2 | RealityKit playback mapped from `CompanionPresentationState` (**shipped** for puppet) |
 | U3 | Skin materials remain runtime remap; clips shared (**shipped**) |
 
@@ -178,7 +182,8 @@ Procedural pure-function locals remain the fallback when `skeletalPlaybackEnable
 | **A4c** | Runtime `AnimationResource` clip library | **Done** (`LiraARAnimationLibrary`) |
 | **A5** | Joint-hierarchy skeletal AnimationLibrary + player | **Done** (`LiraSkeletal*` + renderer default) |
 | **A5+** | Session ambient drift/pulse + route polyline reveal | **Done** (#157) |
-| **A5b** | DCC skinned skeletal (optional) | **Blocked on artist mesh** — not runtime-completeable |
+| **A5b** | Blender armature rigid bind on artist multi-mesh | **Done** (`LiraArmature` + export) |
+| **A5c** | Heat-map skinned weights (optional) | **Blocked** — needs merged mesh + weight paint |
 | **A6** | Outdoor motion QA notes | Device walk (#41) |
 
 ## Test strategy
