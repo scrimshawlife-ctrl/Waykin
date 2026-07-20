@@ -85,11 +85,12 @@ enum LiraSkeletalAnimationLibrary {
         ])
     }
 
-    /// Follow: root-relative head yaw + filament lag + soft breath.
+    /// Follow: root-relative head yaw + filament lag + soft breath + mid-filament phase.
     static func followClip(duration: TimeInterval = 2.2) throws -> AnimationResource {
         let half = max(0.05, duration) / 2
         return try AnimationResource.group(with: [
             try scalePulse(path: "CoreGlow", to: 1.06, duration: half, reverse: true),
+            try scalePulse(path: "CoreHalo", to: 1.09, duration: half, reverse: true),
             try rotateSwing(
                 path: "Head",
                 from: headRest(pitch: -0.12, yaw: 0.04),
@@ -102,6 +103,20 @@ enum LiraSkeletalAnimationLibrary {
                 from: filamentRest(),
                 to: filamentTilt(pitchDelta: 0.09, yaw: -0.04),
                 duration: half,
+                reverse: true
+            ),
+            try rotateSwing(
+                path: "FilamentMid",
+                from: Transform.identity,
+                to: segmentPitch(0.07),
+                duration: half * 1.05,
+                reverse: true
+            ),
+            try rotateSwing(
+                path: "FilamentTip",
+                from: Transform.identity,
+                to: segmentPitch(0.11),
+                duration: half * 0.9,
                 reverse: true
             ),
             try rotateSwing(
@@ -242,6 +257,12 @@ enum LiraSkeletalAnimationLibrary {
         let qPitch = simd_quatf(angle: pitch, axis: simd_normalize(SIMD3<Float>(1, 0.12, 0)))
         let qYaw = simd_quatf(angle: yaw, axis: [0, 1, 0])
         t.rotation = qYaw * qPitch
+        return t
+    }
+
+    private static func segmentPitch(_ pitch: Float) -> Transform {
+        var t = Transform.identity
+        t.rotation = simd_quatf(angle: pitch, axis: [1, 0, 0])
         return t
     }
 

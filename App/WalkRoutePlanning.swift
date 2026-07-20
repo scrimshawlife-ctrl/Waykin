@@ -78,6 +78,13 @@ struct PlannedWalkRoute: Equatable, Sendable {
             return message
         }
     }
+
+    /// Prefix of polyline for draw-on reveal (progress 0…1).
+    func revealedPolyline(progress: Double) -> [TracePoint] {
+        let count = LiraSessionMotion.routeRevealPointCount(total: polyline.count, progress: progress)
+        guard count > 0 else { return [] }
+        return Array(polyline.prefix(count))
+    }
 }
 
 /// Place search hit for route destination UI.

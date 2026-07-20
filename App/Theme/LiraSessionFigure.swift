@@ -100,29 +100,65 @@ struct LiraSessionFigure: View {
     @ViewBuilder
     private var stillOrFigure: some View {
         if displayedStillName != nil || previousStillName != nil {
-            ZStack {
-                // Hunter delayed echo (pressure behind) — A3, still path.
-                if LiraSessionMotion.showsHunterEcho(pose: pose),
-                   let echoName = displayedStillName ?? targetStillName,
-                   UIImage(named: echoName) != nil {
-                    let offset = LiraSessionMotion.hunterEchoOffset(reduceMotion: reduceMotion)
-                    stillImage(echoName)
-                        .opacity(LiraSessionMotion.hunterEchoOpacity(reduceMotion: reduceMotion))
-                        .offset(x: offset.width, y: -offset.height)
-                        .accessibilityHidden(true)
+            // Continuous ambient drift/pulse when motion allowed (#157).
+            TimelineView(
+                .animation(
+                    minimumInterval: 1.0 / 30.0,
+                    paused: !LiraSessionMotion.allowsAmbientStillMotion(pose: pose, reduceMotion: reduceMotion)
+                )
+            ) { context in
+                let driftP = LiraSessionMotion.filamentDriftProgress(at: context.date, reduceMotion: reduceMotion)
+                let driftX = LiraSessionMotion.filamentDriftOffsetX(progress: driftP, reduceMotion: reduceMotion)
+                let driftY = LiraSessionMotion.filamentDriftOffsetY(progress: driftP, reduceMotion: reduceMotion)
+                let ambientScale = LiraSessionMotion.ambientPulseScale(
+                    at: context.date,
+                    pose: pose,
+                    reduceMotion: reduceMotion
+                )
+                ZStack {
+                    // Hunter delayed echo (pressure behind) — A3, still path.
+                    if LiraSessionMotion.showsHunterEcho(pose: pose),
+                       let echoName = displayedStillName ?? targetStillName,
+                       UIImage(named: echoName) != nil {
+                        let offset = LiraSessionMotion.hunterEchoOffset(reduceMotion: reduceMotion)
+                        stillImage(echoName)
+                            .opacity(LiraSessionMotion.hunterEchoOpacity(reduceMotion: reduceMotion))
+                            .offset(x: offset.width + driftX * 0.35, y: -offset.height + driftY * 0.35)
+                            .accessibilityHidden(true)
+                    }
+                    if let previousStillName, UIImage(named: previousStillName) != nil {
+                        stillImage(previousStillName)
+                            .opacity(1 - stillBlend)
+                    }
+                    if let displayedStillName, UIImage(named: displayedStillName) != nil {
+                        stillImage(displayedStillName)
+                            .opacity(stillBlend)
+                            .offset(x: driftX, y: driftY)
+                            .scaleEffect(ambientScale)
+                    }
                 }
-                if let previousStillName, UIImage(named: previousStillName) != nil {
-                    stillImage(previousStillName)
-                        .opacity(1 - stillBlend)
-                }
-                if let displayedStillName, UIImage(named: displayedStillName) != nil {
-                    stillImage(displayedStillName)
-                        .opacity(stillBlend)
-                }
+                .accessibilityHidden(true)
             }
-            .accessibilityHidden(true)
         } else {
-            figure
+            TimelineView(
+                .animation(
+                    minimumInterval: 1.0 / 30.0,
+                    paused: !LiraSessionMotion.allowsAmbientStillMotion(pose: pose, reduceMotion: reduceMotion)
+                )
+            ) { context in
+                let driftP = LiraSessionMotion.filamentDriftProgress(at: context.date, reduceMotion: reduceMotion)
+                let driftX = LiraSessionMotion.filamentDriftOffsetX(progress: driftP, reduceMotion: reduceMotion)
+                let driftY = LiraSessionMotion.filamentDriftOffsetY(progress: driftP, reduceMotion: reduceMotion)
+                figure
+                    .offset(x: driftX, y: driftY)
+                    .scaleEffect(
+                        LiraSessionMotion.ambientPulseScale(
+                            at: context.date,
+                            pose: pose,
+                            reduceMotion: reduceMotion
+                        )
+                    )
+            }
         }
     }
 

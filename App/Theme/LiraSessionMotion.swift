@@ -96,4 +96,64 @@ enum LiraSessionMotion {
         let p = progress.isFinite ? progress : 0
         return CGFloat(2.5 * sin(p * .pi * 2))
     }
+
+    /// Vertical micro-bob (points) for guide/sanctuary language.
+    static func filamentDriftOffsetY(progress: Double, reduceMotion: Bool) -> CGFloat {
+        guard !reduceMotion else { return 0 }
+        let p = progress.isFinite ? progress : 0
+        return CGFloat(1.2 * sin(p * .pi * 2 + 0.6))
+    }
+
+    /// Ambient still motion (drift + soft pulse) for guide/bond/sanctuary/hunter language.
+    static func allowsAmbientStillMotion(pose: LiraSessionPose, reduceMotion: Bool) -> Bool {
+        guard !reduceMotion else { return false }
+        switch pose {
+        case .dormant: return false
+        case .guide, .bond, .sanctuary, .manifesting, .hunter, .rival: return true
+        }
+    }
+
+    /// Drift cycle progress 0…1 at wall date (deterministic for a given date).
+    static func filamentDriftProgress(at date: Date, reduceMotion: Bool) -> Double {
+        guard let period = filamentDriftPeriod(reduceMotion: reduceMotion), period > 0 else { return 0 }
+        let t = date.timeIntervalSinceReferenceDate
+        let r = t.truncatingRemainder(dividingBy: period)
+        return max(0, min(1, r / period))
+    }
+
+    /// Soft continuous pulse scale factor (1…~1.025) for still ambient.
+    static func ambientPulseScale(at date: Date, pose: LiraSessionPose, reduceMotion: Bool) -> CGFloat {
+        guard allowsAmbientStillMotion(pose: pose, reduceMotion: reduceMotion),
+              let period = corePulsePeriod(reduceMotion: reduceMotion), period > 0 else {
+            return 1
+        }
+        let t = date.timeIntervalSinceReferenceDate
+        let r = t.truncatingRemainder(dividingBy: period) / period
+        let amp: CGFloat
+        switch pose {
+        case .bond: amp = 0.028
+        case .guide, .manifesting: amp = 0.02
+        case .hunter, .rival: amp = 0.012
+        case .sanctuary: amp = 0.015
+        case .dormant: amp = 0
+        }
+        return 1 + amp * CGFloat(sin(r * .pi * 2))
+    }
+
+    // MARK: - Route polyline reveal (#157)
+
+    /// Draw-on duration for planned walking route polyline.
+    static func routeRevealDuration(reduceMotion: Bool) -> TimeInterval {
+        reduceMotion ? 0.12 : 0.85
+    }
+
+    /// Count of polyline points to show for progress 0…1 (always ≥2 when ready and progress>0).
+    static func routeRevealPointCount(total: Int, progress: Double) -> Int {
+        guard total >= 2 else { return 0 }
+        let p = progress.isFinite ? min(1, max(0, progress)) : 0
+        if p <= 0 { return 0 }
+        if p >= 1 { return total }
+        let count = Int((Double(total - 1) * p).rounded(.up)) + 1
+        return min(total, max(2, count))
+    }
 }

@@ -160,6 +160,8 @@ struct SessionMapFullView: View {
     @State private var searchHits: [WalkRoutePlaceHit] = []
     @State private var isSearching = false
     @State private var followUser = true
+    /// 0…1 draw-on for planned route polyline (#157).
+    @State private var routeRevealProgress: Double = 0
     @FocusState private var searchFocused: Bool
 
     private var origin: CLLocationCoordinate2D {
@@ -280,17 +282,22 @@ struct SessionMapFullView: View {
         MapReader { proxy in
             Map(position: $camera, interactionModes: [.pan, .zoom, .pitch]) {
                 if plannedRoute.isReady {
-                    MapPolyline(coordinates: plannedRoute.polyline.map(\.coordinate))
-                        .stroke(
-                            theme.bond.opacity(0.95),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round, dash: [8, 5])
+                    let revealed = plannedRoute.revealedPolyline(progress: routeRevealProgress)
+                    if revealed.count >= 2 {
+                        MapPolyline(coordinates: revealed.map(\.coordinate))
+                            .stroke(
+                                theme.bond.opacity(0.95),
+                                style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round, dash: [8, 5])
+                            )
+                    }
+                    if routeRevealProgress > 0.92 {
+                        Marker(
+                            plannedRoute.destinationName.isEmpty ? "Destination" : plannedRoute.destinationName,
+                            systemImage: "flag.fill",
+                            coordinate: plannedRoute.destinationCoordinate
                         )
-                    Marker(
-                        plannedRoute.destinationName.isEmpty ? "Destination" : plannedRoute.destinationName,
-                        systemImage: "flag.fill",
-                        coordinate: plannedRoute.destinationCoordinate
-                    )
-                    .tint(theme.bond)
+                        .tint(theme.bond)
+                    }
                 }
                 if trace.count >= 2 {
                     MapPolyline(coordinates: trace.points.map(\.coordinate))
@@ -355,6 +362,7 @@ struct SessionMapFullView: View {
                     Button(role: .destructive) {
                         plannedRoute = .empty
                         searchHits = []
+                        routeRevealProgress = 0
                     } label: {
                         Text("Clear route")
                             .frame(minHeight: 44)
@@ -421,7 +429,20 @@ struct SessionMapFullView: View {
         let result = await planner.plan(from: origin, to: destination, destinationName: name)
         plannedRoute = result
         if result.isReady {
+            animateRouteReveal()
             fitRoute(result)
+        } else {
+            routeRevealProgress = 0
+        }
+    }
+
+    private func animateRouteReveal() {
+        let duration = LiraSessionMotion.routeRevealDuration(reduceMotion: reduceMotion)
+        var snap = Transaction()
+        snap.disablesAnimations = true
+        withTransaction(snap) { routeRevealProgress = 0 }
+        withAnimation(.easeOut(duration: duration)) {
+            routeRevealProgress = 1
         }
     }
 

@@ -126,6 +126,26 @@ final class SessionMapPresentationTests: XCTestCase {
         XCTAssertTrue(route.accessibilitySummary.contains("Park"))
     }
 
+    func testRouteRevealPolylinePrefix() {
+        let points = (0..<8).map { i in
+            TracePoint(latitude: 37.0 + Double(i) * 0.001, longitude: -122.0)
+        }
+        let route = PlannedWalkRoute(
+            destinationName: "Hill",
+            destinationLatitude: points.last!.latitude,
+            destinationLongitude: points.last!.longitude,
+            polyline: points,
+            distanceMeters: 900,
+            expectedTravelTime: 500,
+            status: .ready
+        )
+        XCTAssertTrue(route.revealedPolyline(progress: 0).isEmpty)
+        XCTAssertEqual(route.revealedPolyline(progress: 1).count, 8)
+        let mid = route.revealedPolyline(progress: 0.4)
+        XCTAssertGreaterThanOrEqual(mid.count, 2)
+        XCTAssertLessThan(mid.count, 8)
+    }
+
     func testRoutePlannerUsesInjectedDirections() async {
         final class FixtureDirections: WalkingRouteDirectionsProviding {
             func walkingRoute(
