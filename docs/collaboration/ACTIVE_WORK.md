@@ -20,7 +20,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| — | — | — | — | Idle | No Ready implementation claim |
+| Issue #41 — outdoor / physical AR validation | Device operator | evidence-only (no product branch) | `docs/design/receipts/**` only | Ready for device walk | Exact `main` build; packet: `OUTDOOR_SESSION_PACKET.md` |
 
 ## Intake (not Ready)
 
@@ -32,8 +32,7 @@ Last updated: 2026-07-20
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Issue #41 — physical AR validation | Physical device access unavailable | Evidence-only protocol on named device + exact build (`main` tip at triage: `86da7ad`); unobserved fields stay `NOT_COMPUTABLE` |
-| Outdoor QA receipt | Device walk deferred by product owner | Fill `OUTDOOR_QA_RECEIPT_TEMPLATE.md` on named device |
+| Issue #41 — physical AR + outdoor QA | Awaiting human device walk | Run `OUTDOOR_SESSION_PACKET.md` on named device; fill pending receipt under `docs/design/receipts/`; unobserved rows stay `NOT_COMPUTABLE` |
 
 ## Completed (recent)
 
