@@ -10,7 +10,7 @@ Last updated: 2026-07-20 (persistence WP-DB1/DB2; UI partial; outdoor parked)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **Persistence hardening WP-DB1–DB4** | — | **DB1–DB4 shipping** (aggregate + atomic completion) | [PERSISTENCE_HARDENING_PLAN.md](../plans/PERSISTENCE_HARDENING_PLAN.md) · ADR-0003 |
+| **Persistence hardening WP-DB1–DB5** | — | **DB1–DB5 shipping** (migration + recovery) | [PERSISTENCE_HARDENING_PLAN.md](../plans/PERSISTENCE_HARDENING_PLAN.md) · [PERSISTENCE_RECOVERY.md](../design/PERSISTENCE_RECOVERY.md) |
 | **UI CANDIDATE_v0.2 Phase 4** | — | **Partial** — waves 1–3 + onboarding/legal on main; checklist polish remains | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
 | Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 
@@ -18,7 +18,7 @@ Last updated: 2026-07-20 (persistence WP-DB1/DB2; UI partial; outdoor parked)
 
 | Work | Reason |
 |---|---|
-| WP-DB5 (migration / recovery suite) | Next after DB4 |
+| WP-DB6 CloudKit evaluation ADR | Only if product requires multi-device restore |
 | UI checklist polish + sim screenshot matrix | Non-outdoor product evidence |
 | HO residual icons / production-board density | Design package alignment |
 
