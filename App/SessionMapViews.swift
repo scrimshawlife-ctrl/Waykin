@@ -89,18 +89,21 @@ struct CompactSessionMap: View {
                 }
                 .accessibilityHidden(true)
 
+                // One inert element; XCUITest reports its frame as the whole
+                // caption+strip section, so the 72 pt strip keeps the section
+                // within the ≤100 pt map-secondary law. Coordinate-free; the
+                // "Open map" button below is the VoiceOver-discoverable path.
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture { onOpenFullMap?() }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Map")
+                    .accessibilityLabel("Location context")
                     .accessibilityValue(locationAccessibilityValue)
-                    .accessibilityHint(onOpenFullMap == nil ? "" : "Opens the full map and route tools.")
-                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAddTraits(.isImage)
                     .accessibilitySortPriority(-1)
                     .accessibilityIdentifier("waykin.session.map")
             }
-            .frame(height: plannedRoute.isReady ? 120 : 96)
+            .frame(height: 72)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             HStack(spacing: 10) {
@@ -109,7 +112,7 @@ struct CompactSessionMap: View {
                 } label: {
                     Label("Open map", systemImage: "arrow.up.left.and.arrow.down.right")
                         .font(.caption.weight(.semibold))
-                        .frame(minHeight: 36)
+                        .frame(minHeight: 48)
                 }
                 .buttonStyle(.bordered)
                 .tint(theme.guide)
@@ -120,7 +123,7 @@ struct CompactSessionMap: View {
                 } label: {
                     Label(plannedRoute.isReady ? "Edit route" : "Create route", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
                         .font(.caption.weight(.semibold))
-                        .frame(minHeight: 36)
+                        .frame(minHeight: 48)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(theme.guide)
