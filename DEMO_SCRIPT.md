@@ -14,7 +14,7 @@ The terminal demo is retained as a fast package-level smoke path.
 2. Open `Waykin.xcodeproj`
 3. Select the Waykin scheme and an iPhone Simulator
 4. Launch the app
-5. Tap `Begin Walk`
+5. Tap `Demo Walk` (secondary on Home; primary **Begin Walk** starts the real GPS walk)
 6. In the active session, use `Run to End`
 7. Tap `End`
 8. Confirm Session Summary appears

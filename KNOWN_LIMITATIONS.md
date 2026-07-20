@@ -6,7 +6,7 @@
 - Demo Mode runs without location permission or HealthKit.
 - Native app build passes in the available Xcode simulator environment.
 - SwiftData persistence covers Bond and session memories.
-- The app exposes one primary Begin Walk path.
+- Home primary CTA is **Begin Walk** (real location walk). **Demo Walk** is secondary; UI tests still target `waykin.beginWalk` on Demo for determinism.
 - Real walking sessions use foreground When-In-Use location only and pause when the app becomes inactive or enters the background.
 - Real samples pass through conservative accuracy, age, ordering, displacement, and walking-speed checks before affecting session state.
 - The iPhone app contains optional HealthKit read enrichment for recent steps and daily walking/running distance.
