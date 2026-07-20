@@ -16,6 +16,8 @@ final class LiraARAssetLoader {
     private(set) var source: Source = .procedural
     /// Why the last preload chose procedural or USDZ (#133 outdoor QA).
     private(set) var loadNote: String = "not_attempted"
+    /// When true, `makeLira` keeps authored PBR/textures (Meshy static mesh).
+    private(set) var preserveAuthoredMaterials = false
     private var template: Entity?
     var skin: LiraSkin = .dawn
 
@@ -31,15 +33,25 @@ final class LiraARAssetLoader {
         }
         do {
             let loaded = try await Self.loadEntity(from: url)
-            let root = Self.normalizeRoot(loaded)
+            var root = Self.normalizeRoot(loaded)
+            var promoted = false
+            if !Self.hasRequiredNodes(root) {
+                root = Self.promoteIncompleteHierarchy(root)
+                promoted = true
+            }
             guard Self.hasRequiredNodes(root) else {
                 clearTemplate(reason: .procedural, note: "hierarchy_invalid")
                 return
             }
+            Self.normalizeVisualHeight(root, targetHeightMeters: 0.72)
             template = root
             source = .usdz(url.lastPathComponent)
-            // Artist blend + hero weights + DCC clips mid-LOD (FX still rigid bone-parent).
-            loadNote = "usdz_active_artist_blend_hero_dcc_mid_lod"
+            preserveAuthoredMaterials = promoted || Self.looksLikeTexturedStaticMesh(root)
+            if preserveAuthoredMaterials {
+                loadNote = "usdz_active_meshy_textured_static"
+            } else {
+                loadNote = "usdz_active_artist_blend_hero_dcc_mid_lod"
+            }
         } catch {
             clearTemplate(reason: .procedural, note: "load_error")
         }
@@ -81,6 +93,7 @@ final class LiraARAssetLoader {
         template = nil
         source = .procedural
         loadNote = note
+        preserveAuthoredMaterials = false
         _ = reason
     }
 
@@ -89,7 +102,10 @@ final class LiraARAssetLoader {
         if let template {
             let clone = template.clone(recursive: true)
             clone.name = CompanionEntityFactory.rootName
-            Self.applySkin(skin, to: clone)
+            // Keep Meshy PBR textures; only paint procedural/artist multi-part meshes.
+            if !preserveAuthoredMaterials {
+                Self.applySkin(skin, to: clone)
+            }
             let scale = configuration.companionHeightMeters / 0.72
             clone.scale = SIMD3<Float>(repeating: scale)
             return clone
@@ -103,9 +119,11 @@ final class LiraARAssetLoader {
         case .procedural:
             return "procedural_living_familiar_mid (\(loadNote))"
         case .usdz(let name):
-            // Packaged asset is GENERATED_MID_LOD unless a test injects a custom label.
             if loadNote.contains("test_template") {
                 return "artist_usdz:\(name) (\(loadNote))"
+            }
+            if loadNote.contains("meshy_textured") {
+                return "meshy_usdz:\(name) (\(loadNote))"
             }
             if loadNote.contains("artist_blend") || loadNote.contains("armature") {
                 return "artist_blend_usdz:\(name) (\(loadNote))"
@@ -138,6 +156,89 @@ final class LiraARAssetLoader {
             root.addChild(child)
         }
         return root
+    }
+
+    /// Meshy image-to-3d (and similar) ships a single textured mesh without A1–A3 names.
+    /// Promote into the semantic hierarchy so puppet animation can bind to joints.
+    static func promoteIncompleteHierarchy(_ root: Entity) -> Entity {
+        guard !hasRequiredNodes(root) else { return root }
+
+        var modelEntities: [Entity] = []
+        func collectModels(_ entity: Entity) {
+            if entity is ModelEntity {
+                modelEntities.append(entity)
+            }
+            for child in entity.children {
+                collectModels(child)
+            }
+        }
+        collectModels(root)
+
+        if root.findEntity(named: "Body") == nil {
+            let body = Entity()
+            body.name = "Body"
+            for model in modelEntities {
+                // Keep geometry; reparent under Body for a single visual mass.
+                if model.parent?.name != "Body" {
+                    model.removeFromParent()
+                    body.addChild(model)
+                }
+            }
+            // Also reparent remaining non-material transform containers that still hold meshes.
+            root.addChild(body)
+        }
+
+        // Empty transform anchors for A1–A3 + required chrome (puppet / motion targets).
+        let markerOffsets: [String: SIMD3<Float>] = [
+            "Head": SIMD3(0, 0.42, 0.10),
+            "LeftEar": SIMD3(-0.10, 0.50, 0.04),
+            "RightEar": SIMD3(0.10, 0.50, 0.04),
+            "Tail": SIMD3(0, 0.18, -0.28),
+            "Filament": SIMD3(0, 0.26, -0.22),
+            "CoreGlow": SIMD3(0, 0.30, 0.06),
+            "GroundShadow": SIMD3(0, 0.01, 0),
+            "StatusIndicator": SIMD3(0, 0.58, 0),
+        ]
+        for name in CompanionEntityFactory.requiredNodeNames {
+            if root.findEntity(named: name) == nil {
+                let marker = Entity()
+                marker.name = name
+                if let offset = markerOffsets[name] {
+                    marker.position = offset
+                }
+                root.addChild(marker)
+            }
+        }
+        // Optional joint used by skeletal ambient clips.
+        if root.findEntity(named: "CoreHalo") == nil {
+            let halo = Entity()
+            halo.name = "CoreHalo"
+            halo.position = SIMD3(0, 0.32, 0.06)
+            root.addChild(halo)
+        }
+        return root
+    }
+
+    /// Scale visual content so bounds height ≈ target (handles feet-scale Meshy exports).
+    static func normalizeVisualHeight(_ root: Entity, targetHeightMeters: Float) {
+        let bounds = root.visualBounds(relativeTo: nil)
+        let height = bounds.extents.y
+        guard height.isFinite, height > 0.05 else { return }
+        let factor = targetHeightMeters / height
+        guard factor.isFinite, factor > 0.01, abs(factor - 1) > 0.05 else { return }
+        root.scale *= factor
+    }
+
+    /// Heuristic: single-mesh textured exports (Meshy) vs multi-part procedural/artist.
+    static func looksLikeTexturedStaticMesh(_ root: Entity) -> Bool {
+        var modelCount = 0
+        func walk(_ entity: Entity) {
+            if entity is ModelEntity { modelCount += 1 }
+            for child in entity.children { walk(child) }
+        }
+        walk(root)
+        // Meshy static: one mesh + empty markers. Artist rig: many named model parts.
+        return modelCount <= 2
     }
 
     static func applySkin(_ skin: LiraSkin, to root: Entity) {

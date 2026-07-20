@@ -1,56 +1,34 @@
-# Lira AR assets
+# Packaged Lira AR USDZ
 
 ```yaml
-lod: AR_mid
-companion: Lira
-evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
+evidence_class: MESHY_TEXTURED_STATIC_V1
 file: Lira_AR_Base.usdz
 ```
 
-## Packaged asset
-
 Primary: `App/Resources/Lira_AR_Base.usdz`  
-Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`
-
-Artist multi-mesh + `LiraArmature` + auto-weight heat-map. Named anchors:
-
-| Node | Role |
-| ---- | ---- |
-| `LiraRoot` | Root |
-| `Head` | A1 tapered snout |
-| `CoreGlow` | A2 bond ember |
-| `Filament` | A3 path plume |
-| `Body`, `LeftEar`, `RightEar`, `Tail`, `GroundShadow`, `StatusIndicator` | Required hierarchy |
+Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`  
+Docs mirror: `docs/assets/companion/ar/Lira_AR_Base.usdz`  
+Source: `ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz`
 
 ## Runtime
 
 1. AR attach → `LiraARAssetLoader.preloadFromBundle()`
-2. Load + validate required nodes → clone + skin materials
-3. If load/validation fails → procedural `CompanionEntityFactory`
+2. If hierarchy incomplete → promote markers (Body + A1–A3 empties)
+3. Spawn clone; preserve textures; puppet animation binds to semantic names
+4. On failure → procedural Living Familiar mid-LOD
 
-## Rebuild
+## Required hierarchy (post-promote)
+
+| Node | Role |
+|------|------|
+| `LiraRoot` | Root |
+| `Body` | Visual mesh parent |
+| `Head`, `LeftEar`, `RightEar`, `Tail` | Puppet / motion |
+| `Filament`, `CoreGlow` | A3 / A2 anchors |
+| `GroundShadow`, `StatusIndicator` | Chrome |
+
+## Integrity
 
 ```bash
-# Preferred: artist blend + armature + auto-weights
-./scripts/export_lira_blend_to_usdz.sh ArtSource/Companion/Lira/lira.blend
-
-# Fallback generator (GENERATED_MID_LOD USDA only)
-./scripts/build_lira_usdz.sh
-
-# Integrity
 ./scripts/check_lira_usdz_integrity.sh
 ```
-
-## Motion stack (dual)
-
-| Layer | Mechanism |
-| ----- | --------- |
-| Runtime clips | `LiraSkeletalPlayer` binds **entity names** (puppet paths) |
-| Mesh deform | USD heat-map weights on Body/Head/ears/legs |
-| FX | Filament/core rigid bone-parent |
-
-Optional DCC actions: `scripts/author_lira_armature_clips.py` → `LIRA_EXPORT_ANIM=1` on export.
-
-## Skins
-
-One mesh package; Dawn / Veil / Rupture remapped at runtime (live re-apply supported).

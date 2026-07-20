@@ -3,21 +3,16 @@
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
 version: 0.6
-status: ARTIST_BLEND_HERO_DCC_MID_LOD_SHIPPED
-usdz: ARTIST_BLEND_HERO_DCC_MID_LOD_V1
+status: MESHY_TEXTURED_STATIC_V1_SHIPPED
+usdz: MESHY_TEXTURED_STATIC_V1
 mesh_descriptor: SHIPPED
-runtime_animation_clips: SHIPPED
-skeletal_joint_hierarchy: SHIPPED
-blender_armature_rigid_bind: SHIPPED
-heat_map_auto_weights: SHIPPED
-hero_region_weights: SHIPPED
-dcc_action_clips: SHIPPED
-hero_region_weights: SHIPPED
-dcc_action_clips: SHIPPED
+runtime_animation_clips: SHIPPED_PUPPET
+skeletal_joint_hierarchy: PROMOTED_MARKERS
+blender_armature_rigid_bind: REFERENCE_ONLY
 direction: spectral_living_familiar
-evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
-source_blend: ArtSource/Companion/Lira/lira.blend
-armature: LiraArmature
+evidence_class: MESHY_TEXTURED_STATIC_V1
+source_mesh: ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz
+armature: puppet_markers_plus_optional_prior_LiraArmature
 ```
 
 ## What shipped
@@ -26,12 +21,12 @@ armature: LiraArmature
 | ----- | -------------- | ------ |
 | Session 2D | Spectral still matrix 7×3 | DIRECTION_ACCEPTED |
 | AR mid-LOD | Procedural Living Familiar (`CompanionEntityFactory`) | **Shipped** (fallback) |
-| AR mesh primitives | `LiraMeshGeometry` (tapered head, sensor blades, filament segments) | **Shipped** |
+| AR mesh primitives | `LiraMeshGeometry` (tapered head, sensor blades, filament segments) | **Shipped** (fallback) |
 | AR local motion | `LiraARMotion` multi-seg filament, ears/tail, body bob, hunter echo | **Shipped** |
 | AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
-| AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** |
-| AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_HERO_DCC_MID_LOD** (~754 KB) |
+| AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** (entity-bind) |
+| AR USDZ load | `LiraARAssetLoader` + hierarchy **promote** for incomplete meshes | **Wired** |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **MESHY_TEXTURED_STATIC_V1** (~40 MB textured) |
 | Blender armature | `LiraArmature` 25 bones | **Shipped** (`build_lira_armature.py`) |
 | Heat-map skin | Auto-weights Body/Head/ears/legs; FX rigid | **Shipped** (`skin_lira_armature.py`) |
 | Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |

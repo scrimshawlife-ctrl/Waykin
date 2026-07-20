@@ -2,12 +2,12 @@ import RealityKit
 import XCTest
 @testable import WaykinApp
 
-/// Hard asserts on packaged ARTIST_BLEND_HERO_DCC_MID_LOD (not soft procedural fallback).
+/// Hard asserts on packaged MESHY_TEXTURED_STATIC_V1 (not soft procedural fallback).
 @MainActor
 final class LiraHeroDCCUSDZTests: XCTestCase {
-    func testPackagedEvidenceClassIsSkinnedMidLOD() {
-        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_HERO_DCC_MID_LOD")
-        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("ARTIST_BLEND_HERO_DCC_MID_LOD"))
+    func testPackagedEvidenceClassIsMeshyTexturedStatic() {
+        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "MESHY_TEXTURED_STATIC_V1")
+        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("MESHY_TEXTURED_STATIC_V1"))
         XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ)
     }
 
@@ -22,8 +22,15 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
             return
         }
         XCTAssertEqual(name, "Lira_AR_Base.usdz")
-        XCTAssertTrue(loader.loadNote.contains("skinned") || loader.loadNote.contains("artist_blend"))
-        XCTAssertTrue(loader.activeLODDescription.contains("artist_blend_usdz"))
+        XCTAssertTrue(
+            loader.loadNote.contains("meshy_textured")
+                || loader.loadNote.contains("artist_blend")
+                || loader.loadNote.contains("skinned")
+        )
+        XCTAssertTrue(
+            loader.activeLODDescription.contains("meshy_usdz")
+                || loader.activeLODDescription.contains("artist_blend_usdz")
+        )
 
         let entity = loader.makeLira()
         XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
@@ -55,10 +62,27 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         let entity = loader.makeLira()
         let player = LiraSkeletalPlayer()
         XCTAssertTrue(player.install(on: entity))
-        // At least puppet fill; DCC idle may upgrade to hybrid/dcc when present.
+        // Meshy static has no DCC clips → puppet fill on promoted markers.
         XCTAssertNotEqual(player.clipSource, .none)
         XCTAssertTrue(player.sourceDescription.contains("clips"))
         player.clear()
+    }
+
+    func testPromoteIncompleteHierarchyAddsRequiredNodes() {
+        let bare = Entity()
+        bare.name = "Root"
+        let mesh = ModelEntity(
+            mesh: .generateBox(size: 0.2),
+            materials: [SimpleMaterial(color: .white, isMetallic: false)]
+        )
+        mesh.name = "mesh1"
+        bare.addChild(mesh)
+        let promoted = LiraARAssetLoader.promoteIncompleteHierarchy(
+            LiraARAssetLoader.normalizeRoot(bare)
+        )
+        XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(promoted))
+        XCTAssertNotNil(promoted.findEntity(named: "Body"))
+        XCTAssertNotNil(promoted.findEntity(named: "mesh1"))
     }
 
     func testApplySkinAllFormsOnPackagedClone() async throws {
@@ -75,7 +99,7 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
             loader.skin = skin
             let entity = loader.makeLira()
             XCTAssertTrue(LiraARAssetLoader.hasRequiredNodes(entity), "skin \(skin.rawValue)")
-            // Live re-paint path
+            // Live re-paint path still safe on marker nodes / optional remaps
             LiraARAssetLoader.applySkin(.dawn, to: entity)
             LiraARAssetLoader.applySkin(skin, to: entity)
             XCTAssertNotNil(entity.findEntity(named: "CoreGlow"))

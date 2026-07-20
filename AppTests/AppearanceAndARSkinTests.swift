@@ -22,7 +22,7 @@ final class AppearanceAndARSkinTests: XCTestCase {
             XCTAssertNotNil(entity.findEntity(named: "FilamentTip"))
         }
         XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ, "Lira_AR_Base.usdz should ship in App/Resources")
-        XCTAssertEqual(LiraARAssetCatalog.packagedLODHint, "packaged_usdz:Lira_AR_Base:ARTIST_BLEND_HERO_DCC_MID_LOD")
+        XCTAssertEqual(LiraARAssetCatalog.packagedLODHint, "packaged_usdz:Lira_AR_Base:MESHY_TEXTURED_STATIC_V1")
         let loader = LiraARAssetLoader()
         // Before preload, spawn remains procedural factory.
         XCTAssertTrue(loader.activeLODDescription.contains("procedural_living_familiar_mid"))
