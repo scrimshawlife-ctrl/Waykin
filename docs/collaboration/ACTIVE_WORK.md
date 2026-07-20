@@ -20,7 +20,7 @@ Last updated: 2026-07-19
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| — | — | — | — | Idle | Path/Health v1.1 + experience loop cohesion; outdoor/AR device still blocked |
+| — | — | — | — | Idle | Event weight light tune; outdoor/AR device still blocked |
 
 ## Blocked
 
