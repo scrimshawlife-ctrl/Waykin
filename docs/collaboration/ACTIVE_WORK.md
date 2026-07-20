@@ -10,7 +10,7 @@ Last updated: 2026-07-20 (pivot: UI CANDIDATE_v0.2; AR recs parked)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **UI CANDIDATE_v0.2 Phase 4 integration** | — | **Wave 2** — session select / prep / sanctuary / bond update | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
+| **UI CANDIDATE_v0.2 Phase 4 integration** | — | **Wave 3** — onboarding + legal docs | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) · [legal/](../legal/README.md) |
 | Issue #41 — outdoor / physical validation | — | **Parked / blocked until daylight** | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 
 ## Intake

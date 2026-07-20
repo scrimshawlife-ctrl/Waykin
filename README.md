@@ -167,13 +167,16 @@ Future-state specifications are reference material until promoted through an acc
 
 ## Safety and Privacy
 
-- Waykin is not safety equipment.
+Legal and safety documents live under [`docs/legal/`](docs/legal/README.md) (Privacy, Terms, Safety brief, Notices). Source code is [Apache 2.0](LICENSE).
+
+- Waykin is not safety equipment or medical advice.
 - Location is requested only during an active real walk.
 - Demo Mode requires no location permission.
 - Pause and stop behavior remain available.
 - Pursuit must never pressure a user to continue through distress or unsafe conditions.
 - Memories are concise deterministic facts, not precise route archives.
 - Field receipts exclude coordinates and personal memory text, retain at most 20 files, and never upload automatically.
+- First-run onboarding includes a safety acknowledgment; Settings → Legal can reopen notices.
 
 ## Validation Status
 

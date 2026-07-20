@@ -100,6 +100,15 @@ struct WaykinApp: App {
             .wkThemed()
             .liraSkin(appModel.selectedLiraSkin)
             .preferredColorScheme(appModel.appearancePreference.preferredColorScheme)
+            .fullScreenCover(isPresented: Binding(
+                get: { !appModel.hasCompletedOnboarding },
+                set: { if $0 == false { appModel.completeOnboarding() } }
+            )) {
+                OnboardingFlowView()
+                    .environment(appModel)
+                    .wkThemed()
+                    .interactiveDismissDisabled()
+            }
             .onChange(of: scenePhase) { _, phase in
                 appModel.handleScenePhase(phase)
             }
@@ -146,6 +155,20 @@ final class WaykinAppModel: CanonicalARCommandSource {
     var selectedWalkMode: WalkMode = .trail
     var path = NavigationPath()
     var showsSettings = false
+    /// First-run onboarding (intro → permissions honesty → safety).
+    var hasCompletedOnboarding: Bool = false {
+        didSet { UserDefaults.standard.set(hasCompletedOnboarding, forKey: Self.onboardingStorageKey) }
+    }
+    static let onboardingStorageKey = "waykin.onboarding.completed.v1"
+
+    func completeOnboarding() {
+        hasCompletedOnboarding = true
+    }
+
+    func resetOnboardingForTesting() {
+        hasCompletedOnboarding = false
+        UserDefaults.standard.removeObject(forKey: Self.onboardingStorageKey)
+    }
 
     // Diagnostics (UI-test only)
     var persistenceMode: String = "FILE_BACKED"
@@ -310,6 +333,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             _ = try? persistenceStore.resetDemoData()
             UserDefaults.standard.removeObject(forKey: LiraSkin.storageKey)
             UserDefaults.standard.removeObject(forKey: AppearancePreference.storageKey)
+            UserDefaults.standard.removeObject(forKey: Self.onboardingStorageKey)
         }
 
         if let loaded = try? persistenceStore.loadCompanion() {
@@ -321,10 +345,19 @@ final class WaykinAppModel: CanonicalARCommandSource {
         if shouldReset {
             self.selectedLiraSkin = .dawn
             self.appearancePreference = .system
-        } else if let raw = UserDefaults.standard.string(forKey: LiraSkin.storageKey),
-                  let skin = LiraSkin(rawValue: raw) {
-            self.selectedLiraSkin = skin
+            self.hasCompletedOnboarding = false
         } else {
+            self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Self.onboardingStorageKey)
+        }
+        // UI tests skip onboarding unless explicitly testing it.
+        if ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING"),
+           !ProcessInfo.processInfo.arguments.contains("-WAYKIN_TEST_ONBOARDING") {
+            self.hasCompletedOnboarding = true
+        }
+        if !shouldReset, let raw = UserDefaults.standard.string(forKey: LiraSkin.storageKey),
+           let skin = LiraSkin(rawValue: raw) {
+            self.selectedLiraSkin = skin
+        } else if !shouldReset {
             self.selectedLiraSkin = .dawn
         }
         if !shouldReset,
@@ -1604,6 +1637,32 @@ struct SettingsView: View {
                     }
                     .frame(minHeight: WKTokens.Space.minTouch)
                     .accessibilityIdentifier("waykin.settings.haptics")
+                }
+
+                Section("Legal") {
+                    NavigationLink {
+                        LegalListView()
+                    } label: {
+                        HStack {
+                            WKIconView(icon: .permissionRequired, size: 18)
+                                .foregroundStyle(theme.textSecondary)
+                            Text("Privacy, Terms, Safety, Notices")
+                                .foregroundStyle(theme.textPrimary)
+                        }
+                        .frame(minHeight: WKTokens.Space.minTouch)
+                    }
+                    .accessibilityIdentifier("waykin.settings.legal")
+
+                    Button {
+                        appModel.resetOnboardingForTesting()
+                        // Allow re-show: clear flag so fullScreenCover presents again after dismiss settings.
+                        dismiss()
+                    } label: {
+                        Text("Replay safety & onboarding")
+                            .foregroundStyle(theme.guideText)
+                            .frame(minHeight: WKTokens.Space.minTouch)
+                    }
+                    .accessibilityIdentifier("waykin.settings.replayOnboarding")
                 }
 
                 Section {
