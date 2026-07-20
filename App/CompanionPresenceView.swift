@@ -206,6 +206,7 @@ struct CompanionPresenceView: View {
     let presentation: CompanionPresencePresentation
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.wkTheme) private var theme
+    @Environment(\.liraSkin) private var liraSkin
 
     var body: some View {
         VStack(spacing: 16) {
@@ -238,6 +239,15 @@ struct CompanionPresenceView: View {
 
             // Lira session-mid production puppet (poses + A1–A3 anchors)
             LiraSessionFigure(presentation: presentation)
+
+            // #133 outdoor QA: catalog still vs Canvas fallback (operator-visible).
+            Text(graphicsDiagnosticLabel)
+                .font(.caption2.monospaced())
+                .foregroundStyle(theme.textTertiary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityLabel("Session graphics path")
+                .accessibilityValue(graphicsDiagnosticLabel)
+                .accessibilityIdentifier("waykin.session.graphicsPath")
 
             Text(presentation.phrase)
                 .font(.title3.weight(.semibold))
@@ -302,6 +312,13 @@ struct CompanionPresenceView: View {
 
     private var pressureTint: Color {
         presentation.pressureIntensity >= 0.45 ? theme.hunter : theme.textSecondary
+    }
+
+    private var graphicsDiagnosticLabel: String {
+        LiraStillCatalog.graphicsPath(
+            pose: LiraSessionPose.resolve(from: presentation),
+            skin: liraSkin
+        ).diagnosticLabel
     }
 
     private func metric(value: String, accessibilityValue: String, label: String, identifier: String) -> some View {

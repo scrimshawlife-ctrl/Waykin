@@ -20,7 +20,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #133 — new graphical assets not perceived outdoors | UNASSIGNED | — | stills catalog / AR USDZ loader diagnostics, docs | Ready | #41 PARTIAL; sphere mid-LOD + Canvas fallback |
+
 | Issue #130 — audio ↔ companion actions + produced cues not perceived | UNASSIGNED | — | AudioExperienceLayer, AppAudioCuePlayer, session wiring, docs | Ready | #41 PARTIAL; event-only audio architecture |
 | Issue #125 — AR continuity (disappear ~10–15 m) | UNASSIGNED | — | `App/AR/**`, AppTests, docs | Ready (IMPLEMENT after claim) | #41 PARTIAL receipt |
 | Issue #126 — session/AR menu UX audit | UNASSIGNED | — | App session chrome, docs | Ready (audit first) | #41 PARTIAL; before more outdoor AR |
@@ -42,6 +42,8 @@ Last updated: 2026-07-20
 
 | Issue / PR | Outcome | Evidence |
 |---|---|---|
+| Issue #133 — graphics LOD diagnostics | Session still path + AR load notes (not hero mesh claim) | PR pending |
+| Issue #132 — UI/UX design spec | PROPOSED docs landed | PR #135 merged |
 | Issue #128 — session elapsed ~2s steps | Fixed wall-clock presentation + 1Hz refresh | PR #129 merged |
 | Issue #121 — session map follow + path trace + GPS chip | Complete (path-trace ratified presentation-only) | PR #123 merged |
 | Issue #115 — glasses glance adapter | Expansion ratified; mock-first adapter shipped (flag default off) | PR #120 merged |

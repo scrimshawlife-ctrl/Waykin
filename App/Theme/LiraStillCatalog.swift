@@ -3,6 +3,22 @@ import UIKit
 
 /// Session still LOD names. When an imageset exists in the asset catalog, prefer it over the Canvas puppet.
 enum LiraStillCatalog {
+    /// Which 2D graphics path is active for a pose×skin (outdoor QA / #133 diagnostics).
+    enum GraphicsPath: String, Equatable, Sendable, CaseIterable {
+        /// Spectral still loaded from `Assets.xcassets/LiraStills`.
+        case catalogStill
+        /// Procedural Canvas puppet (catalog miss or unloadable image).
+        case canvasFallback
+
+        /// Operator-facing diagnostic string (session HUD / a11y / receipts).
+        var diagnosticLabel: String {
+            switch self {
+            case .catalogStill: return "still:catalog"
+            case .canvasFallback: return "still:canvas_fallback"
+            }
+        }
+    }
+
     /// Generated spectral art (non-mascot). Full 7×3 pose×skin matrix + glyphs; missing names fall back to Canvas puppet.
     static func imageName(pose: LiraSessionPose, skin: LiraSkin) -> String? {
         let poseToken: String
@@ -27,6 +43,27 @@ enum LiraStillCatalog {
     static func hasStill(pose: LiraSessionPose, skin: LiraSkin) -> Bool {
         guard let name = imageName(pose: pose, skin: skin) else { return false }
         return UIImage(named: name) != nil
+    }
+
+    /// Resolve whether catalog still or Canvas fallback will be used.
+    static func graphicsPath(pose: LiraSessionPose, skin: LiraSkin) -> GraphicsPath {
+        hasStill(pose: pose, skin: skin) ? .catalogStill : .canvasFallback
+    }
+
+    /// Full 7×3 matrix diagnostics (tests / field prep).
+    static func catalogCoverage() -> (present: Int, missing: [(LiraSessionPose, LiraSkin)]) {
+        var present = 0
+        var missing: [(LiraSessionPose, LiraSkin)] = []
+        for pose in LiraSessionPose.allCases {
+            for skin in LiraSkin.allCases {
+                if hasStill(pose: pose, skin: skin) {
+                    present += 1
+                } else {
+                    missing.append((pose, skin))
+                }
+            }
+        }
+        return (present, missing)
     }
 
     static func glyphName(for skin: LiraSkin) -> String {
