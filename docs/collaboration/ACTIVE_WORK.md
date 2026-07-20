@@ -20,7 +20,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Owner | Branch / worktree | Allowed paths | Status | Dependency |
 |---|---|---|---|---|---|
-| Issue #128 — session elapsed ~2s steps | Grok | `fix/session-elapsed-presentation-clock` | App presentation clock + tests | In Progress | #41 PARTIAL (not GPS failure) |
+| Issue #130 — audio ↔ companion actions + produced cues not perceived | UNASSIGNED | — | AudioExperienceLayer, AppAudioCuePlayer, session wiring, docs | Ready | #41 PARTIAL; event-only audio architecture |
 | Issue #125 — AR continuity (disappear ~10–15 m) | UNASSIGNED | — | `App/AR/**`, AppTests, docs | Ready (IMPLEMENT after claim) | #41 PARTIAL receipt |
 | Issue #126 — session/AR menu UX audit | UNASSIGNED | — | App session chrome, docs | Ready (audit first) | #41 PARTIAL; before more outdoor AR |
 
@@ -41,6 +41,7 @@ Last updated: 2026-07-20
 
 | Issue / PR | Outcome | Evidence |
 |---|---|---|
+| Issue #128 — session elapsed ~2s steps | Fixed wall-clock presentation + 1Hz refresh | PR #129 merged |
 | Issue #121 — session map follow + path trace + GPS chip | Complete (path-trace ratified presentation-only) | PR #123 merged |
 | Issue #115 — glasses glance adapter | Expansion ratified; mock-first adapter shipped (flag default off) | PR #120 merged |
 | Issue #47 — agent coordination board | Complete | PR #48 merged; Project #1 live; closed 2026-07-20 |
