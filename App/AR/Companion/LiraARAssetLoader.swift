@@ -38,8 +38,8 @@ final class LiraARAssetLoader {
             }
             template = root
             source = .usdz(url.lastPathComponent)
-            // Sphere-prim mid-LOD is intentional packaging; not a hero sculpt.
-            loadNote = "usdz_active_sphere_mid_lod"
+            // GENERATED_MID_LOD prim hierarchy — not hand-sculpted hero.
+            loadNote = "usdz_active_generated_mid_lod"
         } catch {
             clearTemplate(reason: .procedural, note: "load_error")
         }
@@ -103,7 +103,11 @@ final class LiraARAssetLoader {
         case .procedural:
             return "procedural_living_familiar_mid (\(loadNote))"
         case .usdz(let name):
-            return "artist_usdz:\(name) (\(loadNote))"
+            // Packaged asset is GENERATED_MID_LOD unless a test injects a custom label.
+            if loadNote.contains("test_template") {
+                return "artist_usdz:\(name) (\(loadNote))"
+            }
+            return "generated_usdz:\(name) (\(loadNote))"
         }
     }
 

@@ -13,6 +13,7 @@ session_ambient_motion: SHIPPED
 route_polyline_reveal: SHIPPED
 skeletal_animation_library: JOINT_HIERARCHY_SHIPPED
 dcc_skinned_skeletal: NOT_SHIPPED
+generated_mid_lod_usdz: SHIPPED_V1_2
 runtime_animation_resource_clips: SHIPPED
 procedural_mesh_mid_lod: SHIPPED
 ```

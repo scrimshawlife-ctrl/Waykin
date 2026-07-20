@@ -1,27 +1,24 @@
-# Lira sculpt / mid-LOD source receipt
+# Lira AR mid-LOD source receipt
 
 ```yaml
-asset: Lira_AR_Base
-source_status: USDA_MID_LOD_V1_1
-runtime_status: PACKAGED
-runtime_paths:
-  - App/Resources/Lira_AR_Base.usdz
-  - App/Resources/Companion/Lira/Lira_AR_Base.usdz
-source: docs/assets/companion/ar/src/Lira_AR_Base.usda
-build: scripts/build_lira_usdz.sh
-required_node_generation: PASS
-usdz_conversion: PASS
-realitykit_load: SIMULATOR_COVERED
-physical_device_validation: NOT_RUN
-animation_library: NOT_SHIPPED
+evidence_class: GENERATED_MID_LOD
+version: 1.2
+date: 2026-07-20
 ```
 
-## Interpretation
+## OBSERVED
 
-- **OBSERVED:** Runtime USDZ rebuilt from enriched USDA with required hierarchy; loader tests cover packaged + procedural fallback.
-- **INFERRED:** Soft asymmetry + Snout improve Living Familiar read vs sphere-stack mascot.
-- **NOT_COMPUTABLE:** Outdoor AR readability; skeletal AnimationLibrary until DCC clips land.
+- Generator: `scripts/generate_lira_mid_lod_usda.py`
+- Package: `scripts/build_lira_usdz.sh` → `App/Resources/Lira_AR_Base.usdz`
+- Root `LiraRoot` with required semantic nodes + nested filament joints
+- Explicit **not** labeled hand-sculpted artist mesh
 
-## Binary GLB note
+## INFERRED
 
-Offline GLB/OBJ (5.8k verts) referenced historically remains optional art-track; repository runtime path is USDA→USDZ mid-LOD with permanent procedural fallback.
+- Compatible with runtime `LiraSkeletalPlayer` joint names
+- Procedural RealityKit factory remains permanent fallback if load fails
+
+## NOT_COMPUTABLE
+
+- Outdoor AR readability
+- True DCC skinned deformation / painted weights

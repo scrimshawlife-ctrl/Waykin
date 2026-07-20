@@ -2,14 +2,15 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
-version: 0.3
-status: PROCEDURAL_MID_SHIPPED
-usdz: ASYNC_LOAD_WIRED
+version: 0.4
+status: GENERATED_MID_LOD_SHIPPED
+usdz: GENERATED_MID_LOD_V1_2
 mesh_descriptor: SHIPPED
 runtime_animation_clips: SHIPPED
 skeletal_joint_hierarchy: SHIPPED
 dcc_skinned_skeletal: NOT_SHIPPED
 direction: spectral_living_familiar
+evidence_class: GENERATED_MID_LOD
 ```
 
 ## What shipped
@@ -17,15 +18,15 @@ direction: spectral_living_familiar
 | Layer | Implementation | Status |
 | ----- | -------------- | ------ |
 | Session 2D | Spectral still matrix 7×3 | DIRECTION_ACCEPTED |
-| AR mid-LOD | Procedural Living Familiar (`CompanionEntityFactory`) | **Shipped** |
+| AR mid-LOD | Procedural Living Familiar (`CompanionEntityFactory`) | **Shipped** (fallback) |
 | AR mesh primitives | `LiraMeshGeometry` (tapered head, sensor blades, filament segments) | **Shipped** |
 | AR local motion | `LiraARMotion` multi-seg filament, ears/tail, body bob, hunter echo | **Shipped** |
-| AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** (lab / single-node) |
-| AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` (multi-joint groups) | **Shipped** (default on spawn; pure-function fallback) |
+| AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
+| AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** |
 | AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
-| AR USDZ asset | `App/Resources/Companion/Lira/Lira_AR_Base.usdz` | **Packaged mid-LOD v1.1 (sculpted prims)** |
-| USDA source | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | Rebuild: `scripts/build_lira_usdz.sh` |
-| Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Partial implemented v0.3 |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **GENERATED_MID_LOD v1.2** (joint nesting) |
+| USDA source | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | Generator: `scripts/generate_lira_mid_lod_usda.py` |
+| Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Mid-LOD complete |
 
 ## Anchors (required)
 
@@ -51,14 +52,23 @@ ARWorldCommandRenderer spawn
 
 Invalid or missing USDZ never blocks spawn — procedural fallback is permanent safety net.
 
-## Drop-in steps (artist)
+## Generate / rebuild (default mid-LOD)
+
+```bash
+./scripts/build_lira_usdz.sh
+```
+
+Evidence class **GENERATED_MID_LOD** — not hand-sculpted. Nested joints include `FilamentBase` / `FilamentMid` / `FilamentTip`.
+
+## Optional artist drop-in (future)
 
 1. Sculpt single shared rig (no per-skin mesh).
-2. Name nodes per table above.
+2. Name nodes per table above (preserve joint set).
 3. Export `Lira_AR_Base.usdz`.
-4. Place under `App/Resources/Companion/Lira/`.
-5. Wire async load (separate PR) preserving `LiraRoot` + A1–A3.
+4. Place under app Resources (same filename).
+5. Re-run hierarchy validation + `make validate`.
 6. Human gore review for hunter poses before outdoor AR claims.
+7. Label evidence as artist-authored separately from GENERATED_MID_LOD.
 
 ## Explicit non-goals
 
