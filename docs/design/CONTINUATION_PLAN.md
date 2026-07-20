@@ -2,12 +2,13 @@
 
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
-version: 3.1
-date: 2026-07-19
-status: EVENT_WEIGHT_LIGHT_TUNE_COMPLETE
-goal: companion_first_event_pacing_without_new_kinds
-outdoor_qa: DEFERRED_NON_BLOCKING
+version: 3.2
+date: 2026-07-20
+status: NON_OUTDOOR_POLISH_COMPLETE_NEXT_41
+goal: outdoor_device_evidence_on_main_tip
+outdoor_qa: BLOCKED_ON_DAYLIGHT_REWALK
 ar_status: FROZEN_MAINTENANCE_ONLY
+authority_note: ACTIVE_WORK.md is the live coordination snapshot
 ```
 
 ## Completed waves
@@ -18,11 +19,21 @@ ar_status: FROZEN_MAINTENANCE_ONLY
 | **AR-F** freeze + **P/H MVP** | **Done** (#98) |
 | **Path/Health v1.1** | **Done** (#99) |
 | **Experience loop cohesion** | **Done** (#100) |
-| **Event weight light tune** | **This wave** |
+| **Event weight light tune** | **Done** (v3.1) |
+| Continuity + audio coupling + path soft cues | **Done** (#125/#130/#139–#143) |
+| Menu UX + non-outdoor UI polish | **Done** (#126/#147–#150) |
+| Engineering doc sync vs code | **This wave** |
 
-## Wave v3.1 — Light event weight tuning
+## Next wave — Outdoor re-walk (#41)
 
-Adjust `WorldEventGeneratorConfiguration.defaultRules` only. No new kinds, no narrative engine, no Demo arc rewrite.
+1. Install tip SHA on physical iPhone in daylight.
+2. Run outdoor session packet + Pass COH column.
+3. Record OBSERVED continuity, produced/path audio, menu/AR full-screen feel.
+4. Open new defect issues only if needed; do not invent PASS from sim.
+
+## Wave v3.1 — Light event weight tuning (complete)
+
+Adjusted `WorldEventGeneratorConfiguration.defaultRules` only. No new kinds, no narrative engine, no Demo arc rewrite.
 
 | ID | Work | Acceptance |
 | -- | ---- | ---------- |

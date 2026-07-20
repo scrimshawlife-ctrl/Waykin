@@ -25,7 +25,7 @@
 - Whether Apple Watch-originated samples appear with the expected timing in the current iPhone HealthKit queries.
 - Whether the conservative defaults are appropriate across devices, terrain, urban canyons, and accessibility-related walking patterns.
 
-No physical walk receipt has been filled in this repository. Do not mark these as PASS from simulator or package evidence.
+A **PARTIAL** outdoor AR operator receipt exists (`docs/design/receipts/OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md`, pre-mitigation continuity/audio notes). That is **not** a full outdoor COH PASS. Do not mark GPS, outdoor audio, battery, or outdoor AR quality as PASS from simulator, package evidence, or that PARTIAL alone. Issue #41 requires a daylight re-walk on current main tip.
 
 The local field-test receipt is engineering evidence only. It has no remote analytics or automatic upload, and receipt creation does not validate physical behavior. Timestamps may reveal session timing when a receipt is shared, field-test ratings remain manual, and receipt-related battery impact is unverified.
 
@@ -39,10 +39,10 @@ The recorded route is measurement support for the active Companion Walk only. It
 
 - HealthKit enrichment is optional and non-authoritative.
 - Successful authorization-request completion does not prove that read access was granted.
-- Missing data, unreadable data, and query failure are not yet represented with sufficient provenance.
+- Code-side hardening (#104) distinguishes request completion, metric availability, empty data, and query failure in the app adapter; **physical-device** authorization/deny/empty/lifecycle evidence remains NOT_COMPUTABLE until exercised on a named iPhone.
 - The current previous-hour step band measures recent activity volume, not live walking cadence.
-- Enrichment refresh currently occurs only at real-walk start and resume.
-- Daily walking/running distance is queried but does not yet have a clearly bounded product purpose.
+- Enrichment refresh runs at real-walk start/resume and on a bounded periodic interval while the walk is active (see `docs/design/HEALTHKIT.md`); device battery impact of refresh is NOT_COMPUTABLE.
+- Daily walking/running distance may soft-fill energy presentation when steps are unavailable; it does not select events or Bond.
 - Waykin does not write workouts to HealthKit.
 
 ## Apple Watch Limitations
@@ -82,8 +82,8 @@ Apple Watch may indirectly contribute samples to HealthKit, but that is not impl
 - Event variety is intentionally bounded.
 - Bundled WAV cues are produced sound design (owner-rendered, 2026-07-19); physical audibility, loudness balance, and outdoor masking remain NOT_COMPUTABLE until device walks.
 - No advanced spatial audio is implemented; the adapter uses only restrained stereo pan.
-- AR remains isolated to the `WaykinARLab` engineering target.
-- Physical-device AR presentation remains `NOT_COMPUTABLE` pending evidence.
+- Production Companion Walk uses **app-target** AR (`App/AR/**`, session full-screen cover). `WaykinARLab` remains a separate engineering surface. Outdoor tracking quality is PARTIAL historically and requires re-walk for PASS (#41).
+- Physical-device outdoor AR quality claims remain evidence-gated; do not equate code mitigations (#125 continuity, diagnostics) with outdoor PASS.
 - Apple Watch implementation remains reference-only until promoted.
 - There is no multiplayer, backend, account system, marketplace, creator SDK, generalized narrative engine, generative AI, or generalized analytics platform.
 - Run, cycle, hike, and climb model values may exist for compatibility, but they are not validated MVP capabilities.

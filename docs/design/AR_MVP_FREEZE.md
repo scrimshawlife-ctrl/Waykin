@@ -2,11 +2,13 @@
 
 ```yaml
 document_id: WAYKIN-AR-MVP-FREEZE-001
-version: 1.0
-date: 2026-07-19
+version: 1.1
+date: 2026-07-20
 status: FROZEN_FOR_ENGINEERING
 evidence_class: SIMULATOR_PLUS_CODE
-outdoor_physical_ar: NOT_COMPUTABLE
+outdoor_physical_ar: PARTIAL_DEVICE_2026_07_20
+outdoor_receipt: docs/design/receipts/OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md
+outdoor_pass: REQUIRES_REWALK_ISSUE_41
 ```
 
 ## Purpose

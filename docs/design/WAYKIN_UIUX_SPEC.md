@@ -40,15 +40,17 @@ this age have design law this strong.
 
 ## A2. Findings (gaps and inconsistencies)
 
-| ID | Severity | Finding |
-|---|---|---|
-| A2-1 | **High** | **Four state vocabularies with no canonical crosswalk.** Presentation (`idle/follow/investigate/alert/celebrate`), art stills (`Dormant/Manifesting/Guide/Bond/Hunter/Rival/Sanctuary`), pursuit (`inactive/noticed/approaching/close/fading`), path relation (`establishing/onPath/strained/offPath/recovered`). Each is internally consistent; the *mapping between them* lives only in scattered code. Design drift is inevitable without one table. → Part B7 supplies it. |
-| A2-2 | **High** | **Home inverts the product's own priority** (Issue #126): demo walk is the prominent CTA; the real walk — the product — is an unstyled link below Memory History. |
-| A2-3 | **High** | **AR modality contradicts walk ergonomics**: swipe-dismissible sheet covering Pause/End (#126), compounding the #125 continuity recovery loop. |
-| A2-4 | Medium | `docs/assets/screenshots/` is empty (README only) — no canonical screen captures exist anywhere; reviews and pitches rebuild mental screenshots from code. |
-| A2-5 | Medium | Icon raster authority is dual: `docs/assets/brand/production/appicon-rasters/` and the compiled `App/Resources/Assets.xcassets`. Functional, but no doc states which is source-of-truth (proposal: SVG master → docs rasters are reference; xcassets is build truth). |
-| A2-6 | Low | Modality inconsistency: Summary is a push, Settings and AR are sheets, AR Lab is a separate target. Workable, but the rule ("pushes for flow, sheets for asides, covers for immersion") is implicit. |
-| A2-7 | Low | Debug/UI-test text blocks share layout space with product UI on Home (flag-gated, but they shape the layout file's readability and tempt drift). |
+> **Historical audit snapshot** from the outdoor PARTIAL / pre–#126 era. **Do not treat open High rows as current main truth.** Remediation status is in the right column; live backlog is B12.
+
+| ID | Severity | Finding | Status on main |
+|---|---|---|---|
+| A2-1 | **High** | Four state vocabularies with no canonical crosswalk. | **Mitigated** — B7 + `CompanionPresentationMatrix` |
+| A2-2 | **High** | Home demo-primary CTA inverted product priority (#126). | **Fixed** — real Begin Walk primary; Demo secondary |
+| A2-3 | **High** | AR swipe-dismissible sheet covering Pause/End (#126). | **Fixed** — fullScreenCover + mirrored controls |
+| A2-4 | Medium | Empty `docs/assets/screenshots/`. | **Partial** — capture script + sim home capture; expand day/night optional |
+| A2-5 | Medium | Dual icon raster authority. | **Documented** — BRAND_GUIDE icon authority (#150) |
+| A2-6 | Low | Sheet vs cover modality implicit. | **Documented** — B2 modality rule; AR is cover |
+| A2-7 | Low | Debug/UI-test blocks on Home. | Open polish; flag-gated |
 
 ---
 
@@ -215,7 +217,7 @@ until receipts say otherwise.
 
 ## Ratification asks
 
-1. Bless the crosswalk table (B7) as canonical, including `Rival` reserved.
-2. Bless the modality rule (B2).
-3. Confirm Home CTA inversion fix proceeds under #126 (already claimed).
-4. Confirm screenshot set (backlog 3) as a new bounded issue.
+1. Bless the crosswalk table (B7) as canonical, including `Rival` reserved — **code authority already cites it**.
+2. Bless the modality rule (B2) — **AR cover + settings sheet shipped**.
+3. ~~Home CTA inversion (#126)~~ — **done**.
+4. Screenshot set — scaffolding + one sim capture shipped; optional expansion under existing capture script.

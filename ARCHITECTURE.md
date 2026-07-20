@@ -13,19 +13,19 @@ MovementEngine
       ↓
 MovementSnapshot
       ↓
-WorldState
+CompanionWalkExperience
+      ├─ WorldState
+      ├─ WorldEventGenerator → WorldEvent? (0–1 / tick)
+      ├─ CompanionPresentationMatrix → behavior + relative distance
+      ├─ AudioExperienceLayer (event cue, else behavior-transition cue)
+      └─ ExperienceUpdate commands / semanticAudioCues
       ↓
-WorldEventGenerator
-      ↓
-WorldEvent
-      ↓
-CompanionRuntime / PursuitState
-      ↓
-AudioCue
-      ↓
-AppAudioCuePlayer
-      ↓
-Local bundled audio asset or safe silence
+App orchestration (WaykinAppModel / DemoSessionController)
+      ├─ CompanionRuntime
+      ├─ PathProgressEngine (+ optional PathAudioCoupling soft cues)
+      ├─ AppAudioCuePlayer
+      ├─ CanonicalARWorldCommandMapper → ARWorldCommand (when AR attached)
+      └─ CompanionPresencePresentation / session UI
       ↓
 SessionMemory + Bond
 ```
@@ -36,9 +36,11 @@ SessionMemory + Bond
 - Movement Engine: owns session transitions, elapsed and active time, distance, speed, route points, simulation, and accepted real walking samples.
 - World State: derives serializable session context from local movement signals, Bond, time context, familiarity, energy, and pressure.
 - Event Generator: emits zero or one deterministic semantic event per tick using a seeded, weighted, cooldown-aware configuration.
-- Companion Runtime: maps events and commands into a small behavior vocabulary for Lira.
-- Audio Experience Layer: maps semantic events to semantic audio cues with priority and cooldown handling.
-- App Audio Adapter: maps the seven canonical cue kinds to bundled local assets, enforces a two-channel playback bound, and owns Apple audio-session lifecycle behavior.
+- Companion presentation matrix: single source for behavior + relative distance + AR presentation string mapping (`CompanionPresentationMatrix`).
+- Companion Runtime: applies experience commands (and event overlays) into Lira’s small behavior vocabulary.
+- Audio Experience Layer: maps world events and companion behavior transitions onto the seven semantic cue kinds (priority + cooldown); path soft cues use the same kinds via `PathAudioCoupling` when event/behavior audio is silent.
+- App Audio Adapter: maps cue kinds to bundled produced WAVs, enforces a two-channel playback bound, and owns Apple audio-session lifecycle behavior.
+- Path progress: semantic on-path / strained / offPath presentation (not navigation).
 
 Persistence supports Bond and concise memories. It is not a generalized backend or content platform.
 
@@ -110,9 +112,11 @@ App-target AR adapter
 ARKit + RealityKit presentation
 ```
 
-The reconstructed AR baseline adds an isolated `WaykinARLab` target with camera authorization, capability monitoring, session lifecycle handling, horizontal raycast placement, bounded entity registration, procedural Lira presentation, deterministic presentation states, and privacy-filtered diagnostics. The normal `Waykin` scheme continues to launch `WaykinApp`; the AR Lab is a separate engineering surface.
+**Shipped presentation bridge (MVP):** Demo and real Companion Walk emit `ARWorldCommand` batches through `CanonicalARWorldCommandMapper` when an AR handler is attached (`CanonicalARSessionView` full-screen cover). Continuity uses world-plane plant with re-plant / camera-anchor fallback (`ARPlacementResolver`); presentation state `.follow` remains local pose, not continuous walker re-anchor. See `docs/design/REAL_WALK_TO_AR_MAPPING.md` and `docs/design/AR_MVP_FREEZE.md`.
 
-The contract remains presentation-only. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does not become an alternate source of gameplay truth. Physical walking and the production Companion Walk loop are not connected to AR in this baseline.
+An isolated `WaykinARLab` target remains available for camera/placement engineering. The normal `Waykin` scheme launches `WaykinApp` with production session AR.
+
+The contract remains **presentation-only**. AR capability and tracking state may inform whether the app shows AR, a limited fallback, or no AR, but tracking quality does **not** become an alternate source of gameplay truth (movement, events, Bond, memories). Physical outdoor tracking quality remains evidence-gated (Issue #41 PARTIAL until re-walk PASS).
 
 ## AI Director Release-Candidate Boundary
 
@@ -151,14 +155,15 @@ The repository still contains deprecated proof-of-concept runtime types for Orc 
 
 ## Deferred Seams
 
-- Manual physical-device GPS, audio, HealthKit, and interruption validation.
+**Done on main (do not re-open without a defect):** production WAV cues; companion-first event weight tune; real-walk/demo → AR command bridge; AR MVP freeze scope; path progress v1.1; HealthKit read hardening code-side (#104).
+
+**Still open:**
+
+- Manual physical-device GPS, outdoor audio audibility, HealthKit device lifecycle, and interruption validation (Issue #41 / protocols).
+- Outdoor AR re-walk after continuity + audio mitigations (COH receipt on tip SHA).
 - Review of local field receipts against manual subjective notes.
 - Device-specific calibration of the conservative walking integrity thresholds.
-- Replacement of deterministic engineering tones with production sound design.
-- Richer tuning of event weights.
-- Optional migration of old proof-of-concept experience code after the walking loop is proven.
-- Connection of AR presentation commands to Lira, movement, events, and pursuit.
-- Physical-device validation of AR placement, tracking loss, interruption recovery, and battery impact.
+- Optional migration/deletion of old proof-of-concept experience code.
 - HealthKit workout writing.
 - watchOS target, workout sessions, workout mirroring, WatchConnectivity, heart-rate enrichment, Watch controls, and Watch haptics.
 - Provider-neutral AI Director contracts, privacy projection, validation, deterministic fallback, and provider substitution.
