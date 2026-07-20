@@ -54,9 +54,11 @@ Waykin advances by proving one bounded layer before promoting the next. This roa
 - Add bounded refresh lifecycle and direct-device evidence.
 - Decide whether daily walking distance has a bounded product purpose.
 
-## Apple Watch Reference Sequence
+## Apple Watch Reference Sequence (FUTURE / REFERENCE ONLY)
 
-Apple Watch remains non-authorizing until promoted through issue scope and architecture review. When promoted, implement in this order:
+**Authority: REFERENCE_ONLY.** This section does **not** authorize implementation, target creation, or entitlement expansion. Status is deferred foresight until a promoted GitHub issue and architecture review exist.
+
+When (and only when) promoted, the intended sequence is:
 
 1. Optional HealthKit workout writing on iPhone with explicit authorization and duplicate protection.
 2. Minimal watchOS target with Ready, Active, and Summary surfaces.
@@ -65,7 +67,7 @@ Apple Watch remains non-authorizing until promoted through issue scope and archi
 5. Non-authoritative Lira, pursuit, Bond, phrase, and haptic synchronization.
 6. Paired-device validation for lifecycle, disconnection, recovery, permissions, battery, thermal, audio, and haptics.
 
-The iPhone remains canonical for movement integrity, event generation, Lira, pursuit, Bond, memories, and final session outcome.
+The iPhone remains canonical for movement integrity, event generation, Lira, pursuit, Bond, memories, and final session outcome. Do not implement watchOS, mirroring, or WatchConnectivity from this roadmap section alone.
 
 ## Future Reference
 
