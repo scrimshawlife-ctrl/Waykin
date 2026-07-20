@@ -2,16 +2,18 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
-version: 0.4
-status: GENERATED_MID_LOD_SHIPPED
-usdz: ARTIST_BLEND_MID_LOD_V1
+version: 0.5
+status: ARTIST_BLEND_ARMATURE_MID_LOD_SHIPPED
+usdz: ARTIST_BLEND_ARMATURE_MID_LOD_V1
 mesh_descriptor: SHIPPED
 runtime_animation_clips: SHIPPED
 skeletal_joint_hierarchy: SHIPPED
-dcc_skinned_skeletal: NOT_SHIPPED
+blender_armature_rigid_bind: SHIPPED
+dcc_skinned_weights: NOT_SHIPPED
 direction: spectral_living_familiar
-evidence_class: ARTIST_BLEND_MID_LOD
+evidence_class: ARTIST_BLEND_ARMATURE_MID_LOD
 source_blend: ArtSource/Companion/Lira/lira.blend
+armature: LiraArmature
 ```
 
 ## What shipped
@@ -25,10 +27,11 @@ source_blend: ArtSource/Companion/Lira/lira.blend
 | AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
 | AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** |
 | AR USDZ load | `LiraARAssetLoader.preloadFromBundle()` + hierarchy validate | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_MID_LOD v1** (~432 KB from `lira.blend`) |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_ARMATURE_MID_LOD** (~515 KB) |
+| Blender armature | `LiraArmature` 25 bones, rigid bone-parent multi-mesh | **Shipped** (`build_lira_armature.py`) |
 | Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |
 | Generated fallback | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | `scripts/build_lira_usdz.sh` |
-| Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Mid-LOD complete |
+| Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Mid-LOD + armature |
 
 ## Anchors (required)
 
@@ -54,27 +57,37 @@ ARWorldCommandRenderer spawn
 
 Invalid or missing USDZ never blocks spawn — procedural fallback is permanent safety net.
 
+Skeletal clips bind via `AnimationBindTarget.entity(name)` on semantic nodes (puppet paths), not SkinnedMesh weight maps.
+
 ## Export / rebuild
 
 ```bash
-# Preferred: artist Blender file
+# Preferred: artist Blender file (+ auto armature build)
 ./scripts/export_lira_blend_to_usdz.sh ArtSource/Companion/Lira/lira.blend
 
 # Fallback: procedural GENERATED_MID_LOD
 ./scripts/build_lira_usdz.sh
 ```
 
-Evidence class **ARTIST_BLEND_MID_LOD** when exported from blend (multi-mesh Living Familiar; no armature skin weights).
+Evidence class **ARTIST_BLEND_ARMATURE_MID_LOD**: multi-mesh Living Familiar + Blender armature with rigid bone-parent bind. USD includes a `Skeleton` prim. Heat-map skin weights are **not** shipped.
 
-## Optional artist drop-in (future)
+## Armature joint tree (Blender)
 
-1. Sculpt single shared rig (no per-skin mesh).
-2. Name nodes per table above (preserve joint set).
-3. Export `Lira_AR_Base.usdz`.
-4. Place under app Resources (same filename).
-5. Re-run hierarchy validation + `make validate`.
-6. Human gore review for hunter poses before outdoor AR claims.
-7. Label evidence as artist-authored separately from GENERATED_MID_LOD.
+```text
+Root
+ └─ Body
+     ├─ Chest → CoreGlow, CoreHalo, Neck → Head → ears/snout/status
+     ├─ Tail
+     ├─ Filament → FilamentBase → FilamentMid → FilamentTip
+     └─ Legs → Paws
+ └─ GroundShadow
+```
+
+## Optional next (not this ship)
+
+1. Merge organic body into one mesh and paint heat-map weights.
+2. Author DCC action clips on `LiraArmature` with same bone names.
+3. Outdoor AR QA (#41).
 
 ## Explicit non-goals
 
@@ -82,3 +95,4 @@ Evidence class **ARTIST_BLEND_MID_LOD** when exported from blend (multi-mesh Liv
 - Unique mesh per skin
 - Gore / teeth / blood hunter geometry
 - Claiming outdoor AR quality without Issue #41 device receipt
+- Claiming heat-map skinned deformation without weight-painted mesh

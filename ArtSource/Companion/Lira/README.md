@@ -1,6 +1,6 @@
 # Lira hand-sculpted AR mid-LOD source
 
-Status: **ARTIST_BLEND_MID_LOD** runtime package (v1 from `lira.blend`).  
+Status: **ARTIST_BLEND_ARMATURE_MID_LOD** runtime package (v1.1 from `lira.blend` + `LiraArmature`).  
 Fallback generator remains GENERATED_MID_LOD via `./scripts/build_lira_usdz.sh`.
 
 ## Runtime contract
@@ -8,6 +8,7 @@ Fallback generator remains GENERATED_MID_LOD via `./scripts/build_lira_usdz.sh`.
 - Runtime filename: `Lira_AR_Base.usdz`
 - Runtime destinations: `App/Resources/Lira_AR_Base.usdz` (+ nested `Companion/Lira/`)
 - Root entity: `LiraRoot`
+- Armature: `LiraArmature` (25 bones, rigid bone-parent bind)
 - Canonical height: `0.72 m`
 - Ground offset: `0.02 m`
 - Required semantic nodes:
@@ -25,13 +26,23 @@ Lira is a mature, slightly uncanny spectral living familiar rather than a mascot
 4. trailing multi-seg path filament;
 5. Dawn palette compatibility with runtime skin remapping.
 
-## Artist blend export (preferred)
+## Artist blend + armature export (preferred)
 
 ```bash
 # requires Blender.app + usdzip
 ./scripts/export_lira_blend_to_usdz.sh ~/Desktop/lira.blend
 # or from ArtSource copy:
 ./scripts/export_lira_blend_to_usdz.sh ArtSource/Companion/Lira/lira.blend
+```
+
+Export steps: rename → synthesize missing nodes → **build LiraArmature + bone-parent meshes** → scale 0.72m → USD → usdzip.
+
+Armature-only (open blend already in Blender session):
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  ArtSource/Companion/Lira/lira.blend \
+  --python scripts/build_lira_armature.py
 ```
 
 ## Procedural generate (fallback)
@@ -43,18 +54,16 @@ Lira is a mature, slightly uncanny spectral living familiar rather than a mascot
 | Path | Role |
 | ---- | ---- |
 | `lira.blend` | Artist source (this folder) |
-| `scripts/export_lira_blend_to_usdz.py` | Blender rename/scale/USD export |
+| `scripts/build_lira_armature.py` | Blender armature + rigid bone bind |
+| `scripts/export_lira_blend_to_usdz.py` | Rename/scale/armature/USD export |
 | `scripts/export_lira_blend_to_usdz.sh` | Blender + usdzip → App Resources |
 | `scripts/generate_lira_mid_lod_usda.py` | GENERATED_MID_LOD fallback |
 | `BUILD_MANIFEST.json` | Provenance |
 
-## Future artist drop-in
-
-Optional hand-sculpted GLB may replace generated mid-LOD **only** if node names match. Open in Blender/Reality Converter, preserve `LiraRoot` + required joints, export USDZ, re-run validation. Label that package as artist-authored separately.
-
 ## Scope boundary
 
-- Evidence class: **GENERATED_MID_LOD**
-- Skeletal **puppet** joints: compatible
-- DCC skinned weights / outdoor readability: **NOT_COMPUTABLE** / not shipped
+- Evidence class: **ARTIST_BLEND_ARMATURE_MID_LOD**
+- Skeletal **puppet** clips: bind by entity name (shipped)
+- Blender armature + USD Skeleton prim: **shipped** (rigid multi-mesh bind)
+- Heat-map skinned weights / outdoor readability: **NOT_COMPUTABLE** / not shipped
 - Procedural RealityKit factory remains permanent fallback

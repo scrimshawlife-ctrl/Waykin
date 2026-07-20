@@ -38,8 +38,8 @@ final class LiraARAssetLoader {
             }
             template = root
             source = .usdz(url.lastPathComponent)
-            // Artist blend mid-LOD (or generated) — not DCC skinned hero.
-            loadNote = "usdz_active_artist_blend_mid_lod"
+            // Artist blend + armature mid-LOD (rigid bone parent) — not heat-map skinned hero.
+            loadNote = "usdz_active_artist_blend_armature_mid_lod"
         } catch {
             clearTemplate(reason: .procedural, note: "load_error")
         }
@@ -107,7 +107,7 @@ final class LiraARAssetLoader {
             if loadNote.contains("test_template") {
                 return "artist_usdz:\(name) (\(loadNote))"
             }
-            if loadNote.contains("artist_blend") {
+            if loadNote.contains("artist_blend") || loadNote.contains("armature") {
                 return "artist_blend_usdz:\(name) (\(loadNote))"
             }
             return "generated_usdz:\(name) (\(loadNote))"
