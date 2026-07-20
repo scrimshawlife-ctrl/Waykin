@@ -11,6 +11,7 @@ Visual system imports and production follow-ons for the app repository.
 | [UI_ENGINEERING_PRACTICE.md](UI_ENGINEERING_PRACTICE.md) | Supporting SwiftUI practice, DoD, prohibited patterns | SUPPORTING |
 | [UI_CHANGE_VALIDATION_RECEIPT.md](UI_CHANGE_VALIDATION_RECEIPT.md) | Material UI PR / RC evidence checklist | SUPPORTING |
 | [UI_CANDIDATE_RESIDUAL_AUDIT.md](UI_CANDIDATE_RESIDUAL_AUDIT.md) | CANDIDATE_v0.2 residual vs shipped app | SUPPORTING |
+| [DEBUG_OPERATOR_CONTINUATION.md](DEBUG_OPERATOR_CONTINUATION.md) | Operator debug D5–D7 plan (map/persistence/font) | SUPPORTING |
 | [OUTDOOR_QA_CHECKLIST.md](OUTDOOR_QA_CHECKLIST.md) | Outdoor device UI checks (#41) | Evidence gate |
 
 ## Integration and art track

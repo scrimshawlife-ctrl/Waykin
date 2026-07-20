@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-20 (post splash #184, UI practice #193, persistence DB1–DB5; track: sim matrix + residual #194)
+Last updated: 2026-07-20 (debug D5–D7 #196 landing; outdoor #41 parked)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -23,6 +23,7 @@ Last updated: 2026-07-20 (post splash #184, UI practice #193, persistence DB1–
 | Map hygiene + session clear | PR #180 |
 | Debug receipts / operator strip / AR presentation summary | PR #182 |
 | Sim screenshot matrix + candidate residual audit | Issue #194 · SIMULATOR set under `docs/assets/screenshots/` |
+| Debug D5–D7 map + persistence operator + font soft log | Issue #196 · receipt schema 5 |
 
 ## Intake
 

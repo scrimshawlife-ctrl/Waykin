@@ -61,7 +61,9 @@ struct WaykinApp: App {
                     storeURL: nil,
                     availability: .degraded
                 )
-                self._appModel = State(initialValue: WaykinAppModel(persistenceStore: store))
+                let model = WaykinAppModel(persistenceStore: store)
+                model.notePersistenceRecoveryAction("degraded_fallback")
+                self._appModel = State(initialValue: model)
             } else {
                 // Absolute last resort: pure domain memory without SwiftData @Query backing.
                 // ModelContainer still required by .modelContainer — create empty in-memory via Schema.
@@ -75,7 +77,9 @@ struct WaykinApp: App {
                     storeURL: nil,
                     availability: .failed
                 )
-                self._appModel = State(initialValue: WaykinAppModel(persistenceStore: store))
+                let model = WaykinAppModel(persistenceStore: store)
+                model.notePersistenceRecoveryAction("emergency_failed")
+                self._appModel = State(initialValue: model)
             }
         }
     }
@@ -190,6 +194,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
     // Diagnostics (UI-test only)
     var persistenceMode: String = "FILE_BACKED"
+    /// Operator recovery label for D6: `none` | `degraded_fallback` | `emergency_failed`.
+    private(set) var persistenceRecoveryAction: String = "none"
     var persistenceLoadState: PersistenceLoadState = .loaded
     var persistenceMemoryCount: Int = 0
     var lastSavedMemoryID: String = ""
@@ -204,6 +210,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
     private(set) var lastOperatorAudioCueKind: String = "—"
     /// Last movement disposition code (operator strip; D3).
     private(set) var lastOperatorMovementDisposition: String = "—"
+    /// Map presentation snapshot taken before session clear (D5).
+    private(set) var sessionMapPresentationSummary = FieldTestMapPresentationSummary.empty
 
     // Live real-session state (physical device)
     private(set) var realWalkState: RealWalkSessionState = .idle
@@ -452,6 +460,13 @@ final class WaykinAppModel: CanonicalARCommandSource {
         configureRealLocationCallbacks()
         refreshRecommendation()
         refreshLatestFieldTestReceiptFromStore()
+        if persistenceStore.availability != .availableFileBacked {
+            let mode = persistenceMode
+            let availability = persistenceStore.availability.rawValue
+            WaykinLog.persistence.info(
+                "availability=\(availability, privacy: .public) mode=\(mode, privacy: .public)"
+            )
+        }
     }
 
     /// Load latest on-disk receipt for Settings export (D2).
@@ -478,6 +493,50 @@ final class WaykinAppModel: CanonicalARCommandSource {
         sessionARPresentationSummary.merge(from: summary)
         WaykinLog.ar.debug(
             "ingest opened=\(summary.arSessionOpened) lod=\(summary.finalLODDescription ?? "nil", privacy: .public)"
+        )
+    }
+
+    /// D6: record how the store was opened (set from app shell on degraded paths).
+    func notePersistenceRecoveryAction(_ action: String) {
+        switch action {
+        case "none", "degraded_fallback", "emergency_failed":
+            persistenceRecoveryAction = action
+        default:
+            persistenceRecoveryAction = "none"
+        }
+        WaykinLog.persistence.info("recovery=\(self.persistenceRecoveryAction, privacy: .public)")
+    }
+
+    /// D5: privacy-safe map counts/status only.
+    func captureMapPresentationForReceipt() {
+        sessionMapPresentationSummary = FieldTestMapPresentationSummary(
+            tracePointCount: walkPathTrace.count,
+            plannedRouteStatus: plannedRouteStatusCode(plannedWalkRoute.status),
+            plannedPolylinePointCount: plannedWalkRoute.polyline.count
+        )
+        WaykinLog.path.debug(
+            "map snapshot pts=\(self.sessionMapPresentationSummary.tracePointCount) planned=\(self.sessionMapPresentationSummary.plannedRouteStatus ?? "nil", privacy: .public)"
+        )
+    }
+
+    /// Test seam for map receipt capture without a live location provider.
+    func appendWalkPathTraceForTesting(latitude: Double, longitude: Double) {
+        walkPathTrace.append(latitude: latitude, longitude: longitude)
+    }
+
+    private func plannedRouteStatusCode(_ status: PlannedWalkRouteStatus) -> String {
+        switch status {
+        case .none: "none"
+        case .searching: "searching"
+        case .ready: "ready"
+        case .failed: "failed"
+        }
+    }
+
+    var persistenceOperatorSummary: FieldTestPersistenceOperatorSummary {
+        FieldTestPersistenceOperatorSummary(
+            availability: persistenceStore.availability.rawValue,
+            recoveryAction: persistenceRecoveryAction
         )
     }
 
@@ -639,6 +698,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
     }
 
     func endDemo() {
+        captureMapPresentationForReceipt()
         clearSessionMapPresentation()
         emitARWorldCommands(arCommandMapper.clear())
         endGlassesGlanceSession()
@@ -905,6 +965,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         guard isLiveSessionActive else { return }
         cancelHealthRefresh()
         endGlassesGlanceSession()
+        captureMapPresentationForReceipt()
         clearSessionMapPresentation()
         emitARWorldCommands(arCommandMapper.clear())
         lastClosingPhrase = activePresencePresentation.closingPhrase
@@ -1265,6 +1326,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
         outcome: FieldTestOutcome,
         errorCategory: FieldTestErrorCategory
     ) {
+        captureMapPresentationForReceipt()
         clearSessionMapPresentation()
         emitARWorldCommands(arCommandMapper.clear())
         let endedAt = fieldTestNow()
@@ -1450,6 +1512,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
     private func resetOperatorDiagnosticsForNewSession() {
         sessionARPresentationSummary = .empty
+        sessionMapPresentationSummary = .empty
         lastOperatorAudioCueKind = "—"
         lastOperatorMovementDisposition = "—"
     }
@@ -1483,7 +1546,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
             endedAt: endedAt,
             pathProgress: pathProgress,
             activityEnrichment: activityEnrichment,
-            arPresentation: arSummary
+            arPresentation: arSummary,
+            mapPresentation: sessionMapPresentationSummary,
+            persistenceOperator: persistenceOperatorSummary
         )
         guard let fieldTestReceiptStore else { return }
         do {
@@ -1919,9 +1984,24 @@ struct SettingsView: View {
                                     .foregroundStyle(theme.textTertiary)
                                     .lineLimit(2)
                             }
+                            Text(
+                                "Map pts: \(receipt.summary.mapPresentation.tracePointCount) · planned \(receipt.summary.mapPresentation.plannedRouteStatus ?? "—")"
+                            )
+                            .font(.caption2)
+                            .foregroundStyle(theme.textTertiary)
+                            Text(
+                                "Persist: \(receipt.summary.persistenceOperator.availability ?? "—") · \(receipt.summary.persistenceOperator.recoveryAction ?? "—")"
+                            )
+                            .font(.caption2)
+                            .foregroundStyle(theme.textTertiary)
                         }
                         .accessibilityIdentifier("waykin.settings.receipt.detail")
                     }
+
+                    Text("Store: \(appModel.persistenceMode) · recovery \(appModel.persistenceRecoveryAction)")
+                        .font(.caption2)
+                        .foregroundStyle(theme.textTertiary)
+                        .accessibilityIdentifier("waykin.settings.persistence.operator")
 
                     Button {
                         appModel.refreshLatestFieldTestReceiptFromStore()
@@ -2011,6 +2091,14 @@ struct ActiveSessionView: View {
     /// D3: compact operator strip — not product chrome; DEBUG / launch flag only.
     @ViewBuilder
     private func operatorDebugStrip(presentation: CompanionPresencePresentation) -> some View {
+        let planned: String = {
+            switch appModel.plannedWalkRoute.status {
+            case .none: return "none"
+            case .searching: return "searching"
+            case .ready: return "ready"
+            case .failed: return "failed"
+            }
+        }()
         VStack(alignment: .leading, spacing: 4) {
             Text("Operator")
                 .font(.caption2.weight(.semibold))
@@ -2018,6 +2106,8 @@ struct ActiveSessionView: View {
             Text("Path: \(presentation.pathRelation.rawValue) · pressure \(String(format: "%.2f", presentation.pathIntegrityPressure))")
             Text("GPS: \(appModel.liveAcceptedCount) ok / \(appModel.liveRejectedCount) rej · last \(appModel.lastOperatorMovementDisposition)")
             Text("Audio: \(appModel.lastOperatorAudioCueKind)")
+            Text("Map: \(appModel.walkPathTrace.count) pts · planned=\(planned)")
+            Text("Persist: \(appModel.persistenceMode) · \(appModel.persistenceRecoveryAction)")
             if appModel.sessionARPresentationSummary.arSessionOpened {
                 Text("AR LOD: \(appModel.sessionARPresentationSummary.finalLODDescription ?? "—")")
                 Text("AR cont: \(appModel.sessionARPresentationSummary.finalContinuityNote ?? "—")")

@@ -36,7 +36,9 @@ Do not put these ratings into analytics infrastructure. The core product questio
 1. Open **Settings → Field-test receipts**.
 2. Confirm status is **Written** after a completed session; use **Refresh from disk** if needed.
 3. Optionally **Share latest receipt JSON** (AirDrop / Files). Receipts are privacy-filtered but timestamps reveal session timing — review before sharing outside the project.
-4. Check `summary.arPresentation` when AR was opened: LOD label, mesh evidence class, continuity note, deferred/replant counts (schema 4). These are software presentation labels, not outdoor quality PASS.
+4. Check `summary.arPresentation` when AR was opened: LOD label, mesh evidence class, continuity note, deferred/replant counts (schema 4+). These are software presentation labels, not outdoor quality PASS.
+5. Check `summary.mapPresentation` (schema 5): trace point count and planned-route status only — not outdoor map readability.
+6. Check `summary.persistenceOperator` (schema 5): availability + recovery action — local store health only, not cloud sync.
 
 ### Via Xcode container
 
