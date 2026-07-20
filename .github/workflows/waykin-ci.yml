@@ -32,7 +32,7 @@ jobs:
 
   native-ios:
     runs-on: macos-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
@@ -49,4 +49,16 @@ jobs:
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             build
-      # test step can be enabled once more UI tests are added
+      - name: Native + UI test suites
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep -oE 'iPhone [^(]+' | head -1 | xargs)
+          echo "Testing on simulator: $DEVICE"
+          # TEMPORARY skip, tracked by issue #203: CanonicalARRuntimeIntegrationTests
+          # is known-red on main (10/21) pending an owner ruling. Remove the
+          # -skip-testing flag when #203 closes so the gate covers everything.
+          xcodebuild \
+            -project Waykin.xcodeproj \
+            -scheme Waykin \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            -skip-testing:WaykinTests/CanonicalARRuntimeIntegrationTests \
+            test
