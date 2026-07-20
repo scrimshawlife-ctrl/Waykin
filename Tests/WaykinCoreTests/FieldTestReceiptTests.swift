@@ -95,7 +95,7 @@ final class FieldTestReceiptTests: XCTestCase {
             endedAt: startedAt.addingTimeInterval(20),
             arPresentation: ar
         )
-        XCTAssertEqual(receipt.schemaVersion, 4)
+        XCTAssertEqual(receipt.schemaVersion, 5)
         XCTAssertTrue(receipt.summary.arPresentation.arSessionOpened)
         XCTAssertEqual(receipt.summary.arPresentation.continuityReplantCount, 3)
         XCTAssertEqual(receipt.summary.arPresentation.finalLODDescription, "artist_usdz:Lira_AR_Base")
@@ -110,6 +110,65 @@ final class FieldTestReceiptTests: XCTestCase {
 
         let decoded = try JSONDecoder().decode(FieldTestReceipt.self, from: data)
         XCTAssertEqual(decoded.summary.arPresentation, receipt.summary.arPresentation)
+    }
+
+    func testMapAndPersistenceOperatorRoundTripWithoutCoordinates() throws {
+        let builder = makeBuilder()
+        let map = FieldTestMapPresentationSummary(
+            tracePointCount: 12,
+            plannedRouteStatus: "ready",
+            plannedPolylinePointCount: 40
+        )
+        let persist = FieldTestPersistenceOperatorSummary(
+            availability: "availableFileBacked",
+            recoveryAction: "none"
+        )
+        let receipt = builder.finish(
+            session: session(),
+            outcome: .completed,
+            endingBond: 13,
+            memoryWritten: true,
+            persistence: .succeeded,
+            endedAt: startedAt.addingTimeInterval(20),
+            mapPresentation: map,
+            persistenceOperator: persist
+        )
+        XCTAssertEqual(receipt.schemaVersion, 5)
+        XCTAssertEqual(receipt.summary.mapPresentation.tracePointCount, 12)
+        XCTAssertEqual(receipt.summary.mapPresentation.plannedRouteStatus, "ready")
+        XCTAssertEqual(receipt.summary.persistenceOperator.availability, "availableFileBacked")
+
+        let data = try JSONEncoder().encode(receipt)
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8)).lowercased()
+        XCTAssertTrue(json.contains("mappresentation"))
+        XCTAssertTrue(json.contains("persistenceoperator"))
+        XCTAssertFalse(json.contains("latitude"))
+        XCTAssertFalse(json.contains("longitude"))
+        XCTAssertFalse(json.contains("/private/"))
+
+        let decoded = try JSONDecoder().decode(FieldTestReceipt.self, from: data)
+        XCTAssertEqual(decoded.summary.mapPresentation, map)
+        XCTAssertEqual(decoded.summary.persistenceOperator, persist)
+    }
+
+    func testLegacySchema4WithoutMapFieldsDecodesEmpty() throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: try encoder.encode(completedReceipt()),
+            options: []
+        ) as? [String: Any])
+        object["schemaVersion"] = 4
+        var summary = try XCTUnwrap(object["summary"] as? [String: Any])
+        summary.removeValue(forKey: "mapPresentation")
+        summary.removeValue(forKey: "persistenceOperator")
+        object["summary"] = summary
+        let legacyData = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(FieldTestReceipt.self, from: legacyData)
+        XCTAssertEqual(decoded.summary.mapPresentation, .empty)
+        XCTAssertEqual(decoded.summary.persistenceOperator, .empty)
     }
 
     func testLegacySchema3WithoutARPresentationDecodesEmpty() throws {

@@ -10,7 +10,12 @@ enum WaykinTypography {
     @discardableResult
     static func ensureRegistered() -> Bool {
         _ = registrationToken
-        return UIFont(name: displayPostScriptName, size: 12) != nil
+        let ok = UIFont(name: displayPostScriptName, size: 12) != nil
+        if !ok {
+            // D7: soft operator signal only — never crash or block launch.
+            WaykinLog.ui.warning("display font not registered (\(displayPostScriptName, privacy: .public))")
+        }
+        return ok
     }
 
     private static let registrationToken: Bool = {

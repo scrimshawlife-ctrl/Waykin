@@ -58,15 +58,54 @@ final class OperatorDebugInstrumentationTests: XCTestCase {
         await model.waitForPendingPersistence()
 
         let receipt = try XCTUnwrap(store.receipts.last)
-        XCTAssertEqual(receipt.schemaVersion, 4)
+        XCTAssertEqual(receipt.schemaVersion, 5)
         XCTAssertTrue(receipt.summary.arPresentation.arSessionOpened)
         XCTAssertEqual(receipt.summary.arPresentation.finalLODDescription, "artist_usdz:Lira_AR_Base")
         XCTAssertNotNil(receipt.summary.arPresentation.sessionStillDiagnosticLabel)
         XCTAssertTrue(
             receipt.summary.arPresentation.sessionStillDiagnosticLabel?.hasPrefix("still:") == true
         )
+        XCTAssertEqual(receipt.summary.persistenceOperator.availability, "availableInMemory")
+        XCTAssertEqual(receipt.summary.persistenceOperator.recoveryAction, "none")
         XCTAssertNotNil(model.latestFieldTestReceiptURL)
         XCTAssertEqual(model.latestFieldTestReceipt?.receiptID, receipt.receiptID)
+    }
+
+    func testFinishReceiptCapturesMapPresentationBeforeClear() async throws {
+        let store = ReceiptMemoryStore()
+        let model = try makeModel(receiptStore: store)
+        model.startDemo(.calmDayWalk)
+        // Synthetic spaced points so WalkPathTrace keeps more than one sample.
+        model.appendWalkPathTraceForTesting(latitude: 37.0, longitude: -122.0)
+        model.appendWalkPathTraceForTesting(latitude: 37.001, longitude: -122.0)
+        model.appendWalkPathTraceForTesting(latitude: 37.002, longitude: -122.0)
+        XCTAssertGreaterThan(model.walkPathTrace.count, 0)
+        model.endDemo()
+        await model.waitForPendingPersistence()
+
+        let receipt = try XCTUnwrap(store.receipts.last)
+        XCTAssertEqual(receipt.schemaVersion, 5)
+        XCTAssertGreaterThan(receipt.summary.mapPresentation.tracePointCount, 0)
+        XCTAssertEqual(receipt.summary.mapPresentation.plannedRouteStatus, "none")
+        // Cleared after snapshot — live trace empty, receipt still has counts.
+        XCTAssertEqual(model.walkPathTrace.count, 0)
+        let data = try JSONEncoder().encode(receipt)
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8)).lowercased()
+        XCTAssertTrue(json.contains("mappresentation"))
+        XCTAssertFalse(json.contains("latitude"))
+        XCTAssertFalse(json.contains("longitude"))
+    }
+
+    func testPersistenceRecoveryActionSurfacesOnReceipt() async throws {
+        let store = ReceiptMemoryStore()
+        let model = try makeModel(receiptStore: store)
+        model.notePersistenceRecoveryAction("degraded_fallback")
+        model.startDemo(.calmDayWalk)
+        model.endDemo()
+        await model.waitForPendingPersistence()
+        let receipt = try XCTUnwrap(store.receipts.last)
+        XCTAssertEqual(receipt.summary.persistenceOperator.recoveryAction, "degraded_fallback")
+        XCTAssertEqual(model.persistenceRecoveryAction, "degraded_fallback")
     }
 
     func testRefreshLatestReceiptFromStore() async throws {
@@ -92,7 +131,11 @@ final class OperatorDebugInstrumentationTests: XCTestCase {
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: configuration)
         return WaykinAppModel(
-            persistenceStore: PersistenceStore(modelContainer: container),
+            persistenceStore: PersistenceStore(
+                modelContainer: container,
+                storeURL: nil,
+                availability: .availableInMemory
+            ),
             healthMetricsProvider: NullHealthMetricsProvider(),
             fieldTestReceiptStore: receiptStore
         )

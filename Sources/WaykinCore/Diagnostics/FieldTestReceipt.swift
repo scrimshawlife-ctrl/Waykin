@@ -213,6 +213,75 @@ public struct FieldTestARPresentationSummary: Codable, Equatable, Sendable {
     }
 }
 
+/// Privacy-safe session map presentation snapshot (schema 5 / D5).
+/// Counts and status only — never coordinates, place names, or polylines.
+public struct FieldTestMapPresentationSummary: Codable, Equatable, Sendable {
+    public var tracePointCount: Int
+    /// `none` | `searching` | `ready` | `failed` — no failure detail strings.
+    public var plannedRouteStatus: String?
+    public var plannedPolylinePointCount: Int
+
+    public static let empty = FieldTestMapPresentationSummary()
+
+    public init(
+        tracePointCount: Int = 0,
+        plannedRouteStatus: String? = nil,
+        plannedPolylinePointCount: Int = 0
+    ) {
+        self.tracePointCount = max(0, tracePointCount)
+        self.plannedRouteStatus = Self.sanitizeStatus(plannedRouteStatus)
+        self.plannedPolylinePointCount = max(0, plannedPolylinePointCount)
+    }
+
+    private static func sanitizeStatus(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch trimmed {
+        case "none", "searching", "ready", "failed":
+            return trimmed
+        default:
+            return "failed"
+        }
+    }
+}
+
+/// Privacy-safe local persistence operator snapshot (schema 5 / D6).
+/// No store path, no quarantine directory path, no SwiftData error strings.
+public struct FieldTestPersistenceOperatorSummary: Codable, Equatable, Sendable {
+    /// `PersistenceAvailability.rawValue` or equivalent operator label.
+    public var availability: String?
+    /// `none` | `degraded_fallback` | `emergency_failed`
+    public var recoveryAction: String?
+
+    public static let empty = FieldTestPersistenceOperatorSummary()
+
+    public init(availability: String? = nil, recoveryAction: String? = nil) {
+        self.availability = Self.sanitize(availability)
+        self.recoveryAction = Self.sanitizeRecovery(recoveryAction)
+    }
+
+    private static func sanitize(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.contains("/") || trimmed.contains("private") {
+            return "redacted"
+        }
+        return String(trimmed.prefix(64))
+    }
+
+    private static func sanitizeRecovery(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch trimmed {
+        case "none", "degraded_fallback", "emergency_failed":
+            return trimmed
+        default:
+            return String(trimmed.prefix(32))
+        }
+    }
+}
+
 public struct FieldTestSummary: Codable, Equatable, Sendable {
     public var durationSeconds: TimeInterval
     public var activeDurationSeconds: TimeInterval
@@ -249,6 +318,10 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
     public var activityAuthorizationDenied: Bool
     /// Privacy-safe AR presentation snapshot (schema 4); empty when AR never opened.
     public var arPresentation: FieldTestARPresentationSummary
+    /// Privacy-safe map presentation snapshot (schema 5); empty when no map chrome used.
+    public var mapPresentation: FieldTestMapPresentationSummary
+    /// Local persistence health at session end (schema 5).
+    public var persistenceOperator: FieldTestPersistenceOperatorSummary
 
     public init(startingBond: Int) {
         durationSeconds = 0
@@ -280,6 +353,8 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         activityStepCadenceBand = nil
         activityAuthorizationDenied = false
         arPresentation = .empty
+        mapPresentation = .empty
+        persistenceOperator = .empty
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -312,6 +387,8 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
         case activityStepCadenceBand
         case activityAuthorizationDenied
         case arPresentation
+        case mapPresentation
+        case persistenceOperator
     }
 
     public init(from decoder: Decoder) throws {
@@ -351,12 +428,20 @@ public struct FieldTestSummary: Codable, Equatable, Sendable {
             FieldTestARPresentationSummary.self,
             forKey: .arPresentation
         ) ?? .empty
+        mapPresentation = try container.decodeIfPresent(
+            FieldTestMapPresentationSummary.self,
+            forKey: .mapPresentation
+        ) ?? .empty
+        persistenceOperator = try container.decodeIfPresent(
+            FieldTestPersistenceOperatorSummary.self,
+            forKey: .persistenceOperator
+        ) ?? .empty
     }
 }
 
 public struct FieldTestReceipt: Codable, Equatable, Sendable {
-    /// Schema 4 adds privacy-safe AR presentation summary (LOD / continuity / counts).
-    public static let currentSchemaVersion = 4
+    /// Schema 5 adds map presentation + persistence operator snapshots (D5/D6).
+    public static let currentSchemaVersion = 5
 
     public var schemaVersion: Int
     public var receiptID: UUID
@@ -587,7 +672,9 @@ public final class FieldTestReceiptBuilder {
         endedAt: Date,
         pathProgress: PathProgressSnapshot? = nil,
         activityEnrichment: ActivityEnrichment? = nil,
-        arPresentation: FieldTestARPresentationSummary? = nil
+        arPresentation: FieldTestARPresentationSummary? = nil,
+        mapPresentation: FieldTestMapPresentationSummary? = nil,
+        persistenceOperator: FieldTestPersistenceOperatorSummary? = nil
     ) -> FieldTestReceipt {
         if let pauseStart = pausedAt {
             accumulatedPausedDuration += max(0, endedAt.timeIntervalSince(pauseStart))
@@ -625,6 +712,12 @@ public final class FieldTestReceiptBuilder {
         }
         if let arPresentation {
             receipt.summary.arPresentation = arPresentation
+        }
+        if let mapPresentation {
+            receipt.summary.mapPresentation = mapPresentation
+        }
+        if let persistenceOperator {
+            receipt.summary.persistenceOperator = persistenceOperator
         }
         appendRequired(FieldTestEntry(timestamp: endedAt, category: .memoryWriteResult, code: persistence.rawValue))
         appendRequired(FieldTestEntry(timestamp: endedAt, category: .sessionCompleted, code: outcome.rawValue))

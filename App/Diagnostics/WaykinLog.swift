@@ -11,4 +11,8 @@ enum WaykinLog {
     static let ar = Logger(subsystem: subsystem, category: "ar")
     static let path = Logger(subsystem: subsystem, category: "path")
     static let receipt = Logger(subsystem: subsystem, category: "receipt")
+    /// Local store availability / recovery (D6) — no store paths.
+    static let persistence = Logger(subsystem: subsystem, category: "persistence")
+    /// Launch presentation soft checks (D7) — font registration, etc.
+    static let ui = Logger(subsystem: subsystem, category: "ui")
 }
