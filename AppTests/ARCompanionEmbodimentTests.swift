@@ -30,9 +30,9 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertNotNil(entity.findEntity(named: "Filament"))
         XCTAssertEqual(
             LiraARAssetCatalog.packagedLODHint,
-            "packaged_usdz:Lira_AR_Base:GENERATED_MID_LOD"
+            "packaged_usdz:Lira_AR_Base:ARTIST_BLEND_MID_LOD"
         )
-        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "GENERATED_MID_LOD")
+        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_MID_LOD")
     }
 
     func testAssetLoaderClonesInjectedTemplateAndAppliesSkin() {

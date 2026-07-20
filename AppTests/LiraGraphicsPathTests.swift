@@ -43,6 +43,7 @@ final class LiraGraphicsPathTests: XCTestCase {
         XCTAssertTrue(
             loader.activeLODDescription.contains("procedural")
                 || loader.activeLODDescription.contains("generated_usdz")
+                || loader.activeLODDescription.contains("artist_blend_usdz")
                 || loader.activeLODDescription.contains("artist_usdz")
         )
         XCTAssertNotEqual(loader.loadNote, "not_attempted")
