@@ -56,6 +56,7 @@ gps_failure: NOT_CLAIMED
 5. **Session elapsed clock advanced about two seconds at a time** (not smooth 1s ticks).
 6. **Audio was not tied to companion actions.**
 7. **New (produced) audio was not used** / not perceived as the production cue set.
+8. **New graphical assets were not used** / not perceived (session and/or AR).
 
 ## INFERRED
 
@@ -64,6 +65,7 @@ gps_failure: NOT_CLAIMED
 - This is a **recoverable AR continuity** problem plus a **separate usability** finding.
 - Elapsed HUD was coupled to sparse GPS sample intervals (`distanceFilter = 2` m + sample-driven `elapsedTime`), not wall-clock presentation — **presentation clock defect**, not GPS failure.
 - Audio is **event-gated** (`WorldEvent` → `AudioExperienceLayer` → `AppAudioCuePlayer`), not driven by AR companion motion or continuous Lira “actions.” Between rare events the walk can be silent while the companion still presents. Produced WAVs **are** mapped/bundled in-repo; non-use outdoors is more consistent with **rare emission / low outdoor gain / expectation mismatch** than with missing project files.
+- Graphics: session UI prefers catalog stills (`LiraStills` / glyphs) but **Canvas puppet** if `UIImage(named:)` fails. AR prefers packaged USDZ only after async validate; else **procedural** mid-LOD. Packaged `Lira_AR_Base.usdz` is **~5.6 KB sphere-prim mid-LOD**, not a hero sculpt — easy to perceive as “new art not used” even when load succeeds.
 
 ## NOT_COMPUTABLE
 
@@ -71,6 +73,7 @@ gps_failure: NOT_CLAIMED
 - Whether GPS measurement failed — **not evidenced**; do not treat as GPS defect.
 - Whether any cue was planner-accepted / asset-resolved / play-started on device (no outdoor audio diagnostics attached).
 - Outdoor audibility of produced WAVs at catalog volumes (~0.14–0.24).
+- Whether AR LOD was `procedural_*` vs `artist_usdz:*`, or session used still imageset vs Canvas fallback (no LOD/still path recorded this walk).
 - Full outdoor UI checklist (D1–D8, N*, R*, H*) — not completed this session.
 - Device model / iOS / exact binary identity for this walk — not supplied by operator report.
 
@@ -90,7 +93,8 @@ Confirm product intent before coding “AR follow”: either document world-plan
 | #125 | AR continuity (disappear ~10–15 m; re-entry recovers) |
 | #126 | Session menu UX audit |
 | #128 | Session elapsed clock ~2s steps on real walk (**fixed** #129) |
-| #130 | Audio not tied to companion actions; produced assets not perceived outdoors |
+| #130 | Audio not tied to companion actions; produced cues not perceived outdoors |
+| #133 | New graphical assets not used / not perceived (stills vs Canvas; AR procedural/sphere USDZ) |
 
 ## Overall
 
@@ -109,8 +113,9 @@ follow_ups: |
   2. Focused menu flow audit — #126
   3. Session presentation elapsed wall-clock — #128 (**shipped** #129)
   4. Companion-visible audio coupling + outdoor cue verification — #130
-  5. Product decision: world-plant vs follow semantics
-  6. Resume outdoor packet after fixes or explicit design acceptance of world-plant
+  5. Graphical LOD diagnostics + expectation vs sphere mid-LOD / still fallback — #133
+  6. Product decision: world-plant vs follow semantics
+  7. Resume outdoor packet after fixes or explicit design acceptance of world-plant
 signed_by: operator-report + agent record
 signed_at: 2026-07-20
 ```
