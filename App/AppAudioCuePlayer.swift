@@ -25,14 +25,16 @@ struct AudioAssetDescriptor: Equatable {
 }
 
 enum AudioCueAssetCatalog {
+    /// Outdoor-aware gain (#130): raised from ~0.14–0.24 so produced cues remain legible on walks.
+    /// Not a loudness PASS claim — physical audibility remains device-evidence only.
     private static let descriptors: [AudioCueKind: AudioAssetDescriptor] = [
-        .companionNear: .init(kind: .companionNear, assetName: "companion_near", fileExtension: "wav", priority: 2, channel: .foreground, volume: 0.20),
-        .companionAhead: .init(kind: .companionAhead, assetName: "companion_ahead", fileExtension: "wav", priority: 2, channel: .foreground, volume: 0.20),
-        .distantFootsteps: .init(kind: .distantFootsteps, assetName: "distant_presence", fileExtension: "wav", priority: 3, channel: .foreground, volume: 0.18),
-        .pursuitPressure: .init(kind: .pursuitPressure, assetName: "pursuit_pressure", fileExtension: "wav", priority: 4, channel: .foreground, volume: 0.24),
-        .pursuitRelease: .init(kind: .pursuitRelease, assetName: "pursuit_release", fileExtension: "wav", priority: 3, channel: .foreground, volume: 0.18),
-        .bondMotif: .init(kind: .bondMotif, assetName: "bond_motif", fileExtension: "wav", priority: 5, channel: .foreground, volume: 0.22),
-        .quietShift: .init(kind: .quietShift, assetName: "quiet_shift", fileExtension: "wav", priority: 1, channel: .ambient, volume: 0.14)
+        .companionNear: .init(kind: .companionNear, assetName: "companion_near", fileExtension: "wav", priority: 2, channel: .foreground, volume: 0.40),
+        .companionAhead: .init(kind: .companionAhead, assetName: "companion_ahead", fileExtension: "wav", priority: 2, channel: .foreground, volume: 0.40),
+        .distantFootsteps: .init(kind: .distantFootsteps, assetName: "distant_presence", fileExtension: "wav", priority: 3, channel: .foreground, volume: 0.36),
+        .pursuitPressure: .init(kind: .pursuitPressure, assetName: "pursuit_pressure", fileExtension: "wav", priority: 4, channel: .foreground, volume: 0.45),
+        .pursuitRelease: .init(kind: .pursuitRelease, assetName: "pursuit_release", fileExtension: "wav", priority: 3, channel: .foreground, volume: 0.36),
+        .bondMotif: .init(kind: .bondMotif, assetName: "bond_motif", fileExtension: "wav", priority: 5, channel: .foreground, volume: 0.42),
+        .quietShift: .init(kind: .quietShift, assetName: "quiet_shift", fileExtension: "wav", priority: 1, channel: .ambient, volume: 0.30)
     ]
 
     static func descriptor(for kind: AudioCueKind) -> AudioAssetDescriptor? {

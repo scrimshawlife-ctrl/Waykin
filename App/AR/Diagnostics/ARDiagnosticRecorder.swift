@@ -11,6 +11,7 @@ enum ARDiagnosticKind: String, Codable, Sendable {
     case stateChanged
     case entityRemoved
     case sessionCleared
+    case continuityReplant
     case error
 }
 

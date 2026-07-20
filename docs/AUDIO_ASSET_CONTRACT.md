@@ -2,15 +2,22 @@
 
 Waykin's core emits semantic `AudioCue` values. Only the app target maps those values to filenames and playback behavior.
 
-| Semantic cue | Asset basename | Channel | Priority |
-|---|---|---|---:|
-| `companionNear` | `companion_near` | foreground | 2 |
-| `companionAhead` | `companion_ahead` | foreground | 2 |
-| `distantFootsteps` | `distant_presence` | foreground | 3 |
-| `pursuitPressure` | `pursuit_pressure` | foreground | 4 |
-| `pursuitRelease` | `pursuit_release` | foreground | 3 |
-| `bondMotif` | `bond_motif` | foreground | 5 |
-| `quietShift` | `quiet_shift` | ambient | 1 |
+## Emission contract (#130)
+
+1. **World-event cues (primary):** when `WorldEventGenerator` fires, `AudioExperienceLayer.map(event:)` emits the matching cue.
+2. **Behavior-transition cues (coupling):** when no world event fires, a change in companion-visible behavior (`drawNear` / `lead` / `rest` / `observe` / `celebrate`) may emit a cue via `AudioExperienceLayer.map(behavior:)` onto the **same** produced basenames. Cooldown: 12 s session elapsed. First behavior seed is silent.
+3. **Not coupled:** AR skeletal motion, filament bob, continuous footsteps, or camera-relative pose loops.
+4. **Gain:** catalog volumes are outdoor-aware (~0.30–0.45). Physical outdoor loudness remains **NOT_COMPUTABLE** without device re-walk evidence.
+
+| Semantic cue | Asset basename | Channel | Priority | Catalog volume |
+|---|---|---|---:|---:|
+| `companionNear` | `companion_near` | foreground | 2 | 0.40 |
+| `companionAhead` | `companion_ahead` | foreground | 2 | 0.40 |
+| `distantFootsteps` | `distant_presence` | foreground | 3 | 0.36 |
+| `pursuitPressure` | `pursuit_pressure` | foreground | 4 | 0.45 |
+| `pursuitRelease` | `pursuit_release` | foreground | 3 | 0.36 |
+| `bondMotif` | `bond_motif` | foreground | 5 | 0.42 |
+| `quietShift` | `quiet_shift` | ambient | 1 | 0.30 |
 
 ## Format And Sound Guidance
 

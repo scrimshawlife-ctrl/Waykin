@@ -49,6 +49,9 @@ final class ARWorldCommandRenderer {
     /// Active skeletal clip id when driving, else nil.
     var activeSkeletalClip: LiraSkeletalAnimationLibrary.ClipID? { skeletalPlayer.activeClip }
 
+    /// #125 continuity diagnostic from placement resolver.
+    var companionContinuityNote: String { placementResolver.lastContinuityNote }
+
     init(
         registry: AREntityRegistry,
         diagnostics: ARDiagnosticRecorder,
@@ -114,10 +117,36 @@ final class ARWorldCommandRenderer {
             return .accepted("companion")
 
         case .updateCompanion(let presentation):
+            // #125: recover / re-plant when world anchor lost or companion walked away.
+            let continuityOK = placementResolver.ensureCompanionContinuity(
+                id: Self.companionID,
+                makeEntity: { [assetLoader] in
+                    let entity = assetLoader.makeLira()
+                    return entity
+                },
+                in: arView
+            )
+            if !continuityOK {
+                diagnostics.record(.placementDeferred, detail: "companion_continuity")
+                return .deferred("companion continuity")
+            }
+            let note = placementResolver.lastContinuityNote
+            let didReplant = note.contains("replant") || note.hasPrefix("planted_")
+            if didReplant {
+                diagnostics.record(.continuityReplant, detail: note)
+                diagnostics.record(.entityReplaced, detail: note)
+            }
+
             guard let anchor = registry.entity(for: Self.companionID),
-                  let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
+                  let companion = anchor.findEntity(named: CompanionEntityFactory.rootName)
+                    ?? anchor.children.first else {
                 return .deferred("companion missing")
             }
+            // Re-bind skeletal after re-plant (new or moved entity).
+            if didReplant {
+                prepareSkeletalPlayback(on: companion)
+            }
+
             let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
                 ? elapsedInCompanionState
                 : 0
@@ -131,6 +160,9 @@ final class ARWorldCommandRenderer {
                 accept(transition, elapsed: elapsed)
             } else {
                 apply(transition, to: companion, elapsed: elapsed)
+            }
+            if skeletalPlayer.isDriving {
+                skeletalPlayer.play(state: transition.resolvedState, on: companion)
             }
             return .accepted("companion:\(transition.resolvedState.rawValue)")
 

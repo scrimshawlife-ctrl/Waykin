@@ -138,12 +138,27 @@ public struct CompanionWalkExperience: WaykinExperience {
             walkState.pursuitState = Self.nextPursuitState(current: walkState.pursuitState, event: event)
         }
 
+        let behavior = Self.behavior(for: event, moving: movement.isMoving)
+
+        // Event cues first; when silent, couple produced assets to companion behavior changes (#130).
         var audioLayer = AudioExperienceLayer()
-        let cue = audioLayer.cue(for: event, now: movement.timestamp)
+        var cue = audioLayer.cue(for: event, now: movement.timestamp)
+        if cue == nil {
+            if let transitionCue = AudioExperienceLayer.cueForBehaviorTransition(
+                from: walkState.lastPresentedBehavior,
+                to: behavior,
+                sessionElapsed: walkState.movementSeconds,
+                lastBehaviorAudioElapsed: walkState.lastBehaviorAudioElapsed,
+                intensity: max(worldState.energy, 0.4)
+            ) {
+                cue = transitionCue
+                walkState.lastBehaviorAudioElapsed = walkState.movementSeconds
+            }
+        }
+        walkState.lastPresentedBehavior = behavior.rawValue
         walkState.activeAudioCues = cue.map { [$0] } ?? []
         walkState.worldState = worldState
 
-        let behavior = Self.behavior(for: event, moving: movement.isMoving)
         let tone = Self.message(for: event, timeContext: timeContext, pursuitState: walkState.pursuitState)
         let newState = ExperienceSessionState(runtimeState: .companionWalk(walkState), narrative: event.map { [$0.debugLabel] } ?? [])
 
