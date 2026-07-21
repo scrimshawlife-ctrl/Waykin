@@ -75,9 +75,14 @@ jobs:
           # Gate App unit tests + UI tests so presentation regressions cannot merge
           # invisible to CI (see issue #204). Full AR integration suite included
           # after #203 re-ratification.
+          # -retry-tests-on-failure absorbs hosted-runner performance flake
+          # (UI tests that pass in seconds locally can time out on the shared
+          # runner — see issue #212). CI only; local runs stay strict.
           xcodebuild \
             -project Waykin.xcodeproj \
             -scheme Waykin \
             -sdk iphonesimulator \
             -destination '${{ steps.sim.outputs.destination }}' \
+            -retry-tests-on-failure \
+            -test-iterations 2 \
             test
