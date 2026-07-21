@@ -14,10 +14,15 @@ targets:
           - "Resources/Lira_AR_Base.usdz"
           - "Resources/Companion/**"
           - "Resources/Fonts/**"
+          - "Resources/PrivacyInfo.xcprivacy"
       - path: App/Resources/Lira_AR_Base.usdz
         type: file
         buildPhase: resources
       - path: App/Resources/Fonts/WaykinDisplay-Regular.ttf
+        type: file
+        buildPhase: resources
+      # Apple privacy manifest — must land at the app bundle root.
+      - path: App/Resources/PrivacyInfo.xcprivacy
         type: file
         buildPhase: resources
     settings:
@@ -31,6 +36,8 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: "Waykin"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_ENTITLEMENTS: App/Waykin.entitlements
+        # Only standard system/HTTPS encryption (MapKit); no custom crypto → exempt.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
     info:
       path: App/Info.plist
       properties:
@@ -41,6 +48,7 @@ targets:
         NSCameraUsageDescription: "Waykin uses the camera to place companions and game events in augmented reality during an active session."
         NSHealthShareUsageDescription: "Waykin can optionally read recent walking activity (steps and walking distance) to enrich an active walk. Demo Mode never requires Health access."
         UIApplicationSupportsIndirectInputEvents: true
+        ITSAppUsesNonExemptEncryption: false
     dependencies:
       - package: Waykin
         product: WaykinCore
