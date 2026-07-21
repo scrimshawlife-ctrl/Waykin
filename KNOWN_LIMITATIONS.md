@@ -76,6 +76,10 @@ Apple Watch may indirectly contribute samples to HealthKit, but that is not impl
 - Located-marker accessibility behavior during a physical walk.
 - Future Watch accessibility, haptic distinguishability, and control ergonomics.
 
+## Distribution & Privacy Manifest
+
+Waykin ships an Apple privacy manifest (`App/Resources/PrivacyInfo.xcprivacy`) declaring: no tracking, no tracking domains, no collected data types that leave the device, and one required-reason API (`UserDefaults`, reason `CA92.1` — accesses only the app's own defaults). `ITSAppUsesNonExemptEncryption` is `false` (only standard system/HTTPS via MapKit; no custom cryptography). These are submission prerequisites, not behavior claims — they are accurate because the app has zero third-party dependencies and transmits no data it collects itself. Health and location remain on-device; user-initiated MapKit search/routing is handled by Apple's own service. Actual App Store review outcome remains `NOT_COMPUTABLE` until a real submission.
+
 ## Deferred Product Scope
 
 - Walking is the MVP focus.
