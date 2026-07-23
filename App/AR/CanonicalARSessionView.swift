@@ -89,9 +89,7 @@ final class CanonicalARSessionRuntime {
             self?.advancePresentation(by: event.deltaTime)
         }
         sessionCoordinator.onCapabilityStateChange = { [weak self] state in
-            guard let self else { return }
-            self.capabilityState = state
-            self.applyTrackingVisibility(for: state)
+            self?.capabilityState = state
         }
         commandHandlerOwner = appModel.attachARWorldCommandHandler { [weak self] commands in
             self?.receive(commands)
@@ -225,21 +223,6 @@ final class CanonicalARSessionRuntime {
     private func advanceFollow(by delta: TimeInterval) {
         guard let arView else { return }
         renderer.advanceCompanionFollow(by: delta, cameraTransform: arView.cameraTransform)
-    }
-
-    /// Suppress the companion while ARKit tracking is unreliable.
-    ///
-    /// During tracking loss the world anchor transform can go briefly garbage, smearing
-    /// the mesh across a corner of the screen right before the anchor is dropped — the
-    /// "corner polygon" seen on device walks, which preceded her vanishing. Hiding through
-    /// that window shows nothing rather than corrupt geometry, and recovery forces an
-    /// immediate continuity check so she returns promptly.
-    private func applyTrackingVisibility(for state: ARCapabilityState) {
-        let reliable = state == .active
-        renderer.setCompanionVisible(reliable)
-        if reliable {
-            continuityElapsed = Self.continuityCheckInterval
-        }
     }
 
     /// Throttled frame-driven continuity so Lira recovers from a dropped world anchor

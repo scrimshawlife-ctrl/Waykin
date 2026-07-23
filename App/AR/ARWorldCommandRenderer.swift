@@ -320,6 +320,10 @@ final class ARWorldCommandRenderer {
     func advanceCompanionFollow(by delta: TimeInterval, cameraTransform: Transform) {
         guard delta.isFinite, delta > 0, delta < 1,
               let companion = liveCompanionRoot(), companion.isEnabled else { return }
+        // Only walk a world-anchored companion. On the camera fallback her anchor already
+        // moves with the view, so writing world positions each frame compounds into
+        // runaway drift and she leaves the scene entirely.
+        guard !placementResolver.isCompanionCameraAnchored else { return }
 
         let matrix = cameraTransform.matrix
         let cameraPosition = cameraTransform.translation
@@ -332,7 +336,10 @@ final class ARWorldCommandRenderer {
         let target = cameraPosition + flatForward * Self.followDistanceMeters
         let offset = SIMD3<Float>(target.x - current.x, 0, target.z - current.z)
         let distance = simd_length(offset)
-        guard distance.isFinite, distance > Self.followArriveRadiusMeters else { return }
+        // Upper bound guards against a garbage transform during relocalization sending her
+        // on a long march to nowhere; re-planting handles genuinely lost anchors.
+        guard distance.isFinite, current.x.isFinite, current.z.isFinite,
+              distance > Self.followArriveRadiusMeters, distance < 60 else { return }
 
         let direction = offset / distance
         let step = min(Self.followSpeedMetersPerSecond * Float(delta), distance)
