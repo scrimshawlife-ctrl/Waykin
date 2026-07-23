@@ -4,11 +4,13 @@
 document_id: WAYKIN-DEFERRED-RECS-001
 created: 2026-07-20
 status: PARKED
-reason: Pivot to UI candidate integration (CANDIDATE_v0.2)
+reason: Pivot to UI candidate integration (CANDIDATE_v0.2); then device AR/audio lane
 main_tip_at_park: f0e6762
+main_tip_at_refresh: 8beec34
+refresh_date: 2026-07-23
 ```
 
-Parked from post–`ARTIST_BLEND_HERO_DCC_MID_LOD` recommendations. Resume after UI integration waves (or in parallel only if blocking).
+Parked from post–`ARTIST_BLEND_HERO_DCC_MID_LOD` recommendations. UI waves largely done on main; outdoor #41 still first when resuming device COH. Concurrent open: PR #217 (device AR/audio), PR #216 (TF checklist).
 
 ## Top parked item — outdoor device
 

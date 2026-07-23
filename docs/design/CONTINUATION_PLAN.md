@@ -2,15 +2,20 @@
 
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
-version: 3.3
-date: 2026-07-20
-status: PIVOT_UI_CANDIDATE_V02
-goal: integrate_WK_EXPORT_CANDIDATE_v0.2_into_app
+version: 3.4
+date: 2026-07-23
+status: DEVICE_FIXES_THEN_TF_INTERNAL
+goal: land_device_ar_audio_fixes_then_internal_testflight
 outdoor_qa: PARKED_SEE_DEFERRED_RECOMMENDATIONS
-ar_status: FROZEN_MAINTENANCE_ONLY_UNLESS_41
+ar_status: FROZEN_MAINTENANCE_ONLY_UNLESS_41_OR_DEFECT
 ui_package: Waykin-Design/11_Approved-Exports/CANDIDATE_v0.2/
+main_tip_at_refresh: 8beec34
+open_product_pr: 217
+open_dist_pr: 216
 authority_note: ACTIVE_WORK.md is the live coordination snapshot
 ```
+
+**2026-07-23 board note:** UI CANDIDATE_v0.2 and Meshy AR packaging largely landed on main. Live code lane is **PR #217** (device AR/audio + skinned walk). Distribution privacy/encryption **shipped** (#215). Internal TF checklist is **PR #216** (approved). Outdoor #41 remains PARTIAL / daylight.
 
 ## Completed waves
 
