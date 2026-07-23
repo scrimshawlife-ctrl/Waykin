@@ -304,6 +304,9 @@ final class ARWorldCommandRenderer {
     /// How often to check that the authored walk clip is still running.
     private static let authoredAnimationWatchdogInterval: TimeInterval = 0.4
     private var authoredAnimationWatchdogElapsed: TimeInterval = 0
+    /// True while she is actively closing a gap. Hysteresis between the leash and settle
+    /// distances, so she walks up decisively and then stays put.
+    private var isClosingDistance = false
 
     /// Keep the authored walk clip looping.
     ///
@@ -325,10 +328,15 @@ final class ARWorldCommandRenderer {
     /// Walking pace used when closing distance to the walker (m/s). Slightly above a
     /// human stroll so she can actually catch up rather than trailing forever.
     static let followSpeedMetersPerSecond: Float = 1.35
-    /// Stop closing once this near the ideal spot, so she settles instead of jittering.
-    static let followArriveRadiusMeters: Float = 0.55
-    /// Ideal standing distance in front of the walker.
-    static let followDistanceMeters: Float = 1.6
+    /// Only start closing once she has fallen this far behind. Without a leash she
+    /// re-targets every frame and ends up permanently leading, so the walker feels
+    /// like they are chasing her.
+    static let followLeashMetersLira: Float = 3.2
+    /// Stop once this near the walker. Larger than the leash trigger is deliberate:
+    /// the gap between them is hysteresis, so she settles rather than hovering.
+    static let followSettleMetersLira: Float = 1.4
+    /// How far to the side she settles, so she accompanies rather than blocking the path.
+    static let followSideOffsetMeters: Float = 0.8
 
     /// Walk the companion toward a spot in front of the walker.
     ///
@@ -353,14 +361,45 @@ final class ARWorldCommandRenderer {
         guard simd_length(flatForward) > 0.0001 else { return }
         flatForward = simd_normalize(flatForward)
 
+        var flatRight = SIMD3<Float>(matrix.columns.0.x, 0, matrix.columns.0.z)
+        guard simd_length(flatRight) > 0.0001 else { return }
+        flatRight = simd_normalize(flatRight)
+
         let current = companion.position(relativeTo: nil)
-        let target = cameraPosition + flatForward * Self.followDistanceMeters
-        let offset = SIMD3<Float>(target.x - current.x, 0, target.z - current.z)
-        let distance = simd_length(offset)
+        // Measure against the walker, never against a point ahead of them. Targeting
+        // "in front of the camera" re-aims every frame, so the target runs away as the
+        // walker advances and she ends up permanently leading.
+        let toWalker = SIMD3<Float>(cameraPosition.x - current.x, 0, cameraPosition.z - current.z)
+        let gap = simd_length(toWalker)
         // Upper bound guards against a garbage transform during relocalization sending her
         // on a long march to nowhere; re-planting handles genuinely lost anchors.
-        guard distance.isFinite, current.x.isFinite, current.z.isFinite,
-              distance > Self.followArriveRadiusMeters, distance < 60 else { return }
+        guard gap.isFinite, current.x.isFinite, current.z.isFinite, gap < 60 else { return }
+
+        // Hysteresis: only set off once she has genuinely fallen behind, and keep walking
+        // until comfortably close. Without the gap between the two she hovers constantly.
+        if gap > Self.followLeashMetersLira { isClosingDistance = true }
+        if gap <= Self.followSettleMetersLira { isClosingDistance = false }
+
+        guard isClosingDistance else {
+            // Settled: hold position and simply turn to watch the walker.
+            guard gap > 0.05 else { return }
+            let facing = toWalker / gap
+            companion.setOrientation(
+                simd_quatf(angle: atan2(facing.x, facing.z), axis: [0, 1, 0]),
+                relativeTo: nil
+            )
+            return
+        }
+
+        // Settle beside and slightly behind the walker, so she accompanies rather than
+        // parking in their path.
+        let target = cameraPosition - flatForward * 0.25 + flatRight * Self.followSideOffsetMeters
+        let offset = SIMD3<Float>(target.x - current.x, 0, target.z - current.z)
+        let distance = simd_length(offset)
+        guard distance > 0.05 else {
+            isClosingDistance = false
+            return
+        }
 
         let direction = offset / distance
         let step = min(Self.followSpeedMetersPerSecond * Float(delta), distance)
