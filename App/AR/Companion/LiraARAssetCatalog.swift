@@ -9,6 +9,17 @@ import Foundation
 enum LiraARAssetCatalog {
     static let baseUSDZName = "Lira_AR_Base"
     static let resourceSubdirectory = "Companion/Lira"
+    /// Per-state DCC clip USDZs (sidecar packages from the Blender export pipeline).
+    static let clipsSubdirectory = "Companion/Lira/Clips"
+    /// Filenames without extension, matching `author_lira_armature_clips` / export.
+    static let dccClipBaseNames: [String] = [
+        "Lira_Idle",
+        "Lira_Follow",
+        "Lira_Investigate",
+        "Lira_Alert",
+        "Lira_Celebrate",
+        "Lira_Spawn",
+    ]
 
     /// Bundle URL for artist USDZ if present in the app package.
     static var baseUSDZURL: URL? {
@@ -24,6 +35,29 @@ enum LiraARAssetCatalog {
                 withExtension: "usdz",
                 subdirectory: "Companion/Lira"
             )
+    }
+
+    /// Bundle URL for a single DCC clip sidecar USDZ, if packaged.
+    static func dccClipUSDZURL(baseName: String) -> URL? {
+        Bundle.main.url(
+            forResource: baseName,
+            withExtension: "usdz",
+            subdirectory: clipsSubdirectory
+        )
+            ?? Bundle.main.url(
+                forResource: baseName,
+                withExtension: "usdz",
+                subdirectory: "Companion/Lira/Clips"
+            )
+            ?? Bundle.main.url(forResource: baseName, withExtension: "usdz")
+    }
+
+    /// All packaged DCC clip sidecar URLs (name → url). Missing files are omitted.
+    static var dccClipUSDZURLs: [(baseName: String, url: URL)] {
+        dccClipBaseNames.compactMap { name in
+            guard let url = dccClipUSDZURL(baseName: name) else { return nil }
+            return (name, url)
+        }
     }
 
     /// Whether a production USDZ file is packaged (load may still fail validation).

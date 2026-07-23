@@ -39,6 +39,17 @@ Legacy Meshy image-to-3d packages (if still under `ArtSource/Companion/Lira/mesh
 | `Filament`, `CoreGlow` | A3 / A2 anchors |
 | `GroundShadow`, `StatusIndicator` | Chrome |
 
+## DCC clip sidecars
+
+Per-state Blender actions also ship as:
+
+`App/Resources/Companion/Lira/Clips/Lira_{Idle,Follow,Investigate,Alert,Celebrate,Spawn}.usdz`
+
+At preload, `LiraARAssetLoader.loadDCCClipSidecars()` maps any RealityKit-visible
+animations into `LiraSkeletalPlayer` (overlaying the puppet library). When RealityKit
+exposes no `availableAnimations` for the Blender crate export, the player stays on
+`puppet:multiPart:6_clips` — state motion still works; DCC bone curves do not.
+
 ## Integrity
 
 ```bash

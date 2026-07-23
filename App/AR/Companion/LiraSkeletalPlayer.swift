@@ -40,9 +40,16 @@ final class LiraSkeletalPlayer {
     var transitionDuration: TimeInterval = 0.22
 
     /// Build clip table when entity has skeletal joints.
-    /// Prefers DCC clips from the USDZ when available; else puppet library.
+    /// Prefers DCC clips (entity `availableAnimations` + optional external sidecar library);
+    /// else puppet library.
+    ///
+    /// - Parameter externalDCC: Clips loaded from packaged sidecar USDZs
+    ///   (`LiraARAssetLoader.dccClipLibrary`). Overlay entity-local DCC when present.
     @discardableResult
-    func install(on entity: Entity) -> Bool {
+    func install(
+        on entity: Entity,
+        externalDCC: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource] = [:]
+    ) -> Bool {
         stop()
         guard LiraSkeletalRig.hasSkeletalJoints(entity) else {
             isInstalled = false
@@ -70,7 +77,14 @@ final class LiraSkeletalPlayer {
             library = [:]
             return false
         }
-        let dcc = style == .staticMesh ? [:] : Self.mapDCCAnimations(from: entity)
+        var dcc: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource] = [:]
+        if style != .staticMesh {
+            dcc = Self.mapDCCAnimations(from: entity)
+            // Sidecar library fills gaps (and provides clips when default layer is silent).
+            for (id, resource) in externalDCC where dcc[id] == nil {
+                dcc[id] = resource
+            }
+        }
         var merged = puppet
         for (id, resource) in dcc {
             merged[id] = resource

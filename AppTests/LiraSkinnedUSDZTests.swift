@@ -55,6 +55,13 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         }
         let loader = LiraARAssetLoader()
         await loader.preloadFromBundle(usdzURL: url)
+        // Tests may not package Clips/ in the host bundle; load from repo paths.
+        if loader.dccClipLibrary.isEmpty {
+            let sidecarURLs = Self.repoDCCClipURLs()
+            if !sidecarURLs.isEmpty {
+                _ = await loader.loadDCCClipSidecars(urls: sidecarURLs)
+            }
+        }
         guard case .usdz = loader.source else {
             XCTFail(loader.activeLODDescription)
             return
@@ -67,7 +74,7 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
             "unexpected puppet style \(style) for \(loader.activeLODDescription)"
         )
         let player = LiraSkeletalPlayer()
-        XCTAssertTrue(player.install(on: entity))
+        XCTAssertTrue(player.install(on: entity, externalDCC: loader.dccClipLibrary))
         XCTAssertEqual(player.puppetStyle, style)
         // Artist package may bind DCC clips; Meshy static uses puppet fill.
         XCTAssertTrue(
@@ -88,11 +95,10 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         player.clear()
     }
 
-    /// Sim-only binding report for the artist package (not outdoor #41).
+    /// Sim-only binding report for the artist package default layer (not outdoor #41).
     ///
-    /// Documents whether RealityKit surfaces DCC clips from the runtime USDZ.
-    /// Sidecar clip USDs in the archive do not automatically appear as
-    /// `availableAnimations` until packaging composes them — expect puppet fill today.
+    /// Documents whether RealityKit surfaces DCC clips from the main USDZ.
+    /// Sidecar composition is covered by `testDCCClipSidecarCompositionBindsStateClips`.
     func testArtistPackageAnimationBindingReport() async throws {
         guard let url = LiraARAssetCatalog.baseUSDZURL else {
             throw XCTSkip("Packaged Lira_AR_Base.usdz not in test host bundle")
@@ -118,9 +124,11 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         let dccMapped = LiraSkeletalPlayer.mapDCCAnimations(from: entity)
         let style = LiraSkeletalRig.puppetStyle(for: entity)
         let player = LiraSkeletalPlayer()
-        XCTAssertTrue(player.install(on: entity), "skeletal install should succeed")
+        XCTAssertTrue(
+            player.install(on: entity, externalDCC: loader.dccClipLibrary),
+            "skeletal install should succeed"
+        )
 
-        // OBSERVED (sim): publish binding facts for receipts / follow-up packaging work.
         let report = [
             "loadNote=\(loader.loadNote)",
             "lod=\(loader.activeLODDescription)",
@@ -131,6 +139,7 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
             "clipSource=\(player.clipSource.rawValue)",
             "sourceDescription=\(player.sourceDescription)",
             "hasAuthoredAnimation=\(loader.hasAuthoredAnimation)",
+            "sidecarNote=\(loader.dccSidecarNote)",
         ].joined(separator: " | ")
         XCTContext.runActivity(named: "artist_usdz_animation_binding") { _ in
             XCTAssertTrue(true, report)
@@ -138,14 +147,62 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         print("WAYKIN_SIM_ANIM_BINDING: \(report)")
 
         XCTAssertEqual(style, .multiPart, "artist mid-LOD should be multiPart")
-        // Until composition_followup lands, RealityKit may expose 0 DCC clips on the
-        // default layer — puppet library still drives state clips.
-        if clipCount == 0 {
-            XCTAssertEqual(player.clipSource, .puppet, report)
-        } else {
+        // Default layer often exposes 0 DCC clips; puppet (or sidecar externalDCC) still drives.
+        XCTAssertTrue(
+            player.clipSource == .dcc || player.clipSource == .hybrid || player.clipSource == .puppet,
+            report
+        )
+        player.play(state: .idle, on: entity)
+        XCTAssertEqual(player.activeClip, .idle)
+        player.play(state: .follow, on: entity)
+        XCTAssertEqual(player.activeClip, .follow)
+        player.clear()
+    }
+
+    /// OBSERVED sim: sidecar DCC composition path for the artist package.
+    func testDCCClipSidecarCompositionBindsStateClips() async throws {
+        guard let url = LiraARAssetCatalog.baseUSDZURL else {
+            throw XCTSkip("Packaged Lira_AR_Base.usdz not in test host bundle")
+        }
+        let loader = LiraARAssetLoader()
+        await loader.preloadFromBundle(usdzURL: url)
+        let sidecarURLs = LiraARAssetCatalog.dccClipUSDZURLs.isEmpty
+            ? Self.repoDCCClipURLs()
+            : LiraARAssetCatalog.dccClipUSDZURLs
+        XCTAssertFalse(sidecarURLs.isEmpty, "expected DCC clip USDZs under App/Resources/Companion/Lira/Clips")
+        let mapped = await loader.loadDCCClipSidecars(urls: sidecarURLs)
+
+        let entity = loader.makeLira()
+        XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: entity), .multiPart)
+        XCTAssertFalse(loader.hasAuthoredAnimation)
+
+        let player = LiraSkeletalPlayer()
+        XCTAssertTrue(player.install(on: entity, externalDCC: loader.dccClipLibrary))
+
+        let report = [
+            "loadNote=\(loader.loadNote)",
+            "sidecarNote=\(loader.dccSidecarNote)",
+            "mapped=\(mapped)",
+            "libraryKeys=\(loader.dccClipLibrary.keys.map(\.rawValue).sorted().joined(separator: ","))",
+            "clipSource=\(player.clipSource.rawValue)",
+            "sourceDescription=\(player.sourceDescription)",
+            "entityClips=\(LiraARAssetLoader.animationClipCount(entity))",
+        ].joined(separator: " | ")
+        print("WAYKIN_SIM_DCC_COMPOSITION: \(report)")
+
+        // Sidecar files exist; RealityKit may still expose 0 animations for Blender crate
+        // exports. When mapped > 0 we expect dcc/hybrid; otherwise puppet fill is honest.
+        if mapped > 0 {
             XCTAssertTrue(
-                player.clipSource == .dcc || player.clipSource == .hybrid || player.clipSource == .puppet,
+                player.clipSource == .dcc || player.clipSource == .hybrid,
                 report
+            )
+            XCTAssertGreaterThanOrEqual(loader.dccClipLibrary.count, 1, report)
+        } else {
+            XCTAssertEqual(player.clipSource, .puppet, report)
+            XCTAssertTrue(
+                loader.dccSidecarNote.contains("mapped=0"),
+                "expected mapped=0 note when RealityKit surfaces no clips: \(report)"
             )
         }
         player.play(state: .idle, on: entity)
@@ -153,6 +210,25 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         player.play(state: .follow, on: entity)
         XCTAssertEqual(player.activeClip, .follow)
         player.clear()
+    }
+
+    /// Resolve DCC clip USDZs from the repo when the test host bundle omits Clips/.
+    private static func repoDCCClipURLs() -> [(baseName: String, url: URL)] {
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<3 {
+            root.deleteLastPathComponent()
+        }
+        let clipDir = root
+            .appendingPathComponent("App", isDirectory: true)
+            .appendingPathComponent("Resources", isDirectory: true)
+            .appendingPathComponent("Companion", isDirectory: true)
+            .appendingPathComponent("Lira", isDirectory: true)
+            .appendingPathComponent("Clips", isDirectory: true)
+        return LiraARAssetCatalog.dccClipBaseNames.compactMap { name in
+            let url = clipDir.appendingPathComponent("\(name).usdz")
+            guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+            return (name, url)
+        }
     }
 
     func testPromoteIncompleteHierarchyAddsRequiredNodes() {
