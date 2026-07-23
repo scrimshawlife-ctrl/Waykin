@@ -18,6 +18,25 @@ targets:
       - path: App/Resources/Lira_AR_Base.usdz
         type: file
         buildPhase: resources
+      # Per-state DCC clip USDZs (Idle/Follow/…) — loaded at runtime into LiraSkeletalPlayer.
+      - path: App/Resources/Companion/Lira/Clips/Lira_Idle.usdz
+        type: file
+        buildPhase: resources
+      - path: App/Resources/Companion/Lira/Clips/Lira_Follow.usdz
+        type: file
+        buildPhase: resources
+      - path: App/Resources/Companion/Lira/Clips/Lira_Investigate.usdz
+        type: file
+        buildPhase: resources
+      - path: App/Resources/Companion/Lira/Clips/Lira_Alert.usdz
+        type: file
+        buildPhase: resources
+      - path: App/Resources/Companion/Lira/Clips/Lira_Celebrate.usdz
+        type: file
+        buildPhase: resources
+      - path: App/Resources/Companion/Lira/Clips/Lira_Spawn.usdz
+        type: file
+        buildPhase: resources
       - path: App/Resources/Fonts/WaykinDisplay-Regular.ttf
         type: file
         buildPhase: resources

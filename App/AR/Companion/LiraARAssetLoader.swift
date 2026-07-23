@@ -26,6 +26,13 @@ final class LiraARAssetLoader {
     /// which stops playback — so the resources are kept here and re-applied after each
     /// placement rather than relying on the live entity still owning them.
     private(set) var authoredClips: [AnimationResource] = []
+    /// DCC per-state clips loaded from packaged sidecar USDZs (`Companion/Lira/Clips`).
+    /// The main `Lira_AR_Base.usdz` default layer often exposes zero `availableAnimations`
+    /// even though SkelAnimation prims exist; sidecars are full per-action exports that
+    /// RealityKit may surface as named animations. Fed into `LiraSkeletalPlayer.install`.
+    private(set) var dccClipLibrary: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource] = [:]
+    /// How many sidecar USDZs were found / how many yielded a mapped clip.
+    private(set) var dccSidecarNote: String = "sidecars=not_attempted"
     /// Controller for the running walk clip. `skel_off` in the motion line refers to the
     /// puppet player (deliberately stood down for authored rigs), so it cannot answer
     /// "is the walk cycle actually playing" — this can.
@@ -49,6 +56,8 @@ final class LiraARAssetLoader {
             clearTemplate(reason: .procedural, note: "no_packaged_url")
             return
         }
+        dccClipLibrary = [:]
+        dccSidecarNote = "sidecars=not_attempted"
         do {
             let loaded = try await Self.loadEntity(from: url)
             // Skinned/animated exports (Meshy walk cycle) must NOT be reparented:
@@ -110,19 +119,83 @@ final class LiraARAssetLoader {
                 Self.plantBodyOnGround(root)
                 Self.layoutSpectralFXAnchors(on: root)
             }
+            // After FX install, model count is high — use promote flag + Body-only mesh heuristic.
+            let preserveMaterials = promoted || Self.isAuthoredBodyStaticMesh(root)
+            // Compose DCC sidecars *before* publishing template/source so a concurrent
+            // spawn cannot install skeletal playback with an empty dccClipLibrary
+            // (renderer only installs on spawn/replant; late sidecar fill would stick on puppet).
+            let sidecarMapped = await loadDCCClipSidecars()
             template = root
             source = .usdz(url.lastPathComponent)
-            // After FX install, model count is high — use promote flag + Body-only mesh heuristic.
-            preserveAuthoredMaterials = promoted
-                || Self.isAuthoredBodyStaticMesh(root)
-            if preserveAuthoredMaterials {
-                loadNote = "usdz_active_meshy_textured_static:clips=\(clipCount)"
+            preserveAuthoredMaterials = preserveMaterials
+            if preserveMaterials {
+                loadNote = "usdz_active_meshy_textured_static:clips=\(clipCount);sidecar=\(sidecarMapped)"
             } else {
-                loadNote = "usdz_active_artist_blend_hero_dcc_mid_lod:clips=\(clipCount)"
+                loadNote = "usdz_active_artist_blend_hero_dcc_mid_lod:clips=\(clipCount);sidecar=\(sidecarMapped)"
             }
         } catch {
             clearTemplate(reason: .procedural, note: "load_error")
         }
+    }
+
+    /// Load packaged per-state DCC clip USDZs and map them into `dccClipLibrary`.
+    ///
+    /// Returns the number of clip IDs successfully mapped. Sidecars that fail to load or
+    /// expose no `availableAnimations` are skipped (puppet fill remains available).
+    @discardableResult
+    func loadDCCClipSidecars(
+        urls: [(baseName: String, url: URL)] = LiraARAssetCatalog.dccClipUSDZURLs
+    ) async -> Int {
+        var mapped: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource] = [:]
+        var found = 0
+        var loaded = 0
+        for (baseName, url) in urls {
+            found += 1
+            do {
+                let entity = try await Self.loadEntity(from: url)
+                let fromEntity = LiraSkeletalPlayer.mapDCCAnimations(from: entity)
+                // Prefer name from filename when entity animations are unnamed / generic.
+                if fromEntity.isEmpty {
+                    let clips = Self.collectAnimations(entity)
+                    if let only = clips.first,
+                       let id = Self.clipID(matchingBaseName: baseName) {
+                        mapped[id] = only
+                        loaded += 1
+                    }
+                } else {
+                    for (id, resource) in fromEntity {
+                        if mapped[id] == nil {
+                            mapped[id] = resource
+                            loaded += 1
+                        }
+                    }
+                    // Filename wins if mapping missed the expected state.
+                    if let id = Self.clipID(matchingBaseName: baseName),
+                       mapped[id] == nil,
+                       let first = Self.collectAnimations(entity).first {
+                        mapped[id] = first
+                        loaded += 1
+                    }
+                }
+            } catch {
+                continue
+            }
+        }
+        dccClipLibrary = mapped
+        dccSidecarNote = "sidecars_found=\(found);mapped=\(mapped.count);keys=\(mapped.keys.map(\.rawValue).sorted().joined(separator: ","))"
+        return mapped.count
+    }
+
+    /// Map export basename (`Lira_Idle`) → skeletal clip id.
+    static func clipID(matchingBaseName name: String) -> LiraSkeletalAnimationLibrary.ClipID? {
+        let key = name.lowercased()
+        if key.contains("idle") { return .idle }
+        if key.contains("follow") { return .follow }
+        if key.contains("investigate") { return .investigate }
+        if key.contains("alert") { return .alert }
+        if key.contains("celebrate") { return .celebrate }
+        if key.contains("spawn") { return .spawn }
+        return nil
     }
 
     /// iOS 18+: async Entity init. iOS 17: LoadRequest bridge (deployment target 17).
@@ -164,6 +237,8 @@ final class LiraARAssetLoader {
         preserveAuthoredMaterials = false
         hasAuthoredAnimation = false
         authoredClips = []
+        dccClipLibrary = [:]
+        dccSidecarNote = "sidecars=cleared"
         _ = reason
     }
 

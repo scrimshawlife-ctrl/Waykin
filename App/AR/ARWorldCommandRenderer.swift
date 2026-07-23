@@ -82,7 +82,8 @@ final class ARWorldCommandRenderer {
         let authored = assetLoader.hasAuthoredAnimation
             ? (assetLoader.isAuthoredAnimationPlaying ? "anim=PLAYING" : "anim=stopped")
             : "anim=none"
-        return "\(lod) | \(driving) | \(src) | clip=\(clip) | \(authored)"
+        let sidecar = assetLoader.dccSidecarNote
+        return "\(lod) | \(driving) | \(src) | clip=\(clip) | \(authored) | \(sidecar)"
     }
 
     /// Whether the authored walk clip is running, for AR chrome + receipts.
@@ -642,7 +643,10 @@ final class ARWorldCommandRenderer {
         // An authored UsdSkel clip (Meshy walk cycle) already drives this rig — layering
         // the puppet clip library on top would fight it and corrupt the pose.
         guard !assetLoader.hasAuthoredAnimation else { return }
-        guard skeletalPlayer.install(on: entity) else { return }
+        guard skeletalPlayer.install(
+            on: entity,
+            externalDCC: assetLoader.dccClipLibrary
+        ) else { return }
         if reduceMotionEnabled {
             skeletalPlayer.setDriving(false)
         }

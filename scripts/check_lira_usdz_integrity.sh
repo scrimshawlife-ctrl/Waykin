@@ -59,6 +59,23 @@ if [[ -f "$MARKER" ]]; then
   fi
 fi
 
+# Artist DCC clip sidecars (optional but expected for ARTIST_BLEND_HERO_DCC_MID_LOD).
+CLIP_DIR="$ROOT/App/Resources/Companion/Lira/Clips"
+if grep -q 'ARTIST_BLEND_HERO_DCC_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift" 2>/dev/null; then
+  missing=0
+  for clip in Lira_Idle Lira_Follow Lira_Investigate Lira_Alert Lira_Celebrate Lira_Spawn; do
+    if [[ ! -f "$CLIP_DIR/${clip}.usdz" ]]; then
+      echo "WARN: missing DCC sidecar $CLIP_DIR/${clip}.usdz"
+      missing=$((missing + 1))
+    fi
+  done
+  if [[ "$missing" -eq 0 ]]; then
+    pass "DCC clip sidecars present (6)"
+  else
+    echo "WARN: $missing DCC clip sidecars missing (runtime falls back to puppet)"
+  fi
+fi
+
 # Catalog Swift evidence class should match shipped package class
 if grep -q 'MESHY_TEXTURED_STATIC_V1' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
   pass "catalog evidence MESHY_TEXTURED_STATIC_V1"
