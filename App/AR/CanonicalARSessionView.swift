@@ -26,6 +26,9 @@ final class CanonicalARSessionRuntime {
     @ObservationIgnored private var usdzPreloadTask: Task<Void, Never>?
     @ObservationIgnored private var pendingCommands: [ARWorldCommand] = []
     @ObservationIgnored private var commandHandlerOwner: UUID?
+    @ObservationIgnored private var continuityElapsed: TimeInterval = 0
+    /// How often the frame loop verifies the companion survived tracking loss.
+    private static let continuityCheckInterval: TimeInterval = 1.0
     private weak var arView: ARView?
 
     private(set) var capabilityState: ARCapabilityState = .checking
@@ -77,6 +80,7 @@ final class CanonicalARSessionRuntime {
         arView.session = sessionCoordinator.session
         sceneUpdateSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             self?.drainPendingCommands()
+            self?.maintainContinuity(by: event.deltaTime)
             self?.advancePresentation(by: event.deltaTime)
         }
         sessionCoordinator.onCapabilityStateChange = { [weak self] state in
@@ -209,6 +213,18 @@ final class CanonicalARSessionRuntime {
         companionState = transition.resolvedState
     }
 
+    /// Throttled frame-driven continuity so Lira recovers from a dropped world anchor
+    /// within ~1s, instead of vanishing until the next game `updateCompanion` command.
+    /// No-ops until a companion has actually been spawned (renderer guards that).
+    private func maintainContinuity(by delta: TimeInterval) {
+        guard let arView, delta.isFinite, delta >= 0 else { return }
+        continuityElapsed += delta
+        guard continuityElapsed >= Self.continuityCheckInterval else { return }
+        continuityElapsed = 0
+        renderer.maintainCompanionContinuity(in: arView)
+        companionContinuityNote = renderer.companionContinuityNote
+    }
+
     private func render(_ command: ARWorldCommand, in arView: ARView) -> ARCommandResult {
         renderCommandOverride?(command, arView) ?? renderer.render(command, in: arView)
     }
@@ -250,40 +266,44 @@ struct CanonicalARSessionView: View {
 
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("AR: \(runtime.capabilityState.rawValue)")
-                        Text("Lira: \(runtime.companionState.rawValue)")
-                        Text("Form: \(liraSkin.displayName)")
-                        Text("LOD: \(runtime.companionLODDescription)")
-                            .accessibilityIdentifier("waykin.ar.canonical.lod")
-                        // Mid-LOD skinned artist package (not outdoor hero claim).
-                        Text("AR mesh: \(LiraARAssetCatalog.packagedEvidenceClass)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("waykin.ar.canonical.meshClass")
-                        Text("Motion: \(runtime.motionDiagnosticsLine)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                            .accessibilityIdentifier("waykin.ar.canonical.motion")
-                        // #125: continuity plant note for outdoor QA (not a quality claim).
-                        Text("Continuity: \(runtime.companionContinuityNote)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("waykin.ar.canonical.continuity")
-                        // #147: human hint from the same note (no new gameplay truth).
-                        if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
-                            Text(hint)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .accessibilityIdentifier("waykin.ar.canonical.continuityHint")
+                    // Developer diagnostics HUD — hidden in normal sessions, shown for
+                    // operators (-WAYKIN_OPERATOR_DEBUG) and UI tests (-WAYKIN_UI_TESTING).
+                    if ARDiagnosticsHUDFeature.isEnabled {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("AR: \(runtime.capabilityState.rawValue)")
+                            Text("Lira: \(runtime.companionState.rawValue)")
+                            Text("Form: \(liraSkin.displayName)")
+                            Text("LOD: \(runtime.companionLODDescription)")
+                                .accessibilityIdentifier("waykin.ar.canonical.lod")
+                            // Mid-LOD skinned artist package (not outdoor hero claim).
+                            Text("AR mesh: \(LiraARAssetCatalog.packagedEvidenceClass)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("waykin.ar.canonical.meshClass")
+                            Text("Motion: \(runtime.motionDiagnosticsLine)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                                .accessibilityIdentifier("waykin.ar.canonical.motion")
+                            // #125: continuity plant note for outdoor QA (not a quality claim).
+                            Text("Continuity: \(runtime.companionContinuityNote)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .accessibilityIdentifier("waykin.ar.canonical.continuity")
+                            // #147: human hint from the same note (no new gameplay truth).
+                            if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
+                                Text(hint)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .accessibilityIdentifier("waykin.ar.canonical.continuityHint")
+                            }
+                            Text(runtime.lastResult)
                         }
-                        Text(runtime.lastResult)
+                        .font(.caption.weight(.semibold))
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(arStatusAccessibilityLabel)
+                        .accessibilityIdentifier("waykin.ar.canonical.status")
                     }
-                    .font(.caption.weight(.semibold))
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(arStatusAccessibilityLabel)
-                    .accessibilityIdentifier("waykin.ar.canonical.status")
 
                     Spacer()
 
