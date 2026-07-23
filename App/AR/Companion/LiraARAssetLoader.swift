@@ -53,8 +53,14 @@ final class LiraARAssetLoader {
             let loaded = try await Self.loadEntity(from: url)
             // Skinned/animated exports (Meshy walk cycle) must NOT be reparented:
             // pulling the mesh out of its SkelRoot severs skinning and kills the clip.
+            //
+            // Restricted to hierarchy-less exports on purpose. A multi-part artist rig
+            // ships its own per-state clips (Idle/Follow/Investigate/Alert/Celebrate/
+            // Spawn) *and* the semantic nodes `LiraSkeletalPlayer` binds them to. Taking
+            // this branch for such a package would stand the puppet player down and loop
+            // a single arbitrary clip forever, silently discarding the state-driven set.
             let clipCount = Self.animationClipCount(loaded)
-            if Self.animationHost(loaded) != nil {
+            if Self.animationHost(loaded) != nil, !Self.hasRequiredNodes(loaded) {
                 let animatedRoot = Self.adoptAnimatedHierarchy(loaded, skin: skin)
                 guard Self.hasRequiredNodes(animatedRoot) else {
                     clearTemplate(reason: .procedural, note: "animated_hierarchy_invalid")
