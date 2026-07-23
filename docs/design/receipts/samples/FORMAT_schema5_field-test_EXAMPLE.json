@@ -1,0 +1,166 @@
+{
+  "endedAt": "2026-07-20T08:45:12Z",
+  "mode": "demo",
+  "outcome": "completed",
+  "persistence": "succeeded",
+  "receiptID": "D549DD11-82FE-41A7-865A-50D6159E2B26",
+  "schemaVersion": 5,
+  "sessionID": "7E9CAADA-EAEF-4DE6-A31A-EA0622416D16",
+  "startedAt": "2026-07-20T08:45:10Z",
+  "summary": {
+    "acceptedSampleCount": 0,
+    "accumulatedDistanceMeters": 392,
+    "activeDurationSeconds": 280,
+    "activityAuthorizationDenied": false,
+    "activityStepCadenceBand": "unknown",
+    "arPresentation": {
+      "arSessionOpened": true,
+      "companionPlaced": true,
+      "continuityReplantCount": 0,
+      "entityReplacementCount": 0,
+      "finalCapabilityState": "tracking",
+      "finalContinuityNote": "EXAMPLE_only_not_observed_device",
+      "finalLODDescription": "animated_usdz:Lira_AR_Base.usdz (usdz_active_animated_skelanim:clips=6)",
+      "meshEvidenceClass": "MESHY_TEXTURED_STATIC_V1",
+      "motionDiagnosticsLine": "EXAMPLE",
+      "placementDeferredCount": 0,
+      "sessionStillDiagnosticLabel": "still:catalog"
+    },
+    "audioDiagnostics": {
+      "assetLifecycleCounts": {
+        "assetLookupStarted": 5,
+        "assetResolved": 5
+      },
+      "audioSessionLifecycleCounts": {
+        "audioSessionConfigurationStarted": 5,
+        "audioSessionConfigured": 5
+      },
+      "cueReceiptCounts": {
+        "bondMotif": 1,
+        "companionNear": 1,
+        "distantFootsteps": 2,
+        "pursuitPressure": 1,
+        "pursuitRelease": 1,
+        "quietShift": 1
+      },
+      "fadeCount": 1,
+      "interruptionEventCounts": {},
+      "lastRouteCategory": "builtInSpeaker",
+      "plannerAcceptedCueCounts": {
+        "bondMotif": 1,
+        "companionNear": 1,
+        "distantFootsteps": 1,
+        "pursuitPressure": 1,
+        "quietShift": 1
+      },
+      "playbackLifecycleCounts": {
+        "playRequestAccepted": 5,
+        "playbackFadeRequested": 1,
+        "playbackRequested": 5,
+        "playbackStopRequested": 1,
+        "playerObservedActive": 5
+      },
+      "playerLifecycleCounts": {
+        "playerInitialized": 5
+      },
+      "routeChangeReasonCounts": {},
+      "stopCount": 1,
+      "suppressionReasonCounts": {
+        "duplicateCue": 1,
+        "lowerPriority": 1
+      }
+    },
+    "audioSuppressionCount": 2,
+    "averageStabilizedSpeedMetersPerSecond": 1.4000000000000001,
+    "bondDelta": 2,
+    "durationSeconds": 280,
+    "endingBond": 14,
+    "finalMovementState": "stopped",
+    "freshAnchorResetCount": 0,
+    "interruptionCount": 0,
+    "lifecycleTransitionCount": 0,
+    "mapPresentation": {
+      "plannedPolylinePointCount": 0,
+      "plannedRouteStatus": "none",
+      "tracePointCount": 0
+    },
+    "maximumStabilizedSpeedMetersPerSecond": 1.4,
+    "memoryWritten": true,
+    "pathAcceptedSampleCount": 7,
+    "pathIntegrityPressure": 0,
+    "pathMetersAlongPath": 392,
+    "pathRelation": "onPath",
+    "pausedDurationSeconds": 0,
+    "persistenceOperator": {
+      "availability": "availableFileBacked",
+      "recoveryAction": "none"
+    },
+    "rejectedSampleCount": 0,
+    "rejectionCounts": {},
+    "semanticAudioCueCounts": {
+      "bondMotif": 1,
+      "companionNear": 1,
+      "distantFootsteps": 2,
+      "pursuitPressure": 1,
+      "pursuitRelease": 1,
+      "quietShift": 1
+    },
+    "startingBond": 12,
+    "worldEventCounts": {
+      "bondMoment": 1,
+      "companionDrawsNear": 1,
+      "companionObserves": 1,
+      "distantPresence": 1,
+      "pursuitBegins": 1,
+      "pursuitFades": 1,
+      "pursuitIntensifies": 1
+    }
+  },
+  "timeline": [
+    {
+      "category": "sessionStateTransition",
+      "code": "idle_to_active",
+      "timestamp": "2026-07-20T08:45:10Z"
+    },
+    {
+      "category": "movementStateTransition",
+      "code": "idle_to_moving",
+      "timestamp": "2026-07-20T08:45:12Z"
+    },
+    {
+      "category": "worldEventEmitted",
+      "code": "companionObserves",
+      "timestamp": "2026-07-20T08:45:12Z"
+    },
+    {
+      "category": "audioCueRequested",
+      "code": "quietShift",
+      "timestamp": "2026-07-20T08:45:12Z"
+    },
+    {
+      "audioCueKind": "quietShift",
+      "audioDiagnosticKind": "cueReceived",
+      "category": "audioDiagnostic",
+      "code": "cueReceived",
+      "timestamp": "2026-07-20T08:45:12Z"
+    },
+    {
+      "audioCueKind": "quietShift",
+      "audioDiagnosticChannel": "ambient",
+      "audioDiagnosticKind": "playerObservedActive",
+      "category": "audioDiagnostic",
+      "code": "playerObservedActive",
+      "timestamp": "2026-07-20T08:45:12Z"
+    },
+    {
+      "category": "worldEventEmitted",
+      "code": "companionDrawsNear",
+      "timestamp": "2026-07-20T08:45:12Z"
+    },
+    {
+      "category": "audioCueRequested",
+      "code": "companionNear",
+      "timestamp": "2026-07-20T08:45:12Z"
+    }
+  ]
+}

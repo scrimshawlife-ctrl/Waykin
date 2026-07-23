@@ -14,6 +14,7 @@ Visual system imports and production follow-ons for the app repository.
 | [DEBUG_OPERATOR_CONTINUATION.md](DEBUG_OPERATOR_CONTINUATION.md) | Operator debug D5–D7 plan (map/persistence/font) | SUPPORTING |
 | [INDOOR_AR_HYBRID_SMOKE.md](INDOOR_AR_HYBRID_SMOKE.md) | Indoor device AR DCC/hybrid/puppet smoke | Evidence protocol |
 | [OUTDOOR_QA_CHECKLIST.md](OUTDOOR_QA_CHECKLIST.md) | Outdoor device UI checks (#41) | Evidence gate |
+| [TESTFLIGHT_RC_CHECKLIST.md](TESTFLIGHT_RC_CHECKLIST.md) | Internal TestFlight / RC engineering checklist | SUPPORTING |
 
 ## Integration and art track
 
@@ -43,7 +44,8 @@ Visual system imports and production follow-ons for the app repository.
 | [PATHFINDING.md](PATHFINDING.md) | Semantic path progress + summary surfacing |
 | [HEALTHKIT.md](HEALTHKIT.md) | Optional HealthKit enrichment + energy bias |
 | [EVENT_WEIGHT_TUNING.md](EVENT_WEIGHT_TUNING.md) | Companion-first defaultRules light tune |
-| [receipts/](receipts/) | Filled outdoor / sim receipts |
+| [receipts/](receipts/) | Filled outdoor / sim / indoor smoke receipts |
+| [receipts/samples/](receipts/samples/) | Field-test JSON format samples (not device PASS) |
 
 ## Recommended order
 
