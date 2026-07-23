@@ -88,6 +88,73 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         player.clear()
     }
 
+    /// Sim-only binding report for the artist package (not outdoor #41).
+    ///
+    /// Documents whether RealityKit surfaces DCC clips from the runtime USDZ.
+    /// Sidecar clip USDs in the archive do not automatically appear as
+    /// `availableAnimations` until packaging composes them — expect puppet fill today.
+    func testArtistPackageAnimationBindingReport() async throws {
+        guard let url = LiraARAssetCatalog.baseUSDZURL else {
+            throw XCTSkip("Packaged Lira_AR_Base.usdz not in test host bundle")
+        }
+        let loader = LiraARAssetLoader()
+        await loader.preloadFromBundle(usdzURL: url)
+        guard case .usdz = loader.source else {
+            XCTFail("expected usdz load: \(loader.activeLODDescription)")
+            return
+        }
+
+        XCTAssertFalse(
+            loader.hasAuthoredAnimation,
+            "artist multi-part package must not take hierarchy-less single-clip path"
+        )
+        XCTAssertTrue(
+            loader.loadNote.contains("artist_blend"),
+            "loadNote=\(loader.loadNote)"
+        )
+
+        let entity = loader.makeLira()
+        let clipCount = LiraARAssetLoader.animationClipCount(entity)
+        let dccMapped = LiraSkeletalPlayer.mapDCCAnimations(from: entity)
+        let style = LiraSkeletalRig.puppetStyle(for: entity)
+        let player = LiraSkeletalPlayer()
+        XCTAssertTrue(player.install(on: entity), "skeletal install should succeed")
+
+        // OBSERVED (sim): publish binding facts for receipts / follow-up packaging work.
+        let report = [
+            "loadNote=\(loader.loadNote)",
+            "lod=\(loader.activeLODDescription)",
+            "puppetStyle=\(style.rawValue)",
+            "availableAnimations=\(clipCount)",
+            "dccMapped=\(dccMapped.count)",
+            "dccKeys=\(dccMapped.keys.map(\.rawValue).sorted().joined(separator: ","))",
+            "clipSource=\(player.clipSource.rawValue)",
+            "sourceDescription=\(player.sourceDescription)",
+            "hasAuthoredAnimation=\(loader.hasAuthoredAnimation)",
+        ].joined(separator: " | ")
+        XCTContext.runActivity(named: "artist_usdz_animation_binding") { _ in
+            XCTAssertTrue(true, report)
+        }
+        print("WAYKIN_SIM_ANIM_BINDING: \(report)")
+
+        XCTAssertEqual(style, .multiPart, "artist mid-LOD should be multiPart")
+        // Until composition_followup lands, RealityKit may expose 0 DCC clips on the
+        // default layer — puppet library still drives state clips.
+        if clipCount == 0 {
+            XCTAssertEqual(player.clipSource, .puppet, report)
+        } else {
+            XCTAssertTrue(
+                player.clipSource == .dcc || player.clipSource == .hybrid || player.clipSource == .puppet,
+                report
+            )
+        }
+        player.play(state: .idle, on: entity)
+        XCTAssertEqual(player.activeClip, .idle)
+        player.play(state: .follow, on: entity)
+        XCTAssertEqual(player.activeClip, .follow)
+        player.clear()
+    }
+
     func testPromoteIncompleteHierarchyAddsRequiredNodes() {
         let bare = Entity()
         bare.name = "Root"

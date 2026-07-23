@@ -6,11 +6,11 @@ created: 2026-07-20
 status: PARKED
 reason: Pivot to UI candidate integration (CANDIDATE_v0.2); then device AR/audio lane
 main_tip_at_park: f0e6762
-main_tip_at_refresh: 8beec34
+main_tip_at_refresh: 68ba09d
 refresh_date: 2026-07-23
 ```
 
-Parked from post–`ARTIST_BLEND_HERO_DCC_MID_LOD` recommendations. UI waves largely done on main; outdoor #41 still first when resuming device COH. Concurrent open: PR #217 (device AR/audio), PR #216 (TF checklist).
+Parked from post–`ARTIST_BLEND_HERO_DCC_MID_LOD` recommendations. UI waves done; **#222 artist package + #217 device/runtime on main (`68ba09d`)**. Outdoor #41 still first for COH. Next eng: DCC clip composition + indoor smoke on tip.
 
 ## Top parked item — outdoor device
 
@@ -35,9 +35,10 @@ Parked from post–`ARTIST_BLEND_HERO_DCC_MID_LOD` recommendations. UI waves lar
 | 2 | ~~Sim screenshot matrix (day/night × home/session/summary)~~ | **Done** issue #194 tooling + SIMULATOR set; AR frame still optional/manual |
 | 3 | Device **indoor** AR smoke of DCC hybrid chrome (`dcc`/`hybrid`/`puppet`) | **Armed** — protocol [`INDOOR_AR_HYBRID_SMOKE.md`](INDOOR_AR_HYBRID_SMOKE.md) + `scripts/indoor_ar_smoke_prep.sh`; human device rows PENDING |
 | 4 | Freehand weight paint pass | Only if outdoor shows joint tearing |
-| 5 | Slim DCC package (~5MB → anim-only sidecars) | Size optimization |
-| 6 | RC/FUTURE features | Directors, Watch, Path/Health v2 — need promotion |
-| 7 | Orc/FutureSelf cleanup | Dedicated migration issue + Codable tests |
+| 5 | **DCC clip composition** (sidecars → `availableAnimations`) | Packaging; Motion may stay puppet until bound |
+| 6 | Slim DCC package further | Optional; already ~5 MB |
+| 7 | RC/FUTURE features | Directors, Watch, Path/Health v2 — need promotion |
+| 8 | Orc/FutureSelf cleanup | Dedicated migration issue + Codable tests |
 
 ## Explicit non-priorities while parked
 
