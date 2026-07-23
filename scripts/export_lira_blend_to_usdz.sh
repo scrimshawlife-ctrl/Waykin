@@ -60,12 +60,14 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 USD_DIR="$(cd "$(dirname "$USD")" && pwd)"
 # Package USD + any sibling assets (textures/ referenced as @./textures/...@).
-cp "$USD" "$TMP/"
-# Top-level image/usd siblings
+# USDZ default layer is the first archive member — put Lira_AR_Base.usd first so
+# Entity(contentsOf:) loads the multi-part mesh, not a single clip sidecar.
+cp "$USD" "$TMP/Lira_AR_Base.usd"
+# Clip sidecars + textures next (composition into one animation library is a follow-up).
 find "$USD_DIR" -maxdepth 1 -type f \( \
   -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.exr' \
   -o -name '*.usdc' -o -name '*.usda' -o -name '*.usd' \
-\) ! -name "$(basename "$USD")" -exec cp {} "$TMP/" \; 2>/dev/null || true
+\) ! -name "$(basename "$USD")" ! -name 'Lira_AR_Base.usd' -exec cp {} "$TMP/" \; 2>/dev/null || true
 # Nested texture directories (Blender often writes textures/)
 if [[ -d "$USD_DIR/textures" ]]; then
   cp -R "$USD_DIR/textures" "$TMP/textures"
@@ -74,7 +76,16 @@ fi
 find "$USD_DIR" -mindepth 1 -maxdepth 1 -type d \( -name 'textures' -o -name 'Textures' -o -name 'maps' \) \
   -exec bash -c 'cp -R "$1" "$2/"' _ {} "$TMP" \; 2>/dev/null || true
 rm -f "$APP_OUT" "$NESTED" "$DOC_OUT"
-(cd "$TMP" && usdzip -r "$APP_OUT" .)
+# Explicit file order: base first, then remaining (usdzip -r uses directory order).
+(
+  cd "$TMP"
+  ORDER=(Lira_AR_Base.usd)
+  while IFS= read -r f; do
+    [[ "$f" == "./Lira_AR_Base.usd" ]] && continue
+    ORDER+=("${f#./}")
+  done < <(find . -type f | sort)
+  usdzip "$APP_OUT" "${ORDER[@]}"
+)
 mkdir -p "$(dirname "$NESTED")"
 cp "$APP_OUT" "$NESTED"
 cp "$APP_OUT" "$DOC_OUT"

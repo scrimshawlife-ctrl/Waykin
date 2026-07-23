@@ -30,10 +30,10 @@ Procedural Living Familiar (sphere-rig) remains permanent **soft fallback** when
 
 ## Non-goals
 
-- Hero marketing sculpt as runtime default  
-- Per-skin unique meshes (one rig, three material climates)  
-- Outdoor #41 COH from this work alone  
-- Expanding AR gameplay beyond presentation package  
+- Hero marketing sculpt as runtime default
+- Per-skin unique meshes (one rig, three material climates)
+- Outdoor #41 COH from this work alone
+- Expanding AR gameplay beyond presentation package
 
 ## Identity gates (must pass before ship)
 
@@ -106,18 +106,18 @@ Update together:
 
 `AR_MVP_FREEZE.md` lists hand-sculpted hero as non-goal under blind expansion. **Issue #220** authorizes a **bounded package replacement** so brand AR presentation matches direction lock. Allowed paths:
 
-- `App/Resources/**` USDZ + mirrors  
-- Catalog / integrity / export scripts as needed  
-- Minimal loader notes for new evidence class  
+- `App/Resources/**` USDZ + mirrors
+- Catalog / integrity / export scripts as needed
+- Minimal loader notes for new evidence class
 
 Not allowed without new issues: new AR gameplay states, multi-companion, hero-only marketing runtime.
 
 ## Suggested PR sequence
 
-1. **Docs** (this plan + ACTIVE_WORK intake) — this PR  
-2. **Art** — blend + USDZ triple + evidence class  
-3. **Optional** — DCC idle/walk clips if stills motion insufficient  
-4. **Indoor smoke** — silhouette row OBSERVED on device  
+1. **Docs** (this plan + ACTIVE_WORK intake) — this PR
+2. **Art** — blend + USDZ triple + evidence class
+3. **Optional** — DCC idle/walk clips if stills motion insufficient
+4. **Indoor smoke** — silhouette row OBSERVED on device
 
 Parallel OK with #217 device AR/audio.
 

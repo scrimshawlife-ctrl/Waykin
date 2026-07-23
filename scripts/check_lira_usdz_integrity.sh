@@ -38,6 +38,19 @@ else
   fail "usdz missing usd/usdc/texture entries"
 fi
 
+# Artist packages: default layer must be Lira_AR_Base.usd (not a clip sidecar).
+# Zip listing order = archive order; first data row after headers is the default layer.
+first_entry=$(unzip -Z1 "$ROOT_USDZ" 2>/dev/null | head -1 || true)
+if [[ -n "$first_entry" ]]; then
+  if [[ "$first_entry" == "Lira_AR_Base.usd" || "$first_entry" == "Lira_AR_Base.usdc" || "$first_entry" == *.usdc ]]; then
+    pass "default layer first entry ($first_entry)"
+  elif [[ "$first_entry" == Lira_*.usd ]]; then
+    fail "default layer is clip sidecar ($first_entry); repack with Lira_AR_Base.usd first"
+  else
+    pass "default layer first entry ($first_entry)"
+  fi
+fi
+
 if [[ -f "$MARKER" ]]; then
   if grep -E 'MESHY_TEXTURED_STATIC_V1|ARTIST_BLEND_HERO_DCC_MID_LOD|ARTIST_BLEND_SKINNED_MID_LOD|ARTIST_BLEND_ARMATURE_MID_LOD|ARTIST_BLEND_MID_LOD' "$MARKER" >/dev/null; then
     pass "EXPORT_OK evidence marker"
