@@ -30,16 +30,16 @@ enum LiraARAssetCatalog {
     static var hasPackagedUSDZ: Bool { baseUSDZURL != nil }
 
     /// Package presence only — prefer `LiraARAssetLoader.activeLODDescription` at runtime.
-    /// Current package: **MESHY_TEXTURED_STATIC_V1** (image-to-3d textured mesh; puppet animation).
+    /// Current package: **ARTIST_BLEND_HERO_DCC_MID_LOD** (artist multi-part mid-LOD armature + hero paint + DCC clips).
     /// Fallback generator remains GENERATED_MID_LOD.
     static var packagedLODHint: String {
         if hasPackagedUSDZ {
-            "packaged_usdz:\(baseUSDZName):MESHY_TEXTURED_STATIC_V1"
+            "packaged_usdz:\(baseUSDZName):ARTIST_BLEND_HERO_DCC_MID_LOD"
         } else {
             "procedural_living_familiar_mid"
         }
     }
 
     /// Explicit evidence class for packaged AR asset.
-    static let packagedEvidenceClass = "MESHY_TEXTURED_STATIC_V1"
+    static let packagedEvidenceClass = "ARTIST_BLEND_HERO_DCC_MID_LOD"
 }

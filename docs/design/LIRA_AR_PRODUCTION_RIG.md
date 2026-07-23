@@ -3,14 +3,14 @@
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
 version: 0.6
-status: MESHY_TEXTURED_STATIC_V1_SHIPPED
-usdz: MESHY_TEXTURED_STATIC_V1
+status: ARTIST_BLEND_HERO_DCC_MID_LOD_SHIPPED
+usdz: ARTIST_BLEND_HERO_DCC_MID_LOD
 mesh_descriptor: SHIPPED
 runtime_animation_clips: SHIPPED_PUPPET_STATIC_MESH
 skeletal_joint_hierarchy: PROMOTED_MARKERS
 blender_armature_rigid_bind: REFERENCE_ONLY
 direction: spectral_living_familiar
-evidence_class: MESHY_TEXTURED_STATIC_V1
+evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
 source_mesh: ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz
 armature: puppet_markers_plus_optional_prior_LiraArmature
 puppet_style: staticMesh_body_plus_spectral_fx
@@ -28,7 +28,7 @@ spectral_fx: A2_CoreGlow_A3_Filament_GroundShadow
 | AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
 | AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** (entity-bind) |
 | AR USDZ load | `LiraARAssetLoader` + hierarchy **promote** for incomplete meshes | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **MESHY_TEXTURED_STATIC_V1** (~9.6 MB compressed; ArtSource full-res) |
+| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_HERO_DCC_MID_LOD** (~4.8 MB; armature + DCC clips) |
 | Blender armature | `LiraArmature` 25 bones | **Shipped** (`build_lira_armature.py`) |
 | Heat-map skin | Auto-weights Body/Head/ears/legs; FX rigid | **Shipped** (`skin_lira_armature.py`) |
 | Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |

@@ -1,22 +1,25 @@
 # Packaged Lira AR USDZ
 
 ```yaml
-evidence_class: MESHY_TEXTURED_STATIC_V1
+evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
 file: Lira_AR_Base.usdz
-runtime_size: ~9.6MB_compressed
+runtime_size: ~4.8MB_artist_blend_dcc
 ```
 
 Primary: `App/Resources/Lira_AR_Base.usdz` (bundled via xcodegen)  
 Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`  
 Docs mirror: `docs/assets/companion/ar/Lira_AR_Base.usdz`  
-Full-res source: `ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz`  
+Artist source: `ArtSource/Companion/Lira/lira.blend`  
 
-Recompress after re-import:
+Re-export after sculpt / clip changes (does **not** use the Meshy interim path):
 
 ```bash
-cp ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz App/Resources/Lira_AR_Base.usdz
-./scripts/compress_lira_meshy_usdz.sh
+./scripts/export_lira_blend_to_usdz.sh ArtSource/Companion/Lira/lira.blend
+./scripts/check_lira_usdz_integrity.sh
 ```
+
+Legacy Meshy image-to-3d packages (if still under `ArtSource/Companion/Lira/meshy/`) are
+**not** the runtime default. Do not copy them over `Lira_AR_Base.usdz`.
 
 ## Runtime
 
