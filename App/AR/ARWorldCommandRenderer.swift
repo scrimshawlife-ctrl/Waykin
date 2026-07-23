@@ -47,6 +47,9 @@ final class ARWorldCommandRenderer {
         }
     }
 
+    /// Whether Lira walks ahead of the walker or keeps pace with them.
+    var escortMode: LiraEscortMode = .follow
+
     /// Cosmetic Lira skin. Setting re-applies materials to a live companion if planted.
     var companionSkin: LiraSkin {
         get { assetLoader.skin }
@@ -337,6 +340,10 @@ final class ARWorldCommandRenderer {
     static let followSettleMetersLira: Float = 1.4
     /// How far to the side she settles, so she accompanies rather than blocking the path.
     static let followSideOffsetMeters: Float = 0.8
+    /// Station-keeping distance ahead of the walker when leading.
+    static let leadDistanceMeters: Float = 2.0
+    /// Deadband while leading, so she is not nudged every frame.
+    static let leadArriveRadiusMeters: Float = 0.45
 
     /// Walk the companion toward a spot in front of the walker.
     ///
@@ -374,6 +381,24 @@ final class ARWorldCommandRenderer {
         // Upper bound guards against a garbage transform during relocalization sending her
         // on a long march to nowhere; re-planting handles genuinely lost anchors.
         guard gap.isFinite, current.x.isFinite, current.z.isFinite, gap < 60 else { return }
+
+        // Leading keeps station ahead of the walker, so it re-aims continuously rather
+        // than waiting to fall behind — that constant re-aim is exactly what makes
+        // following feel like being chased, and exactly what leading needs.
+        if escortMode == .lead {
+            let ahead = cameraPosition + flatForward * Self.leadDistanceMeters
+            let leadOffset = SIMD3<Float>(ahead.x - current.x, 0, ahead.z - current.z)
+            let leadDistance = simd_length(leadOffset)
+            guard leadDistance > Self.leadArriveRadiusMeters else { return }
+            let leadDirection = leadOffset / leadDistance
+            let leadStep = min(Self.followSpeedMetersPerSecond * Float(delta), leadDistance)
+            companion.setPosition(current + leadDirection * leadStep, relativeTo: nil)
+            companion.setOrientation(
+                simd_quatf(angle: atan2(leadDirection.x, leadDirection.z), axis: [0, 1, 0]),
+                relativeTo: nil
+            )
+            return
+        }
 
         // Hysteresis: only set off once she has genuinely fallen behind, and keep walking
         // until comfortably close. Without the gap between the two she hovers constantly.

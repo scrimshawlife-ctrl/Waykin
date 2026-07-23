@@ -55,6 +55,11 @@ final class CanonicalARSessionRuntime {
         self.renderCommandOverride = renderCommand
     }
 
+    /// Lead vs follow, chosen when the walk is started.
+    func setEscortMode(_ mode: LiraEscortMode) {
+        renderer.escortMode = mode
+    }
+
     func setCompanionSkin(_ skin: LiraSkin) {
         // Re-applies materials to live companion when planted.
         renderer.companionSkin = skin
@@ -261,6 +266,7 @@ final class CanonicalARSessionRuntime {
 struct CanonicalARSessionView: View {
     let appModel: any CanonicalARCommandSource
     var liraSkin: LiraSkin = .dawn
+    var escortMode: LiraEscortMode = .follow
     /// Mirrored walk controls (#126) so Pause/End stay reachable without leaving AR.
     var isPaused: Bool = false
     var onPause: (() -> Void)?
@@ -365,11 +371,15 @@ struct CanonicalARSessionView: View {
             }
         }
         .onAppear {
+            runtime.setEscortMode(escortMode)
             runtime.setCompanionSkin(liraSkin)
             runtime.setReduceMotion(reduceMotion)
         }
         .onChange(of: liraSkin) { _, newSkin in
             runtime.setCompanionSkin(newSkin)
+        }
+        .onChange(of: escortMode) { _, newMode in
+            runtime.setEscortMode(newMode)
         }
         .onChange(of: reduceMotion) { _, enabled in
             runtime.setReduceMotion(enabled)

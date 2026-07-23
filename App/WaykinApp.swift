@@ -175,6 +175,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
     }
     /// Presentation mode for the next / active walk (Trail default). Not a new gameplay engine.
     var selectedWalkMode: WalkMode = .trail
+    /// Whether Lira walks ahead of the walker or keeps pace with them (chosen per walk).
+    var liraEscortMode: LiraEscortMode = .follow
     var path = NavigationPath()
     var showsSettings = false
     /// First-run onboarding (intro → permissions honesty → safety).
@@ -2264,6 +2266,7 @@ struct ActiveSessionView: View {
             CanonicalARSessionView(
                 appModel: appModel,
                 liraSkin: appModel.selectedLiraSkin,
+                escortMode: appModel.liraEscortMode,
                 isPaused: appModel.activePresencePresentation.isPaused,
                 onPause: {
                     appModel.isLiveSessionActive ? appModel.pauseRealSession() : appModel.pauseDemo()
@@ -2414,6 +2417,33 @@ struct PreparationView: View {
     @Environment(WaykinAppModel.self) private var appModel
     @Environment(\.wkTheme) private var theme
 
+    /// Lead / follow switch for this walk.
+    private var escortToggle: some View {
+        @Bindable var model = appModel
+        return Toggle(isOn: Binding(
+            get: { model.liraEscortMode == .lead },
+            set: { model.liraEscortMode = $0 ? .lead : .follow }
+        )) {
+            HStack(spacing: WKTokens.Space.sm) {
+                WKIconView(icon: model.liraEscortMode.icon, size: 18)
+                    .foregroundStyle(mode.accent(in: theme))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.liraEscortMode.title)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(theme.textPrimary)
+                    Text(model.liraEscortMode.detail)
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+            }
+        }
+        .tint(mode.accent(in: theme))
+        .frame(minHeight: WKTokens.Space.minTouch)
+        .accessibilityIdentifier("waykin.prepare.escortMode")
+        .accessibilityValue(model.liraEscortMode.rawValue)
+    }
+
     var body: some View {
         ZStack {
             theme.background.ignoresSafeArea()
@@ -2438,6 +2468,10 @@ struct PreparationView: View {
                         .multilineTextAlignment(.center)
                 }
                 Spacer(minLength: 0)
+
+                // Lead vs follow is a genuine taste call — leading feels like being
+                // guided, following feels like company — so it is chosen per walk.
+                escortToggle
 
                 Button {
                     appModel.selectedWalkMode = mode
