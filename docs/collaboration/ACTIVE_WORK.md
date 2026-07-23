@@ -11,10 +11,11 @@ Last updated: 2026-07-23 (board refresh while #217 CI/device; distribution unblo
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
 | [PR #217](https://github.com/scrimshawlife-ctrl/Waykin/pull/217) — AR/audio device fixes + skinned walk Lira | **prabu-openclaw** | **In flight** — full-screen, `.playback` audio, ground plant/continuity, rigged USDZ; walk anim device play still open | CI + review; Info.plist reconciles with #216 if both merge |
-| [PR #216](https://github.com/scrimshawlife-ctrl/Waykin/pull/216) — Info.plist encryption sync + TestFlight RC checklist | scrimshawlife-ctrl | **APPROVED / green** — land after or folded into #217 Info.plist story | Do not double-edit Info.plist vs #217 |
+| [PR #216](https://github.com/scrimshawlife-ctrl/Waykin/pull/216) — Info.plist encryption sync (+ original checklist) | scrimshawlife-ctrl | **APPROVED / green** — Info.plist half still needed after #217; checklist may land via #218 | Do not double-edit Info.plist vs #217 |
+| [PR #218](https://github.com/scrimshawlife-ctrl/Waykin/pull/218) — collab board + TF checklist + receipt samples | scrimshawlife-ctrl | **Docs** — no AR code | Independent of #217 |
 | Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — re-walk on tip after #217 | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · daylight |
-| Indoor AR hybrid smoke | Human device | **Armed** — fill PENDING receipt on named tip | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
-| Internal TestFlight RC | Human (signing / ASC) | **Unblocked for engineering** after #215 privacy/encryption; use #216 checklist when merged | Bump build number before archive; #41 not required for *internal* TF |
+| Indoor AR hybrid smoke | Human device | **Armed** — `receipts/INDOOR_AR_HYBRID_SMOKE_*_8beec34_PENDING.md` | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
+| Internal TestFlight RC | Human (signing / ASC) | **Checklist available** at [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md) after #218; #215 privacy/encryption on main | Bump build number before archive; #41 not required for *internal* TF |
 
 ## Recently completed (main)
 

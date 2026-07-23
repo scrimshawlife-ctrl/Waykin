@@ -16,12 +16,24 @@ Outdoor QA copies should use:
 OUTDOOR_QA_RECEIPT_YYYYMMDD_<device-model>.md
 ```
 
+## Indoor AR hybrid smoke
+
+| File | Status |
+| ---- | ------ |
+| `INDOOR_AR_HYBRID_SMOKE_20260723T011800Z_8beec34_PENDING.md` | **PENDING** human fill on main tip `8beec34` (or re-bind after #217) |
+| Protocol | `../INDOOR_AR_HYBRID_SMOKE.md` |
+
 ## Simulator preflight / engineering
 
 Multiple `SIM_PREFLIGHT_*` and sim checklist receipts live in this directory. They are **SIMULATOR** evidence only.
+
+## Field-test JSON samples (agent format)
+
+See [`samples/`](samples/) — real sim export (schema 4) + synthetic schema **5** example with `arPresentation` / `clips=N`. **Not** device or outdoor evidence.
 
 ## Rules
 
 - `OBSERVED` only from named device/build sessions.
 - PARTIAL outdoor AR receipt does **not** close Issue #41.
 - After continuity/audio/UI mitigations, re-walk on **current main tip** for COH PASS claims.
+- Do not treat `samples/*.json` as outdoor AR or #217 device PASS.
