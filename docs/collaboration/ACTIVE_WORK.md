@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-23 (board refresh while #217 CI/device; distribution unblocked on main)
+Last updated: 2026-07-23 (artist AR package #222; device AR #217; main has #218/#219)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,77 +10,50 @@ Last updated: 2026-07-23 (board refresh while #217 CI/device; distribution unblo
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| [PR #217](https://github.com/scrimshawlife-ctrl/Waykin/pull/217) — AR/audio device fixes + skinned walk Lira | **prabu-openclaw** | **In flight** — full-screen, `.playback` audio, ground plant/continuity, rigged USDZ; walk anim device play still open | CI + review; Info.plist reconciles with #216 if both merge |
-| [PR #216](https://github.com/scrimshawlife-ctrl/Waykin/pull/216) — Info.plist encryption sync (+ original checklist) | scrimshawlife-ctrl | **APPROVED / green** — Info.plist half still needed after #217; checklist may land via #218 | Do not double-edit Info.plist vs #217 |
-| [PR #218](https://github.com/scrimshawlife-ctrl/Waykin/pull/218) — collab board + TF checklist + receipt samples | scrimshawlife-ctrl | **Docs** — no AR code | Independent of #217 |
-| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — re-walk on tip after #217 | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · daylight |
-| Indoor AR hybrid smoke | Human device | **Armed** — `receipts/INDOOR_AR_HYBRID_SMOKE_*_8beec34_PENDING.md` | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
-| Internal TestFlight RC | Human (signing / ASC) | **Checklist available** at [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md) after #218; #215 privacy/encryption on main | Bump build number before archive; #41 not required for *internal* TF |
+| [PR #222](https://github.com/scrimshawlife-ctrl/Waykin/pull/222) — artist Lira mid-LOD USDZ | eng | **In flight** — package ~4.8 MB `ARTIST_BLEND_HERO_DCC_MID_LOD` | Issue #220 |
+| [PR #217](https://github.com/scrimshawlife-ctrl/Waykin/pull/217) — device AR/audio | prabu-openclaw | **In flight** — full-screen, playback, plant/follow; **do not clobber #222 USDZ** | Rebase after #222 |
+| [PR #221](https://github.com/scrimshawlife-ctrl/Waykin/pull/221) — sculpt plan docs | — | Green / needs non-author review | Issue #220 |
+| Issue #41 — outdoor physical validation | Human device | **Parked / PARTIAL** | Daylight re-walk on tip |
+| Indoor AR hybrid smoke | Human device | Armed scaffold on main (#218) | Fill PENDING receipt |
+| Internal TestFlight RC | Human | Checklist on main (#218); encryption plist (#219) | Bump build; signing |
 
 ## Recently completed (main)
 
 | Work | Evidence |
 |---|---|
-| Privacy manifest + encryption declaration | PR #215 · main `8beec34` |
-| CI UI-test retry on hosted flake | PR #213 |
-| Meshy textured Lira + puppet + spectral FX + compress | PRs #208–#211 |
-| Native + UI test gate + AR integration re-ratify | PRs #205 / #207 |
-| A11y + map-secondary law restore | PR #202 |
-| Persistence WP-DB1–DB5 | PRs #185–#192 · recovery quarantine |
-| Time-aware splash + Waykin display font | PR #184 |
-| Debug D5–D7 + receipt schema 5 | Issue #196 · PR #197 |
-| Grok skill pack (team-tracked `.grok/skills`) | PRs #198–#199 |
+| Board refresh + TF checklist + receipt samples | PR #218 |
+| Info.plist encryption key | PR #219 |
+| Privacy manifest + encryption declaration | PR #215 |
+| Meshy textured Lira ladder (interim) | PRs #208–#211 |
+| CI native/UI gates + flake retry | #205 / #213 |
+| Persistence WP-DB1–DB5 | #185–#192 |
+| Grok skill pack | #198–#199 |
 
 ## Intake
 
 | Work | Reason |
 |---|---|
-| Walk-cycle playback on device (`clips=N` diagnosis) | #217 known issue — field receipt `arPresentation.finalLODDescription` |
-| Smooth companion follow (vs ~6 m replant teleports) | Product decision; not threshold-only |
-| Soft-budget USDZ slim (&lt;12 MB) while keeping skinned walk | Optional; hard cap 20 MB |
-| WP-DB6 CloudKit evaluation ADR | Only if product requires multi-device restore |
-| Evidence class rename beyond `MESHY_TEXTURED_STATIC_V1` | Only with catalog + tests + EXPORT_OK |
-| Optional DM Sans / extra SVG icons | Dedicated issue only |
-| Orc / FutureSelf cleanup | Migration issue + Codable tests |
+| [Issue #220](https://github.com/scrimshawlife-ctrl/Waykin/issues/220) — AR production sculpt / brand package | #222 packaging; device silhouette OBSERVED still open |
+| Walk-cycle playback on device (`clips=N`) | #217 known issue |
+| Soft-budget / freehand silhouette polish | Only if indoor still fails brand gates |
 
 ## Blocked
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| #41 outdoor COH PASS | Device + daylight + tip after mitigations | Outdoor packet + COH receipt; do not invent PASS from sim |
+| #41 outdoor COH PASS | Device + daylight | Outdoor packet + COH on tip SHA |
 
-## Field-test JSON (agents)
-
-Format samples (not device evidence): `docs/design/receipts/samples/` when present on a branch (schema 5 EXAMPLE + sim schema 4). Production: Settings → share latest receipt. Source: `Sources/WaykinCore/Diagnostics/FieldTestReceipt.swift`.
-
-## Parked recommendations
-
-See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — outdoor #41 first when resumed; indoor smoke; DCC package slim-down; RC/FUTURE; Orc cleanup.
-
-## Explicitly deferred (FUTURE / RC)
-
-- Pathfinding v2, Health v2, Watch, AI Directors RC, multi-companion
-- Removing deprecated Orc/FutureSelf surfaces (needs migration issue)
-- Marketplace / multiplayer
-
-## Merge hygiene (open PRs)
+## Merge hygiene
 
 ```text
-Preferred: land #217 (product/device) then re-cut #216 or rebase checklist onto tip
-          OR fold encryption-stable Info.plist + TF checklist into #217 before merge
-Avoid: parallel Info.plist thrash — xcodegen must leave a clean tree on tip
+Prefer: #221 (docs) → #222 (artist USDZ) → #217 (device code, keep main package)
+Avoid:  #217 reintroducing Meshy as Lira_AR_Base.usdz after #222
 ```
-
-## Preservation
-
-`wip/ar3-local-preservation` is not merge authority.
 
 ## UI authority (quick)
 
 | Need | Doc |
 |---|---|
 | Product surfaces | [WAYKIN_UIUX_SPEC.md](../design/WAYKIN_UIUX_SPEC.md) |
-| Tokens / candidate package | [UI_CANDIDATE_V02_POINTER.md](../design/UI_CANDIDATE_V02_POINTER.md) |
-| Practice + PR receipt | [UI_ENGINEERING_PRACTICE.md](../design/UI_ENGINEERING_PRACTICE.md) · [UI_CHANGE_VALIDATION_RECEIPT.md](../design/UI_CHANGE_VALIDATION_RECEIPT.md) |
-| Residual audit | [UI_CANDIDATE_RESIDUAL_AUDIT.md](../design/UI_CANDIDATE_RESIDUAL_AUDIT.md) |
+| Practice + PR receipt | [UI_ENGINEERING_PRACTICE.md](../design/UI_ENGINEERING_PRACTICE.md) |
 | Conflicts | [DOCUMENT_AUTHORITY.md](../governance/DOCUMENT_AUTHORITY.md) |
