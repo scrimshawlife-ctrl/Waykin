@@ -1,9 +1,9 @@
 # Packaged Lira AR USDZ
 
 ```yaml
-evidence_class: MESHY_TEXTURED_STATIC_V1
+evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
 file: Lira_AR_Base.usdz
-runtime_size: ~9.6MB_compressed
+runtime_size: ~4.8MB_artist_blend_dcc
 ```
 
 Primary: `App/Resources/Lira_AR_Base.usdz` (bundled via xcodegen)  

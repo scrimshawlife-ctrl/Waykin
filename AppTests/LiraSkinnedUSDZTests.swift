@@ -2,12 +2,12 @@ import RealityKit
 import XCTest
 @testable import WaykinApp
 
-/// Hard asserts on packaged MESHY_TEXTURED_STATIC_V1 (not soft procedural fallback).
+/// Hard asserts on packaged ARTIST_BLEND_HERO_DCC_MID_LOD (not soft procedural fallback).
 @MainActor
 final class LiraHeroDCCUSDZTests: XCTestCase {
-    func testPackagedEvidenceClassIsMeshyTexturedStatic() {
-        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "MESHY_TEXTURED_STATIC_V1")
-        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("MESHY_TEXTURED_STATIC_V1"))
+    func testPackagedEvidenceClassIsArtistBlendHeroDCCMidLOD() {
+        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_HERO_DCC_MID_LOD")
+        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("ARTIST_BLEND_HERO_DCC_MID_LOD"))
         XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ)
     }
 

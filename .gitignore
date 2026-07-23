@@ -33,3 +33,7 @@ DerivedData/
 .grok/*
 !.grok/skills/
 !.grok/skills/**
+
+__pycache__/
+*.pyc
+*.blend1
