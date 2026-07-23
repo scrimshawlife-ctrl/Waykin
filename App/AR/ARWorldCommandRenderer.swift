@@ -296,6 +296,12 @@ final class ARWorldCommandRenderer {
         placementResolver.clear()
         diagnostics.record(.sessionCleared)
         companionState = .idle
+        // Follow state is per-session. Left behind, a stale pace estimate or a latched
+        // "closing distance" flag would make the next walk's first seconds behave as if
+        // it were mid-stride from the previous one.
+        walkerSpeedEstimate = 0
+        lastCameraPosition = nil
+        isClosingDistance = false
         elapsedInCompanionState = 0
         localMotionElapsed = 0
         spawnCoalesceElapsed = 0
