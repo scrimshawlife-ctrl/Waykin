@@ -317,12 +317,23 @@ final class LiraARAssetLoader {
     func playAuthoredAnimation(on entity: Entity) {
         guard hasAuthoredAnimation else { return }
         let host = Self.animationHost(entity) ?? entity
+        // Ask for an explicitly unbounded repeat; the plain `repeat()` was observed
+        // running a single cycle on this skeletal resource. A watchdog in the renderer
+        // restarts it regardless, so this is belt-and-braces.
         if let own = host.availableAnimations.first {
-            authoredController = host.playAnimation(own.repeat(), transitionDuration: 0.2, startsPaused: false)
+            authoredController = host.playAnimation(
+                own.repeat(duration: .infinity),
+                transitionDuration: 0.2,
+                startsPaused: false
+            )
             return
         }
         guard let stored = authoredClips.first else { return }
-        authoredController = host.playAnimation(stored.repeat(), transitionDuration: 0.2, startsPaused: false)
+        authoredController = host.playAnimation(
+            stored.repeat(duration: .infinity),
+            transitionDuration: 0.2,
+            startsPaused: false
+        )
     }
 
     /// Meshy image-to-3d (and similar) ships a single textured mesh without A1–A3 names.

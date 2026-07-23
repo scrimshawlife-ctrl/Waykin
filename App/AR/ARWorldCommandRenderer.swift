@@ -301,6 +301,27 @@ final class ARWorldCommandRenderer {
         return .cleared
     }
 
+    /// How often to check that the authored walk clip is still running.
+    private static let authoredAnimationWatchdogInterval: TimeInterval = 0.4
+    private var authoredAnimationWatchdogElapsed: TimeInterval = 0
+
+    /// Keep the authored walk clip looping.
+    ///
+    /// A device walk reported `anim=PLAYING` followed by `anim=stopped`: the clip ran a
+    /// single ~1s cycle and halted, so `AnimationResource.repeat()` is not looping this
+    /// skeletal resource. Rather than depend on repeat semantics, restart whenever it is
+    /// observed stopped. Throttled so a clip that refuses to start cannot thrash the
+    /// animation system every frame.
+    private func advanceAuthoredAnimationWatchdog(by delta: TimeInterval) {
+        guard assetLoader.hasAuthoredAnimation else { return }
+        authoredAnimationWatchdogElapsed += delta
+        guard authoredAnimationWatchdogElapsed >= Self.authoredAnimationWatchdogInterval else { return }
+        authoredAnimationWatchdogElapsed = 0
+        guard !assetLoader.isAuthoredAnimationPlaying,
+              let companion = liveCompanionRoot(), companion.isEnabled else { return }
+        assetLoader.playAuthoredAnimation(on: companion)
+    }
+
     /// Walking pace used when closing distance to the walker (m/s). Slightly above a
     /// human stroll so she can actually catch up rather than trailing forever.
     static let followSpeedMetersPerSecond: Float = 1.35
@@ -356,6 +377,7 @@ final class ARWorldCommandRenderer {
     func advanceLocalMotion(by delta: TimeInterval) {
         guard delta.isFinite, delta >= 0 else { return }
         localMotionElapsed += delta
+        advanceAuthoredAnimationWatchdog(by: delta)
         if isSpawningCoalesce {
             spawnCoalesceElapsed += delta
             let progress = LiraARMotion.spawnCoalesceProgress(
