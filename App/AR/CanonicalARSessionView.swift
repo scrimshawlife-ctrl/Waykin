@@ -84,6 +84,7 @@ final class CanonicalARSessionRuntime {
         arView.session = sessionCoordinator.session
         sceneUpdateSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             self?.drainPendingCommands()
+            self?.advanceFollow(by: event.deltaTime)
             self?.maintainContinuity(by: event.deltaTime)
             self?.advancePresentation(by: event.deltaTime)
         }
@@ -217,6 +218,13 @@ final class CanonicalARSessionRuntime {
         renderer.advanceLocalMotion(by: delta)
         guard let transition = renderer.advanceCompanionPresentation(by: delta) else { return }
         companionState = transition.resolvedState
+    }
+
+    /// Walk the companion toward the walker each frame, so she covers ground instead of
+    /// snapping into place. Needs the live camera transform, which only the view owns.
+    private func advanceFollow(by delta: TimeInterval) {
+        guard let arView else { return }
+        renderer.advanceCompanionFollow(by: delta, cameraTransform: arView.cameraTransform)
     }
 
     /// Suppress the companion while ARKit tracking is unreliable.

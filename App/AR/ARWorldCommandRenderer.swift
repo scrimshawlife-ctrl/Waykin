@@ -301,6 +301,49 @@ final class ARWorldCommandRenderer {
         return .cleared
     }
 
+    /// Walking pace used when closing distance to the walker (m/s). Slightly above a
+    /// human stroll so she can actually catch up rather than trailing forever.
+    static let followSpeedMetersPerSecond: Float = 1.35
+    /// Stop closing once this near the ideal spot, so she settles instead of jittering.
+    static let followArriveRadiusMeters: Float = 0.55
+    /// Ideal standing distance in front of the walker.
+    static let followDistanceMeters: Float = 1.6
+
+    /// Walk the companion toward a spot in front of the walker.
+    ///
+    /// Replaces teleport-style re-planting as the normal way she keeps up: she now
+    /// *travels* there at walking pace and turns to face her direction of travel, so
+    /// turning around shows her walking up rather than snapping into view. Re-planting
+    /// remains only for a genuinely lost or detached anchor.
+    ///
+    /// Movement is horizontal only — her ground height is whatever the plant established.
+    func advanceCompanionFollow(by delta: TimeInterval, cameraTransform: Transform) {
+        guard delta.isFinite, delta > 0, delta < 1,
+              let companion = liveCompanionRoot(), companion.isEnabled else { return }
+
+        let matrix = cameraTransform.matrix
+        let cameraPosition = cameraTransform.translation
+        let forward = -SIMD3<Float>(matrix.columns.2.x, matrix.columns.2.y, matrix.columns.2.z)
+        var flatForward = SIMD3<Float>(forward.x, 0, forward.z)
+        guard simd_length(flatForward) > 0.0001 else { return }
+        flatForward = simd_normalize(flatForward)
+
+        let current = companion.position(relativeTo: nil)
+        let target = cameraPosition + flatForward * Self.followDistanceMeters
+        let offset = SIMD3<Float>(target.x - current.x, 0, target.z - current.z)
+        let distance = simd_length(offset)
+        guard distance.isFinite, distance > Self.followArriveRadiusMeters else { return }
+
+        let direction = offset / distance
+        let step = min(Self.followSpeedMetersPerSecond * Float(delta), distance)
+        companion.setPosition(current + direction * step, relativeTo: nil)
+        // Face where she is heading.
+        companion.setOrientation(
+            simd_quatf(angle: atan2(direction.x, direction.z), axis: [0, 1, 0]),
+            relativeTo: nil
+        )
+    }
+
     /// Advance A2 breath, A3 filament sway / hunter echo, A4 spawn coalesce.
     /// Safe no-op without companion.
     func advanceLocalMotion(by delta: TimeInterval) {
@@ -400,8 +443,9 @@ final class ARWorldCommandRenderer {
 
     private func applyPresentation(for state: CompanionPresentationState, to entity: Entity) {
         let presentation = presentation(for: state)
-        entity.position = presentation.position
-        entity.orientation = presentation.orientation
+        // Position and orientation are owned by `advanceCompanionFollow`, which walks her
+        // in world space. Re-applying the per-state local offsets here would snap her back
+        // to the anchor origin on every state change and fight the follow motion.
         applySpawnCoalesce(to: entity, state: state)
 
         entity.findEntity(named: "StatusIndicator")?.isEnabled = presentation.indicatorVisible
