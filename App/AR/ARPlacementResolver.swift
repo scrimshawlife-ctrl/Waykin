@@ -252,7 +252,27 @@ final class ARPlacementResolver {
         let camera = arView.cameraTransform
         let anchorPos = anchor.position(relativeTo: nil)
         let cameraPos = camera.translation
-        return Self.shouldReplant(distanceMeters: simd_length(anchorPos - cameraPos))
+        let offset = anchorPos - cameraPos
+        guard Self.shouldReplant(distanceMeters: simd_length(offset)) else { return false }
+
+        // Far enough to re-plant — but don't do it while the walker is looking at her.
+        // A device walk logged 13 re-plants over 134m, read as her teleporting around.
+        // Re-planting only once she is out of frame keeps her presence continuous
+        // without the jump ever being witnessed.
+        return Self.isBehindCamera(offset: offset, cameraTransform: camera.matrix)
+    }
+
+    /// True when `offset` (companion minus camera) points behind the camera.
+    /// ARKit cameras look down local -Z, so forward is the negated third column.
+    static func isBehindCamera(offset: SIMD3<Float>, cameraTransform: float4x4) -> Bool {
+        let forward = -SIMD3<Float>(
+            cameraTransform.columns.2.x,
+            cameraTransform.columns.2.y,
+            cameraTransform.columns.2.z
+        )
+        let length = simd_length(offset)
+        guard length > 0.0001, simd_length(forward) > 0.0001 else { return true }
+        return simd_dot(offset / length, simd_normalize(forward)) < 0
     }
 
     /// Pure distance gate for tests / diagnostics (#125).

@@ -175,6 +175,8 @@ final class ARWorldCommandRenderer {
             // Re-bind skeletal after re-plant (new or moved entity).
             if didReplant {
                 prepareSkeletalPlayback(on: companion)
+                // Re-parenting stopped the authored clip — restart it.
+                assetLoader.playAuthoredAnimation(on: companion)
             }
 
             let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
@@ -251,6 +253,7 @@ final class ARWorldCommandRenderer {
             if let companion = liveCompanionRoot() {
                 prepareSkeletalPlayback(on: companion)
                 applyPresentation(for: companionState, to: companion)
+                assetLoader.playAuthoredAnimation(on: companion)
             }
         }
         return ok
@@ -424,6 +427,16 @@ final class ARWorldCommandRenderer {
         guard let anchor = registry.entity(for: Self.companionID) else { return nil }
         return anchor.findEntity(named: CompanionEntityFactory.rootName)
             ?? anchor.children.first
+    }
+
+    /// Show/hide the planted companion without disturbing its anchor.
+    ///
+    /// While ARKit tracking is unreliable the world anchor transform can go briefly
+    /// garbage, smearing the low-poly mesh across the screen (the "corner polygon")
+    /// right before the anchor is dropped. Hiding through that window suppresses the
+    /// artifact instead of showing corrupt geometry.
+    func setCompanionVisible(_ visible: Bool) {
+        liveCompanionRoot()?.isEnabled = visible
     }
 
     /// Re-paint materials on the currently planted companion (live form change).

@@ -84,7 +84,9 @@ final class CanonicalARSessionRuntime {
             self?.advancePresentation(by: event.deltaTime)
         }
         sessionCoordinator.onCapabilityStateChange = { [weak self] state in
-            self?.capabilityState = state
+            guard let self else { return }
+            self.capabilityState = state
+            self.applyTrackingVisibility(for: state)
         }
         commandHandlerOwner = appModel.attachARWorldCommandHandler { [weak self] commands in
             self?.receive(commands)
@@ -213,6 +215,21 @@ final class CanonicalARSessionRuntime {
         companionState = transition.resolvedState
     }
 
+    /// Suppress the companion while ARKit tracking is unreliable.
+    ///
+    /// During tracking loss the world anchor transform can go briefly garbage, smearing
+    /// the mesh across a corner of the screen right before the anchor is dropped — the
+    /// "corner polygon" seen on device walks, which preceded her vanishing. Hiding through
+    /// that window shows nothing rather than corrupt geometry, and recovery forces an
+    /// immediate continuity check so she returns promptly.
+    private func applyTrackingVisibility(for state: ARCapabilityState) {
+        let reliable = state == .active
+        renderer.setCompanionVisible(reliable)
+        if reliable {
+            continuityElapsed = Self.continuityCheckInterval
+        }
+    }
+
     /// Throttled frame-driven continuity so Lira recovers from a dropped world anchor
     /// within ~1s, instead of vanishing until the next game `updateCompanion` command.
     /// No-ops until a companion has actually been spawned (renderer guards that).
@@ -269,37 +286,22 @@ struct CanonicalARSessionView: View {
                     // Developer diagnostics HUD — hidden in normal sessions, shown for
                     // operators (-WAYKIN_OPERATOR_DEBUG) and UI tests (-WAYKIN_UI_TESTING).
                     if ARDiagnosticsHUDFeature.isEnabled {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("AR: \(runtime.capabilityState.rawValue)")
-                            Text("Lira: \(runtime.companionState.rawValue)")
-                            Text("Form: \(liraSkin.displayName)")
-                            Text("LOD: \(runtime.companionLODDescription)")
+                        // Compact by design: this sits over the live camera during field
+                        // walks, so it stays three short lines. Full detail still reaches
+                        // the walk receipt via ingestARPresentationDiagnostics.
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("\(runtime.capabilityState.rawValue) · \(runtime.companionState.rawValue) · \(liraSkin.displayName)")
+                            Text(runtime.companionLODDescription)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
                                 .accessibilityIdentifier("waykin.ar.canonical.lod")
-                            // Mid-LOD skinned artist package (not outdoor hero claim).
-                            Text("AR mesh: \(LiraARAssetCatalog.packagedEvidenceClass)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .accessibilityIdentifier("waykin.ar.canonical.meshClass")
-                            Text("Motion: \(runtime.motionDiagnosticsLine)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                                .accessibilityIdentifier("waykin.ar.canonical.motion")
-                            // #125: continuity plant note for outdoor QA (not a quality claim).
-                            Text("Continuity: \(runtime.companionContinuityNote)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                            Text(runtime.companionContinuityNote)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
                                 .accessibilityIdentifier("waykin.ar.canonical.continuity")
-                            // #147: human hint from the same note (no new gameplay truth).
-                            if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
-                                Text(hint)
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                    .accessibilityIdentifier("waykin.ar.canonical.continuityHint")
-                            }
-                            Text(runtime.lastResult)
                         }
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.secondary)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel(arStatusAccessibilityLabel)
                         .accessibilityIdentifier("waykin.ar.canonical.status")

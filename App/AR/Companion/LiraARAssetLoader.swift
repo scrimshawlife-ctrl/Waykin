@@ -21,6 +21,11 @@ final class LiraARAssetLoader {
     /// True when the packaged USDZ ships its own skeletal clip (UsdSkel walk cycle).
     /// The renderer must not install puppet clips over it, and `makeLira` loops it.
     private(set) var hasAuthoredAnimation = false
+    /// Clips captured from the template at load. `clone(recursive:)` does not reliably
+    /// carry an entity's animation library, and every re-plant calls `removeFromParent()`
+    /// which stops playback — so the resources are kept here and re-applied after each
+    /// placement rather than relying on the live entity still owning them.
+    private(set) var authoredClips: [AnimationResource] = []
     private var template: Entity?
     var skin: LiraSkin = .dawn
 
@@ -60,6 +65,7 @@ final class LiraARAssetLoader {
                 source = .usdz(url.lastPathComponent)
                 preserveAuthoredMaterials = true
                 hasAuthoredAnimation = true
+                authoredClips = Self.collectAnimations(animatedRoot)
                 loadNote = "usdz_active_animated_skelanim:clips=\(clipCount)"
                 return
             }
@@ -141,6 +147,7 @@ final class LiraARAssetLoader {
         loadNote = note
         preserveAuthoredMaterials = false
         hasAuthoredAnimation = false
+        authoredClips = []
         _ = reason
     }
 
@@ -157,9 +164,7 @@ final class LiraARAssetLoader {
             }
             let scale = configuration.companionHeightMeters / 0.72
             clone.scale = SIMD3<Float>(repeating: scale)
-            if hasAuthoredAnimation {
-                Self.playAuthoredAnimation(on: clone)
-            }
+            playAuthoredAnimation(on: clone)
             return clone
         }
         return CompanionEntityFactory(skin: skin).makeLira(configuration: configuration)
@@ -284,11 +289,30 @@ final class LiraARAssetLoader {
         return root
     }
 
-    /// Loop the authored skeletal clip on a freshly cloned companion.
-    static func playAuthoredAnimation(on clone: Entity) {
-        guard let host = animationHost(clone),
-              let clip = host.availableAnimations.first else { return }
-        host.playAnimation(clip.repeat(), transitionDuration: 0.2, startsPaused: false)
+    /// Every animation resource in the subtree.
+    static func collectAnimations(_ root: Entity) -> [AnimationResource] {
+        var found = root.availableAnimations
+        for child in root.children {
+            found.append(contentsOf: collectAnimations(child))
+        }
+        return found
+    }
+
+    /// (Re)start the authored walk clip on a placed companion.
+    ///
+    /// Must be called after *every* placement, not just spawn: `ensureCompanionContinuity`
+    /// re-parents the entity on each re-plant, which stops any running animation. Prefers
+    /// the entity's own library and falls back to the resources captured at load, since a
+    /// clone may not carry them.
+    func playAuthoredAnimation(on entity: Entity) {
+        guard hasAuthoredAnimation else { return }
+        let host = Self.animationHost(entity) ?? entity
+        if let own = host.availableAnimations.first {
+            host.playAnimation(own.repeat(), transitionDuration: 0.2, startsPaused: false)
+            return
+        }
+        guard let stored = authoredClips.first else { return }
+        host.playAnimation(stored.repeat(), transitionDuration: 0.2, startsPaused: false)
     }
 
     /// Meshy image-to-3d (and similar) ships a single textured mesh without A1–A3 names.
