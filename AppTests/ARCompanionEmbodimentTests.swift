@@ -130,7 +130,9 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         )
     }
 
-    func testEveryStateAppliesBoundedAbsoluteRealityKitPresentation() throws {
+    /// Scale / indicator / materials are presentation-owned; root position and orientation
+    /// are follow-owned (`advanceCompanionFollow`) and must not be reset on state change.
+    func testEveryStateAppliesBoundedScaleAndStatusWithoutClobberingFollowTransform() throws {
         let registry = AREntityRegistry()
         let renderer = ARWorldCommandRenderer(
             registry: registry,
@@ -140,19 +142,25 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         let companion = try XCTUnwrap(
             anchor.findEntity(named: CompanionEntityFactory.rootName)
         )
-        let expected: [(CompanionPresentationState, SIMD3<Float>, SIMD3<Float>, simd_quatf, Bool)] = [
-            (.idle, [0, 0, 0], [1, 1, 1], simd_quatf(angle: 0, axis: [0, 1, 0]), false),
-            (.follow, [0, 0, 0.12], [1.02, 1.02, 1.02], simd_quatf(angle: 0.18, axis: [0, 1, 0]), false),
-            (.investigate, [-0.08, 0, 0], [1, 0.92, 1.08], simd_quatf(angle: -0.22, axis: [1, 0, 0]), true),
-            (.alert, [0, 0, -0.10], [1.05, 1.14, 0.96], simd_quatf(angle: 0, axis: [0, 1, 0]), true),
-            (.celebrate, [0, 0.10, 0], [1.12, 1.12, 1.12], simd_quatf(angle: .pi / 5, axis: [0, 1, 0]), true),
+        let expected: [(CompanionPresentationState, SIMD3<Float>, Bool)] = [
+            (.idle, [1, 1, 1], false),
+            (.follow, [1.02, 1.02, 1.02], false),
+            (.investigate, [1, 0.92, 1.08], true),
+            (.alert, [1.05, 1.14, 0.96], true),
+            (.celebrate, [1.12, 1.12, 1.12], true),
         ]
 
-        for (state, position, scale, orientation, indicatorVisible) in expected {
+        // Simulate a follow-owned world pose that presentation must not overwrite.
+        let followOwnedPosition = SIMD3<Float>(0.4, 0.05, -0.3)
+        let followOwnedOrientation = simd_quatf(angle: 0.75, axis: [0, 1, 0])
+        companion.position = followOwnedPosition
+        companion.orientation = followOwnedOrientation
+
+        for (state, scale, indicatorVisible) in expected {
             _ = renderer.setCompanionState(state)
-            XCTAssertEqual(companion.position, position)
             XCTAssertEqual(companion.scale, scale)
-            XCTAssertEqual(companion.orientation.vector, orientation.vector)
+            XCTAssertEqual(companion.position, followOwnedPosition)
+            XCTAssertEqual(companion.orientation.vector, followOwnedOrientation.vector)
             XCTAssertEqual(
                 companion.findEntity(named: "StatusIndicator")?.isEnabled,
                 indicatorVisible
@@ -161,18 +169,15 @@ final class ARCompanionEmbodimentTests: XCTestCase {
                 companion.findEntity(named: "StatusIndicator") as? ModelEntity
             )
             XCTAssertTrue(try XCTUnwrap(indicator.model?.materials.first) is SimpleMaterial)
-            XCTAssertLessThanOrEqual(simd_length(companion.position), 0.12)
             XCTAssertLessThanOrEqual(max(scale.x, max(scale.y, scale.z)), 1.14)
 
-            companion.position = [4, 4, 4]
             companion.scale = [3, 3, 3]
-            companion.orientation = simd_quatf(angle: .pi, axis: [0, 1, 0])
             indicator.model?.materials = [UnlitMaterial(color: .black)]
 
             _ = renderer.setCompanionState(state)
-            XCTAssertEqual(companion.position, position)
             XCTAssertEqual(companion.scale, scale)
-            XCTAssertEqual(companion.orientation.vector, orientation.vector)
+            XCTAssertEqual(companion.position, followOwnedPosition)
+            XCTAssertEqual(companion.orientation.vector, followOwnedOrientation.vector)
             XCTAssertTrue(try XCTUnwrap(indicator.model?.materials.first) is SimpleMaterial)
         }
     }
