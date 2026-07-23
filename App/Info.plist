@@ -34,5 +34,16 @@
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Audio-first walking experience: cues must keep playing with the screen
+	     locked and the phone in a pocket. Without this, backgrounding kills audio. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<!-- Presence of UILaunchScreen tells iOS the app supports native full-screen
+	     rendering. Without it iOS runs in legacy letterbox (reduced logical size),
+	     which shrinks the whole UI and crams ARView into a thin camera band. -->
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>
