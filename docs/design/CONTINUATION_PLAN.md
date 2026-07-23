@@ -30,11 +30,15 @@ authority_note: ACTIVE_WORK.md is the live coordination snapshot
 | Menu UX + non-outdoor UI polish | **Done** (#126/#147–#150) |
 | Engineering doc sync vs code | **This wave** |
 
-## Active wave — UI CANDIDATE_v0.2 Phase 4
+## Completed wave — UI CANDIDATE_v0.2 Phase 4
 
 Pointer: [UI_CANDIDATE_V02_POINTER.md](UI_CANDIDATE_V02_POINTER.md)
 
-1. Verify tokens / day-night vs `App/Theme/WKTokens.swift` (HO-001).
+**No longer active** (2026-07-23 board refresh). UI candidate integration largely landed on main; live lanes are device AR/audio (#217), artist AR package (#222), internal TF (#218 checklist / #219 encryption). Residual UI polish only via dedicated issues — do not treat the list below as open implementation queue.
+
+Historical checklist (done or superseded on main):
+
+1. Tokens / day-night vs `App/Theme/WKTokens.swift` (HO-001).
 2. Home + Begin + settings chrome vs production board.
 3. Active session + pause + safety pause density.
 4. Icons from candidate SVG set.
