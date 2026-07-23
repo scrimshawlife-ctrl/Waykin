@@ -119,14 +119,16 @@ final class LiraARAssetLoader {
                 Self.plantBodyOnGround(root)
                 Self.layoutSpectralFXAnchors(on: root)
             }
+            // After FX install, model count is high — use promote flag + Body-only mesh heuristic.
+            let preserveMaterials = promoted || Self.isAuthoredBodyStaticMesh(root)
+            // Compose DCC sidecars *before* publishing template/source so a concurrent
+            // spawn cannot install skeletal playback with an empty dccClipLibrary
+            // (renderer only installs on spawn/replant; late sidecar fill would stick on puppet).
+            let sidecarMapped = await loadDCCClipSidecars()
             template = root
             source = .usdz(url.lastPathComponent)
-            // After FX install, model count is high — use promote flag + Body-only mesh heuristic.
-            preserveAuthoredMaterials = promoted
-                || Self.isAuthoredBodyStaticMesh(root)
-            // Compose DCC state clips from sidecar USDZs when the default layer is silent.
-            let sidecarMapped = await loadDCCClipSidecars()
-            if preserveAuthoredMaterials {
+            preserveAuthoredMaterials = preserveMaterials
+            if preserveMaterials {
                 loadNote = "usdz_active_meshy_textured_static:clips=\(clipCount);sidecar=\(sidecarMapped)"
             } else {
                 loadNote = "usdz_active_artist_blend_hero_dcc_mid_lod:clips=\(clipCount);sidecar=\(sidecarMapped)"
