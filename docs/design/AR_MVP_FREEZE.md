@@ -28,11 +28,15 @@ Declare AR presentation **complete for MVP engineering** so pathfinding and Heal
 
 ## Explicit non-goals (do not implement under AR-F)
 
-- Hand-sculpted hero mesh / AnimationLibrary clips
+- Hand-sculpted **hero marketing** mesh as runtime default / AnimationLibrary expansion without an issue
 - Outdoor AR tracking quality claims
 - Multi-companion AR, marketplace assets
 - Navigation map UI, AR glasses
 - New companion mechanics
+
+### Authorized art package swap
+
+**Issue #220** authorizes replacing interim Meshy / stub USDZ with a **mid-LOD production sculpt** that matches spectral stills (A1–A3). See [LIRA_AR_SCULPT_PLAN.md](LIRA_AR_SCULPT_PLAN.md). Scope is package + evidence class + integrity/tests — not AR feature expansion.
 
 ## Frozen paths (maintenance-only)
 

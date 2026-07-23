@@ -31,6 +31,7 @@ Last updated: 2026-07-20 (indoor AR smoke armed; Grok skills team handoff; outdo
 
 | Work | Reason |
 |---|---|
+| [Issue #220](https://github.com/scrimshawlife-ctrl/Waykin/issues/220) — AR production sculpt USDZ | Replace Meshy blob silhouette; [LIRA_AR_SCULPT_PLAN.md](../design/LIRA_AR_SCULPT_PLAN.md) |
 | WP-DB6 CloudKit evaluation ADR | Only if product requires multi-device restore |
 | Optional DM Sans bundle / extra SVG icons | Only with dedicated issue; not blocking |
 | HO residual production-board density | Align only where glanceability improves |

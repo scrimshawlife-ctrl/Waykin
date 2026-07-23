@@ -36,6 +36,7 @@ Visual system imports and production follow-ons for the app repository.
 | [SIM_CHECKLIST_AUTOMATION.md](SIM_CHECKLIST_AUTOMATION.md) | Manual S1–S8 → automated tests |
 | [ART_DIRECTION_SIGN_OFF.md](ART_DIRECTION_SIGN_OFF.md) | Spectral Lira direction accepted |
 | [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ async load |
+| [LIRA_AR_SCULPT_PLAN.md](LIRA_AR_SCULPT_PLAN.md) | **Production sculpt** AR package (issue #220; replace Meshy interim) |
 | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Session + AR animation draft plan |
 | [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | v3 experience loop cohesion (path/health → summary) |
 | [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md) | AR presentation frozen for engineering |
