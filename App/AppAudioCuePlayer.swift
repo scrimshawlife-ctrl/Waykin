@@ -137,7 +137,12 @@ extension AVAudioSession: AudioSessionControlling {
     }
 
     func configureAmbientMixing() throws {
-        try setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+        // `.playback`, not `.ambient`. Waykin is an audio-first walking experience:
+        //  - `.ambient` is silenced by the hardware ring/silent switch (cues inaudible).
+        //  - `.ambient` stops on backgrounding, so audio died whenever the screen locked
+        //    or the phone went in a pocket — i.e. during the actual walk.
+        // `.playback` survives both; `.mixWithOthers` keeps the walker's own music playing.
+        try setCategory(.playback, mode: .default, options: [.mixWithOthers])
     }
 
     func activate() throws {
