@@ -26,6 +26,9 @@ final class CanonicalARSessionRuntime {
     @ObservationIgnored private var usdzPreloadTask: Task<Void, Never>?
     @ObservationIgnored private var pendingCommands: [ARWorldCommand] = []
     @ObservationIgnored private var commandHandlerOwner: UUID?
+    @ObservationIgnored private var continuityElapsed: TimeInterval = 0
+    /// How often the frame loop verifies the companion survived tracking loss.
+    private static let continuityCheckInterval: TimeInterval = 1.0
     private weak var arView: ARView?
 
     private(set) var capabilityState: ARCapabilityState = .checking
@@ -52,6 +55,11 @@ final class CanonicalARSessionRuntime {
         self.renderCommandOverride = renderCommand
     }
 
+    /// Lead vs follow, chosen when the walk is started.
+    func setEscortMode(_ mode: LiraEscortMode) {
+        renderer.escortMode = mode
+    }
+
     func setCompanionSkin(_ skin: LiraSkin) {
         // Re-applies materials to live companion when planted.
         renderer.companionSkin = skin
@@ -63,6 +71,10 @@ final class CanonicalARSessionRuntime {
     }
 
     var motionDiagnosticsLine: String { renderer.motionDiagnosticsLine }
+    /// "walk clip running?" — the puppet-player fields cannot answer this.
+    var authoredAnimationNote: String {
+        renderer.authoredAnimationNote
+    }
     var isSkeletalDriving: Bool { renderer.isSkeletalDriving }
     var activeSkeletalClipName: String { renderer.activeSkeletalClip?.rawValue ?? "none" }
 
@@ -77,6 +89,8 @@ final class CanonicalARSessionRuntime {
         arView.session = sessionCoordinator.session
         sceneUpdateSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             self?.drainPendingCommands()
+            self?.advanceFollow(by: event.deltaTime)
+            self?.maintainContinuity(by: event.deltaTime)
             self?.advancePresentation(by: event.deltaTime)
         }
         sessionCoordinator.onCapabilityStateChange = { [weak self] state in
@@ -85,14 +99,17 @@ final class CanonicalARSessionRuntime {
         commandHandlerOwner = appModel.attachARWorldCommandHandler { [weak self] commands in
             self?.receive(commands)
         }
-        // Preload optional artist USDZ before / while AR session starts.
-        usdzPreloadTask = Task { [weak self] in
+        // Start the camera first. The packaged companion is an 18MB rigged USDZ, and
+        // parsing it ahead of session start left the AR view black for seconds while the
+        // walker waited on a feed that had not been asked for yet.
+        sessionStartTask = Task { [weak self] in
+            await self?.sessionCoordinator.start()
+        }
+        // Then preload the companion at lower priority; placement defers until it lands.
+        usdzPreloadTask = Task(priority: .utility) { [weak self] in
             guard let self else { return }
             await self.assetLoader.preloadFromBundle()
             self.companionLODDescription = self.assetLoader.activeLODDescription
-        }
-        sessionStartTask = Task { [weak self] in
-            await self?.sessionCoordinator.start()
         }
     }
 
@@ -209,6 +226,25 @@ final class CanonicalARSessionRuntime {
         companionState = transition.resolvedState
     }
 
+    /// Walk the companion toward the walker each frame, so she covers ground instead of
+    /// snapping into place. Needs the live camera transform, which only the view owns.
+    private func advanceFollow(by delta: TimeInterval) {
+        guard let arView else { return }
+        renderer.advanceCompanionFollow(by: delta, cameraTransform: arView.cameraTransform)
+    }
+
+    /// Throttled frame-driven continuity so Lira recovers from a dropped world anchor
+    /// within ~1s, instead of vanishing until the next game `updateCompanion` command.
+    /// No-ops until a companion has actually been spawned (renderer guards that).
+    private func maintainContinuity(by delta: TimeInterval) {
+        guard let arView, delta.isFinite, delta >= 0 else { return }
+        continuityElapsed += delta
+        guard continuityElapsed >= Self.continuityCheckInterval else { return }
+        continuityElapsed = 0
+        renderer.maintainCompanionContinuity(in: arView)
+        companionContinuityNote = renderer.companionContinuityNote
+    }
+
     private func render(_ command: ARWorldCommand, in arView: ARView) -> ARCommandResult {
         renderCommandOverride?(command, arView) ?? renderer.render(command, in: arView)
     }
@@ -233,6 +269,7 @@ final class CanonicalARSessionRuntime {
 struct CanonicalARSessionView: View {
     let appModel: any CanonicalARCommandSource
     var liraSkin: LiraSkin = .dawn
+    var escortMode: LiraEscortMode = .follow
     /// Mirrored walk controls (#126) so Pause/End stay reachable without leaving AR.
     var isPaused: Bool = false
     var onPause: (() -> Void)?
@@ -250,40 +287,30 @@ struct CanonicalARSessionView: View {
 
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("AR: \(runtime.capabilityState.rawValue)")
-                        Text("Lira: \(runtime.companionState.rawValue)")
-                        Text("Form: \(liraSkin.displayName)")
-                        Text("LOD: \(runtime.companionLODDescription)")
-                            .accessibilityIdentifier("waykin.ar.canonical.lod")
-                        // Mid-LOD skinned artist package (not outdoor hero claim).
-                        Text("AR mesh: \(LiraARAssetCatalog.packagedEvidenceClass)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("waykin.ar.canonical.meshClass")
-                        Text("Motion: \(runtime.motionDiagnosticsLine)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                            .accessibilityIdentifier("waykin.ar.canonical.motion")
-                        // #125: continuity plant note for outdoor QA (not a quality claim).
-                        Text("Continuity: \(runtime.companionContinuityNote)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("waykin.ar.canonical.continuity")
-                        // #147: human hint from the same note (no new gameplay truth).
-                        if let hint = ARContinuityHint.message(from: runtime.companionContinuityNote) {
-                            Text(hint)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .accessibilityIdentifier("waykin.ar.canonical.continuityHint")
+                    // Developer diagnostics HUD — hidden in normal sessions, shown for
+                    // operators (-WAYKIN_OPERATOR_DEBUG) and UI tests (-WAYKIN_UI_TESTING).
+                    if ARDiagnosticsHUDFeature.isEnabled {
+                        // Compact by design: this sits over the live camera during field
+                        // walks, so it stays three short lines. Full detail still reaches
+                        // the walk receipt via ingestARPresentationDiagnostics.
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("\(runtime.capabilityState.rawValue) · \(runtime.companionState.rawValue) · \(runtime.authoredAnimationNote)")
+                                .accessibilityIdentifier("waykin.ar.canonical.anim")
+                            Text(runtime.companionLODDescription)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .accessibilityIdentifier("waykin.ar.canonical.lod")
+                            Text(runtime.companionContinuityNote)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .accessibilityIdentifier("waykin.ar.canonical.continuity")
                         }
-                        Text(runtime.lastResult)
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(arStatusAccessibilityLabel)
+                        .accessibilityIdentifier("waykin.ar.canonical.status")
                     }
-                    .font(.caption.weight(.semibold))
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(arStatusAccessibilityLabel)
-                    .accessibilityIdentifier("waykin.ar.canonical.status")
 
                     Spacer()
 
@@ -347,11 +374,15 @@ struct CanonicalARSessionView: View {
             }
         }
         .onAppear {
+            runtime.setEscortMode(escortMode)
             runtime.setCompanionSkin(liraSkin)
             runtime.setReduceMotion(reduceMotion)
         }
         .onChange(of: liraSkin) { _, newSkin in
             runtime.setCompanionSkin(newSkin)
+        }
+        .onChange(of: escortMode) { _, newMode in
+            runtime.setEscortMode(newMode)
         }
         .onChange(of: reduceMotion) { _, enabled in
             runtime.setReduceMotion(enabled)

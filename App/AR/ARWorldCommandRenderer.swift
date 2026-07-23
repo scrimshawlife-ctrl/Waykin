@@ -47,6 +47,9 @@ final class ARWorldCommandRenderer {
         }
     }
 
+    /// Whether Lira walks ahead of the walker or keeps pace with them.
+    var escortMode: LiraEscortMode = .follow
+
     /// Cosmetic Lira skin. Setting re-applies materials to a live companion if planted.
     var companionSkin: LiraSkin {
         get { assetLoader.skin }
@@ -76,7 +79,16 @@ final class ARWorldCommandRenderer {
         let clip = activeSkeletalClip?.rawValue ?? (reduceMotionEnabled ? "reduce_motion" : "procedural_locals")
         let driving = isSkeletalDriving ? "skel_on" : "skel_off"
         let src = skeletalPlayer.sourceDescription
-        return "\(lod) | \(driving) | \(src) | clip=\(clip)"
+        let authored = assetLoader.hasAuthoredAnimation
+            ? (assetLoader.isAuthoredAnimationPlaying ? "anim=PLAYING" : "anim=stopped")
+            : "anim=none"
+        return "\(lod) | \(driving) | \(src) | clip=\(clip) | \(authored)"
+    }
+
+    /// Whether the authored walk clip is running, for AR chrome + receipts.
+    var authoredAnimationNote: String {
+        guard assetLoader.hasAuthoredAnimation else { return "anim=none" }
+        return assetLoader.isAuthoredAnimationPlaying ? "anim=PLAYING" : "anim=stopped"
     }
 
     /// DCC vs puppet clip install source.
@@ -175,6 +187,8 @@ final class ARWorldCommandRenderer {
             // Re-bind skeletal after re-plant (new or moved entity).
             if didReplant {
                 prepareSkeletalPlayback(on: companion)
+                // Re-parenting stopped the authored clip — restart it.
+                assetLoader.playAuthoredAnimation(on: companion)
             }
 
             let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
@@ -228,6 +242,35 @@ final class ARWorldCommandRenderer {
         commands.map { render($0, in: arView) }
     }
 
+    /// Frame-driven safety net (throttled by the caller): keeps a *already-spawned*
+    /// companion present even when no `updateCompanion` commands arrive. Outdoors,
+    /// ARKit frequently drops the world anchor on tracking loss / relocalization, which
+    /// makes Lira vanish; command-driven continuity alone recovers too slowly. This
+    /// re-plants ahead of the camera when the anchor was dropped or Lira drifted far.
+    ///
+    /// Never spawns from nothing: it no-ops unless a companion is currently registered,
+    /// so it cannot summon Lira before the game's own `spawnCompanion`.
+    @discardableResult
+    func maintainCompanionContinuity(in arView: ARView) -> Bool {
+        guard registry.entity(for: Self.companionID) != nil else { return false }
+        let ok = placementResolver.ensureCompanionContinuity(
+            id: Self.companionID,
+            makeEntity: { [assetLoader] in assetLoader.makeLira() },
+            in: arView
+        )
+        let note = placementResolver.lastContinuityNote
+        // Only re-bind / re-present when an actual re-plant happened (not "ok_present").
+        if ok, note.contains("replant") || note.hasPrefix("planted_") {
+            diagnostics.record(.continuityReplant, detail: "framedriven:\(note)")
+            if let companion = liveCompanionRoot() {
+                prepareSkeletalPlayback(on: companion)
+                applyPresentation(for: companionState, to: companion)
+                assetLoader.playAuthoredAnimation(on: companion)
+            }
+        }
+        return ok
+    }
+
     func setCompanionState(_ state: CompanionPresentationState) -> ARCommandResult {
         guard let anchor = registry.entity(for: Self.companionID),
               let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
@@ -253,6 +296,12 @@ final class ARWorldCommandRenderer {
         placementResolver.clear()
         diagnostics.record(.sessionCleared)
         companionState = .idle
+        // Follow state is per-session. Left behind, a stale pace estimate or a latched
+        // "closing distance" flag would make the next walk's first seconds behave as if
+        // it were mid-stride from the previous one.
+        walkerSpeedEstimate = 0
+        lastCameraPosition = nil
+        isClosingDistance = false
         elapsedInCompanionState = 0
         localMotionElapsed = 0
         spawnCoalesceElapsed = 0
@@ -261,11 +310,179 @@ final class ARWorldCommandRenderer {
         return .cleared
     }
 
+    /// How often to check that the authored walk clip is still running.
+    private static let authoredAnimationWatchdogInterval: TimeInterval = 0.4
+    private var authoredAnimationWatchdogElapsed: TimeInterval = 0
+    /// Smoothed walker pace (m/s), estimated from camera movement.
+    private var walkerSpeedEstimate: Float = 0
+    private var lastCameraPosition: SIMD3<Float>?
+
+    /// True while she is actively closing a gap. Hysteresis between the leash and settle
+    /// distances, so she walks up decisively and then stays put.
+    private var isClosingDistance = false
+
+    /// Pace she moves at: a stroll by default, but scaled to outpace the walker so she
+    /// can hold station when they run.
+    private var currentFollowSpeed: Float {
+        min(
+            Self.followMaxSpeedMetersPerSecond,
+            max(
+                Self.followSpeedMetersPerSecond,
+                walkerSpeedEstimate * Self.followOvertakeFactor
+            )
+        )
+    }
+
+    /// Keep the authored walk clip looping.
+    ///
+    /// A device walk reported `anim=PLAYING` followed by `anim=stopped`: the clip ran a
+    /// single ~1s cycle and halted, so `AnimationResource.repeat()` is not looping this
+    /// skeletal resource. Rather than depend on repeat semantics, restart whenever it is
+    /// observed stopped. Throttled so a clip that refuses to start cannot thrash the
+    /// animation system every frame.
+    private func advanceAuthoredAnimationWatchdog(by delta: TimeInterval) {
+        guard assetLoader.hasAuthoredAnimation else { return }
+        authoredAnimationWatchdogElapsed += delta
+        guard authoredAnimationWatchdogElapsed >= Self.authoredAnimationWatchdogInterval else { return }
+        authoredAnimationWatchdogElapsed = 0
+        guard !assetLoader.isAuthoredAnimationPlaying,
+              let companion = liveCompanionRoot(), companion.isEnabled else { return }
+        assetLoader.playAuthoredAnimation(on: companion)
+    }
+
+    /// Walking pace used when closing distance to the walker (m/s). Slightly above a
+    /// human stroll so she can actually catch up rather than trailing forever.
+    static let followSpeedMetersPerSecond: Float = 1.35
+    /// Ceiling on her pace, so a GPS/tracking glitch cannot fling her across the scene.
+    static let followMaxSpeedMetersPerSecond: Float = 5.0
+    /// How much faster than the walker she may move while closing a gap. Matching the
+    /// walker exactly means she can never actually catch up.
+    static let followOvertakeFactor: Float = 1.35
+    /// Only start closing once she has fallen this far behind. Without a leash she
+    /// re-targets every frame and ends up permanently leading, so the walker feels
+    /// like they are chasing her.
+    static let followLeashMetersLira: Float = 3.2
+    /// Stop once this near the walker. Larger than the leash trigger is deliberate:
+    /// the gap between them is hysteresis, so she settles rather than hovering.
+    static let followSettleMetersLira: Float = 1.4
+    /// How far to the side she settles, so she accompanies rather than blocking the path.
+    static let followSideOffsetMeters: Float = 0.8
+    /// Station-keeping distance ahead of the walker when leading.
+    static let leadDistanceMeters: Float = 2.0
+    /// Deadband while leading, so she is not nudged every frame.
+    static let leadArriveRadiusMeters: Float = 0.45
+
+    /// Walk the companion toward a spot in front of the walker.
+    ///
+    /// Replaces teleport-style re-planting as the normal way she keeps up: she now
+    /// *travels* there at walking pace and turns to face her direction of travel, so
+    /// turning around shows her walking up rather than snapping into view. Re-planting
+    /// remains only for a genuinely lost or detached anchor.
+    ///
+    /// Movement is horizontal only — her ground height is whatever the plant established.
+    func advanceCompanionFollow(by delta: TimeInterval, cameraTransform: Transform) {
+        guard delta.isFinite, delta > 0, delta < 1,
+              let companion = liveCompanionRoot(), companion.isEnabled else { return }
+        // Only walk a world-anchored companion. On the camera fallback her anchor already
+        // moves with the view, so writing world positions each frame compounds into
+        // runaway drift and she leaves the scene entirely.
+        guard !placementResolver.isCompanionCameraAnchored else { return }
+
+        let matrix = cameraTransform.matrix
+        let cameraPosition = cameraTransform.translation
+        let forward = -SIMD3<Float>(matrix.columns.2.x, matrix.columns.2.y, matrix.columns.2.z)
+        var flatForward = SIMD3<Float>(forward.x, 0, forward.z)
+        guard simd_length(flatForward) > 0.0001 else { return }
+        flatForward = simd_normalize(flatForward)
+
+        var flatRight = SIMD3<Float>(matrix.columns.0.x, 0, matrix.columns.0.z)
+        guard simd_length(flatRight) > 0.0001 else { return }
+        flatRight = simd_normalize(flatRight)
+
+        // Estimate the walker's pace so she can keep station on a run instead of being
+        // left behind at a fixed stroll and then re-planted ahead. Heavily smoothed:
+        // per-frame camera deltas are noisy.
+        if let last = lastCameraPosition {
+            let travelled = simd_length(SIMD3<Float>(
+                cameraPosition.x - last.x, 0, cameraPosition.z - last.z
+            ))
+            let instant = travelled / Float(delta)
+            if instant.isFinite, instant < 12 {
+                walkerSpeedEstimate += (instant - walkerSpeedEstimate) * 0.08
+            }
+        }
+        lastCameraPosition = cameraPosition
+
+        let current = companion.position(relativeTo: nil)
+        // Measure against the walker, never against a point ahead of them. Targeting
+        // "in front of the camera" re-aims every frame, so the target runs away as the
+        // walker advances and she ends up permanently leading.
+        let toWalker = SIMD3<Float>(cameraPosition.x - current.x, 0, cameraPosition.z - current.z)
+        let gap = simd_length(toWalker)
+        // Upper bound guards against a garbage transform during relocalization sending her
+        // on a long march to nowhere; re-planting handles genuinely lost anchors.
+        guard gap.isFinite, current.x.isFinite, current.z.isFinite, gap < 60 else { return }
+
+        // Leading keeps station ahead of the walker, so it re-aims continuously rather
+        // than waiting to fall behind — that constant re-aim is exactly what makes
+        // following feel like being chased, and exactly what leading needs.
+        if escortMode == .lead {
+            let ahead = cameraPosition + flatForward * Self.leadDistanceMeters
+            let leadOffset = SIMD3<Float>(ahead.x - current.x, 0, ahead.z - current.z)
+            let leadDistance = simd_length(leadOffset)
+            guard leadDistance > Self.leadArriveRadiusMeters else { return }
+            let leadDirection = leadOffset / leadDistance
+            let leadStep = min(currentFollowSpeed * Float(delta), leadDistance)
+            companion.setPosition(current + leadDirection * leadStep, relativeTo: nil)
+            companion.setOrientation(
+                simd_quatf(angle: atan2(leadDirection.x, leadDirection.z), axis: [0, 1, 0]),
+                relativeTo: nil
+            )
+            return
+        }
+
+        // Hysteresis: only set off once she has genuinely fallen behind, and keep walking
+        // until comfortably close. Without the gap between the two she hovers constantly.
+        if gap > Self.followLeashMetersLira { isClosingDistance = true }
+        if gap <= Self.followSettleMetersLira { isClosingDistance = false }
+
+        guard isClosingDistance else {
+            // Settled: hold position and simply turn to watch the walker.
+            guard gap > 0.05 else { return }
+            let facing = toWalker / gap
+            companion.setOrientation(
+                simd_quatf(angle: atan2(facing.x, facing.z), axis: [0, 1, 0]),
+                relativeTo: nil
+            )
+            return
+        }
+
+        // Settle beside and slightly behind the walker, so she accompanies rather than
+        // parking in their path.
+        let target = cameraPosition - flatForward * 0.25 + flatRight * Self.followSideOffsetMeters
+        let offset = SIMD3<Float>(target.x - current.x, 0, target.z - current.z)
+        let distance = simd_length(offset)
+        guard distance > 0.05 else {
+            isClosingDistance = false
+            return
+        }
+
+        let direction = offset / distance
+        let step = min(currentFollowSpeed * Float(delta), distance)
+        companion.setPosition(current + direction * step, relativeTo: nil)
+        // Face where she is heading.
+        companion.setOrientation(
+            simd_quatf(angle: atan2(direction.x, direction.z), axis: [0, 1, 0]),
+            relativeTo: nil
+        )
+    }
+
     /// Advance A2 breath, A3 filament sway / hunter echo, A4 spawn coalesce.
     /// Safe no-op without companion.
     func advanceLocalMotion(by delta: TimeInterval) {
         guard delta.isFinite, delta >= 0 else { return }
         localMotionElapsed += delta
+        advanceAuthoredAnimationWatchdog(by: delta)
         if isSpawningCoalesce {
             spawnCoalesceElapsed += delta
             let progress = LiraARMotion.spawnCoalesceProgress(
@@ -360,8 +577,9 @@ final class ARWorldCommandRenderer {
 
     private func applyPresentation(for state: CompanionPresentationState, to entity: Entity) {
         let presentation = presentation(for: state)
-        entity.position = presentation.position
-        entity.orientation = presentation.orientation
+        // Position and orientation are owned by `advanceCompanionFollow`, which walks her
+        // in world space. Re-applying the per-state local offsets here would snap her back
+        // to the anchor origin on every state change and fight the follow motion.
         applySpawnCoalesce(to: entity, state: state)
 
         entity.findEntity(named: "StatusIndicator")?.isEnabled = presentation.indicatorVisible
@@ -398,6 +616,16 @@ final class ARWorldCommandRenderer {
             ?? anchor.children.first
     }
 
+    /// Show/hide the planted companion without disturbing its anchor.
+    ///
+    /// While ARKit tracking is unreliable the world anchor transform can go briefly
+    /// garbage, smearing the low-poly mesh across the screen (the "corner polygon")
+    /// right before the anchor is dropped. Hiding through that window suppresses the
+    /// artifact instead of showing corrupt geometry.
+    func setCompanionVisible(_ visible: Bool) {
+        liveCompanionRoot()?.isEnabled = visible
+    }
+
     /// Re-paint materials on the currently planted companion (live form change).
     func reapplySkinToLiveCompanion() {
         guard let companion = liveCompanionRoot() else { return }
@@ -411,6 +639,9 @@ final class ARWorldCommandRenderer {
     private func prepareSkeletalPlayback(on entity: Entity) {
         skeletalPlayer.clear()
         guard skeletalPlaybackEnabled else { return }
+        // An authored UsdSkel clip (Meshy walk cycle) already drives this rig — layering
+        // the puppet clip library on top would fight it and corrupt the pose.
+        guard !assetLoader.hasAuthoredAnimation else { return }
         guard skeletalPlayer.install(on: entity) else { return }
         if reduceMotionEnabled {
             skeletalPlayer.setDriving(false)

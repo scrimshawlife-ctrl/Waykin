@@ -94,15 +94,18 @@ This plan binds animation to existing state machines:
 
 ### Current
 
-`ARWorldCommandRenderer.applyPresentation` sets absolute root:
+`ARWorldCommandRenderer.applyPresentation` owns **scale**, status indicator, materials,
+and local joint motion. Root **position / orientation** are owned by
+`advanceCompanionFollow` (world-space walk) and must not be re-applied on state change
+(that would snap Lira back to the anchor origin).
 
-| State | Intent |
+| State | Presentation intent (scale / FX; not root plant) |
 | ----- | ------ |
-| idle | Neutral plant |
-| follow | Slight forward + yaw |
+| idle | Neutral scale |
+| follow | Slight grow |
 | investigate | Lean / crouch scale |
 | alert | Rear / grow |
-| celebrate | Lift + spin window |
+| celebrate | Lift scale window |
 
 ### Planned channels (procedural entity first)
 

@@ -49,6 +49,11 @@ targets:
         NSHealthShareUsageDescription: "Waykin can optionally read recent walking activity (steps and walking distance) to enrich an active walk. Demo Mode never requires Health access."
         UIApplicationSupportsIndirectInputEvents: true
         ITSAppUsesNonExemptEncryption: false
+        # Grants native full-screen rendering; without it iOS letterboxes the app
+        # at a reduced logical size and ARView collapses into a thin camera band.
+        UILaunchScreen: {}
+        # Audio-first: cues must survive screen lock / phone-in-pocket during a walk.
+        UIBackgroundModes: [audio]
     dependencies:
       - package: Waykin
         product: WaykinCore

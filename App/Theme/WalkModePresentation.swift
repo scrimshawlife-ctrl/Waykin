@@ -75,3 +75,38 @@ enum WalkMode: String, CaseIterable, Identifiable, Hashable, Sendable {
     /// Demo scenario still only calmDayWalk — presentation label differs.
     var demoScenario: DemoScenarioID { .calmDayWalk }
 }
+
+/// Where Lira walks relative to the walker during a session.
+///
+/// Both readings came out of device walks: leading felt like being guided but put her
+/// in the path and made the walker feel they were chasing her; following felt like
+/// company. Neither is wrong, so it is a choice made when starting a walk.
+enum LiraEscortMode: String, CaseIterable, Identifiable, Hashable, Sendable {
+    /// She keeps ahead, showing the way.
+    case lead
+    /// She keeps pace beside and slightly behind the walker.
+    case follow
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .lead: "Lira leads"
+        case .follow: "Lira follows"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .lead: "She walks ahead and shows the way."
+        case .follow: "She keeps pace beside you."
+        }
+    }
+
+    var icon: WKIcon {
+        switch self {
+        case .lead: .companionAhead
+        case .follow: .companionBehind
+        }
+    }
+}
