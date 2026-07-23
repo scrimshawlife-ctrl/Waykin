@@ -99,14 +99,17 @@ final class CanonicalARSessionRuntime {
         commandHandlerOwner = appModel.attachARWorldCommandHandler { [weak self] commands in
             self?.receive(commands)
         }
-        // Preload optional artist USDZ before / while AR session starts.
-        usdzPreloadTask = Task { [weak self] in
+        // Start the camera first. The packaged companion is an 18MB rigged USDZ, and
+        // parsing it ahead of session start left the AR view black for seconds while the
+        // walker waited on a feed that had not been asked for yet.
+        sessionStartTask = Task { [weak self] in
+            await self?.sessionCoordinator.start()
+        }
+        // Then preload the companion at lower priority; placement defers until it lands.
+        usdzPreloadTask = Task(priority: .utility) { [weak self] in
             guard let self else { return }
             await self.assetLoader.preloadFromBundle()
             self.companionLODDescription = self.assetLoader.activeLODDescription
-        }
-        sessionStartTask = Task { [weak self] in
-            await self?.sessionCoordinator.start()
         }
     }
 
