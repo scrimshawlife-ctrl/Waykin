@@ -66,6 +66,10 @@ final class CanonicalARSessionRuntime {
     }
 
     var motionDiagnosticsLine: String { renderer.motionDiagnosticsLine }
+    /// "walk clip running?" — the puppet-player fields cannot answer this.
+    var authoredAnimationNote: String {
+        renderer.authoredAnimationNote
+    }
     var isSkeletalDriving: Bool { renderer.isSkeletalDriving }
     var activeSkeletalClipName: String { renderer.activeSkeletalClip?.rawValue ?? "none" }
 
@@ -290,7 +294,8 @@ struct CanonicalARSessionView: View {
                         // walks, so it stays three short lines. Full detail still reaches
                         // the walk receipt via ingestARPresentationDiagnostics.
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("\(runtime.capabilityState.rawValue) · \(runtime.companionState.rawValue) · \(liraSkin.displayName)")
+                            Text("\(runtime.capabilityState.rawValue) · \(runtime.companionState.rawValue) · \(runtime.authoredAnimationNote)")
+                                .accessibilityIdentifier("waykin.ar.canonical.anim")
                             Text(runtime.companionLODDescription)
                                 .lineLimit(1)
                                 .truncationMode(.middle)

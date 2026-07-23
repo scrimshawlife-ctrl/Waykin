@@ -76,7 +76,16 @@ final class ARWorldCommandRenderer {
         let clip = activeSkeletalClip?.rawValue ?? (reduceMotionEnabled ? "reduce_motion" : "procedural_locals")
         let driving = isSkeletalDriving ? "skel_on" : "skel_off"
         let src = skeletalPlayer.sourceDescription
-        return "\(lod) | \(driving) | \(src) | clip=\(clip)"
+        let authored = assetLoader.hasAuthoredAnimation
+            ? (assetLoader.isAuthoredAnimationPlaying ? "anim=PLAYING" : "anim=stopped")
+            : "anim=none"
+        return "\(lod) | \(driving) | \(src) | clip=\(clip) | \(authored)"
+    }
+
+    /// Whether the authored walk clip is running, for AR chrome + receipts.
+    var authoredAnimationNote: String {
+        guard assetLoader.hasAuthoredAnimation else { return "anim=none" }
+        return assetLoader.isAuthoredAnimationPlaying ? "anim=PLAYING" : "anim=stopped"
     }
 
     /// DCC vs puppet clip install source.

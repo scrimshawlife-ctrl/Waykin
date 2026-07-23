@@ -26,6 +26,16 @@ final class LiraARAssetLoader {
     /// which stops playback — so the resources are kept here and re-applied after each
     /// placement rather than relying on the live entity still owning them.
     private(set) var authoredClips: [AnimationResource] = []
+    /// Controller for the running walk clip. `skel_off` in the motion line refers to the
+    /// puppet player (deliberately stood down for authored rigs), so it cannot answer
+    /// "is the walk cycle actually playing" — this can.
+    private var authoredController: AnimationPlaybackController?
+
+    /// Whether the authored walk clip is currently running on the live companion.
+    var isAuthoredAnimationPlaying: Bool {
+        guard let authoredController else { return false }
+        return authoredController.isPlaying
+    }
     private var template: Entity?
     var skin: LiraSkin = .dawn
 
@@ -308,11 +318,11 @@ final class LiraARAssetLoader {
         guard hasAuthoredAnimation else { return }
         let host = Self.animationHost(entity) ?? entity
         if let own = host.availableAnimations.first {
-            host.playAnimation(own.repeat(), transitionDuration: 0.2, startsPaused: false)
+            authoredController = host.playAnimation(own.repeat(), transitionDuration: 0.2, startsPaused: false)
             return
         }
         guard let stored = authoredClips.first else { return }
-        host.playAnimation(stored.repeat(), transitionDuration: 0.2, startsPaused: false)
+        authoredController = host.playAnimation(stored.repeat(), transitionDuration: 0.2, startsPaused: false)
     }
 
     /// Meshy image-to-3d (and similar) ships a single textured mesh without A1–A3 names.
