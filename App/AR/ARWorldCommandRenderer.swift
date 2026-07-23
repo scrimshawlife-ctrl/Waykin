@@ -228,6 +228,34 @@ final class ARWorldCommandRenderer {
         commands.map { render($0, in: arView) }
     }
 
+    /// Frame-driven safety net (throttled by the caller): keeps a *already-spawned*
+    /// companion present even when no `updateCompanion` commands arrive. Outdoors,
+    /// ARKit frequently drops the world anchor on tracking loss / relocalization, which
+    /// makes Lira vanish; command-driven continuity alone recovers too slowly. This
+    /// re-plants ahead of the camera when the anchor was dropped or Lira drifted far.
+    ///
+    /// Never spawns from nothing: it no-ops unless a companion is currently registered,
+    /// so it cannot summon Lira before the game's own `spawnCompanion`.
+    @discardableResult
+    func maintainCompanionContinuity(in arView: ARView) -> Bool {
+        guard registry.entity(for: Self.companionID) != nil else { return false }
+        let ok = placementResolver.ensureCompanionContinuity(
+            id: Self.companionID,
+            makeEntity: { [assetLoader] in assetLoader.makeLira() },
+            in: arView
+        )
+        let note = placementResolver.lastContinuityNote
+        // Only re-bind / re-present when an actual re-plant happened (not "ok_present").
+        if ok, note.contains("replant") || note.hasPrefix("planted_") {
+            diagnostics.record(.continuityReplant, detail: "framedriven:\(note)")
+            if let companion = liveCompanionRoot() {
+                prepareSkeletalPlayback(on: companion)
+                applyPresentation(for: companionState, to: companion)
+            }
+        }
+        return ok
+    }
+
     func setCompanionState(_ state: CompanionPresentationState) -> ARCommandResult {
         guard let anchor = registry.entity(for: Self.companionID),
               let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
@@ -411,6 +439,9 @@ final class ARWorldCommandRenderer {
     private func prepareSkeletalPlayback(on entity: Entity) {
         skeletalPlayer.clear()
         guard skeletalPlaybackEnabled else { return }
+        // An authored UsdSkel clip (Meshy walk cycle) already drives this rig — layering
+        // the puppet clip library on top would fight it and corrupt the pose.
+        guard !assetLoader.hasAuthoredAnimation else { return }
         guard skeletalPlayer.install(on: entity) else { return }
         if reduceMotionEnabled {
             skeletalPlayer.setDriving(false)

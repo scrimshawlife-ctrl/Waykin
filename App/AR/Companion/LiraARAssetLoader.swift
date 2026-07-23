@@ -18,6 +18,9 @@ final class LiraARAssetLoader {
     private(set) var loadNote: String = "not_attempted"
     /// When true, `makeLira` keeps authored PBR/textures (Meshy static mesh).
     private(set) var preserveAuthoredMaterials = false
+    /// True when the packaged USDZ ships its own skeletal clip (UsdSkel walk cycle).
+    /// The renderer must not install puppet clips over it, and `makeLira` loops it.
+    private(set) var hasAuthoredAnimation = false
     private var template: Entity?
     var skin: LiraSkin = .dawn
 
@@ -33,6 +36,34 @@ final class LiraARAssetLoader {
         }
         do {
             let loaded = try await Self.loadEntity(from: url)
+            // Skinned/animated exports (Meshy walk cycle) must NOT be reparented:
+            // pulling the mesh out of its SkelRoot severs skinning and kills the clip.
+            let clipCount = Self.animationClipCount(loaded)
+            if Self.animationHost(loaded) != nil {
+                let animatedRoot = Self.adoptAnimatedHierarchy(loaded, skin: skin)
+                guard Self.hasRequiredNodes(animatedRoot) else {
+                    clearTemplate(reason: .procedural, note: "animated_hierarchy_invalid")
+                    return
+                }
+                if let body = animatedRoot.findEntity(named: "Body") {
+                    // Scale an inner node rather than Body itself: per-frame local motion
+                    // resets Body.scale to 1 for static-mesh puppets, which would silently
+                    // undo height normalization. (Root scale is owned by `makeLira`.)
+                    let target = body.children.first(where: { Self.hasModelGeometry($0) }) ?? body
+                    Self.normalizeVisualHeight(target, targetHeightMeters: 0.72)
+                }
+                if Self.isAuthoredBodyStaticMesh(animatedRoot) {
+                    Self.plantBodyOnGround(animatedRoot)
+                    Self.layoutSpectralFXAnchors(on: animatedRoot)
+                }
+                template = animatedRoot
+                source = .usdz(url.lastPathComponent)
+                preserveAuthoredMaterials = true
+                hasAuthoredAnimation = true
+                loadNote = "usdz_active_animated_skelanim:clips=\(clipCount)"
+                return
+            }
+
             var root = Self.normalizeRoot(loaded)
             var promoted = false
             if !Self.hasRequiredNodes(root) {
@@ -63,9 +94,9 @@ final class LiraARAssetLoader {
             preserveAuthoredMaterials = promoted
                 || Self.isAuthoredBodyStaticMesh(root)
             if preserveAuthoredMaterials {
-                loadNote = "usdz_active_meshy_textured_static"
+                loadNote = "usdz_active_meshy_textured_static:clips=\(clipCount)"
             } else {
-                loadNote = "usdz_active_artist_blend_hero_dcc_mid_lod"
+                loadNote = "usdz_active_artist_blend_hero_dcc_mid_lod:clips=\(clipCount)"
             }
         } catch {
             clearTemplate(reason: .procedural, note: "load_error")
@@ -109,6 +140,7 @@ final class LiraARAssetLoader {
         source = .procedural
         loadNote = note
         preserveAuthoredMaterials = false
+        hasAuthoredAnimation = false
         _ = reason
     }
 
@@ -125,6 +157,9 @@ final class LiraARAssetLoader {
             }
             let scale = configuration.companionHeightMeters / 0.72
             clone.scale = SIMD3<Float>(repeating: scale)
+            if hasAuthoredAnimation {
+                Self.playAuthoredAnimation(on: clone)
+            }
             return clone
         }
         return CompanionEntityFactory(skin: skin).makeLira(configuration: configuration)
@@ -138,6 +173,9 @@ final class LiraARAssetLoader {
         case .usdz(let name):
             if loadNote.contains("test_template") {
                 return "artist_usdz:\(name) (\(loadNote))"
+            }
+            if loadNote.contains("animated_skelanim") {
+                return "animated_usdz:\(name) (\(loadNote))"
             }
             if loadNote.contains("meshy_textured") {
                 return "meshy_usdz:\(name) (\(loadNote))"
@@ -173,6 +211,84 @@ final class LiraARAssetLoader {
             root.addChild(child)
         }
         return root
+    }
+
+    /// Total animation clips RealityKit exposed across the loaded subtree.
+    /// Surfaced in `loadNote` so a field receipt distinguishes "USD import produced no
+    /// clips" from "clips imported but never played" — two very different bugs.
+    static func animationClipCount(_ root: Entity) -> Int {
+        var total = root.availableAnimations.count
+        for child in root.children {
+            total += animationClipCount(child)
+        }
+        return total
+    }
+
+    /// First entity in the subtree that owns RealityKit animation clips, if any.
+    /// USD `SkelAnimation` surfaces as `availableAnimations` on the owning entity.
+    static func animationHost(_ root: Entity) -> Entity? {
+        if !root.availableAnimations.isEmpty { return root }
+        for child in root.children {
+            if let found = animationHost(child) { return found }
+        }
+        return nil
+    }
+
+    /// Adopt a skinned/animated USDZ **without moving any geometry**.
+    ///
+    /// `promoteIncompleteHierarchy` reparents meshes under a fresh `Body`, which breaks
+    /// `SkelRoot -> Mesh` binding (and therefore skinning + the authored clip). Here we
+    /// only *rename* the geometry container to `Body` and hang the semantic markers off
+    /// the root as siblings, so the rig and its animation stay exactly as authored.
+    static func adoptAnimatedHierarchy(_ loaded: Entity, skin: LiraSkin) -> Entity {
+        let root = loaded
+        root.name = CompanionEntityFactory.rootName
+
+        // Name the existing geometry container "Body" — never reparent it.
+        if root.findEntity(named: "Body") == nil,
+           let container = root.children.first(where: { hasModelGeometry($0) }) {
+            container.name = "Body"
+        }
+
+        let markerOffsets: [String: SIMD3<Float>] = [
+            "Head": SIMD3(0, 0.42, 0.10),
+            "LeftEar": SIMD3(-0.10, 0.50, 0.04),
+            "RightEar": SIMD3(0.10, 0.50, 0.04),
+            "Tail": SIMD3(0, 0.18, -0.28),
+            "Filament": SIMD3(0, 0.28, -0.20),
+            "CoreGlow": SIMD3(0, 0.32, 0.12),
+            "GroundShadow": SIMD3(0, 0.01, 0),
+            "StatusIndicator": SIMD3(0, 0.58, 0),
+        ]
+        for name in CompanionEntityFactory.requiredNodeNames where root.findEntity(named: name) == nil {
+            let marker = Entity()
+            marker.name = name
+            if let offset = markerOffsets[name] { marker.position = offset }
+            root.addChild(marker)
+        }
+        if root.findEntity(named: "CoreHalo") == nil {
+            let halo = Entity()
+            halo.name = "CoreHalo"
+            halo.position = SIMD3(0, 0.34, 0.12)
+            root.addChild(halo)
+        }
+        if root.findEntity(named: LiraARMotion.hunterEchoNodeName) == nil {
+            let echo = Entity()
+            echo.name = LiraARMotion.hunterEchoNodeName
+            echo.position = SIMD3(0.04, 0.28, -0.08)
+            echo.isEnabled = false
+            root.addChild(echo)
+        }
+
+        installSpectralFX(on: root, skin: skin)
+        return root
+    }
+
+    /// Loop the authored skeletal clip on a freshly cloned companion.
+    static func playAuthoredAnimation(on clone: Entity) {
+        guard let host = animationHost(clone),
+              let clip = host.availableAnimations.first else { return }
+        host.playAnimation(clip.repeat(), transitionDuration: 0.2, startsPaused: false)
     }
 
     /// Meshy image-to-3d (and similar) ships a single textured mesh without A1–A3 names.
