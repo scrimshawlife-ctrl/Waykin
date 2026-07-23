@@ -131,6 +131,10 @@ final class ARPlacementResolver {
 
     // MARK: - Private
 
+    /// Typical distance from the ground to a held phone, used to guess a floor height
+    /// when no plane can be detected.
+    static let assumedEyeHeightMeters: Float = 1.45
+
     private func placeCompanion(
         id: String,
         entity: Entity,
@@ -141,7 +145,51 @@ final class ARPlacementResolver {
         if placeOnGroundPlane(id: id, entity: entity, in: arView, screenPoint: screenPoint, reason: reason + "+ground") {
             return true
         }
+        // No detected plane — in low light that can last a whole session. Rather than
+        // surrender to the camera anchor, which makes her ride the view and disables
+        // follow motion, plant a world anchor on an assumed floor. Being world-anchored
+        // at a plausible height beats being glued to the camera, and a real plane later
+        // upgrades her through the usual continuity path.
+        if placeOnAssumedGround(id: id, entity: entity, in: arView, reason: reason + "+assumed_ground") {
+            return true
+        }
         return placeOnCamera(id: id, entity: entity, in: arView, reason: reason + "+camera_fallback")
+    }
+
+    /// World-anchor the companion on an estimated floor ahead of the walker.
+    private func placeOnAssumedGround(
+        id: String,
+        entity: Entity,
+        in arView: ARView,
+        reason: String
+    ) -> Bool {
+        let camera = arView.cameraTransform
+        let matrix = camera.matrix
+        let forward = -SIMD3<Float>(matrix.columns.2.x, matrix.columns.2.y, matrix.columns.2.z)
+        var flat = SIMD3<Float>(forward.x, 0, forward.z)
+        guard simd_length(flat) > 0.0001 else { return false }
+        flat = simd_normalize(flat)
+
+        let origin = camera.translation
+        guard origin.x.isFinite, origin.y.isFinite, origin.z.isFinite else { return false }
+        let spot = SIMD3<Float>(
+            origin.x + flat.x * 1.8,
+            origin.y - Self.assumedEyeHeightMeters,
+            origin.z + flat.z * 1.8
+        )
+
+        var transform = matrix_identity_float4x4
+        transform.columns.3 = SIMD4<Float>(spot.x, spot.y, spot.z, 1)
+        let anchor = AnchorEntity(world: transform)
+        if entity.position == .zero {
+            entity.position = SIMD3<Float>(0, 0.02, 0)
+        }
+        anchor.addChild(entity)
+        arView.scene.addAnchor(anchor)
+        registry.register(anchor, for: id)
+        cameraAnchoredIDs.remove(id)
+        lastContinuityNote = "planted_assumed_ground:\(reason)"
+        return true
     }
 
     /// Screen points to probe for ground. A single sample just below centre misses often

@@ -43,6 +43,16 @@ final class ARSessionCoordinator: NSObject {
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
         configuration.environmentTexturing = .automatic
+        // Plane detection from camera imagery alone fails in low light — a dusk walk
+        // logged the companion stuck on the camera fallback for a whole session,
+        // "waiting for ground". Depth sensing does not depend on ambient light, so
+        // enable it wherever the device offers it.
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        }
+        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+            configuration.sceneReconstruction = .mesh
+        }
 
         var options: ARSession.RunOptions = []
         if resetTracking {

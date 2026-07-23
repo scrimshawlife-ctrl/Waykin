@@ -307,9 +307,25 @@ final class ARWorldCommandRenderer {
     /// How often to check that the authored walk clip is still running.
     private static let authoredAnimationWatchdogInterval: TimeInterval = 0.4
     private var authoredAnimationWatchdogElapsed: TimeInterval = 0
+    /// Smoothed walker pace (m/s), estimated from camera movement.
+    private var walkerSpeedEstimate: Float = 0
+    private var lastCameraPosition: SIMD3<Float>?
+
     /// True while she is actively closing a gap. Hysteresis between the leash and settle
     /// distances, so she walks up decisively and then stays put.
     private var isClosingDistance = false
+
+    /// Pace she moves at: a stroll by default, but scaled to outpace the walker so she
+    /// can hold station when they run.
+    private var currentFollowSpeed: Float {
+        min(
+            Self.followMaxSpeedMetersPerSecond,
+            max(
+                Self.followSpeedMetersPerSecond,
+                walkerSpeedEstimate * Self.followOvertakeFactor
+            )
+        )
+    }
 
     /// Keep the authored walk clip looping.
     ///
@@ -331,6 +347,11 @@ final class ARWorldCommandRenderer {
     /// Walking pace used when closing distance to the walker (m/s). Slightly above a
     /// human stroll so she can actually catch up rather than trailing forever.
     static let followSpeedMetersPerSecond: Float = 1.35
+    /// Ceiling on her pace, so a GPS/tracking glitch cannot fling her across the scene.
+    static let followMaxSpeedMetersPerSecond: Float = 5.0
+    /// How much faster than the walker she may move while closing a gap. Matching the
+    /// walker exactly means she can never actually catch up.
+    static let followOvertakeFactor: Float = 1.35
     /// Only start closing once she has fallen this far behind. Without a leash she
     /// re-targets every frame and ends up permanently leading, so the walker feels
     /// like they are chasing her.
@@ -372,6 +393,20 @@ final class ARWorldCommandRenderer {
         guard simd_length(flatRight) > 0.0001 else { return }
         flatRight = simd_normalize(flatRight)
 
+        // Estimate the walker's pace so she can keep station on a run instead of being
+        // left behind at a fixed stroll and then re-planted ahead. Heavily smoothed:
+        // per-frame camera deltas are noisy.
+        if let last = lastCameraPosition {
+            let travelled = simd_length(SIMD3<Float>(
+                cameraPosition.x - last.x, 0, cameraPosition.z - last.z
+            ))
+            let instant = travelled / Float(delta)
+            if instant.isFinite, instant < 12 {
+                walkerSpeedEstimate += (instant - walkerSpeedEstimate) * 0.08
+            }
+        }
+        lastCameraPosition = cameraPosition
+
         let current = companion.position(relativeTo: nil)
         // Measure against the walker, never against a point ahead of them. Targeting
         // "in front of the camera" re-aims every frame, so the target runs away as the
@@ -391,7 +426,7 @@ final class ARWorldCommandRenderer {
             let leadDistance = simd_length(leadOffset)
             guard leadDistance > Self.leadArriveRadiusMeters else { return }
             let leadDirection = leadOffset / leadDistance
-            let leadStep = min(Self.followSpeedMetersPerSecond * Float(delta), leadDistance)
+            let leadStep = min(currentFollowSpeed * Float(delta), leadDistance)
             companion.setPosition(current + leadDirection * leadStep, relativeTo: nil)
             companion.setOrientation(
                 simd_quatf(angle: atan2(leadDirection.x, leadDirection.z), axis: [0, 1, 0]),
@@ -427,7 +462,7 @@ final class ARWorldCommandRenderer {
         }
 
         let direction = offset / distance
-        let step = min(Self.followSpeedMetersPerSecond * Float(delta), distance)
+        let step = min(currentFollowSpeed * Float(delta), distance)
         companion.setPosition(current + direction * step, relativeTo: nil)
         // Face where she is heading.
         companion.setOrientation(
