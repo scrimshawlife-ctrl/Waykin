@@ -74,6 +74,33 @@ if grep -q 'ARTIST_BLEND_HERO_DCC_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCa
   else
     echo "WARN: $missing DCC clip sidecars missing (runtime falls back to puppet)"
   fi
+
+  # A sidecar can exist and still contain a single frozen pose: Blender 5's USD
+  # writer emits SkelAnimation joint arrays with no timeSamples, which RealityKit
+  # reports as availableAnimations=0 (#225). Presence alone is not enough —
+  # require real animated joint curves so a static re-export fails loudly here
+  # instead of silently shipping motionless clips.
+  if command -v usdcat >/dev/null 2>&1; then
+    static=0
+    for clip in Lira_Idle Lira_Follow Lira_Investigate Lira_Alert Lira_Celebrate Lira_Spawn; do
+      src="$CLIP_DIR/${clip}.usdz"
+      [[ -f "$src" ]] || continue
+      # `grep -c` (not `-q`): under `set -o pipefail` an early-exiting `grep -q`
+      # SIGPIPEs usdcat and the pipeline reports failure even on a match.
+      curves=$(usdcat "$src" 2>/dev/null | grep -c 'rotations.timeSamples' || true)
+      if [[ "${curves:-0}" -eq 0 ]]; then
+        echo "FAIL: $clip.usdz has no animated joint curves (static pose export)"
+        static=$((static + 1))
+      fi
+    done
+    if [[ "$static" -gt 0 ]]; then
+      echo "check_lira_usdz_integrity: FAIL ($static clip(s) without timeSamples)"
+      exit 1
+    fi
+    pass "DCC clip sidecars carry animated joint curves"
+  else
+    echo "WARN: usdcat unavailable; skipped DCC animation-curve check"
+  fi
 fi
 
 # Catalog Swift evidence class should match shipped package class

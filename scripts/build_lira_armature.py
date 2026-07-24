@@ -159,7 +159,12 @@ def resolve_anchor(name: str) -> Vector | None:
 
 
 def ensure_edit_mode(arm_obj: bpy.types.Object) -> None:
-    bpy.ops.object.mode_set(mode="OBJECT")
+    # `mode_set` needs an active object; headless Blender starts with none, so
+    # a bare OBJECT-mode call raises "Context missing active object".
+    if bpy.context.view_layer.objects.active is None:
+        bpy.context.view_layer.objects.active = arm_obj
+    if bpy.context.object is not None and bpy.context.object.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode="OBJECT")
     bpy.ops.object.select_all(action="DESELECT")
     arm_obj.select_set(True)
     bpy.context.view_layer.objects.active = arm_obj
