@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-23 (post-merge #222 + #217; tip `68ba09d`)
+Last updated: 2026-07-23 (post-merge #226 DCC bake; tip `c4995f4`)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,15 +10,17 @@ Last updated: 2026-07-23 (post-merge #222 + #217; tip `68ba09d`)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — re-walk on tip after #217+#222 | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · daylight · tip `68ba09d` |
-| Indoor AR hybrid smoke | Human device | **Armed** — re-prep on `68ba09d`; prior receipts PENDING older SHAs | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
-| DCC clip composition follow-up | Engineering | **Open** — sidecars in USDZ; default layer is base mesh; full state-driven `availableAnimations` may still be puppet/hybrid | `EXPORT_OK` `clip_packaging=…composition_followup` |
-| Internal TestFlight RC | Human (signing / ASC) | **Checklist ready** | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md); tip `68ba09d`; #41 not required for *internal* TF |
+| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — re-walk on tip after #217–#226 | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · daylight · tip `c4995f4` |
+| Indoor AR hybrid smoke | Human device | **Armed** — re-prep on tip `c4995f4` (expect Motion `dcc` / mapped clips) | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
+| Internal TestFlight RC | Human (signing / ASC) | **Checklist ready** | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md); tip `c4995f4`; #41 not required for *internal* TF |
 
 ## Recently completed (main)
 
 | Work | Evidence |
 |---|---|
+| Bake real joint curves into DCC clip USDZs (`mapped=6`, `clipSource=dcc`) | PR #226 · main `c4995f4` · closes #225 |
+| DCC clip sidecar composition path (bundle + load-before-publish) | PR #224 · main `7931120` |
+| Board + sim preflight receipts | PR #223 · main `b66e235` |
 | Device AR/audio: full-screen, `.playback`, plant/follow, multi-part guard | PR #217 · main `68ba09d` |
 | Artist mid-LOD USDZ replaces Meshy blob | PR #222 · main `ee57a7d` · closes #220 |
 | Collab board + TF checklist + receipt samples | PR #218 · main `0d27074` |
@@ -37,8 +39,7 @@ Last updated: 2026-07-23 (post-merge #222 + #217; tip `68ba09d`)
 
 | Work | Reason |
 |---|---|
-| Bind six DCC clip sidecars into runtime AnimationLibrary | Packaging follow-up; receipt should show `dcc:`/`hybrid:` + clip ids when done |
-| Device Motion chrome: `skel_on` + real clip id after plant | Indoor smoke + #41; do not invent from sim alone |
+| Device Motion chrome: `skel_on` + `dcc` + real clip ids after plant | Indoor smoke + #41; sim evidence on #226, device still NOT_COMPUTABLE |
 | Smooth companion follow polish | Product; leash/follow shipped in #217 — field-tune if needed |
 | WP-DB6 CloudKit evaluation ADR | Only if product requires multi-device restore |
 | Optional DM Sans / extra SVG icons | Dedicated issue only |
@@ -56,7 +57,7 @@ Format samples (not device evidence): `docs/design/receipts/samples/` (schema 5 
 
 ## Parked recommendations
 
-See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — outdoor #41 when resumed; indoor smoke; DCC clip composition; RC/FUTURE; Orc cleanup.
+See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — outdoor #41 when resumed; indoor smoke; RC/FUTURE; Orc cleanup.
 
 ## Explicitly deferred (FUTURE / RC)
 
@@ -67,9 +68,9 @@ See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — out
 ## Merge hygiene
 
 ```text
-Main is clear of open product PRs as of 68ba09d.
+Main open-product PRs cleared through #226 (c4995f4).
 Prefer small docs/board PRs separate from AR code.
-Avoid reintroducing Meshy Lira_Walk as runtime Lira_AR_Base.usdz.
+Do not reintroduce Meshy Lira_Walk as runtime Lira_AR_Base.usdz.
 ```
 
 ## Preservation
