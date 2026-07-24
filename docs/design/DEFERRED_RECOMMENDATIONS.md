@@ -6,17 +6,17 @@ created: 2026-07-20
 status: PARKED
 reason: Device evidence lane (indoor smoke + outdoor #41); eng DCC path shipped
 main_tip_at_park: f0e6762
-main_tip_at_refresh: c4995f4
-refresh_date: 2026-07-23
+main_tip_at_refresh: f061b4e
+refresh_date: 2026-07-24
 ```
 
-Parked after UI waves and AR mesh/device stack. **On tip `c4995f4`:** artist package (#222), device AR/audio/follow (#217), composition (#224), DCC bake/export (#226 → `clipSource=dcc` sim). Outdoor **#41** remains first for COH. Next: indoor smoke on tip, then outdoor when daylight.
+Parked after UI waves and AR mesh/device stack. **On tip `f061b4e`:** artist package (#222), device AR/audio/follow (#217), composition (#224), DCC bake/export (#226 → `clipSource=dcc` sim). Outdoor **#41** remains first for COH. Next: indoor smoke on tip, then outdoor when daylight.
 
 ## Top parked item — outdoor device
 
 | Priority | Item | Notes |
 | -------- | ---- | ----- |
-| **1** | **[#41](https://github.com/scrimshawlife-ctrl/Waykin/issues/41) outdoor AR re-walk** | Daylight physical iPhone; COH PASS/PARTIAL/FAIL; tip SHA at walk time (`c4995f4`+) |
+| **1** | **[#41](https://github.com/scrimshawlife-ctrl/Waykin/issues/41) outdoor AR re-walk** | Daylight physical iPhone; COH PASS/PARTIAL/FAIL; tip SHA at walk time (`f061b4e`+) |
 
 ### Outdoor packet (when resuming #41)
 
