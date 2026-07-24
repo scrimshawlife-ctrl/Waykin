@@ -41,12 +41,14 @@ def _joint_local_matrix(arm: bpy.types.Object, joint_path: str):
     """Parent-local posed matrix for a USD joint path like `Root/Body/Chest`.
 
     Composed as `rest_local @ matrix_basis` rather than read from
-    `pose_bone.matrix`: in background Blender the evaluated pose matrices are
-    not refreshed by `frame_set` alone and come back as the rest pose for every
-    frame, which is precisely how a clip bakes to a static pose. `matrix_basis`
-    is the animation channel itself, so it always reflects the current frame.
-    At frame 1 this reduces to the rest transform, matching the values
-    Blender's own exporter writes into the static arrays.
+    `pose_bone.matrix`. `pose_bone.matrix` is the *evaluated* pose, which is
+    only meaningful once the depsgraph has refreshed and the armature is in
+    POSE mode — a rest-frozen or unrefreshed rig reports the rest pose for
+    every frame, which is precisely how a clip bakes to a static pose.
+    `matrix_basis` is the animation channel itself, so it always reflects the
+    current frame regardless of evaluation state. At frame 1 this reduces to
+    the rest transform, matching the values Blender's own exporter writes into
+    the static arrays.
     """
     name = joint_path.split("/")[-1]
     pose_bone = arm.pose.bones.get(name)

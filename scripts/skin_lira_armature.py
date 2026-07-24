@@ -24,6 +24,7 @@ import sys
 from pathlib import Path
 
 import bpy
+from mathutils import Matrix
 
 ARMATURE_NAME = "LiraArmature"
 
@@ -138,7 +139,17 @@ def merge_torso_and_head() -> None:
 
 
 def ensure_rest_pose(arm: bpy.types.Object) -> None:
+    """Bind at rest so automatic weights are computed against the rest shape.
+
+    Callers MUST restore POSE afterwards via `restore_pose_position` — leaving
+    the armature in REST freezes every deformer, so the mesh never follows the
+    animation in the viewport, in renders, or in a pose-evaluated export.
+    """
     arm.data.pose_position = "REST"
+
+
+def restore_pose_position(arm: bpy.types.Object) -> None:
+    arm.data.pose_position = "POSE"
 
 
 def skin_meshes_auto(arm: bpy.types.Object) -> list[str]:
@@ -200,7 +211,21 @@ def re_rigid_bind_fx(arm: bpy.types.Object) -> None:
         o.parent = arm
         o.parent_type = "BONE"
         o.parent_bone = bone if bone in arm.data.bones else "Body"
-        o.matrix_world = mw
+        # Assigning `matrix_world` after a bone re-parent does not round-trip:
+        # the setter derives the local transform from a parent inverse Blender
+        # has not recomputed for the new bone, and FilamentBase/FilamentMid
+        # landed at the world origin — hidden under the body until a clip
+        # lifted the rig and exposed them as two stray spheres. Neutralize the
+        # local transform, read back the bone's own world matrix, and set the
+        # basis to the exact delta instead.
+        o.matrix_parent_inverse = Matrix.Identity(4)
+        o.matrix_basis = Matrix.Identity(4)
+        bpy.context.view_layer.update()
+        o.matrix_basis = o.matrix_world.inverted() @ mw
+        bpy.context.view_layer.update()
+        drift = (o.matrix_world.translation - mw.translation).length
+        if drift > 1e-4:
+            raise SystemExit(f"rigid FX {o.name} drifted {drift:.4f} from its authored place")
         log(f"rigid FX {o.name} → bone {o.parent_bone}")
 
 
@@ -295,6 +320,7 @@ def skin() -> dict:
     skinned = skin_meshes_auto(arm)
     harden_skin_weights(skinned)
     re_rigid_bind_fx(arm)
+    restore_pose_position(arm)
     stats = validate_skin()
     stats["skinned_objects"] = skinned
     return stats

@@ -172,13 +172,34 @@ def ensure_edit_mode(arm_obj: bpy.types.Object) -> None:
 
 
 def remove_existing_armature() -> None:
+    """Delete any prior LiraArmature, keeping its children where the artist put them.
+
+    Removing the armature drops the parent out from under every bone-parented
+    FX mesh, and Blender keeps the child's *local* matrix — so the mesh snaps to
+    wherever that local transform lands, typically near the world origin. On a
+    re-run of the pipeline FilamentBase/FilamentMid ended up ~0.50 from their
+    bones, out of sight under the body until an animated clip lifted the rig.
+    Snapshot world transforms first and write them back as plain object-space
+    matrices once the parent is gone.
+    """
+    victims = {ARMATURE_NAME, "LiraArmature", "Armature"}
+    orphans: list[tuple[bpy.types.Object, Matrix]] = [
+        (o, o.matrix_world.copy())
+        for o in bpy.data.objects
+        if o.parent is not None and o.parent.name in victims
+    ]
     for o in list(bpy.data.objects):
-        if o.type == "ARMATURE" and o.name in {ARMATURE_NAME, "LiraArmature", "Armature"}:
+        if o.type == "ARMATURE" and o.name in victims:
             log(f"remove existing armature object {o.name}")
             bpy.data.objects.remove(o, do_unlink=True)
     for a in list(bpy.data.armatures):
-        if a.name in {ARMATURE_NAME, "LiraArmature", "Armature"}:
+        if a.name in victims:
             bpy.data.armatures.remove(a)
+    for o, mw in orphans:
+        o.matrix_world = mw
+    if orphans:
+        bpy.context.view_layer.update()
+        log(f"restored world transform for {len(orphans)} orphaned child(ren)")
 
 
 def create_armature() -> bpy.types.Object:
@@ -289,8 +310,22 @@ def bone_parent(obj: bpy.types.Object, arm_obj: bpy.types.Object, bone_name: str
     obj.parent = arm_obj
     obj.parent_type = "BONE"
     obj.parent_bone = bone_name
-    # Restore world matrix after bone parenting
-    obj.matrix_world = mw
+    # Assigning `matrix_world` straight after a bone re-parent does not round
+    # trip: the setter works from a parent inverse Blender has not recomputed
+    # for the new bone, so the object silently lands somewhere else. Rebuilding
+    # the armature this way dropped FilamentBase/FilamentMid at the world
+    # origin, ~0.50 from their bones, where they sat hidden under the body
+    # until an animated clip lifted the rig and exposed them as stray spheres.
+    # Neutralize the local transform, read the bone's own world matrix back,
+    # then set the basis to the exact delta.
+    obj.matrix_parent_inverse = Matrix.Identity(4)
+    obj.matrix_basis = Matrix.Identity(4)
+    bpy.context.view_layer.update()
+    obj.matrix_basis = obj.matrix_world.inverted() @ mw
+    bpy.context.view_layer.update()
+    drift = (obj.matrix_world.translation - mw.translation).length
+    if drift > 1e-4:
+        raise SystemExit(f"bone-parent {obj.name} drifted {drift:.4f} from its authored place")
     log(f"bone-parent {obj.name} → {bone_name}")
 
 
