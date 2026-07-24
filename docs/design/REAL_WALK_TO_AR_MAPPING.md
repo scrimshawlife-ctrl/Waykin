@@ -48,9 +48,10 @@ Mapper: `CanonicalARWorldCommandMapper`.
 | quietInterval | rest | 2.0 | idle | sanctuary (dormant if paused) | quietShift (event) |
 | companionMovesAhead / lead | lead | 4.0 far | follow + ahead bearing | guide | companionAhead |
 | bondMoment | drawNear | 1.2 | celebrate | bond | bondMotif |
-| path strained (pursuit quiet) | (unchanged) | (unchanged) | investigate | rival lean | quietShift `path:strained` if silent |
-| path offPath (pursuit quiet) | (unchanged) | (unchanged) | alert | hunter lean | quietShift `path:offPath` if silent |
-| path recovered | (unchanged) | (unchanged) | (matrix) | (matrix) | pursuitRelease `path:recovered` if silent |
+| AR presentation transition (event/behavior silent) | (matrix) | (matrix) | investigate / alert / celebrate | (matrix) | `arPresentation:*` → quietShift / pursuitPressure / bondMotif; follow/idle silent |
+| path strained (pursuit quiet) | (unchanged) | (unchanged) | investigate | rival lean | prefer `arPresentation:investigate` → quietShift; else quietShift `path:strained` |
+| path offPath (pursuit quiet) | (unchanged) | (unchanged) | alert | hunter lean | prefer `arPresentation:alert` → pursuitPressure; else quietShift `path:offPath` |
+| path recovered | (unchanged) | (unchanged) | (matrix) | (matrix) | pursuitRelease `path:recovered` if still silent |
 
 Shared resolver: `CompanionPresentationMatrix`. Outdoor multi-surface scorecard: `OUTDOOR_QA_RECEIPT_TEMPLATE.md` Pass COH (#143).
 
@@ -75,7 +76,7 @@ Continuity mitigation (code, sim-testable; outdoor PASS requires re-walk):
 | Menu / AR entry UX awkward | PARTIAL device | #126 flow audit |
 | GPS failure | **Not claimed** | Device report is AR presentation, not GPS integrity |
 | USDZ mid-LOD | Acceptable | Procedural fallback if load fails |
-| Audio coupling | Code mitigation | Event + behavior-transition cues (#130); outdoor audibility NOT_COMPUTABLE until re-walk |
+| Audio coupling | Code mitigation | Event + behavior + AR presentation-transition cues (#130); outdoor audibility NOT_COMPUTABLE until re-walk |
 
 Device receipt: `docs/design/receipts/OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md` · parent #41.
 
