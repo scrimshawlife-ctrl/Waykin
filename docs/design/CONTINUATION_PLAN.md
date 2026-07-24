@@ -2,89 +2,121 @@
 
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
-version: 3.4
-date: 2026-07-23
-status: DEVICE_FIXES_THEN_TF_INTERNAL
-goal: land_device_ar_audio_fixes_then_internal_testflight
+version: 4.0
+date: 2026-07-24
+status: DEVICE_EVIDENCE_LANE
+goal: indoor_smoke_then_internal_tf_then_outdoor_41
 outdoor_qa: PARKED_SEE_DEFERRED_RECOMMENDATIONS
-ar_status: FROZEN_MAINTENANCE_ONLY_UNLESS_41_OR_DEFECT
+ar_status: MAINTENANCE_ONLY_UNLESS_41_OR_DEFECT
 ui_package: Waykin-Design/11_Approved-Exports/CANDIDATE_v0.2/
-main_tip_at_refresh: 8beec34
-open_product_pr: 217
-open_dist_pr: 216
+main_tip_at_refresh: f061b4e
+open_product_pr: none
+open_issues: [41]
 authority_note: ACTIVE_WORK.md is the live coordination snapshot
 ```
 
-**2026-07-23 board note:** UI CANDIDATE_v0.2 and Meshy AR packaging largely landed on main. Live code lane is **PR #217** (device AR/audio + skinned walk). Distribution privacy/encryption **shipped** (#215). Internal TF checklist is **PR #216** (approved). Outdoor #41 remains PARTIAL / daylight.
+## Executive summary
 
-## Completed waves
+Engineering stack for Lira AR mid-LOD + device AR/audio + DCC binding is **on main**. Remaining value is **device evidence** and **distribution**, not more mesh pipeline churn.
 
-| Wave | Status |
-| ---- | ------ |
-| Design / indoor presentation / AR mid-LOD / USDZ | **Done** |
-| **AR-F** freeze + **P/H MVP** | **Done** (#98) |
-| **Path/Health v1.1** | **Done** (#99) |
-| **Experience loop cohesion** | **Done** (#100) |
-| **Event weight light tune** | **Done** (v3.1) |
-| Continuity + audio coupling + path soft cues | **Done** (#125/#130/#139–#143) |
-| Menu UX + non-outdoor UI polish | **Done** (#126/#147–#150) |
-| Engineering doc sync vs code | **This wave** |
+| Layer | Status on tip |
+| ----- | ------------- |
+| Artist mesh | Shipped (#222) `ARTIST_BLEND_HERO_DCC_MID_LOD` |
+| Full-screen, audio, plant/follow | Shipped (#217) |
+| DCC composition (sidecars in bundle) | Shipped (#224) |
+| Joint curve bake → RK `availableAnimations` | Shipped (#226) sim **`mapped=6` / `clipSource=dcc`** |
+| Board / sim receipts | Shipped (#223, #227) |
+| Indoor device smoke | **Human — next** |
+| Internal TestFlight | **Human — parallel OK** |
+| Outdoor #41 COH | **Human — daylight** |
 
-## Completed wave — UI CANDIDATE_v0.2 Phase 4
+## Completed eng waves (recent)
 
-Pointer: [UI_CANDIDATE_V02_POINTER.md](UI_CANDIDATE_V02_POINTER.md)
+| Wave | Evidence |
+| ---- | -------- |
+| Artist mid-LOD package | #222 · `ee57a7d` |
+| Device AR/audio/follow | #217 · `68ba09d` |
+| Board + sim preflight | #223 · `b66e235` |
+| DCC sidecar composition | #224 · `7931120` |
+| DCC bake / timeSamples | #226 · `c4995f4` · closes #225 |
+| Board post-#226 | #227 · `f061b4e` |
 
-**No longer active** (2026-07-23 board refresh). UI candidate integration largely landed on main; live lanes are device AR/audio (#217), artist AR package (#222), internal TF (#218 checklist / #219 encryption). Residual UI polish only via dedicated issues — do not treat the list below as open implementation queue.
+## Phase A — Pre-device gates (laptop)
 
-Historical checklist (done or superseded on main):
+```bash
+git checkout main && git pull --ff-only
+SHA=$(git rev-parse HEAD) && echo tip=$SHA
+make check-lira-usdz
+make validate
+xcodebuild -scheme Waykin \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -only-testing:WaykinTests/LiraHeroDCCUSDZTests/testDCCClipSidecarCompositionBindsStateClips \
+  test
+```
 
-1. Tokens / day-night vs `App/Theme/WKTokens.swift` (HO-001).
-2. Home + Begin + settings chrome vs production board.
-3. Active session + pause + safety pause density.
-4. Icons from candidate SVG set.
-5. Mode cards / bond viz / summary alignment.
+| Gate | Expected on tip ≥ `c4995f4` / board `f061b4e` |
+| ---- | --------------------------- |
+| Integrity | PASS + animated joint curves on 6 sidecars |
+| Validate | OVERALL PASS |
+| Sim composition | `mapped=6` `clipSource=dcc` (OBSERVED sim) |
 
-## Parked wave — Outdoor re-walk (#41)
+Phase A receipt example: `docs/design/receipts/PHASE_A_PREDEVICE_*_f061b4e.md`.
 
-See [DEFERRED_RECOMMENDATIONS.md](DEFERRED_RECOMMENDATIONS.md). Resume when human requests outdoor.
-3. Record OBSERVED continuity, produced/path audio, menu/AR full-screen feel.
-4. Open new defect issues only if needed; do not invent PASS from sim.
+## Phase B — Indoor AR hybrid smoke (human, ~15 min)
 
-## Wave v3.1 — Light event weight tuning (complete)
+Protocol: [INDOOR_AR_HYBRID_SMOKE.md](INDOOR_AR_HYBRID_SMOKE.md)
 
-Adjusted `WorldEventGeneratorConfiguration.defaultRules` only. No new kinds, no narrative engine, no Demo arc rewrite.
+1. Install **exact** tip SHA (Debug + operator strip preferred).
+2. Run I1–I12; mark PASS / FAIL / NOT_COMPUTABLE only.
+3. Expect Motion line: `dcc:`… with real clip ids after plant (**device** OBSERVED).
+4. Share field-test JSON (schema ≥ 5); no coordinates.
+5. Fill PENDING receipt; open repair issues only for FAIL items.
 
-| ID | Work | Acceptance |
-| -- | ---- | ---------- |
-| **W1** | Companion-first weights/cooldowns | drawsNear/observes favored over quiet + pursuit entry |
-| **W2** | Rarer pursuit begins | Higher pressure/energy entry, lower weight, longer cooldown |
-| **W3** | Easier fade / earlier bond-familiar | Mild threshold relief; fade slightly more available |
-| **W4** | Frequency bound preserved | ≤8 events / 30×10s fixture; seed determinism unchanged |
-| **W5** | Demo Mode unaffected | Scheduled calm-day arc tests still pass |
+**Does not close #41.**
 
-### Tuning intent
+## Phase C — Internal TestFlight (human, parallel to B)
 
-| Prefer | De-emphasize |
-| ------ | ------------ |
-| Lira near / observe / ahead | quietInterval dominance |
-| Bond + familiar place | Early sharp pursuit |
-| pursuitFades after pressure | pursuitBegins spam |
+Checklist: [TESTFLIGHT_RC_CHECKLIST.md](TESTFLIGHT_RC_CHECKLIST.md)
 
-Outdoor receipts may revise numbers later. Do not drop `minimumTickSpacing` below ~30 without device evidence.
+1. Bump build number; archive tip.
+2. Privacy/encryption already on main (#215/#219).
+3. Internal group only; #41 **not** required for internal TF.
 
-### Out of scope
+## Phase D — Outdoor #41 (human, daylight)
 
-| Track | Work |
-| ----- | ---- |
-| Outdoor | Device walk QA / outdoor receipt OBSERVED |
-| AR | Issue #41; sculpted USDZ / AnimationLibrary |
-| Path v2 | Corridor geometry / map product |
-| Health v2 | Workouts, background delivery |
-| Audio | New cue kinds / production sound redesign |
+Protocol: [OUTDOOR_SESSION_PACKET.md](OUTDOOR_SESSION_PACKET.md) + issue #41.
 
-## Related
+1. Same tip as indoor (or re-run Phase A after any merge).
+2. Daylight walk; COH PASS/PARTIAL/FAIL with OBSERVED only.
+3. Silhouette, plant/replant, DCC motion in sun, continuity, audio, thermal.
 
-- [PATHFINDING.md](PATHFINDING.md)
-- [HEALTHKIT.md](HEALTHKIT.md)
-- [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md)
-- `Sources/WaykinCore/Engines/WorldEventGenerator.swift`
+## Explicit non-goals
+
+- Re-sculpt Lira without a defect
+- Meshy walk as default runtime USDZ
+- Hermes open-ended Blender thrash without one hypothesis
+- Outdoor quality claims from sim or indoor smoke alone
+- MVP expansion without promotion
+
+## Defect triage
+
+| Symptom | First look |
+| ------- | ---------- |
+| `mapped=0` / puppet only on tip ≥ `c4995f4` | Wrong build/tip; Clips missing; integrity FAIL |
+| Plant fail / duplicate Lira | Continuity / placement |
+| Silent audio | `.playback` / silent switch / interruption |
+| DCC bound but ugly motion | Art bake quality — field note; not #41 close alone |
+
+## Success criteria
+
+| Milestone | Done when |
+| --------- | --------- |
+| Eng DCC stack | On main (done `c4995f4` / board `f061b4e`) |
+| Indoor smoke | Filled receipt with device OBSERVED rows |
+| Internal TF | Build on internal group |
+| #41 | Dated outdoor receipt; no invented PASS |
+
+---
+
+**Live board:** [ACTIVE_WORK.md](../collaboration/ACTIVE_WORK.md)  
+**Parked backlog:** [DEFERRED_RECOMMENDATIONS.md](DEFERRED_RECOMMENDATIONS.md)
