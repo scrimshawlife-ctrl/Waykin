@@ -202,12 +202,24 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
     func playLaunchThemeIfNeeded() {
         guard !hasPlayedLaunchTheme else { return }
+        // UI tests drive launch-time assertions; audio is not under test there and
+        // must never gate first frame.
+        guard !ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING") else { return }
         hasPlayedLaunchTheme = true
-        audioPlayer.handle([AudioExperienceLayer.momentCue(.appLaunch)])
+        // Off the launch critical path. `handle` synchronously configures and
+        // activates the AVAudioSession and decodes the theme; doing that inside
+        // the root view's `onAppear` blocked first frame long enough to trip the
+        // launch watchdog ("Timed out while launching application via Xcode").
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(350))
+            guard let self else { return }
+            self.audioPlayer.handle([AudioExperienceLayer.momentCue(.appLaunch)])
+        }
     }
 
-    /// The companion materializing — the full Lira theme. Called at each
-    /// `arCommandMapper.spawn(...)`; sonically this is also session-start.
+    /// The companion materializing — the full Lira theme. Fired on the *real*
+    /// walk spawn only; sonically this is also session-start. Demo deliberately
+    /// stays silent (see `startDemo`) so its receipts remain deterministic.
     private func playCompanionSpawnTheme() {
         audioPlayer.handle([AudioExperienceLayer.momentCue(.spawn)])
     }
