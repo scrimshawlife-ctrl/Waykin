@@ -310,6 +310,13 @@ def validate_armature() -> None:
     for need in ("Body", "Head", "Filament", "CoreGlow", "LeftEar", "RightEar", "Tail"):
         if need not in bones:
             raise SystemExit(f"armature missing bone {need}")
+    # Skinning binds automatic weights at rest and older art sources were saved
+    # still in REST, which freezes every deformer: the mesh ignores the clips in
+    # renders and in any pose-evaluated export. Force POSE so a rest-frozen
+    # source cannot ship silently.
+    if arm.data.pose_position != "POSE":
+        log(f"armature pose_position={arm.data.pose_position} → POSE")
+        arm.data.pose_position = "POSE"
     log(f"armature validated bones={len(bones)}")
 
 
