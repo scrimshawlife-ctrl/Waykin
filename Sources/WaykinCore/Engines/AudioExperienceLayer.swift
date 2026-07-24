@@ -15,6 +15,14 @@ public struct EmptyAudioAssetResolver: AudioAssetResolving {
 public struct AudioExperienceLayer {
     /// Minimum session elapsed between behavior-transition cues when no world event fires (#130).
     public static let behaviorTransitionCooldown: TimeInterval = 12
+    /// Minimum session elapsed between AR presentation-transition cues when event/behavior audio is silent.
+    public static let arPresentationTransitionCooldown: TimeInterval = 12
+
+    /// Canonical AR presentation vocabulary (matches `CompanionPresentationMatrix.arBehaviorString`
+    /// and App `CompanionPresentationState` raw values). Used only for mapping — no new cue kinds.
+    public static let arPresentationVocabulary: Set<String> = [
+        "idle", "follow", "investigate", "alert", "celebrate",
+    ]
 
     private var activeCues: [String: AudioCue] = [:]
     private var lastPlayedByCooldownGroup: [String: Date] = [:]
@@ -64,6 +72,30 @@ public struct AudioExperienceLayer {
         }
 
         return map(behavior: next, intensity: intensity)
+    }
+
+    /// Cue when AR presentation vocabulary changes (DCC / `CompanionPresentationState` strings)
+    /// and higher-priority event/behavior audio is silent. Uses existing produced cue kinds only.
+    /// First presentation seed is silent; cooldown matches behavior transitions.
+    public static func cueForARPresentationTransition(
+        from previousRaw: String?,
+        to nextRaw: String,
+        sessionElapsed: TimeInterval,
+        lastARPresentationAudioElapsed: TimeInterval?,
+        intensity: Double = 0.45
+    ) -> AudioCue? {
+        let previous = previousRaw.map(normalizedARPresentation)
+        let next = normalizedARPresentation(nextRaw)
+        guard previous != next else { return nil }
+        // First presentation seeds without audio (avoid spawn / session-start noise).
+        guard previous != nil else { return nil }
+
+        if let last = lastARPresentationAudioElapsed,
+           sessionElapsed - last < arPresentationTransitionCooldown {
+            return nil
+        }
+
+        return map(arPresentation: next, intensity: intensity)
     }
 
     public mutating func endSession() {
@@ -142,5 +174,53 @@ public struct AudioExperienceLayer {
             // Follow/idle are high-frequency motion defaults — no dedicated cue.
             return nil
         }
+    }
+
+    /// Map AR presentation vocabulary onto existing produced cue kinds (no new kinds / assets).
+    /// Continuous skeletal loops, filament bob, and gait remain unmapped — transitions only.
+    public static func map(arPresentation raw: String, intensity: Double = 0.45) -> AudioCue? {
+        let key = normalizedARPresentation(raw)
+        let label = "arPresentation:\(key)"
+        switch key {
+        case "celebrate":
+            return AudioCue(
+                kind: .bondMotif,
+                intensity: intensity,
+                spatialBias: .center,
+                priority: 5,
+                cooldownGroup: "bond",
+                shouldFade: true,
+                debugLabel: label
+            )
+        case "alert":
+            return AudioCue(
+                kind: .pursuitPressure,
+                intensity: min(intensity, 0.7),
+                spatialBias: .behind,
+                priority: 4,
+                cooldownGroup: "pursuit",
+                shouldFade: false,
+                debugLabel: label
+            )
+        case "investigate":
+            return AudioCue(
+                kind: .quietShift,
+                intensity: min(intensity, 0.4),
+                spatialBias: .center,
+                priority: 1,
+                cooldownGroup: "ambient",
+                shouldFade: true,
+                debugLabel: label
+            )
+        case "follow", "idle":
+            // High-frequency AR defaults (DCC follow/idle loops) — no transition cue.
+            return nil
+        default:
+            return nil
+        }
+    }
+
+    private static func normalizedARPresentation(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }

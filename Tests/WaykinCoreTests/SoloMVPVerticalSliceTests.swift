@@ -117,6 +117,71 @@ final class SoloMVPVerticalSliceTests: XCTestCase {
         XCTAssertNil(AudioExperienceLayer.map(behavior: .idle))
     }
 
+    func testARPresentationMapsOntoProducedCueKinds() {
+        // DCC / AR presentation vocabulary → existing WAV basenames only (no new kinds).
+        XCTAssertEqual(AudioExperienceLayer.map(arPresentation: "celebrate")?.kind, .bondMotif)
+        XCTAssertEqual(AudioExperienceLayer.map(arPresentation: "alert")?.kind, .pursuitPressure)
+        XCTAssertEqual(AudioExperienceLayer.map(arPresentation: "investigate")?.kind, .quietShift)
+        XCTAssertNil(AudioExperienceLayer.map(arPresentation: "follow"))
+        XCTAssertNil(AudioExperienceLayer.map(arPresentation: "idle"))
+        XCTAssertNil(AudioExperienceLayer.map(arPresentation: "unknown"))
+        // Case / whitespace normalization.
+        XCTAssertEqual(AudioExperienceLayer.map(arPresentation: "  Alert ")?.kind, .pursuitPressure)
+        XCTAssertEqual(
+            AudioExperienceLayer.map(arPresentation: "celebrate")?.debugLabel,
+            "arPresentation:celebrate"
+        )
+        // Vocabulary covers App CompanionPresentationState / matrix strings.
+        for raw in ["idle", "follow", "investigate", "alert", "celebrate"] {
+            XCTAssertTrue(AudioExperienceLayer.arPresentationVocabulary.contains(raw))
+        }
+    }
+
+    func testARPresentationTransitionCueCooldownAndFirstSeedSilent() {
+        XCTAssertNil(
+            AudioExperienceLayer.cueForARPresentationTransition(
+                from: nil,
+                to: "alert",
+                sessionElapsed: 10,
+                lastARPresentationAudioElapsed: nil
+            )
+        )
+        let first = AudioExperienceLayer.cueForARPresentationTransition(
+            from: "follow",
+            to: "alert",
+            sessionElapsed: 20,
+            lastARPresentationAudioElapsed: nil
+        )
+        XCTAssertEqual(first?.kind, .pursuitPressure)
+        XCTAssertEqual(first?.debugLabel, "arPresentation:alert")
+
+        XCTAssertNil(
+            AudioExperienceLayer.cueForARPresentationTransition(
+                from: "alert",
+                to: "investigate",
+                sessionElapsed: 25,
+                lastARPresentationAudioElapsed: 20
+            )
+        )
+        let after = AudioExperienceLayer.cueForARPresentationTransition(
+            from: "alert",
+            to: "investigate",
+            sessionElapsed: 20 + AudioExperienceLayer.arPresentationTransitionCooldown,
+            lastARPresentationAudioElapsed: 20
+        )
+        XCTAssertEqual(after?.kind, .quietShift)
+
+        // Unmapped destination (follow) yields nil even after cooldown.
+        XCTAssertNil(
+            AudioExperienceLayer.cueForARPresentationTransition(
+                from: "alert",
+                to: "follow",
+                sessionElapsed: 100,
+                lastARPresentationAudioElapsed: 20
+            )
+        )
+    }
+
     func testBehaviorTransitionCueCooldownAndFirstSeedSilent() {
         // First presentation seeds without audio.
         XCTAssertNil(

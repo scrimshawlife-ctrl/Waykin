@@ -6,9 +6,10 @@ Waykin's core emits semantic `AudioCue` values. Only the app target maps those v
 
 1. **World-event cues (primary):** when `WorldEventGenerator` fires, `AudioExperienceLayer.map(event:)` emits the matching cue.
 2. **Behavior-transition cues (coupling):** when no world event fires, a change in companion-visible behavior (`drawNear` / `lead` / `rest` / `observe` / `celebrate`) may emit a cue via `AudioExperienceLayer.map(behavior:)` onto the **same** produced basenames. Cooldown: 12 s session elapsed. First behavior seed is silent.
-3. **Path soft cues (#140):** when event/behavior audio is silent and pursuit is inactive/fading, a `PathRelation` transition may emit via `PathAudioCoupling` — `strained`/`offPath` → `quietShift`, `recovered` → `pursuitRelease` (debug labels `path:*`). Cooldown: 14 s. Does **not** select world events or change Bond.
-4. **Not coupled:** AR skeletal motion, filament bob, continuous footsteps, or camera-relative pose loops.
-5. **Gain:** catalog volumes are outdoor-aware (~0.30–0.45). Physical outdoor loudness remains **NOT_COMPUTABLE** without device re-walk evidence.
+3. **AR presentation-transition cues (DCC vocabulary):** when event and behavior audio are silent, a change in AR presentation string (`idle` / `follow` / `investigate` / `alert` / `celebrate` from `CompanionPresentationMatrix.arBehaviorString`) may emit via `AudioExperienceLayer.map(arPresentation:)` onto the **same** produced basenames. Mapping: `celebrate` → `bondMotif`, `alert` → `pursuitPressure`, `investigate` → `quietShift`, `follow`/`idle` → silent. Debug labels `arPresentation:*`. Cooldown: 12 s session elapsed. First presentation seed is silent. App plays this **before** path soft cues and **only** when experience `semanticAudioCues` is empty (no double-fire with event/behavior).
+4. **Path soft cues (#140):** when event/behavior/AR-presentation audio is silent and pursuit is inactive/fading, a `PathRelation` transition may emit via `PathAudioCoupling` — `strained`/`offPath` → `quietShift`, `recovered` → `pursuitRelease` (debug labels `path:*`). Cooldown: 14 s. Does **not** select world events or change Bond.
+5. **Not coupled:** continuous AR skeletal motion loops, filament bob, continuous footsteps, or camera-relative pose loops. Presentation **state transitions** are coupled (item 3); per-frame clip playback is not.
+6. **Gain:** catalog volumes are outdoor-aware (~0.30–0.45). Physical outdoor loudness remains **NOT_COMPUTABLE** without device re-walk evidence.
 
 | Semantic cue | Asset basename | Channel | Priority | Catalog volume |
 |---|---|---|---:|---:|
