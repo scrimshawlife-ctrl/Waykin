@@ -143,6 +143,12 @@ public enum AudioCueKind: String, Codable, CaseIterable, Sendable {
     case pursuitRelease
     case bondMotif
     case quietShift
+    // One-shot lifecycle "moment" cues (not walk-derived). All state the Lira
+    // leitmotif; launch and spawn are the full theme. See LIRA_AUDIO_CUE_FAMILY.md.
+    case appLaunchTheme
+    case companionReveal
+    case spawnTheme
+    case bondMilestone
 }
 
 public enum AudioSpatialBias: String, Codable, Equatable, Sendable {

@@ -128,6 +128,9 @@ struct WaykinApp: App {
                     .wkThemed()
                     .interactiveDismissDisabled()
             }
+            .onAppear {
+                appModel.playLaunchThemeIfNeeded()
+            }
             .onChange(of: scenePhase) { _, phase in
                 appModel.handleScenePhase(phase)
             }
@@ -187,6 +190,36 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
     func completeOnboarding() {
         hasCompletedOnboarding = true
+        // First reveal of Lira at the end of onboarding — a hushed statement of
+        // her theme (LIRA_AUDIO_CUE_FAMILY.md §2). Only on a genuine transition.
+        audioPlayer.handle([AudioExperienceLayer.momentCue(.companionReveal)])
+    }
+
+    /// Lifecycle "moment" audio (launch / spawn / bond milestone). Fired once per
+    /// moment by the caller; the player degrades to silence if the asset is a
+    /// placeholder or missing, so these are safe to ship before the sound pass.
+    private var hasPlayedLaunchTheme = false
+
+    func playLaunchThemeIfNeeded() {
+        guard !hasPlayedLaunchTheme else { return }
+        hasPlayedLaunchTheme = true
+        audioPlayer.handle([AudioExperienceLayer.momentCue(.appLaunch)])
+    }
+
+    /// The companion materializing — the full Lira theme. Called at each
+    /// `arCommandMapper.spawn(...)`; sonically this is also session-start.
+    private func playCompanionSpawnTheme() {
+        audioPlayer.handle([AudioExperienceLayer.momentCue(.spawn)])
+    }
+
+    /// Bond milestone at the summary — fired from `SessionSummaryView` on a
+    /// clean audio session (post teardown), guarded to once per summary.
+    private var lastBondMilestoneSummaryID: UUID?
+
+    func playBondMilestone(for summary: SessionSummary) {
+        guard summary.bondDelta > 0, lastBondMilestoneSummaryID != summary.id else { return }
+        lastBondMilestoneSummaryID = summary.id
+        audioPlayer.handle([AudioExperienceLayer.momentCue(.bondMilestone)])
     }
 
     func resetOnboardingForTesting() {
@@ -588,6 +621,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
             emitARWorldCommands(arCommandMapper.spawn(
                 companionRuntime: demoController.companionRuntime
             ))
+            // No spawn theme in Demo: the scripted demo is a diagnostic harness
+            // whose field-test receipts pin the walk audio timeline. Moment
+            // themes are live-experience polish (see beginAuthorizedRealWalk).
             if let session = movementEngine.currentSession, fieldTestReceiptStore != nil {
                 let builder = FieldTestReceiptBuilder(
                     sessionID: session.id,
@@ -910,6 +946,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             realExperienceState = CompanionWalkExperience().start(context: context)
             realCompanionRuntime = CompanionRuntime()
             emitARWorldCommands(arCommandMapper.spawn(companionRuntime: realCompanionRuntime))
+            playCompanionSpawnTheme()
             lastClosingPhrase = ""
             demoMessage = "Waiting for a reliable location fix..."
             path.append(AppRoute.activeSession(.calmDayWalk))
@@ -2728,6 +2765,11 @@ struct SessionSummaryView: View {
                 }
                 .padding(WKTokens.Space.screenMarginX)
             }
+        }
+        .onAppear {
+            // Bond milestone theme when this session grew the bond — clean audio
+            // session here (after end-of-walk teardown), guarded once per summary.
+            appModel.playBondMilestone(for: summary)
         }
     }
 

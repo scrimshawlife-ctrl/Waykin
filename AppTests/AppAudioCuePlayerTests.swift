@@ -14,7 +14,11 @@ final class AppAudioCuePlayerTests: XCTestCase {
             .pursuitPressure: ("pursuit_pressure", 4, .foreground),
             .pursuitRelease: ("pursuit_release", 3, .foreground),
             .bondMotif: ("bond_motif", 5, .foreground),
-            .quietShift: ("quiet_shift", 1, .ambient)
+            .quietShift: ("quiet_shift", 1, .ambient),
+            .appLaunchTheme: ("lira_launch_theme", 6, .moment),
+            .companionReveal: ("lira_companion_reveal", 6, .moment),
+            .spawnTheme: ("lira_spawn_theme", 6, .moment),
+            .bondMilestone: ("lira_bond_milestone", 6, .moment)
         ]
 
         XCTAssertEqual(Set(expected.keys), Set(AudioCueKind.allCases))
@@ -46,6 +50,30 @@ final class AppAudioCuePlayerTests: XCTestCase {
         XCTAssertEqual(planner.decision(for: cue(.pursuitPressure, priority: 4)), .play(AudioCueAssetCatalog.descriptor(for: .pursuitPressure)!, replacingActiveCue: true))
         XCTAssertEqual(planner.decision(for: cue(.companionAhead, priority: 2)), .ignoreLowerPriority)
         XCTAssertEqual(planner.decision(for: cue(.quietShift, priority: 1)), .play(AudioCueAssetCatalog.descriptor(for: .quietShift)!, replacingActiveCue: false))
+    }
+
+    func testMomentCuesLayerOverWalkCuesOnAnIndependentChannel() {
+        var planner = AudioCuePlaybackPlanner()
+
+        // A high-priority spawn theme must NOT suppress an in-flight walk cue:
+        // they live on different channels (moment vs foreground/ambient).
+        XCTAssertEqual(
+            planner.decision(for: cue(.spawnTheme, priority: 6)),
+            .play(AudioCueAssetCatalog.descriptor(for: .spawnTheme)!, replacingActiveCue: false)
+        )
+        XCTAssertEqual(
+            planner.decision(for: cue(.pursuitPressure, priority: 4)),
+            .play(AudioCueAssetCatalog.descriptor(for: .pursuitPressure)!, replacingActiveCue: false)
+        )
+        XCTAssertEqual(
+            planner.decision(for: cue(.quietShift, priority: 1)),
+            .play(AudioCueAssetCatalog.descriptor(for: .quietShift)!, replacingActiveCue: false)
+        )
+        // A second moment does replace the first on the shared moment channel.
+        XCTAssertEqual(
+            planner.decision(for: cue(.bondMilestone, priority: 6)),
+            .play(AudioCueAssetCatalog.descriptor(for: .bondMilestone)!, replacingActiveCue: true)
+        )
     }
 
     func testPlannerLifecycleIsExplicit() {
