@@ -348,6 +348,23 @@ def author_dcc_clips() -> list[str]:
     return names
 
 
+def _action_fcurve_count(action: bpy.types.Action) -> int:
+    """F-curve count across Blender 5 slotted actions and legacy actions.
+
+    Blender 5 moved curves to `layers[].strips[].channelbags[].fcurves` and
+    removed `Action.fcurves`; the legacy path is kept for older Blenders.
+    """
+    legacy = getattr(action, "fcurves", None)
+    if legacy is not None:
+        return len(legacy)
+    total = 0
+    for layer in getattr(action, "layers", []):
+        for strip in getattr(layer, "strips", []):
+            for channelbag in getattr(strip, "channelbags", []):
+                total += len(channelbag.fcurves)
+    return total
+
+
 def export_clip_animation_usds(out_dir: Path, clip_names: list[str]) -> list[Path]:
     """
     Export one USD per DCC action so RealityKit can discover multiple animations.
@@ -364,11 +381,25 @@ def export_clip_animation_usds(out_dir: Path, clip_names: list[str]) -> list[Pat
         if o.parent == arm or (o.parent and o.parent.type == "ARMATURE"):
             o.select_set(True)
     bpy.context.view_layer.objects.active = arm
+    scene = bpy.context.scene
     for name in clip_names:
         action = bpy.data.actions.get(name)
         if action is None:
             continue
+        # A silently keyframe-less action exports as a static rest pose and
+        # RealityKit reports availableAnimations=0 (#225). Fail loud instead.
+        if _action_fcurve_count(action) == 0:
+            raise SystemExit(f"clip action has no fcurves (nothing to bake): {name}")
         arm.animation_data.action = action
+        # The USD exporter samples scene.frame_start…frame_end, NOT the action's
+        # own range, and assigning .action from Python does not re-evaluate the
+        # rig. Without both of these the exporter samples an unposed armature and
+        # writes flat default joint arrays with no timeSamples (#225).
+        start, end = action.frame_range
+        scene.frame_start = int(round(start))
+        scene.frame_end = max(int(round(end)), scene.frame_start + 1)
+        scene.frame_set(scene.frame_start)
+        bpy.context.view_layer.update()
         path = out_dir / f"{name}.usd"
         try:
             bpy.ops.wm.usd_export(
@@ -394,11 +425,53 @@ def export_clip_animation_usds(out_dir: Path, clip_names: list[str]) -> list[Pat
                 log(f"clip usd {path.name}")
         except Exception as e:
             log(f"WARN clip export {name}: {e}")
+    # Blender 5's USD writer emits the SkelAnimation prim with static default
+    # joint arrays and no timeSamples, so RealityKit reports
+    # availableAnimations=0 (#225). Bake the real per-frame joint transforms
+    # and splice them in. Verified: this is what flips clipSource puppet->dcc.
+    _inject_baked_skel_animation(out_dir, clip_names, written)
     # Restore idle as default active
     idle = bpy.data.actions.get("Lira_Idle")
     if idle is not None:
         arm.animation_data.action = idle
     return written
+
+
+def _usd_joint_paths(usd_path: Path) -> list[str]:
+    """Read the SkelAnimation `joints` token order straight from the export."""
+    import re
+    import subprocess
+
+    text = subprocess.run(
+        ["usdcat", str(usd_path)], check=True, capture_output=True, text=True
+    ).stdout
+    match = re.search(r"uniform token\[\] joints = \[(.*?)\]", text, re.S)
+    if not match:
+        return []
+    return re.findall(r'"([^"]+)"', match.group(1))
+
+
+def _inject_baked_skel_animation(
+    out_dir: Path, clip_names: list[str], written: list[Path]
+) -> None:
+    if not written:
+        return
+    import subprocess
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from bake_lira_skel_animation import bake_clips  # noqa: E402
+    from inject_usd_skel_timesamples import inject  # noqa: E402
+
+    joint_paths = _usd_joint_paths(written[0])
+    if not joint_paths:
+        log("WARN no joints found in clip USD; skipping skel bake")
+        return
+
+    baked = bake_clips(joint_paths, clip_names, out_dir / "lira_skel_baked.json")
+    # Call in-process: inside Blender, `sys.executable` is the Blender binary,
+    # so shelling out to it as a Python interpreter would not work.
+    for path in written:
+        inject(path, baked, path.stem)
 
 
 def main() -> None:

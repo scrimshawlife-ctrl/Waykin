@@ -1,4 +1,4 @@
-usd=docs/assets/companion/ar/artist/Lira_AR_Base.usd
+usd=/Users/prabu/.openclaw/workspace/workspace-coding/Waykin-canonical/docs/assets/companion/ar/artist/Lira_AR_Base.usd
 blend=ArtSource/Companion/Lira/lira.blend
 evidence=ARTIST_BLEND_HERO_DCC_MID_LOD
 armature=LiraArmature
@@ -9,7 +9,3 @@ body_vgroups=25
 body_multi_bone_verts=1830
 body_multi_bone_ratio=1.0
 body_max_influences=4
-default_layer=Lira_AR_Base.usd
-clip_packaging=sidecar_usds_in_archive+runtime_sidecar_load;default_layer_base
-clip_runtime=App/Resources/Companion/Lira/Clips/*.usdz
-note=default_layer_base_first;runtime_loads_clip_usdz_sidecars_into_LiraSkeletalPlayer
