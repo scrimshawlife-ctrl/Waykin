@@ -7,10 +7,10 @@ date: 2026-07-25
 status: SUPPORTING
 authority: SUPPORTING
 parent_main_at_prep: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
-baseline_short: 2d969a0
+baseline_short: 3cc8ac2
 marketing_version: "0.9.0"
 build_number: "2"
-validate_observed: PENDING_LOCAL_VALIDATE_ON_TIP
+validate_observed: PASS_LOCAL_20260725T194535Z_3cc8ac2
 outdoor_gate: ISSUE_41_OPEN
 ```
 
@@ -18,7 +18,7 @@ outdoor_gate: ISSUE_41_OPEN
 
 **Authority:** Supporting engineering checklist. Does not override `docs/SOLO_MVP_SCOPE.md`, `KNOWN_LIMITATIONS.md`, or issue #41 evidence rules.
 
-**Note (2026-07-25):** Version **0.9.0 (2)** is introduced in the version-bump PR. Do **not** archive parent tip `d9d1df7` alone (still 1.0/1). After the bump merges, set `git_sha` to the **merge tip** that contains 0.9.0 (2), re-run section 2 gates on **that** SHA, then archive.
+**Note (2026-07-25):** Archive tip **`3cc8ac2`** has marketing **0.9.0** / build **2**. Local Phase A `make validate` **PASS** (receipt `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2`). Re-run validate if tip moves before archive.
 
 **Who:** Human with Apple Developer Program access for signing, App Store Connect, and upload. Agent can run automated gates and fill OBSERVED/NOT_COMPUTABLE rows.
 
@@ -28,12 +28,12 @@ outdoor_gate: ISSUE_41_OPEN
 
 | Field | Value at cut |
 | ----- | ------------ |
-| Cut `git_sha` (full) | `2d969a00e7aea407418c80e5166556a747915e3b` (0.9.0 / 2 on main after #237) |
+| Cut `git_sha` (full) | `3cc8ac21a3bbe286486c551b04630b5531ec928c` (docs pin + 0.9.0/2; Phase A validate PASS) |
 | Parent main at prep | `d9d1df7` (Hallmark #236; version still 1.0/1) |
 | Cut date (UTC) | 2026-07-25 |
-| Branch | `main` @ `2d969a0` |
+| Branch | `main` @ `3cc8ac2` |
 | Marketing / build | **0.9.0 (2)** (this PR) |
-| `make validate` | Re-run on `2d969a0` before archive (version bump PR CI green; confirm local) |
+| `make validate` | **PASS** local 2026-07-25T19:45:22Z on `3cc8ac2` (130 package tests + WaykinApp) |
 | Open product blockers | #41 outdoor COH still open — ship only as **internal** TF with known limitations |
 | Dirty tree | Only intentional RC commits |
 
