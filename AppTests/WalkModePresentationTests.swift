@@ -4,6 +4,9 @@ import XCTest
 final class WalkModePresentationTests: XCTestCase {
     func testThreeModesWithIconsAndCopy() {
         XCTAssertEqual(WalkMode.allCases.map(\.rawValue), ["trail", "race", "hunt"])
+        XCTAssertTrue(WalkMode.trail.isFeaturedPath)
+        XCTAssertFalse(WalkMode.race.isFeaturedPath)
+        XCTAssertEqual(WalkMode.secondaryModes.map(\.rawValue), ["race", "hunt"])
         for mode in WalkMode.allCases {
             XCTAssertFalse(mode.title.isEmpty)
             XCTAssertFalse(mode.emotionalLine.isEmpty)

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Echo climate design tokens for App presentation (Phase 4 step 1).
 ///
@@ -86,16 +87,61 @@ enum WKTokens {
         static let iconContainer: CGFloat = 12
     }
 
-    // MARK: - Type scale (Dynamic Type aware via system fonts)
+    // MARK: - Type scale
+    //
+    // Display/title use bundled WaykinDisplay (brand pairing).
+    // Body/caption/numeric stay system so Dynamic Type + outdoor glance stay legible.
 
     enum TypeScale {
         /// Session state display — design 36pt; floor ~28pt outdoor glance.
         static let displayMin: CGFloat = 28
-        static let display: Font = .system(size: 36, weight: .semibold, design: .default)
-        static let title: Font = .system(size: 24, weight: .semibold, design: .default)
+        /// Brand display face for large titles / ceremonial screens.
+        static let display: Font = WaykinTypography.display(size: 36, relativeTo: .largeTitle)
+        /// Brand display face for screen titles (Home, Session Select, Summary).
+        static let title: Font = WaykinTypography.display(size: 24, relativeTo: .title2)
+        /// Readable body — system, Dynamic Type.
         static let body: Font = .system(size: 16, weight: .regular, design: .default)
         static let caption: Font = .system(size: 12, weight: .medium, design: .default)
         static let numeric: Font = .system(size: 20, weight: .medium, design: .default).monospacedDigit()
+        /// Outdoor glance state word when display face is too soft at distance.
+        static let sessionState: Font = .system(size: displayMin, weight: .semibold, design: .default)
+    }
+
+    // MARK: - Lira material palette (named tokens — no mid-render RGB improvisation)
+
+    /// Cosmetic Lira fills shared by session canvas, glyphs, and procedural AR factory.
+    enum LiraMaterial {
+        static let dawnBody = Color(wkHex: 0xE8D9C4)
+        static let dawnBodySecondary = Color(wkHex: 0xC9B899)
+        static let dawnRivalWarm = Color(wkHex: 0xE0C7AD)
+        static let veilBody = Color(wkHex: 0x2A2E38)
+        static let veilBodySecondary = Color(wkHex: 0x3A404F)
+        static let veilBond = Color(wkHex: 0xC98A7A)
+        static let veilCast = Color(wkHex: 0x6B598A)
+        static let ruptureBody = Color(wkHex: 0x4A4558)
+        static let ruptureBodySecondary = Color(wkHex: 0x5C4F7A)
+        static let ruptureFringe = Color(wkHex: 0x8A97A8)
+
+        enum Hex {
+            static let dawnBody = "E8D9C4"
+            static let dawnBodySecondary = "C9B899"
+            static let dawnRivalWarm = "E0C7AD"
+            static let veilBody = "2A2E38"
+            static let veilBodySecondary = "3A404F"
+            static let veilBond = "C98A7A"
+            static let veilCast = "6B598A"
+            static let ruptureBody = "4A4558"
+            static let ruptureBodySecondary = "5C4F7A"
+            static let ruptureFringe = "8A97A8"
+            static let guide = "3F8F8A"
+            static let bond = "D4A45A"
+            static let hunter = "5C4E7A"
+            static let hunterFilament = "7B8C9E"
+            static let rival = "D17A4A"
+            static let caution = "E0B040"
+            static let sanctuary = "A8C4B5"
+            static let paperLight = "F7F5F2"
+        }
     }
 
     // MARK: - Motion (seconds)
@@ -158,22 +204,12 @@ struct WKTheme: Equatable {
     }
 
     /// Active-session field: mist/indigo foundation with hunter pressure wash (never color-alone for meaning).
+    /// Blends named tokens — no free RGB improvisation.
     func sessionBackground(pressure: Double) -> Color {
         let p = min(1, max(0, pressure))
-        if isNight {
-            // Night indigo-earth leaning toward hunter violet as pressure rises
-            return Color(
-                red: 0.071 + p * 0.12,
-                green: 0.082 + p * 0.05,
-                blue: 0.110 + p * 0.18
-            )
-        }
-        // Day cool mist with soft hunter tint under pressure
-        return Color(
-            red: 0.894 - p * 0.12,
-            green: 0.910 - p * 0.14,
-            blue: 0.925 - p * 0.08
-        )
+        let base = background
+        let wash = hunter.opacity(0.08 + p * 0.28)
+        return base.mix(with: wash, amount: 0.35 + p * 0.45)
     }
 
     static func resolve(_ colorScheme: ColorScheme) -> WKTheme {
@@ -190,6 +226,41 @@ extension Color {
         let g = Double((wkHex >> 8) & 0xFF) / 255
         let b = Double(wkHex & 0xFF) / 255
         self.init(.sRGB, red: r, green: g, blue: b, opacity: opacity)
+    }
+
+    /// Presentation blend of two solid colors (amount clamped 0…1).
+    func mix(with other: Color, amount: Double) -> Color {
+        let t = min(1, max(0, amount))
+        #if canImport(UIKit)
+        let a = UIColor(self)
+        let b = UIColor(other)
+        var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa)
+        b.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+        return Color(
+            .sRGB,
+            red: Double(ar + (br - ar) * t),
+            green: Double(ag + (bg - ag) * t),
+            blue: Double(ab + (bb - ab) * t),
+            opacity: Double(aa + (ba - aa) * t)
+        )
+        #else
+        return t < 0.5 ? self : other
+        #endif
+    }
+
+    /// UIKit bridge for RealityKit materials / indicators.
+    var wkUIColor: UIColor { UIColor(self) }
+}
+
+extension UIColor {
+    /// sRGB hex for AR / UIKit paths that cannot take SwiftUI `Color`.
+    convenience init(wkHex: UInt32, alpha: CGFloat = 1) {
+        let r = CGFloat((wkHex >> 16) & 0xFF) / 255
+        let g = CGFloat((wkHex >> 8) & 0xFF) / 255
+        let b = CGFloat(wkHex & 0xFF) / 255
+        self.init(red: r, green: g, blue: b, alpha: alpha)
     }
 }
 

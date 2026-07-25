@@ -164,12 +164,12 @@ struct OnboardingFlowView: View {
     }
 
     private func permissionRow(icon: WKIcon, title: String, body: String) -> some View {
+        // Type-led row: icon inline with title (no icon-tile wash).
         HStack(alignment: .top, spacing: WKTokens.Space.md) {
-            WKIconView(icon: icon, size: 24)
+            WKIconView(icon: icon, size: 20)
                 .foregroundStyle(theme.guide)
-                .frame(width: 40, height: 40)
-                .background(theme.guide.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: WKTokens.Radius.iconContainer, style: .continuous))
+                .frame(width: 24, alignment: .center)
+                .padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
@@ -180,10 +180,8 @@ struct OnboardingFlowView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(WKTokens.Space.md)
+        .padding(.vertical, WKTokens.Space.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: WKTokens.Radius.medium, style: .continuous))
     }
 
     private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {

@@ -74,6 +74,12 @@ enum WalkMode: String, CaseIterable, Identifiable, Hashable, Sendable {
 
     /// Demo scenario still only calmDayWalk — presentation label differs.
     var demoScenario: DemoScenarioID { .calmDayWalk }
+
+    /// Trail is the featured path on session select; Race/Hunt are secondary.
+    var isFeaturedPath: Bool { self == .trail }
+
+    /// Secondary modes shown under the featured Trail card.
+    static var secondaryModes: [WalkMode] { [.race, .hunt] }
 }
 
 /// Where Lira walks relative to the walker during a session.
