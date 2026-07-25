@@ -289,7 +289,8 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         // Durable bond must match the optimistic in-memory companion after both
         // FIFO-chained completed-session writes (demo bondDelta is experience-owned).
         XCTAssertEqual(companion?.bondLevel, model.companion.bondLevel)
-        XCTAssertEqual(try await model.persistence.memoryCount(), 2)
+        let memoryCount = try await model.persistence.memoryCount()
+        XCTAssertEqual(memoryCount, 2)
         XCTAssertGreaterThan(
             companion?.bondLevel ?? 0,
             CanonicalCompanionIdentity.defaultCompanion().bondLevel
