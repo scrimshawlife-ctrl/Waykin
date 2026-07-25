@@ -301,6 +301,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
     /// Path soft-audio coupling (#140): last relation and session elapsed when path cue accepted.
     @ObservationIgnored private var lastPathRelationForAudio: PathRelation = .establishing
     @ObservationIgnored private var lastPathAudioElapsed: TimeInterval?
+    @ObservationIgnored private var lastARPresentationForAudio: String?
+    @ObservationIgnored private var lastARPresentationAudioElapsed: TimeInterval?
+
 
     var activePresencePresentation: CompanionPresencePresentation {
         let usesPhysicalRuntime = isLiveSessionActive
@@ -625,6 +628,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathProgressEngine.reset(isDemo: true)
             pathProgress = pathProgressEngine.snapshot
             lastPathRelationForAudio = pathProgress.relation
+            lastARPresentationForAudio = nil
+            lastARPresentationAudioElapsed = nil
+            lastARPresentationForAudio = nil
+            lastARPresentationAudioElapsed = nil
             lastPathAudioElapsed = nil
             clearSessionMapPresentation()
             resetOperatorDiagnosticsForNewSession()
@@ -727,6 +734,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             )
         } else {
             lastPathRelationForAudio = pathProgress.relation
+            lastARPresentationForAudio = nil
+            lastARPresentationAudioElapsed = nil
         }
         if let scenario, tickIndex < scenario.ticks.count {
             emitARWorldCommands(arCommandMapper.update(
@@ -928,6 +937,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathProgressEngine.reset(isDemo: false)
             pathProgress = pathProgressEngine.snapshot
             lastPathRelationForAudio = pathProgress.relation
+            lastARPresentationForAudio = nil
+            lastARPresentationAudioElapsed = nil
             lastPathAudioElapsed = nil
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
             try movementEngine.resumeSession()
@@ -1525,6 +1536,50 @@ final class WaykinAppModel: CanonicalARCommandSource {
         guard arWorldCommandHandlerOwner == owner else { return }
         arWorldCommandHandlerOwner = nil
         arWorldCommandHandler = nil
+    }
+
+    private func playARPresentationAudioIfNeeded(
+        companionRuntime: CompanionRuntime,
+        event: WorldEvent?,
+        pursuitState: PursuitState,
+        sessionElapsed: TimeInterval,
+        at timestamp: Date
+    ) -> Bool {
+        let next = CompanionPresentationMatrix.arBehaviorString(
+            state: companionRuntime.state,
+            event: event?.kind,
+            pursuitState: pursuitState,
+            pathRelation: pathProgress.relation,
+            pathIntegrityPressure: pathProgress.integrityPressure
+        )
+        let previous = lastARPresentationForAudio
+        defer { lastARPresentationForAudio = next }
+        guard let cue = AudioExperienceLayer.cueForARPresentationTransition(
+            from: previous,
+            to: next,
+            sessionElapsed: sessionElapsed,
+            lastARPresentationAudioElapsed: lastARPresentationAudioElapsed
+        ) else { return false }
+        lastARPresentationAudioElapsed = sessionElapsed
+        activeFieldTestReceipt?.recordAudioCue(cue, at: timestamp)
+        lastOperatorAudioCueKind = cue.kind.rawValue
+        audioPlayer.handle([cue])
+        return true
+    }
+
+    /// Keep AR presentation audio state aligned when a higher-priority cue already played.
+    private func seedARPresentationAudioState(
+        companionRuntime: CompanionRuntime,
+        event: WorldEvent?,
+        pursuitState: PursuitState
+    ) {
+        lastARPresentationForAudio = CompanionPresentationMatrix.arBehaviorString(
+            state: companionRuntime.state,
+            event: event?.kind,
+            pursuitState: pursuitState,
+            pathRelation: pathProgress.relation,
+            pathIntegrityPressure: pathProgress.integrityPressure
+        )
     }
 
     // MARK: - Glasses glance (#115)
