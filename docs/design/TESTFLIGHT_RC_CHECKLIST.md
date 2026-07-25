@@ -8,8 +8,8 @@ status: SUPPORTING
 authority: SUPPORTING
 parent_main_at_prep: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
 phase_a_validate_sha: 3cc8ac21a3bbe286486c551b04630b5531ec928c
-main_tip_at_doc_sync: 7089b5da0256e5aa9e37a1539eb70d64d6506a15
-baseline_short: 7089b5d
+main_tip_at_doc_sync: d7954ac44000da76f53ee687ebb26fed9dcfeeca
+baseline_short: d7954ac
 marketing_version: "0.9.0"
 build_number: "2"
 validate_observed: PASS_LOCAL_20260725T194535Z_3cc8ac2
@@ -20,7 +20,7 @@ outdoor_gate: ISSUE_41_OPEN
 
 **Authority:** Supporting engineering checklist. Does not override `docs/SOLO_MVP_SCOPE.md`, `KNOWN_LIMITATIONS.md`, or issue #41 evidence rules.
 
-**Note (2026-07-25):** Marketing **0.9.0** / build **2** is on main. Phase A `make validate` **PASS** on `3cc8ac2` (receipt `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2`). Main tip `7089b5d` adds docs only after that SHA — same app version. Prefer archiving **current `main` tip** after `git pull`; re-run validate if **code** moved past Phase A.
+**Note (2026-07-25):** Marketing **0.9.0** / build **2** is on main. Phase A `make validate` **PASS** on `3cc8ac2` (receipt `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2`). Main tip `d7954ac` adds docs only after that SHA — same app version. Prefer archiving **current `main` tip** after `git pull`; re-run validate if **code** moved past Phase A.
 
 **Who:** Human with Apple Developer Program access for signing, App Store Connect, and upload. Agent can run automated gates and fill OBSERVED/NOT_COMPUTABLE rows.
 
@@ -30,7 +30,7 @@ outdoor_gate: ISSUE_41_OPEN
 
 | Field | Value at cut |
 | ----- | ------------ |
-| Recommended archive tip | Current `main` (`7089b5d` at doc sync; pull first) |
+| Recommended archive tip | Current `main` (`d7954ac` at doc sync; pull first) |
 | Phase A validate SHA | `3cc8ac21a3bbe286486c551b04630b5531ec928c` |
 | Cut date (UTC) | 2026-07-25 |
 | Branch | `main` |
@@ -285,7 +285,7 @@ Build SHA: <paste full SHA>
 | **BLOCKED** | Validate red; missing PrivacyInfo; wrong entitlements (e.g. background location added accidentally); no signing; critical crash on TF1–TF2 |
 | **NOT READY for public App Store** | Until product-reviewed legal URLs/policy, outdoor honesty narrative, and product sign-off beyond internal TF |
 
-### Baseline verdict (2026-07-25, tip `7089b5d` / Phase A `3cc8ac2`)
+### Baseline verdict (2026-07-25, tip `d7954ac` / Phase A `3cc8ac2`)
 
 | Dimension | Verdict |
 | --------- | ------- |

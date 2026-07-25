@@ -6,19 +6,19 @@ created: 2026-07-20
 status: PARKED
 reason: Device evidence lane (indoor smoke + outdoor #41); eng + Hallmark UI shipped
 main_tip_at_park: f0e6762
-main_tip_at_refresh: 7089b5d
+main_tip_at_refresh: d7954ac
 refresh_date: 2026-07-25
 marketing_version: "0.9.0"
 build_number: "2"
 ```
 
-Parked after UI waves, AR mesh/device stack, Hallmark polish (#236), and internal TF version cut (#237). **On tip `7089b5d`:** artist package + DCC path shipped; Phase A laptop validate **PASS** on ancestor `3cc8ac2`; indoor/outdoor human receipts PENDING. Outdoor **#41** remains first for COH.
+Parked after UI waves, AR mesh/device stack, Hallmark polish (#236), and internal TF version cut (#237). **On tip `d7954ac`:** artist package + DCC path shipped; Phase A laptop validate **PASS** on ancestor `3cc8ac2`; indoor/outdoor human receipts PENDING. Outdoor **#41** remains first for COH.
 
 ## Top parked item — outdoor device
 
 | Priority | Item | Notes |
 | -------- | ---- | ----- |
-| **1** | **[#41](https://github.com/scrimshawlife-ctrl/Waykin/issues/41) outdoor AR re-walk** | Daylight physical iPhone; COH PASS/PARTIAL/FAIL; tip SHA at walk time (`7089b5d` preferred; scaffold `OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md`) |
+| **1** | **[#41](https://github.com/scrimshawlife-ctrl/Waykin/issues/41) outdoor AR re-walk** | Daylight physical iPhone; COH PASS/PARTIAL/FAIL; tip SHA at walk time (`d7954ac` preferred; scaffold `OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md`) |
 
 ### Outdoor packet (when resuming #41)
 
