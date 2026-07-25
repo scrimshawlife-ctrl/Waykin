@@ -2,13 +2,15 @@
 
 ```yaml
 document_id: WAYKIN-TESTFLIGHT-RC-001
-version: 1.0
-date: 2026-07-22
+version: 1.1
+date: 2026-07-25
 status: SUPPORTING
 authority: SUPPORTING
-baseline_sha: 8beec340311287b015e46b824d0ede2b94d7b0e4
-baseline_short: 8beec34
-validate_observed: PASS_2026-07-22
+parent_main_at_prep: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
+baseline_short: PENDING_ARCHIVE_TIP
+marketing_version: "0.9.0"
+build_number: "2"
+validate_observed: PENDING_ON_ARCHIVE_TIP
 outdoor_gate: ISSUE_41_OPEN
 ```
 
@@ -16,7 +18,7 @@ outdoor_gate: ISSUE_41_OPEN
 
 **Authority:** Supporting engineering checklist. Does not override `docs/SOLO_MVP_SCOPE.md`, `KNOWN_LIMITATIONS.md`, or issue #41 evidence rules.
 
-**Note (2026-07-23):** Checklist content can land via docs PR without the #216 Info.plist-only commit. After #217 merges, re-pin `baseline_sha` and re-run section 2 gates before archive.
+**Note (2026-07-25):** Version **0.9.0 (2)** is introduced in the version-bump PR. Do **not** archive parent tip `d9d1df7` alone (still 1.0/1). After the bump merges, set `git_sha` to the **merge tip** that contains 0.9.0 (2), re-run section 2 gates on **that** SHA, then archive.
 
 **Who:** Human with Apple Developer Program access for signing, App Store Connect, and upload. Agent can run automated gates and fill OBSERVED/NOT_COMPUTABLE rows.
 
@@ -26,10 +28,12 @@ outdoor_gate: ISSUE_41_OPEN
 
 | Field | Value at cut |
 | ----- | ------------ |
-| Cut `git_sha` (full) | `8beec340311287b015e46b824d0ede2b94d7b0e4` (refresh if main moves) |
-| Cut date (UTC) | 2026-07-22 |
-| Branch | `main` (or RC branch named below) |
-| `make validate` | **PASS** (OBSERVED on baseline; re-run on cut) |
+| Cut `git_sha` (full) | **PENDING** — fill with merge tip that contains 0.9.0 (2), not `d9d1df7` alone |
+| Parent main at prep | `d9d1df7` (Hallmark #236; version still 1.0/1) |
+| Cut date (UTC) | 2026-07-25 |
+| Branch | `main` after version-bump merge |
+| Marketing / build | **0.9.0 (2)** (this PR) |
+| `make validate` | Re-run on **archive tip** (do not rely only on #236 CI) |
 | Open product blockers | #41 outdoor COH still open — ship only as **internal** TF with known limitations |
 | Dirty tree | Only intentional RC commits |
 
@@ -44,8 +48,8 @@ If tip moves after this doc’s baseline, re-run section 2 and rewrite the SHA r
 | Display name | Waykin | Keep |
 | Bundle ID (app) | `com.waykin.WaykinApp` | Confirm team ownership in Apple Developer |
 | AR Lab bundle | `com.waykin.arlab` | **Do not** upload Lab as consumer TF unless intentional |
-| Marketing version | `1.0` (`CFBundleShortVersionString`) | Set explicit RC (e.g. `0.9.0` internal or `1.0.0` if product accepts) in `project.yml` **and** regenerate |
-| Build number | `1` (`CFBundleVersion`) | **Must bump** per TF upload (monotone integer) |
+| Marketing version | **`0.9.0`** | Internal TF cut; bump to `1.0.0` only with product ship decision |
+| Build number | **`2`** | Bump for every subsequent TF upload |
 | Deployment target | iOS 17.0 | Confirm tester devices ≥ 17 |
 | App icon | `AppIcon` full set present (incl. 1024) | Spot-check on device home screen |
 | Display font | `WaykinDisplay-Regular.ttf` in `UIAppFonts` | Splash only; no DM Sans claim |

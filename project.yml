@@ -46,6 +46,8 @@ targets:
         buildPhase: resources
     settings:
       base:
+        MARKETING_VERSION: "0.9.0"
+        CURRENT_PROJECT_VERSION: "2"
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Waykin uses your location during an active movement session to measure distance, pace, and route progress."
         INFOPLIST_KEY_NSCameraUsageDescription: "Waykin uses the camera to place companions and game events in augmented reality during an active session."
         INFOPLIST_KEY_NSHealthShareUsageDescription: "Waykin can optionally read recent walking activity (steps and walking distance) to enrich an active walk. Demo Mode never requires Health access."
@@ -61,6 +63,9 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Waykin
+        # Internal TestFlight cut — marketing 0.9.0, build 2 (monotone per upload).
+        CFBundleShortVersionString: "0.9.0"
+        CFBundleVersion: "2"
         UIAppFonts:
           - WaykinDisplay-Regular.ttf
         NSLocationWhenInUseUsageDescription: "Waykin uses your location during an active movement session to measure distance, pace, and route progress."
