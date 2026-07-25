@@ -9,7 +9,7 @@ Do not invent values like `OBSERVED_INDOOR_DEVICE` — use `OBSERVED` and note i
 
 | Field | Value |
 | ----- | ----- |
-| Prefer install tip | `main` @ `7089b5d` (or ≥ `3cc8ac2` with 0.9.0 / 2) |
+| Prefer install tip | `main` @ `d7954ac` (or ≥ `3cc8ac2` with 0.9.0 / 2) |
 | Marketing / build | **0.9.0 (2)** |
 | Phase A (laptop) | `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` — **PASS** |
 | Indoor human | `INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md` — **PENDING** |

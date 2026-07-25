@@ -9,7 +9,7 @@ goal: indoor_smoke_then_internal_tf_then_outdoor_41
 outdoor_qa: PARKED_SEE_DEFERRED_RECOMMENDATIONS
 ar_status: MAINTENANCE_ONLY_UNLESS_41_OR_DEFECT
 ui_package: Waykin-Design/11_Approved-Exports/CANDIDATE_v0.2/
-main_tip_at_refresh: 7089b5d
+main_tip_at_refresh: d7954ac
 marketing_version: "0.9.0"
 build_number: "2"
 open_product_pr: none
@@ -43,7 +43,7 @@ Engineering for Lira AR mid-LOD, device AR/audio, DCC binding, Hallmark presenta
 | Session double-End guard | #235 |
 | Hallmark presentation polish | #236 · `d9d1df7` |
 | TF 0.9.0 (2) + board | #237 · `2d969a0` |
-| Cut SHA pin + Phase A handoff | #238 / #239 · tip `7089b5d` |
+| Cut SHA pin + Phase A handoff + board sync | #238–#240 · tip `d7954ac` |
 
 ## Phase A — Pre-device gates (laptop)
 
@@ -116,7 +116,7 @@ Protocol: [OUTDOOR_SESSION_PACKET.md](OUTDOOR_SESSION_PACKET.md) + issue #41.
 
 | Milestone | Done when |
 | --------- | --------- |
-| Eng DCC + Hallmark + 0.9.0 (2) | On main (done through `7089b5d`) |
+| Eng DCC + Hallmark + 0.9.0 (2) | On main (done through `d7954ac`) |
 | Indoor smoke | Filled receipt with device OBSERVED rows |
 | Internal TF | Build on internal testing group |
 | #41 | Dated outdoor receipt; no invented PASS |
