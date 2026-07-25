@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-25 (main `d9d1df7` — Hallmark #236 merged)
+Last updated: 2026-07-25 (main `2d969a0` — Hallmark #236 + TF 0.9.0(2) #237)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -11,8 +11,8 @@ Last updated: 2026-07-25 (main `d9d1df7` — Hallmark #236 merged)
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
 | Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — re-walk on tip `d9d1df7`+ | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · daylight |
-| Indoor AR hybrid smoke | Human device | **Armed** — tip `d9d1df7` (Hallmark UI + DCC path); fill PENDING receipt | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
-| Internal TestFlight RC | Human (signing / ASC) | **Version cut 0.9.0 (2)** — checklist + marketing/build bump | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md); #41 not required for *internal* TF |
+| Indoor AR hybrid smoke | Human device | **Armed** — tip `2d969a0`; fill PENDING receipt on install tip | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
+| Internal TestFlight RC | Human (signing / ASC) | **Ready to archive** tip `2d969a0` · 0.9.0 (2) | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md); `make validate` then Organizer |
 
 ## Recently completed (main)
 

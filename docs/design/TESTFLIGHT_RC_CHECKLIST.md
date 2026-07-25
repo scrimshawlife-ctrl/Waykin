@@ -7,10 +7,10 @@ date: 2026-07-25
 status: SUPPORTING
 authority: SUPPORTING
 parent_main_at_prep: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
-baseline_short: PENDING_ARCHIVE_TIP
+baseline_short: 2d969a0
 marketing_version: "0.9.0"
 build_number: "2"
-validate_observed: PENDING_ON_ARCHIVE_TIP
+validate_observed: PENDING_LOCAL_VALIDATE_ON_TIP
 outdoor_gate: ISSUE_41_OPEN
 ```
 
@@ -28,12 +28,12 @@ outdoor_gate: ISSUE_41_OPEN
 
 | Field | Value at cut |
 | ----- | ------------ |
-| Cut `git_sha` (full) | **PENDING** — fill with merge tip that contains 0.9.0 (2), not `d9d1df7` alone |
+| Cut `git_sha` (full) | `2d969a00e7aea407418c80e5166556a747915e3b` (0.9.0 / 2 on main after #237) |
 | Parent main at prep | `d9d1df7` (Hallmark #236; version still 1.0/1) |
 | Cut date (UTC) | 2026-07-25 |
-| Branch | `main` after version-bump merge |
+| Branch | `main` @ `2d969a0` |
 | Marketing / build | **0.9.0 (2)** (this PR) |
-| `make validate` | Re-run on **archive tip** (do not rely only on #236 CI) |
+| `make validate` | Re-run on `2d969a0` before archive (version bump PR CI green; confirm local) |
 | Open product blockers | #41 outdoor COH still open — ship only as **internal** TF with known limitations |
 | Dirty tree | Only intentional RC commits |
 
