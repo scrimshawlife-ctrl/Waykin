@@ -286,7 +286,14 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertEqual(store.receipts.count, 2)
         XCTAssertEqual(store.receipts[1].outcome, .completed)
         let companion = try model.persistenceStore.loadCompanion()
-        XCTAssertEqual(companion?.bondLevel, CanonicalCompanionIdentity.defaultCompanion().bondLevel + 2)
+        // Durable bond must match the optimistic in-memory companion after both
+        // FIFO-chained completed-session writes (demo bondDelta is experience-owned).
+        XCTAssertEqual(companion?.bondLevel, model.companion.bondLevel)
+        XCTAssertEqual(try await model.persistence.memoryCount(), 2)
+        XCTAssertGreaterThan(
+            companion?.bondLevel ?? 0,
+            CanonicalCompanionIdentity.defaultCompanion().bondLevel
+        )
     }
 
     private func makeModel(
