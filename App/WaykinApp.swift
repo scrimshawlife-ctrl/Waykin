@@ -792,6 +792,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
         // Detach the builder now so a later startDemo cannot overwrite it, and so a
         // duplicate endDemo cannot steal/finalize it as invalid while persist is pending.
         let receiptBuilder = takeActiveFieldTestReceipt()
+        // Snapshot alongside the builder: the finishes below are deferred into the
+        // persistence chain, which can outlive this session's global state.
+        let receiptInputs = captureFieldTestReceiptInputs()
         guard let result = result, let summary = summary else {
             if let receiptBuilder {
                 finishFieldTestReceipt(
@@ -802,7 +805,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
                     memoryWritten: false,
                     persistence: .notAttempted,
                     errorCategory: .invalidState,
-                    endedAt: endedAt
+                    endedAt: endedAt,
+                    inputs: receiptInputs
                 )
             }
             return
@@ -866,7 +870,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
                         endingBond: updated.bondLevel,
                         memoryWritten: true,
                         persistence: .succeeded,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             } catch {
@@ -881,7 +886,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
                         memoryWritten: false,
                         persistence: .failed,
                         errorCategory: .persistence,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             }
@@ -1147,6 +1153,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathRelation: pathProgress.relation.rawValue
         )
         let receiptBuilder = takeActiveFieldTestReceipt()
+        let receiptInputs = captureFieldTestReceiptInputs()
         enqueuePersistence { [weak self] in
             guard let self else { return }
             do {
@@ -1165,7 +1172,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
                         endingBond: updatedCompanion.bondLevel,
                         memoryWritten: true,
                         persistence: .succeeded,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             } catch {
@@ -1180,7 +1188,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
                         memoryWritten: false,
                         persistence: .failed,
                         errorCategory: .persistence,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             }
@@ -1489,7 +1498,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 memoryWritten: false,
                 persistence: .notAttempted,
                 errorCategory: errorCategory,
-                endedAt: endedAt
+                endedAt: endedAt,
+                inputs: captureFieldTestReceiptInputs()
             )
         }
     }
@@ -1699,6 +1709,43 @@ final class WaykinAppModel: CanonicalARCommandSource {
         lastOperatorMovementDisposition = "—"
     }
 
+    /// Session-scoped receipt inputs, captured at End.
+    ///
+    /// `finishFieldTestReceipt` runs inside the persistence chain, which can
+    /// complete *after* `startDemo` / `startRealCompanionWalk` has already reset
+    /// these globals for the next session. Reading them late attributes the next
+    /// session's (or an empty) path trace, enrichment and AR/map diagnostics to
+    /// the receipt of the walk that just finished. Snapshot at End, never read
+    /// `self` from the deferred closure.
+    private struct FieldTestReceiptInputs {
+        let pathProgress: PathProgressSnapshot
+        let activityEnrichment: ActivityEnrichment
+        let arPresentation: FieldTestARPresentationSummary
+        let mapPresentation: FieldTestMapPresentationSummary
+        let persistenceOperator: FieldTestPersistenceOperatorSummary
+    }
+
+    /// Must be called at End, on the same turn the builder is detached.
+    private func captureFieldTestReceiptInputs() -> FieldTestReceiptInputs {
+        var arSummary = sessionARPresentationSummary
+        if arSummary.sessionStillDiagnosticLabel == nil {
+            // Resolved here rather than at finish: it reads the live presence
+            // presentation and skin, which the next session also replaces.
+            let stillLabel = LiraStillCatalog.graphicsPath(
+                pose: LiraSessionPose.resolve(from: activePresencePresentation),
+                skin: selectedLiraSkin
+            ).diagnosticLabel
+            arSummary.sessionStillDiagnosticLabel = stillLabel
+        }
+        return FieldTestReceiptInputs(
+            pathProgress: pathProgress,
+            activityEnrichment: activityEnrichment,
+            arPresentation: arSummary,
+            mapPresentation: sessionMapPresentationSummary,
+            persistenceOperator: persistenceOperatorSummary
+        )
+    }
+
     private func takeActiveFieldTestReceipt() -> FieldTestReceiptBuilder? {
         let builder = activeFieldTestReceipt
         activeFieldTestReceipt = nil
@@ -1713,16 +1760,10 @@ final class WaykinAppModel: CanonicalARCommandSource {
         memoryWritten: Bool,
         persistence: FieldTestPersistenceResult,
         errorCategory: FieldTestErrorCategory? = nil,
-        endedAt: Date
+        endedAt: Date,
+        inputs: FieldTestReceiptInputs
     ) {
-        var arSummary = sessionARPresentationSummary
-        if arSummary.sessionStillDiagnosticLabel == nil {
-            let stillLabel = LiraStillCatalog.graphicsPath(
-                pose: LiraSessionPose.resolve(from: activePresencePresentation),
-                skin: selectedLiraSkin
-            ).diagnosticLabel
-            arSummary.sessionStillDiagnosticLabel = stillLabel
-        }
+        let arSummary = inputs.arPresentation
         let receipt = builder.finish(
             session: session,
             outcome: outcome,
@@ -1731,11 +1772,11 @@ final class WaykinAppModel: CanonicalARCommandSource {
             persistence: persistence,
             errorCategory: errorCategory,
             endedAt: endedAt,
-            pathProgress: pathProgress,
-            activityEnrichment: activityEnrichment,
+            pathProgress: inputs.pathProgress,
+            activityEnrichment: inputs.activityEnrichment,
             arPresentation: arSummary,
-            mapPresentation: sessionMapPresentationSummary,
-            persistenceOperator: persistenceOperatorSummary
+            mapPresentation: inputs.mapPresentation,
+            persistenceOperator: inputs.persistenceOperator
         )
         guard let fieldTestReceiptStore else { return }
         do {
