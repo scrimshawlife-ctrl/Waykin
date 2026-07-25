@@ -372,6 +372,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
 
     /// Tracks in-flight repository work so tests can await durable completion (WP-DB3).
     @ObservationIgnored private var pendingPersistenceTasks: [Task<Void, Never>] = []
+    /// FIFO tail so completed-session writes apply bond monotonicity in end order.
+    @ObservationIgnored private var persistenceChainTail: Task<Void, Never>?
 
     init(
         persistenceStore: PersistenceStore,
@@ -771,6 +773,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
     }
 
     func endDemo() {
+        // Idempotent: a second End (double-tap / AR+session End) must not finalize the
+        // in-flight field-test receipt as `.invalidState` while persistence is still pending.
+        guard demoController.isRunning else { return }
         captureMapPresentationForReceipt()
         clearSessionMapPresentation()
         emitARWorldCommands(arCommandMapper.clear())
@@ -784,16 +789,26 @@ final class WaykinAppModel: CanonicalARCommandSource {
         activeFieldTestReceipt?.recordAudioLifecycle("stop", at: endedAt)
         let scenarioLabel = demoController.currentScenario.map { String(describing: $0.id) }
         let (session, result, summary) = demoController.end()
+        // Detach the builder now so a later startDemo cannot overwrite it, and so a
+        // duplicate endDemo cannot steal/finalize it as invalid while persist is pending.
+        let receiptBuilder = takeActiveFieldTestReceipt()
+        // Snapshot alongside the builder: the finishes below are deferred into the
+        // persistence chain, which can outlive this session's global state.
+        let receiptInputs = captureFieldTestReceiptInputs()
         guard let result = result, let summary = summary else {
-            finishFieldTestReceipt(
-                session: session,
-                outcome: .invalidState,
-                endingBond: companion.bondLevel,
-                memoryWritten: false,
-                persistence: .notAttempted,
-                errorCategory: .invalidState,
-                endedAt: endedAt
-            )
+            if let receiptBuilder {
+                finishFieldTestReceipt(
+                    receiptBuilder,
+                    session: session,
+                    outcome: .invalidState,
+                    endingBond: companion.bondLevel,
+                    memoryWritten: false,
+                    persistence: .notAttempted,
+                    errorCategory: .invalidState,
+                    endedAt: endedAt,
+                    inputs: receiptInputs
+                )
+            }
             return
         }
 
@@ -845,30 +860,34 @@ final class WaykinAppModel: CanonicalARCommandSource {
                     companion: updated
                 )
                 let count = try await self.persistence.memoryCount()
-                await MainActor.run {
-                    self.lastSavedMemoryID = receipt.recordID.uuidString
-                    self.persistenceMemoryCount = count
+                self.lastSavedMemoryID = receipt.recordID.uuidString
+                self.persistenceMemoryCount = count
+                if let receiptBuilder {
                     self.finishFieldTestReceipt(
+                        receiptBuilder,
                         session: session,
                         outcome: didCompleteScenario ? .completed : .userEnded,
                         endingBond: updated.bondLevel,
                         memoryWritten: true,
                         persistence: .succeeded,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             } catch {
-                await MainActor.run {
-                    self.demoMessage = "Persistence failed: \(error)"
-                    self.persistenceLoadState = .failed
+                self.demoMessage = "Persistence failed: \(error)"
+                self.persistenceLoadState = .failed
+                if let receiptBuilder {
                     self.finishFieldTestReceipt(
+                        receiptBuilder,
                         session: session,
                         outcome: .persistenceFailed,
                         endingBond: self.companion.bondLevel,
                         memoryWritten: false,
                         persistence: .failed,
                         errorCategory: .persistence,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             }
@@ -884,11 +903,16 @@ final class WaykinAppModel: CanonicalARCommandSource {
         }
     }
 
-    private func enqueuePersistence(_ work: @escaping @Sendable () async -> Void) {
-        let task = Task { await work() }
+    /// Serializes durable writes so bondAfter from session N cannot overwrite session N+1.
+    private func enqueuePersistence(_ work: @escaping @MainActor () async -> Void) {
+        let previous = persistenceChainTail
+        let task = Task { @MainActor in
+            await previous?.value
+            await work()
+        }
+        persistenceChainTail = task
         pendingPersistenceTasks.append(task)
     }
-
     func returnHome() { path = NavigationPath() }
 
     // MARK: - Real physical walk support (COMPANION_WALK)
@@ -1128,6 +1152,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             memoryText: memoryText,
             pathRelation: pathProgress.relation.rawValue
         )
+        let receiptBuilder = takeActiveFieldTestReceipt()
+        let receiptInputs = captureFieldTestReceiptInputs()
         enqueuePersistence { [weak self] in
             guard let self else { return }
             do {
@@ -1136,30 +1162,34 @@ final class WaykinAppModel: CanonicalARCommandSource {
                     companion: updatedCompanion
                 )
                 let count = try await self.persistence.memoryCount()
-                await MainActor.run {
-                    self.lastSavedMemoryID = receipt.recordID.uuidString
-                    self.persistenceMemoryCount = count
+                self.lastSavedMemoryID = receipt.recordID.uuidString
+                self.persistenceMemoryCount = count
+                if let receiptBuilder {
                     self.finishFieldTestReceipt(
+                        receiptBuilder,
                         session: ended,
                         outcome: .userEnded,
                         endingBond: updatedCompanion.bondLevel,
                         memoryWritten: true,
                         persistence: .succeeded,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             } catch {
-                await MainActor.run {
-                    self.demoMessage = "The walk ended, but its memory could not be saved."
-                    self.persistenceLoadState = .failed
+                self.demoMessage = "The walk ended, but its memory could not be saved."
+                self.persistenceLoadState = .failed
+                if let receiptBuilder {
                     self.finishFieldTestReceipt(
+                        receiptBuilder,
                         session: ended,
                         outcome: .persistenceFailed,
                         endingBond: self.companion.bondLevel,
                         memoryWritten: false,
                         persistence: .failed,
                         errorCategory: .persistence,
-                        endedAt: endedAt
+                        endedAt: endedAt,
+                        inputs: receiptInputs
                     )
                 }
             }
@@ -1459,15 +1489,19 @@ final class WaykinAppModel: CanonicalARCommandSource {
         resetPresentationElapsedClock()
         realWalkState = .failed
         demoMessage = message
-        finishFieldTestReceipt(
-            session: endedSession,
-            outcome: outcome,
-            endingBond: companion.bondLevel,
-            memoryWritten: false,
-            persistence: .notAttempted,
-            errorCategory: errorCategory,
-            endedAt: endedAt
-        )
+        if let receiptBuilder = takeActiveFieldTestReceipt() {
+            finishFieldTestReceipt(
+                receiptBuilder,
+                session: endedSession,
+                outcome: outcome,
+                endingBond: companion.bondLevel,
+                memoryWritten: false,
+                persistence: .notAttempted,
+                errorCategory: errorCategory,
+                endedAt: endedAt,
+                inputs: captureFieldTestReceiptInputs()
+            )
+        }
     }
 
     /// Optional HealthKit enrichment for real walks only. Never blocks Demo Mode.
@@ -1675,25 +1709,61 @@ final class WaykinAppModel: CanonicalARCommandSource {
         lastOperatorMovementDisposition = "—"
     }
 
-    private func finishFieldTestReceipt(
-        session: MovementSession?,
-        outcome: FieldTestOutcome,
-        endingBond: Int,
-        memoryWritten: Bool,
-        persistence: FieldTestPersistenceResult,
-        errorCategory: FieldTestErrorCategory? = nil,
-        endedAt: Date
-    ) {
-        guard let builder = activeFieldTestReceipt else { return }
-        activeFieldTestReceipt = nil
+    /// Session-scoped receipt inputs, captured at End.
+    ///
+    /// `finishFieldTestReceipt` runs inside the persistence chain, which can
+    /// complete *after* `startDemo` / `startRealCompanionWalk` has already reset
+    /// these globals for the next session. Reading them late attributes the next
+    /// session's (or an empty) path trace, enrichment and AR/map diagnostics to
+    /// the receipt of the walk that just finished. Snapshot at End, never read
+    /// `self` from the deferred closure.
+    private struct FieldTestReceiptInputs {
+        let pathProgress: PathProgressSnapshot
+        let activityEnrichment: ActivityEnrichment
+        let arPresentation: FieldTestARPresentationSummary
+        let mapPresentation: FieldTestMapPresentationSummary
+        let persistenceOperator: FieldTestPersistenceOperatorSummary
+    }
+
+    /// Must be called at End, on the same turn the builder is detached.
+    private func captureFieldTestReceiptInputs() -> FieldTestReceiptInputs {
         var arSummary = sessionARPresentationSummary
         if arSummary.sessionStillDiagnosticLabel == nil {
+            // Resolved here rather than at finish: it reads the live presence
+            // presentation and skin, which the next session also replaces.
             let stillLabel = LiraStillCatalog.graphicsPath(
                 pose: LiraSessionPose.resolve(from: activePresencePresentation),
                 skin: selectedLiraSkin
             ).diagnosticLabel
             arSummary.sessionStillDiagnosticLabel = stillLabel
         }
+        return FieldTestReceiptInputs(
+            pathProgress: pathProgress,
+            activityEnrichment: activityEnrichment,
+            arPresentation: arSummary,
+            mapPresentation: sessionMapPresentationSummary,
+            persistenceOperator: persistenceOperatorSummary
+        )
+    }
+
+    private func takeActiveFieldTestReceipt() -> FieldTestReceiptBuilder? {
+        let builder = activeFieldTestReceipt
+        activeFieldTestReceipt = nil
+        return builder
+    }
+
+    private func finishFieldTestReceipt(
+        _ builder: FieldTestReceiptBuilder,
+        session: MovementSession?,
+        outcome: FieldTestOutcome,
+        endingBond: Int,
+        memoryWritten: Bool,
+        persistence: FieldTestPersistenceResult,
+        errorCategory: FieldTestErrorCategory? = nil,
+        endedAt: Date,
+        inputs: FieldTestReceiptInputs
+    ) {
+        let arSummary = inputs.arPresentation
         let receipt = builder.finish(
             session: session,
             outcome: outcome,
@@ -1702,11 +1772,11 @@ final class WaykinAppModel: CanonicalARCommandSource {
             persistence: persistence,
             errorCategory: errorCategory,
             endedAt: endedAt,
-            pathProgress: pathProgress,
-            activityEnrichment: activityEnrichment,
+            pathProgress: inputs.pathProgress,
+            activityEnrichment: inputs.activityEnrichment,
             arPresentation: arSummary,
-            mapPresentation: sessionMapPresentationSummary,
-            persistenceOperator: persistenceOperatorSummary
+            mapPresentation: inputs.mapPresentation,
+            persistenceOperator: inputs.persistenceOperator
         )
         guard let fieldTestReceiptStore else { return }
         do {

@@ -238,6 +238,85 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertNotNil(model.lastSummary)
     }
 
+    func testDoubleEndDemoDoesNotCorruptCompletedReceipt() async throws {
+        let store = ReceiptCaptureStore()
+        let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 5_000))
+        let model = try makeModel(clock: clock, receiptStore: store)
+
+        model.startDemo(.calmDayWalk)
+        model.runDemoToEnd()
+        clock.now = clock.now.addingTimeInterval(120)
+        model.endDemo()
+        // Second End must be a no-op: previously it finalized the live builder as
+        // `.invalidState` and prevented the successful persist path from writing.
+        model.endDemo()
+        await model.waitForPendingPersistence()
+
+        let receipt = try XCTUnwrap(store.receipts.single)
+        XCTAssertEqual(receipt.outcome, .completed)
+        XCTAssertEqual(receipt.persistence, .succeeded)
+        XCTAssertTrue(receipt.summary.memoryWritten)
+        XCTAssertEqual(model.persistenceMemoryCount, 1)
+    }
+
+    func testStartingNextDemoBeforePersistFinishesDoesNotStealPriorReceipt() async throws {
+        let store = ReceiptCaptureStore()
+        let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 6_000))
+        let model = try makeModel(clock: clock, receiptStore: store)
+
+        model.startDemo(.calmDayWalk)
+        model.runDemoToEnd()
+        clock.now = clock.now.addingTimeInterval(90)
+        model.endDemo()
+        // Session-scoped state as it stood at End. The next startDemo resets all of
+        // this; the first receipt must still describe the first walk.
+        let firstRelation = model.pathProgress.relation.rawValue
+        let firstAcceptedSamples = model.pathProgress.acceptedSampleCount
+        let firstMetersAlongPath = model.pathProgress.metersAlongPath
+        // Begin the next demo while the prior durable write / receipt finish is pending.
+        model.returnHome()
+        clock.now = clock.now.addingTimeInterval(1)
+        model.startDemo(.calmDayWalk)
+        await model.waitForPendingPersistence()
+
+        XCTAssertEqual(store.receipts.count, 1)
+        XCTAssertEqual(store.receipts[0].outcome, .completed)
+        XCTAssertEqual(store.receipts[0].persistence, .succeeded)
+        // Diagnostics must be snapshotted at End, not read from globals the next
+        // session has already reset — otherwise a completed walk's receipt reports
+        // the next session's (or an empty) path trace.
+        XCTAssertEqual(store.receipts[0].summary.pathRelation, firstRelation)
+        XCTAssertEqual(store.receipts[0].summary.pathAcceptedSampleCount, firstAcceptedSamples)
+        XCTAssertEqual(
+            store.receipts[0].summary.pathMetersAlongPath ?? 0,
+            firstMetersAlongPath,
+            accuracy: 0.001
+        )
+        XCTAssertNotEqual(
+            model.pathProgress.acceptedSampleCount,
+            firstAcceptedSamples,
+            "precondition: the next demo must have reset path state, or this test proves nothing"
+        )
+
+        model.runDemoToEnd()
+        clock.now = clock.now.addingTimeInterval(90)
+        model.endDemo()
+        await model.waitForPendingPersistence()
+
+        XCTAssertEqual(store.receipts.count, 2)
+        XCTAssertEqual(store.receipts[1].outcome, .completed)
+        let companion = try model.persistenceStore.loadCompanion()
+        // Durable bond must match the optimistic in-memory companion after both
+        // FIFO-chained completed-session writes (demo bondDelta is experience-owned).
+        XCTAssertEqual(companion?.bondLevel, model.companion.bondLevel)
+        let memoryCount = try await model.persistence.memoryCount()
+        XCTAssertEqual(memoryCount, 2)
+        XCTAssertGreaterThan(
+            companion?.bondLevel ?? 0,
+            CanonicalCompanionIdentity.defaultCompanion().bondLevel
+        )
+    }
+
     private func makeModel(
         clock: ReceiptTestClock,
         audio: (any AudioCuePlaying)? = nil,
