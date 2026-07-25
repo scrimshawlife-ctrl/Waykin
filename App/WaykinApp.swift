@@ -301,6 +301,9 @@ final class WaykinAppModel: CanonicalARCommandSource {
     /// Path soft-audio coupling (#140): last relation and session elapsed when path cue accepted.
     @ObservationIgnored private var lastPathRelationForAudio: PathRelation = .establishing
     @ObservationIgnored private var lastPathAudioElapsed: TimeInterval?
+    /// AR presentation → existing cue map: last AR vocabulary string + elapsed when AR cue accepted.
+    @ObservationIgnored private var lastARPresentationForAudio: String?
+    @ObservationIgnored private var lastARPresentationAudioElapsed: TimeInterval?
 
     var activePresencePresentation: CompanionPresencePresentation {
         let usesPhysicalRuntime = isLiveSessionActive
@@ -626,6 +629,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathProgress = pathProgressEngine.snapshot
             lastPathRelationForAudio = pathProgress.relation
             lastPathAudioElapsed = nil
+            lastARPresentationForAudio = nil
+            lastARPresentationAudioElapsed = nil
             clearSessionMapPresentation()
             resetOperatorDiagnosticsForNewSession()
             activityEnrichment = .empty
@@ -709,24 +714,42 @@ final class WaykinAppModel: CanonicalARCommandSource {
         if let event = demoController.currentEvent {
             activeFieldTestReceipt?.recordWorldEvent(event)
         }
+        let demoTimestamp = movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
+        let demoSessionElapsed = movementEngine.currentSession?.elapsedTime ?? Double(demoController.tickIndex)
+        let demoPursuit = demoController.companionWalkState?.pursuitState ?? .inactive
+        let demoEvent = demoController.currentEvent
         var playedEventOrBehaviorCue = false
         if let cue = demoController.currentAudioCue {
-            activeFieldTestReceipt?.recordAudioCue(
-                cue,
-                at: movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
-            )
+            activeFieldTestReceipt?.recordAudioCue(cue, at: demoTimestamp)
             lastOperatorAudioCueKind = cue.kind.rawValue
             audioPlayer.handle([cue])
             playedEventOrBehaviorCue = true
         }
-        if !playedEventOrBehaviorCue {
-            playPathSoftAudioIfNeeded(
-                pursuitState: demoController.companionWalkState?.pursuitState ?? .inactive,
-                sessionElapsed: movementEngine.currentSession?.elapsedTime ?? Double(demoController.tickIndex),
-                at: movementEngine.currentSession?.routePoints.last?.timestamp ?? fieldTestNow()
+        if playedEventOrBehaviorCue {
+            // Seed AR presentation tracker so the next silent transition is not a false first-seed.
+            seedARPresentationAudioState(
+                companionRuntime: demoController.companionRuntime,
+                event: demoEvent,
+                pursuitState: demoPursuit
             )
-        } else {
             lastPathRelationForAudio = pathProgress.relation
+        } else {
+            let playedAR = playARPresentationAudioIfNeeded(
+                companionRuntime: demoController.companionRuntime,
+                event: demoEvent,
+                pursuitState: demoPursuit,
+                sessionElapsed: demoSessionElapsed,
+                at: demoTimestamp
+            )
+            if playedAR {
+                lastPathRelationForAudio = pathProgress.relation
+            } else {
+                playPathSoftAudioIfNeeded(
+                    pursuitState: demoPursuit,
+                    sessionElapsed: demoSessionElapsed,
+                    at: demoTimestamp
+                )
+            }
         }
         if let scenario, tickIndex < scenario.ticks.count {
             emitARWorldCommands(arCommandMapper.update(
@@ -929,6 +952,8 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pathProgress = pathProgressEngine.snapshot
             lastPathRelationForAudio = pathProgress.relation
             lastPathAudioElapsed = nil
+            lastARPresentationForAudio = nil
+            lastARPresentationAudioElapsed = nil
             try movementEngine.startSession(activity: .walk, experienceID: "companion_walk")
             try movementEngine.resumeSession()
             if let session = movementEngine.currentSession {
@@ -1224,7 +1249,7 @@ final class WaykinAppModel: CanonicalARCommandSource {
             }
             self.publishGlassesGlance()
 
-            // Path soft audio can fire on reject-only ticks (GPS strain) without a world update (#140).
+            // Soft audio can fire on reject-only ticks (GPS strain) without a world update (#140).
             let pursuitForPath: PursuitState = {
                 if case .companionWalk(let walk) = self.realExperienceState?.runtimeState {
                     return walk.pursuitState
@@ -1237,15 +1262,31 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 }
                 return self.movementEngine.currentSession?.elapsedTime ?? 0
             }()
-
             guard let snapshot = result.snapshot,
                   let state = self.realExperienceState,
                   let context = self.realExperienceContext else {
-                self.playPathSoftAudioIfNeeded(
+                // No ExperienceUpdate runs on a rejected sample, so there is no fresh world event.
+                // Passing the stale `walk.lastEvent` would short-circuit the event overlay in
+                // `arBehaviorString` and mask the path-driven state — an earlier
+                // `companionMovesAhead` computes `follow` (silent) even while `offPath`, which is
+                // exactly the GPS-strain case this branch exists for. Pass nil so reject-only path
+                // transitions can drive the AR presentation cue.
+                let playedAR = self.playARPresentationAudioIfNeeded(
+                    companionRuntime: self.realCompanionRuntime,
+                    event: nil,
                     pursuitState: pursuitForPath,
                     sessionElapsed: pathSessionElapsed,
                     at: self.fieldTestNow()
                 )
+                if !playedAR {
+                    self.playPathSoftAudioIfNeeded(
+                        pursuitState: pursuitForPath,
+                        sessionElapsed: pathSessionElapsed,
+                        at: self.fieldTestNow()
+                    )
+                } else {
+                    self.lastPathRelationForAudio = self.pathProgress.relation
+                }
                 return
             }
 
@@ -1273,12 +1314,28 @@ final class WaykinAppModel: CanonicalARCommandSource {
                     pathIntegrityPressure: self.pathProgress.integrityPressure
                 ))
                 if update.semanticAudioCues.isEmpty {
-                    self.playPathSoftAudioIfNeeded(
+                    let playedAR = self.playARPresentationAudioIfNeeded(
+                        companionRuntime: self.realCompanionRuntime,
+                        event: event,
                         pursuitState: walkState.pursuitState,
                         sessionElapsed: walkState.movementSeconds,
                         at: snapshot.timestamp
                     )
+                    if playedAR {
+                        self.lastPathRelationForAudio = self.pathProgress.relation
+                    } else {
+                        self.playPathSoftAudioIfNeeded(
+                            pursuitState: walkState.pursuitState,
+                            sessionElapsed: walkState.movementSeconds,
+                            at: snapshot.timestamp
+                        )
+                    }
                 } else {
+                    self.seedARPresentationAudioState(
+                        companionRuntime: self.realCompanionRuntime,
+                        event: event,
+                        pursuitState: walkState.pursuitState
+                    )
                     self.lastPathRelationForAudio = self.pathProgress.relation
                 }
             }
@@ -1499,12 +1556,13 @@ final class WaykinAppModel: CanonicalARCommandSource {
         return owner
     }
 
-    /// Soft path cues when experience/event audio is silent (#140).
+    /// Soft path cues when experience/event and AR presentation audio are silent (#140).
+    @discardableResult
     private func playPathSoftAudioIfNeeded(
         pursuitState: PursuitState,
         sessionElapsed: TimeInterval,
         at timestamp: Date
-    ) {
+    ) -> Bool {
         let previous = lastPathRelationForAudio
         let next = pathProgress.relation
         defer { lastPathRelationForAudio = next }
@@ -1514,11 +1572,60 @@ final class WaykinAppModel: CanonicalARCommandSource {
             pursuitState: pursuitState,
             sessionElapsed: sessionElapsed,
             lastPathAudioElapsed: lastPathAudioElapsed
-        ) else { return }
+        ) else { return false }
         lastPathAudioElapsed = sessionElapsed
         activeFieldTestReceipt?.recordAudioCue(cue, at: timestamp)
         lastOperatorAudioCueKind = cue.kind.rawValue
         audioPlayer.handle([cue])
+        return true
+    }
+
+    /// When event/behavior audio is silent, couple AR presentation vocabulary
+    /// (idle/follow/investigate/alert/celebrate) onto the existing WAV catalog.
+    /// Does not double-fire: caller must skip this when experience already emitted cues.
+    @discardableResult
+    private func playARPresentationAudioIfNeeded(
+        companionRuntime: CompanionRuntime,
+        event: WorldEvent?,
+        pursuitState: PursuitState,
+        sessionElapsed: TimeInterval,
+        at timestamp: Date
+    ) -> Bool {
+        let next = CompanionPresentationMatrix.arBehaviorString(
+            state: companionRuntime.state,
+            event: event?.kind,
+            pursuitState: pursuitState,
+            pathRelation: pathProgress.relation,
+            pathIntegrityPressure: pathProgress.integrityPressure
+        )
+        let previous = lastARPresentationForAudio
+        defer { lastARPresentationForAudio = next }
+        guard let cue = AudioExperienceLayer.cueForARPresentationTransition(
+            from: previous,
+            to: next,
+            sessionElapsed: sessionElapsed,
+            lastARPresentationAudioElapsed: lastARPresentationAudioElapsed
+        ) else { return false }
+        lastARPresentationAudioElapsed = sessionElapsed
+        activeFieldTestReceipt?.recordAudioCue(cue, at: timestamp)
+        lastOperatorAudioCueKind = cue.kind.rawValue
+        audioPlayer.handle([cue])
+        return true
+    }
+
+    /// Keep AR presentation audio state aligned when a higher-priority cue already played.
+    private func seedARPresentationAudioState(
+        companionRuntime: CompanionRuntime,
+        event: WorldEvent?,
+        pursuitState: PursuitState
+    ) {
+        lastARPresentationForAudio = CompanionPresentationMatrix.arBehaviorString(
+            state: companionRuntime.state,
+            event: event?.kind,
+            pursuitState: pursuitState,
+            pathRelation: pathProgress.relation,
+            pathIntegrityPressure: pathProgress.integrityPressure
+        )
     }
 
     func detachARWorldCommandHandler(owner: UUID) {
