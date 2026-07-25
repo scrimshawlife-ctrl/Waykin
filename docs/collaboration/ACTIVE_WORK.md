@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-24 (board #227 + continuation plan v4; tip `f061b4e`)
+Last updated: 2026-07-25 (Hallmark UI polish #236 CI green; auto-merge awaits write review)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,31 +10,26 @@ Last updated: 2026-07-24 (board #227 + continuation plan v4; tip `f061b4e`)
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — re-walk on tip after #217–#226 | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · daylight · tip `f061b4e` |
-| Indoor AR hybrid smoke | Human device | **Armed** — re-prep on tip `f061b4e` (expect Motion `dcc` / mapped clips) | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
-| Internal TestFlight RC | Human (signing / ASC) | **Checklist ready** | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md); tip `f061b4e`; #41 not required for *internal* TF |
+| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — re-walk after #217–#226 + UI polish on tip | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · daylight |
+| Indoor AR hybrid smoke | Human device | **Armed** — re-prep on post-#236 tip (expect Motion `dcc` / mapped clips) | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · `scripts/indoor_ar_smoke_prep.sh` |
+| Internal TestFlight RC | Human (signing / ASC) | **Checklist ready** | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md); #41 not required for *internal* TF |
+| PR #236 Hallmark UI polish | Agent / reviewer | **CI green · auto-merge** — needs 1 write-access approving review (author cannot self-approve) | https://github.com/scrimshawlife-ctrl/Waykin/pull/236 |
 
 ## Recently completed (main)
 
 | Work | Evidence |
 |---|---|
+| Hallmark audit polish (Trail featured, single state chip, LiraMaterial tokens, left-bias prep/bond/sanctuary, WaykinDisplay titles) | PR #236 (merge pending review) · tip `04b7089` |
+| Phase A pre-device receipt + audio cue family / lifecycle cues | PRs #230–#234 · main through `0586429` |
 | Board after #226 (ACTIVE_WORK + indoor scaffold) | PR #227 · main `f061b4e` |
 | Bake real joint curves into DCC clip USDZs (`mapped=6`, `clipSource=dcc`) | PR #226 · main `c4995f4` · closes #225 |
 | DCC clip sidecar composition path (bundle + load-before-publish) | PR #224 · main `7931120` |
-| Board + sim preflight receipts | PR #223 · main `b66e235` |
 | Device AR/audio: full-screen, `.playback`, plant/follow, multi-part guard | PR #217 · main `68ba09d` |
 | Artist mid-LOD USDZ replaces Meshy blob | PR #222 · main `ee57a7d` · closes #220 |
-| Collab board + TF checklist + receipt samples | PR #218 · main `0d27074` |
-| Info.plist encryption key only | PR #219 |
-| Privacy manifest + encryption declaration | PR #215 · main `8beec34` |
-| CI UI-test retry on hosted flake | PR #213 |
-| Meshy textured Lira + puppet + spectral FX + compress | PRs #208–#211 |
-| Native + UI test gate + AR integration re-ratify | PRs #205 / #207 |
-| A11y + map-secondary law restore | PR #202 |
-| Persistence WP-DB1–DB5 | PRs #185–#192 · recovery quarantine |
-| Time-aware splash + Waykin display font | PR #184 |
-| Debug D5–D7 + receipt schema 5 | Issue #196 · PR #197 |
-| Grok skill pack (team-tracked `.grok/skills`) | PRs #198–#199 |
+| Collab board + TF checklist + receipt samples | PR #218 |
+| Privacy manifest + encryption + Info.plist sync | PRs #215 / #219 |
+| CI UI-test retry + native gate | PRs #213 / #205 |
+| Persistence WP-DB1–DB5 | PRs #185–#192 |
 
 ## Intake
 
@@ -51,6 +46,7 @@ Last updated: 2026-07-24 (board #227 + continuation plan v4; tip `f061b4e`)
 | Work | Reason | Required resolution |
 |---|---|---|
 | #41 outdoor COH PASS | Device + daylight + tip after mitigations | Outdoor packet + COH receipt; do not invent PASS from sim |
+| #236 merge | Branch ruleset: ≥1 approving review from write access | Collaborator approve → auto-merge |
 
 ## Field-test JSON (agents)
 
@@ -69,9 +65,9 @@ See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) — out
 ## Merge hygiene
 
 ```text
-Main open-product PRs cleared through #226 (c4995f4).
 Prefer small docs/board PRs separate from AR code.
 Do not reintroduce Meshy Lira_Walk as runtime Lira_AR_Base.usdz.
+Hallmark UI polish is App-only; re-validate indoor smoke after #236 lands.
 ```
 
 ## Preservation
