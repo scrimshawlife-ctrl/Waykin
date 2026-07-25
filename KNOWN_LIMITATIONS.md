@@ -25,7 +25,7 @@
 - Whether Apple Watch-originated samples appear with the expected timing in the current iPhone HealthKit queries.
 - Whether the conservative defaults are appropriate across devices, terrain, urban canyons, and accessibility-related walking patterns.
 
-A **PARTIAL** outdoor AR operator receipt exists (`docs/design/receipts/OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md`, pre-mitigation continuity/audio notes). That is **not** a full outdoor COH PASS. Do not mark GPS, outdoor audio, battery, or outdoor AR quality as PASS from simulator, package evidence, or that PARTIAL alone. Issue #41 requires a daylight re-walk on current main tip.
+A **PARTIAL** outdoor AR operator receipt exists (`docs/design/receipts/OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md`, pre-mitigation continuity/audio notes). That is **not** a full outdoor COH PASS. Continuity/audio/UI/DCC mitigations and Hallmark polish have since landed on main; do **not** mark GPS, outdoor audio, battery, or outdoor AR quality as PASS from simulator, package evidence, Phase A, or that PARTIAL alone. Issue #41 requires a daylight re-walk on **current main tip** (see `docs/collaboration/ACTIVE_WORK.md` and the latest `OUTDOOR_QA_RECEIPT_*_PENDING.md`).
 
 The local field-test receipt is engineering evidence only. It has no remote analytics or automatic upload, and receipt creation does not validate physical behavior. Timestamps may reveal session timing when a receipt is shared, field-test ratings remain manual, and receipt-related battery impact is unverified. Settings can show latest-receipt status and share the on-device JSON; that is still a privacy-filtered engineering export, not analytics.
 

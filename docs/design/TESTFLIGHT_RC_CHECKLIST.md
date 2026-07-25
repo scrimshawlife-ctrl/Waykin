@@ -7,7 +7,9 @@ date: 2026-07-25
 status: SUPPORTING
 authority: SUPPORTING
 parent_main_at_prep: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
-baseline_short: 3cc8ac2
+phase_a_validate_sha: 3cc8ac21a3bbe286486c551b04630b5531ec928c
+main_tip_at_doc_sync: 7089b5da0256e5aa9e37a1539eb70d64d6506a15
+baseline_short: 7089b5d
 marketing_version: "0.9.0"
 build_number: "2"
 validate_observed: PASS_LOCAL_20260725T194535Z_3cc8ac2
@@ -18,7 +20,7 @@ outdoor_gate: ISSUE_41_OPEN
 
 **Authority:** Supporting engineering checklist. Does not override `docs/SOLO_MVP_SCOPE.md`, `KNOWN_LIMITATIONS.md`, or issue #41 evidence rules.
 
-**Note (2026-07-25):** Archive tip **`3cc8ac2`** has marketing **0.9.0** / build **2**. Local Phase A `make validate` **PASS** (receipt `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2`). Re-run validate if tip moves before archive.
+**Note (2026-07-25):** Marketing **0.9.0** / build **2** is on main. Phase A `make validate` **PASS** on `3cc8ac2` (receipt `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2`). Main tip `7089b5d` adds docs only after that SHA — same app version. Prefer archiving **current `main` tip** after `git pull`; re-run validate if **code** moved past Phase A.
 
 **Who:** Human with Apple Developer Program access for signing, App Store Connect, and upload. Agent can run automated gates and fill OBSERVED/NOT_COMPUTABLE rows.
 
@@ -28,11 +30,11 @@ outdoor_gate: ISSUE_41_OPEN
 
 | Field | Value at cut |
 | ----- | ------------ |
-| Cut `git_sha` (full) | `3cc8ac21a3bbe286486c551b04630b5531ec928c` (docs pin + 0.9.0/2; Phase A validate PASS) |
-| Parent main at prep | `d9d1df7` (Hallmark #236; version still 1.0/1) |
+| Recommended archive tip | Current `main` (`7089b5d` at doc sync; pull first) |
+| Phase A validate SHA | `3cc8ac21a3bbe286486c551b04630b5531ec928c` |
 | Cut date (UTC) | 2026-07-25 |
-| Branch | `main` @ `3cc8ac2` |
-| Marketing / build | **0.9.0 (2)** (this PR) |
+| Branch | `main` |
+| Marketing / build | **0.9.0 (2)** |
 | `make validate` | **PASS** local 2026-07-25T19:45:22Z on `3cc8ac2` (130 package tests + WaykinApp) |
 | Open product blockers | #41 outdoor COH still open — ship only as **internal** TF with known limitations |
 | Dirty tree | Only intentional RC commits |
@@ -96,7 +98,7 @@ git diff --check
 | validate-simulator | Recommended if UI changed since last TF | |
 | CI on cut commit (GitHub Actions) | PASS | |
 
-**Baseline OBSERVED (2026-07-22 on `8beec34`):** isolation PASS, usdz PASS (`MESHY_TEXTURED_STATIC_V1`, ~10.0 MB), collab PASS, validate PASS (126 package tests + WaykinApp native build).
+**Baseline OBSERVED (2026-07-25 on `3cc8ac2`):** isolation PASS, usdz PASS (`ARTIST_BLEND_HERO_DCC_MID_LOD`, ~5.3 MB + 6 DCC sidecars), collab PASS, validate PASS (130 package tests + WaykinApp native build).
 
 ---
 
@@ -283,15 +285,16 @@ Build SHA: <paste full SHA>
 | **BLOCKED** | Validate red; missing PrivacyInfo; wrong entitlements (e.g. background location added accidentally); no signing; critical crash on TF1–TF2 |
 | **NOT READY for public App Store** | Until product-reviewed legal URLs/policy, outdoor honesty narrative, and product sign-off beyond internal TF |
 
-### Baseline verdict (2026-07-22, `8beec34`)
+### Baseline verdict (2026-07-25, tip `7089b5d` / Phase A `3cc8ac2`)
 
 | Dimension | Verdict |
 | --------- | ------- |
-| Engineering package/native validate | **READY** (re-confirm on cut) |
-| Privacy manifest + encryption | **READY** (Info.plist tracked sync PR optional hygiene) |
-| Legal product review | **OPEN** (draft privacy) |
+| Engineering package/native validate | **READY** (PASS on `3cc8ac2`; re-run if code moves) |
+| Marketing / build | **0.9.0 (2)** on main |
+| Privacy manifest + encryption | **READY** (#215 / #219) |
+| Legal product review | **OPEN** (draft privacy for public store) |
 | Outdoor evidence | **Residual** (#41) |
-| TestFlight readiness | **READY for internal TF** once human signing + build number bump |
+| TestFlight readiness | **READY for internal TF** once human signing + Organizer archive |
 | App Store public | **BLOCKED** pending legal review + product outdoor honesty + release decision |
 
 ---

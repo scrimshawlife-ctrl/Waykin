@@ -39,7 +39,7 @@ Visual system imports and production follow-ons for the app repository.
 | [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ async load |
 | [LIRA_AR_SCULPT_PLAN.md](LIRA_AR_SCULPT_PLAN.md) | **Production sculpt** AR package (issue #220; replace Meshy interim) |
 | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Session + AR animation draft plan |
-| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | v3 experience loop cohesion (path/health → summary) |
+| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | v4.1 device evidence lane (indoor → TF → outdoor #41) |
 | [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md) | AR presentation frozen for engineering |
 | [REAL_WALK_TO_AR_MAPPING.md](REAL_WALK_TO_AR_MAPPING.md) | Real/demo walk → AR commands |
 | [PATHFINDING.md](PATHFINDING.md) | Semantic path progress + summary surfacing |
@@ -48,11 +48,11 @@ Visual system imports and production follow-ons for the app repository.
 | [receipts/](receipts/) | Filled outdoor / sim / indoor smoke receipts |
 | [receipts/samples/](receipts/samples/) | Field-test JSON format samples (not device PASS) |
 
-## Recommended order
+## Recommended order (2026-07-25)
 
-1. Design / presentation / indoor AR motion — **largely complete** (see CONTINUATION_PLAN v0.3)
-2. **AR-F freeze** — seal adapter, stop expanding AR art
-3. **Pathfinding** (semantic walk path; not nav app)
-4. **HealthKit** (App adapter → semantic samples; Demo Mode never blocked)
-5. Outdoor / physical AR receipts — **parallel, non-blocking**
-6. Optional: sculpted USDZ + AnimationLibrary (art track)
+1. Design / presentation / AR mid-LOD / Hallmark polish — **complete on main** (see CONTINUATION_PLAN v4.1)
+2. **AR-F freeze** — maintenance/defects only unless #41 or scoped issue
+3. Path + HealthKit v1.1 — **shipped**; do not expand without promotion
+4. **Indoor device smoke** — human PENDING receipt
+5. **Internal TestFlight** — 0.9.0 (2); archive when signing ready
+6. **Outdoor #41** — daylight COH; not inventable from sim
