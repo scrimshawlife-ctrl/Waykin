@@ -1262,19 +1262,18 @@ final class WaykinAppModel: CanonicalARCommandSource {
                 }
                 return self.movementEngine.currentSession?.elapsedTime ?? 0
             }()
-            let lastEventForPath: WorldEvent? = {
-                if case .companionWalk(let walk) = self.realExperienceState?.runtimeState {
-                    return walk.lastEvent
-                }
-                return nil
-            }()
-
             guard let snapshot = result.snapshot,
                   let state = self.realExperienceState,
                   let context = self.realExperienceContext else {
+                // No ExperienceUpdate runs on a rejected sample, so there is no fresh world event.
+                // Passing the stale `walk.lastEvent` would short-circuit the event overlay in
+                // `arBehaviorString` and mask the path-driven state — an earlier
+                // `companionMovesAhead` computes `follow` (silent) even while `offPath`, which is
+                // exactly the GPS-strain case this branch exists for. Pass nil so reject-only path
+                // transitions can drive the AR presentation cue.
                 let playedAR = self.playARPresentationAudioIfNeeded(
                     companionRuntime: self.realCompanionRuntime,
-                    event: lastEventForPath,
+                    event: nil,
                     pursuitState: pursuitForPath,
                     sessionElapsed: pathSessionElapsed,
                     at: self.fieldTestNow()

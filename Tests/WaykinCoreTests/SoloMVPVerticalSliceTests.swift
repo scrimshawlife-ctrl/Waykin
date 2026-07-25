@@ -196,6 +196,30 @@ final class SoloMVPVerticalSliceTests: XCTestCase {
         )
     }
 
+    func testRejectOnlyTickLetsPathRelationDriveARPresentation() {
+        // On a rejected location sample no ExperienceUpdate runs, so there is no fresh world event.
+        // A stale event short-circuits the event overlay and masks the path-driven state: the
+        // walker is offPath but presents as `follow`, which maps to no cue at all.
+        let stale = CompanionPresentationMatrix.arBehaviorString(
+            state: .follow,
+            event: .companionMovesAhead,
+            pursuitState: .inactive,
+            pathRelation: .offPath
+        )
+        XCTAssertEqual(stale, "follow")
+        XCTAssertNil(AudioExperienceLayer.map(arPresentation: stale))
+
+        // Passing nil lets the reject-only path transition reach the audible alert state.
+        let fresh = CompanionPresentationMatrix.arBehaviorString(
+            state: .follow,
+            event: nil,
+            pursuitState: .inactive,
+            pathRelation: .offPath
+        )
+        XCTAssertEqual(fresh, "alert")
+        XCTAssertEqual(AudioExperienceLayer.map(arPresentation: fresh)?.kind, .pursuitPressure)
+    }
+
     func testBehaviorTransitionCueCooldownAndFirstSeedSilent() {
         // First presentation seeds without audio.
         XCTAssertNil(
