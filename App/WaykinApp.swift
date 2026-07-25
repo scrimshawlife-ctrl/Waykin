@@ -1866,12 +1866,8 @@ struct HomeView: View {
                 .accessibilityLabel("Companion \(appModel.companion.name), Bond \(appModel.companion.bondLevel)")
                 .accessibilityIdentifier("waykin.home.bondRow")
 
-                // Cosmetic skin picker (no unlock economy)
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Form")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(theme.textTertiary)
-                        .accessibilityAddTraits(.isHeader)
+                // Cosmetic skin picker — inline under bond (no full surface card)
+                VStack(alignment: .leading, spacing: WKTokens.Space.xs) {
                     HStack(spacing: 8) {
                         ForEach(LiraSkin.allCases) { skin in
                             Button {
@@ -1912,27 +1908,26 @@ struct HomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("waykin.home.skin.line")
                 }
-                .padding(WKTokens.Space.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(theme.surface)
-                .clipShape(RoundedRectangle(cornerRadius: WKTokens.Radius.medium, style: .continuous))
 
                 if let lastMemory = memoryRecords.first {
                     Text(lastMemory.text)
                         .font(.callout)
                         .foregroundStyle(theme.textSecondary)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("waykin.memory.latest")
                 } else {
-                    // Empty history: soft invite + Begin CTA nearby (component library)
-                    VStack(spacing: WKTokens.Space.sm) {
-                        WKIconView(icon: .history, size: 28)
+                    // Empty history: soft invite + Begin CTA nearby
+                    HStack(alignment: .top, spacing: WKTokens.Space.sm) {
+                        WKIconView(icon: .history, size: 22)
                             .foregroundStyle(theme.textTertiary)
                         Text("Walk with Lira to write your first memory.")
                             .font(.callout)
                             .foregroundStyle(theme.textTertiary)
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("waykin.memory.emptyInvite")
                 }
 
@@ -1940,7 +1935,8 @@ struct HomeView: View {
                     Text(appModel.demoMessage)
                         .font(.callout)
                         .foregroundStyle(theme.textSecondary)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("waykin.status")
                 }
 
@@ -2373,20 +2369,14 @@ struct ActiveSessionView: View {
 
             ScrollView {
                 VStack(spacing: CompanionPresenceStyle.sectionSpacing) {
-                    // Sparse active chrome: state + relation (production board)
+                    // Single state channel: chip only (no duplicate giant label)
                     HStack {
                         WKStateChip(state: chrome)
+                            .accessibilityIdentifier("waykin.session.stateDisplay")
                         Spacer()
                         relationChip(for: presentation)
                     }
                     .accessibilityIdentifier("waykin.session.chromeRow")
-
-                    Text(chrome.chipLabel)
-                        .font(.system(size: WKTokens.TypeScale.displayMin, weight: .semibold))
-                        .minimumScaleFactor(0.85)
-                        .foregroundStyle(chrome.color(in: theme))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityIdentifier("waykin.session.stateDisplay")
 
                     CompanionPresenceView(presentation: presentation)
                         .liraSkin(appModel.selectedLiraSkin)
@@ -2568,22 +2558,24 @@ struct SessionSelectionView: View {
                         .foregroundStyle(theme.textPrimary)
                         .accessibilityIdentifier("waykin.sessionSelect.screen")
 
-                    Text("Presentation modes only — one companion walk underneath.")
+                    Text("One companion walk. Trail is the path; other labels only change how presence feels.")
                         .font(.callout)
                         .foregroundStyle(theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                    ForEach(WalkMode.allCases) { mode in
-                        Button {
-                            appModel.selectedWalkMode = mode
-                            appModel.path.append(AppRoute.prepare(mode))
-                        } label: {
-                            WalkModeCard(
-                                mode: mode,
-                                selected: appModel.selectedWalkMode == mode
-                            )
+                    // Featured: Trail (asymmetric — not three equal tiles)
+                    modeButton(mode: .trail, prominence: .featured)
+
+                    Text("Other framings")
+                        .font(WKTokens.TypeScale.caption)
+                        .foregroundStyle(theme.textTertiary)
+                        .padding(.top, WKTokens.Space.xs)
+                        .accessibilityAddTraits(.isHeader)
+
+                    VStack(spacing: WKTokens.Space.sm) {
+                        ForEach(WalkMode.secondaryModes) { mode in
+                            modeButton(mode: mode, prominence: .secondary)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("waykin.sessionSelect.mode.\(mode.rawValue)")
                     }
                 }
                 .padding(.horizontal, WKTokens.Space.screenMarginX)
@@ -2593,48 +2585,106 @@ struct SessionSelectionView: View {
         .navigationTitle("Session")
         .navigationBarTitleDisplayMode(.inline)
     }
+
+    private func modeButton(mode: WalkMode, prominence: WalkModeCard.Prominence) -> some View {
+        Button {
+            appModel.selectedWalkMode = mode
+            appModel.path.append(AppRoute.prepare(mode))
+        } label: {
+            WalkModeCard(
+                mode: mode,
+                selected: appModel.selectedWalkMode == mode,
+                prominence: prominence
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("waykin.sessionSelect.mode.\(mode.rawValue)")
+    }
 }
 
 struct WalkModeCard: View {
+    enum Prominence {
+        case featured
+        case secondary
+    }
+
     let mode: WalkMode
     var selected: Bool
+    var prominence: Prominence = .featured
     @Environment(\.wkTheme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WKTokens.Space.sm) {
-            HStack(spacing: WKTokens.Space.md) {
-                WKIconView(icon: mode.icon, size: 28)
-                    .foregroundStyle(mode.accent(in: theme))
-                    .frame(width: 40, height: 40)
-                    .background(mode.accent(in: theme).opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: WKTokens.Radius.iconContainer, style: .continuous))
-                Text(mode.title)
-                    .font(.headline)
-                    .foregroundStyle(theme.textPrimary)
-                Spacer()
-            }
-            Text(mode.emotionalLine)
-                .font(.subheadline)
-                .foregroundStyle(theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let note = mode.protectiveFootnote {
-                Text(note)
-                    .font(.caption)
-                    .foregroundStyle(theme.hunter)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("waykin.sessionSelect.huntFootnote")
+        Group {
+            switch prominence {
+            case .featured:
+                featuredBody
+            case .secondary:
+                secondaryBody
             }
         }
-        .padding(WKTokens.Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: WKTokens.Radius.medium, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: WKTokens.Radius.medium, style: .continuous)
-                .stroke(selected ? mode.accent(in: theme) : theme.textTertiary.opacity(0.2), lineWidth: selected ? 1.5 : 1)
+                .stroke(
+                    selected ? mode.accent(in: theme) : theme.textTertiary.opacity(prominence == .featured ? 0.25 : 0.15),
+                    lineWidth: selected ? 1.5 : 1
+                )
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(mode.title). \(mode.emotionalLine)")
+    }
+
+    private var featuredBody: some View {
+        VStack(alignment: .leading, spacing: WKTokens.Space.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: WKTokens.Space.sm) {
+                WKIconView(icon: mode.icon, size: 22)
+                    .foregroundStyle(mode.accent(in: theme))
+                Text(mode.title)
+                    .font(WKTokens.TypeScale.title)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+                Text("Primary")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(theme.guideText)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(theme.guide.opacity(0.12))
+                    .clipShape(Capsule(style: .continuous))
+            }
+            Text(mode.emotionalLine)
+                .font(.subheadline)
+                .foregroundStyle(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(WKTokens.Space.lg)
+    }
+
+    private var secondaryBody: some View {
+        VStack(alignment: .leading, spacing: WKTokens.Space.xs) {
+            HStack(spacing: WKTokens.Space.sm) {
+                WKIconView(icon: mode.icon, size: 18)
+                    .foregroundStyle(mode.accent(in: theme))
+                Text(mode.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+            }
+            Text(mode.emotionalLine)
+                .font(.caption)
+                .foregroundStyle(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let note = mode.protectiveFootnote {
+                Text(note)
+                    .font(.caption2)
+                    .foregroundStyle(theme.hunter)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("waykin.sessionSelect.huntFootnote")
+            }
+        }
+        .padding(.horizontal, WKTokens.Space.md)
+        .padding(.vertical, WKTokens.Space.sm + 2)
     }
 }
 
@@ -2673,27 +2723,31 @@ struct PreparationView: View {
     var body: some View {
         ZStack {
             theme.background.ignoresSafeArea()
-            VStack(spacing: WKTokens.Space.xl) {
-                Spacer(minLength: 0)
-                WKIconView(icon: mode.icon, size: 40)
-                    .foregroundStyle(mode.accent(in: theme))
-                    .accessibilityHidden(true)
-                Text(mode.prepHeadline)
-                    .font(WKTokens.TypeScale.title)
-                    .foregroundStyle(theme.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("waykin.prepare.screen")
+            VStack(alignment: .leading, spacing: WKTokens.Space.lg) {
+                HStack(spacing: WKTokens.Space.sm) {
+                    WKIconView(icon: mode.icon, size: 28)
+                        .foregroundStyle(mode.accent(in: theme))
+                        .accessibilityHidden(true)
+                    Text(mode.prepHeadline)
+                        .font(WKTokens.TypeScale.title)
+                        .foregroundStyle(theme.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .accessibilityIdentifier("waykin.prepare.screen")
+                }
                 Text(mode.prepBody)
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let note = mode.protectiveFootnote {
                     Text(note)
                         .font(.caption)
                         .foregroundStyle(theme.hunter)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 0)
+
+                Spacer(minLength: WKTokens.Space.md)
 
                 // Lead vs follow is a genuine taste call — leading feels like being
                 // guided, following feels like company — so it is chosen per walk.
@@ -2737,24 +2791,24 @@ struct SanctuaryView: View {
         ZStack {
             theme.sanctuary.opacity(0.25).ignoresSafeArea()
             theme.backgroundWarm.opacity(0.9).ignoresSafeArea()
-            VStack(spacing: WKTokens.Space.lg) {
-                WKIconView(icon: .sanctuary, size: 40)
-                    .foregroundStyle(theme.sanctuaryText)
-                Text("SANCTUARY")
-                    .font(.caption.weight(.semibold))
-                    .tracking(1)
-                    .foregroundStyle(theme.sanctuaryText)
-                    .accessibilityIdentifier("waykin.sanctuary.screen")
-                Text("The path can wait.")
-                    .font(WKTokens.TypeScale.title)
-                    .foregroundStyle(theme.textPrimary)
-                    .multilineTextAlignment(.center)
+            VStack(alignment: .leading, spacing: WKTokens.Space.lg) {
+                HStack(spacing: WKTokens.Space.sm) {
+                    WKIconView(icon: .sanctuary, size: 28)
+                        .foregroundStyle(theme.sanctuaryText)
+                    Text("The path can wait.")
+                        .font(WKTokens.TypeScale.title)
+                        .foregroundStyle(theme.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .accessibilityIdentifier("waykin.sanctuary.screen")
+                }
                 Text("Stopping is protective, never a failure. Resume when ready, or continue to your summary.")
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
                 LiraSessionFigure(presentation: appModel.homePresencePresentation)
                     .frame(maxHeight: 140)
+                    .frame(maxWidth: .infinity)
                     .liraSkin(appModel.selectedLiraSkin)
                 Spacer(minLength: 0)
                 if let summary = appModel.lastSummary {
@@ -2787,28 +2841,25 @@ struct BondUpdateView: View {
     var body: some View {
         ZStack {
             theme.backgroundWarm.ignoresSafeArea()
-            VStack(spacing: WKTokens.Space.xl) {
-                Spacer(minLength: 0)
-                Text("BOND")
-                    .font(.caption.weight(.semibold))
-                    .tracking(1)
-                    .foregroundStyle(theme.bondText)
-                    .accessibilityIdentifier("waykin.bondUpdate.screen")
-                WKBondOrbitalRing(bondLevel: appModel.companion.bondLevel, size: 96)
+            VStack(alignment: .leading, spacing: WKTokens.Space.lg) {
                 Text(bondHeadline)
                     .font(WKTokens.TypeScale.title)
                     .foregroundStyle(theme.bondText)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
                     .accessibilityIdentifier("waykin.bondUpdate.headline")
-                Text("Relationship first — not a scoreboard.")
-                    .font(.callout)
-                    .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.center)
+                HStack(spacing: WKTokens.Space.md) {
+                    WKBondOrbitalRing(bondLevel: appModel.companion.bondLevel, size: 88)
+                    Text("Relationship first — not a scoreboard.")
+                        .font(.callout)
+                        .foregroundStyle(theme.textSecondary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if !appModel.lastClosingPhrase.isEmpty {
                     Text(appModel.lastClosingPhrase)
                         .font(.headline)
                         .foregroundStyle(theme.textPrimary)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
                 }
                 Spacer(minLength: 0)
                 Button("Back to Home") { appModel.returnHome() }
@@ -2818,6 +2869,8 @@ struct BondUpdateView: View {
                     .accessibilityIdentifier("waykin.bondUpdate.home")
             }
             .padding(WKTokens.Space.screenMarginX)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("waykin.bondUpdate.screen")
         }
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -2845,12 +2898,11 @@ struct SessionSummaryView: View {
                         .foregroundStyle(theme.textPrimary)
                         .accessibilityIdentifier("waykin.summary.screen")
 
-                    // Mode framing
+                    // Mode framing — title case, no ALLCAPS eyebrow
                     HStack(spacing: WKTokens.Space.sm) {
                         WKIconView(icon: appModel.selectedWalkMode.icon, size: 18)
-                        Text(appModel.selectedWalkMode.title.uppercased())
-                            .font(.caption.weight(.semibold))
-                            .tracking(0.6)
+                        Text(appModel.selectedWalkMode.title)
+                            .font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(appModel.selectedWalkMode.accent(in: theme))
                     .accessibilityIdentifier("waykin.summary.mode")

@@ -38,31 +38,32 @@ struct CompanionEntityFactory {
         let indicator: UIColor
 
         init(skin: LiraSkin) {
+            // Named Echo / LiraMaterial tokens only — no system or free RGB.
             switch skin {
             case .dawn:
-                body = UIColor(red: 0.91, green: 0.85, blue: 0.77, alpha: 1)
-                bodySecondary = UIColor(red: 0.79, green: 0.72, blue: 0.60, alpha: 1)
-                fringe = UIColor(red: 0.25, green: 0.56, blue: 0.54, alpha: 1)
-                bondCore = UIColor(red: 0.83, green: 0.64, blue: 0.35, alpha: 1)
-                filament = UIColor(red: 0.48, green: 0.62, blue: 0.60, alpha: 1)
-                hunterFilament = UIColor(red: 0.48, green: 0.55, blue: 0.62, alpha: 1)
+                body = UIColor(wkHex: 0xE8D9C4)
+                bodySecondary = UIColor(wkHex: 0xC9B899)
+                fringe = UIColor(wkHex: 0x3F8F8A)
+                bondCore = UIColor(wkHex: 0xD4A45A)
+                filament = UIColor(wkHex: 0x7A9E99)
+                hunterFilament = UIColor(wkHex: 0x7B8C9E)
             case .veil:
-                body = UIColor(red: 0.16, green: 0.18, blue: 0.22, alpha: 1)
-                bodySecondary = UIColor(red: 0.23, green: 0.25, blue: 0.31, alpha: 1)
-                fringe = UIColor(red: 0.48, green: 0.55, blue: 0.62, alpha: 1)
-                bondCore = UIColor(red: 0.79, green: 0.54, blue: 0.48, alpha: 1)
-                filament = UIColor(red: 0.48, green: 0.55, blue: 0.62, alpha: 1)
-                hunterFilament = UIColor(red: 0.42, green: 0.35, blue: 0.54, alpha: 1)
+                body = UIColor(wkHex: 0x2A2E38)
+                bodySecondary = UIColor(wkHex: 0x3A404F)
+                fringe = UIColor(wkHex: 0x7B8C9E)
+                bondCore = UIColor(wkHex: 0xC98A7A)
+                filament = UIColor(wkHex: 0x7B8C9E)
+                hunterFilament = UIColor(wkHex: 0x6B598A)
             case .rupture:
-                body = UIColor(red: 0.29, green: 0.27, blue: 0.35, alpha: 1)
-                bodySecondary = UIColor(red: 0.36, green: 0.31, blue: 0.48, alpha: 1)
-                fringe = UIColor(red: 0.54, green: 0.59, blue: 0.66, alpha: 1)
-                bondCore = UIColor(red: 0.83, green: 0.64, blue: 0.35, alpha: 1)
-                filament = UIColor(red: 0.54, green: 0.59, blue: 0.66, alpha: 1)
-                hunterFilament = UIColor(red: 0.42, green: 0.31, blue: 0.54, alpha: 1)
+                body = UIColor(wkHex: 0x4A4558)
+                bodySecondary = UIColor(wkHex: 0x5C4F7A)
+                fringe = UIColor(wkHex: 0x8A97A8)
+                bondCore = UIColor(wkHex: 0xD4A45A)
+                filament = UIColor(wkHex: 0x8A97A8)
+                hunterFilament = UIColor(wkHex: 0x6B4F8A)
             }
             shadow = UIColor(white: 0.05, alpha: 0.55)
-            indicator = UIColor(red: 0.90, green: 0.92, blue: 0.94, alpha: 1)
+            indicator = UIColor(wkHex: 0xF7F5F2)
         }
     }
 

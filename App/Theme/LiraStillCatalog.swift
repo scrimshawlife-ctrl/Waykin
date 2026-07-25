@@ -106,17 +106,17 @@ struct LiraGlyphView: View {
             let bond: Color
             switch skin {
             case .dawn:
-                body = Color(red: 0.91, green: 0.85, blue: 0.77)
-                fringe = Color(red: 0.25, green: 0.56, blue: 0.54)
-                bond = Color(red: 0.83, green: 0.64, blue: 0.35)
+                body = WKTokens.LiraMaterial.dawnBody
+                fringe = WKTokens.Day.guide
+                bond = WKTokens.Day.bond
             case .veil:
-                body = Color(red: 0.16, green: 0.18, blue: 0.22)
-                fringe = Color(red: 0.48, green: 0.55, blue: 0.62)
-                bond = Color(red: 0.79, green: 0.54, blue: 0.48)
+                body = WKTokens.LiraMaterial.veilBody
+                fringe = WKTokens.Day.hunterFilament
+                bond = WKTokens.LiraMaterial.veilBond
             case .rupture:
-                body = Color(red: 0.29, green: 0.27, blue: 0.35)
-                fringe = Color(red: 0.54, green: 0.59, blue: 0.66)
-                bond = Color(red: 0.83, green: 0.64, blue: 0.35)
+                body = WKTokens.LiraMaterial.ruptureBody
+                fringe = WKTokens.LiraMaterial.ruptureFringe
+                bond = WKTokens.Day.bond
             }
             var fil = Path()
             fil.move(to: CGPoint(x: 18 * u, y: 36 * u))

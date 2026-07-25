@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import XCTest
 @testable import WaykinApp
 
@@ -38,6 +39,15 @@ final class WKTokensTests: XCTestCase {
         XCTAssertTrue(theme.isNight)
     }
 
+    func testSessionBackgroundStaysOpaque() {
+        let theme = WKTheme(colorScheme: .light)
+        for p in [0.0, 0.35, 0.75, 1.0] {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            UIColor(theme.sessionBackground(pressure: p)).getRed(&r, green: &g, blue: &b, alpha: &a)
+            XCTAssertEqual(a, 1, accuracy: 0.001, "pressure \(p) must stay opaque")
+        }
+    }
+
     func testPresenceStyleBackgroundUsesTheme() {
         let day = WKTheme(colorScheme: .light)
         let night = WKTheme(colorScheme: .dark)
@@ -54,5 +64,25 @@ final class WKTokensTests: XCTestCase {
         XCTAssertEqual(WKTokens.Motion.fast, 0.12, accuracy: 0.001)
         XCTAssertEqual(WKTokens.Motion.manifestation, 0.70, accuracy: 0.001)
         XCTAssertEqual(WKTokens.TypeScale.displayMin, 28)
+    }
+
+    func testLiraMaterialHexTokensAreStable() {
+        XCTAssertEqual(WKTokens.LiraMaterial.Hex.dawnBody, "E8D9C4")
+        XCTAssertEqual(WKTokens.LiraMaterial.Hex.veilBody, "2A2E38")
+        XCTAssertEqual(WKTokens.LiraMaterial.Hex.ruptureBody, "4A4558")
+        XCTAssertEqual(WKTokens.LiraMaterial.Hex.guide, "3F8F8A")
+        XCTAssertEqual(WKTokens.LiraMaterial.Hex.bond, "D4A45A")
+    }
+
+    func testLiraSkinResolvesThroughNamedMaterialTokens() {
+        let theme = WKTheme.resolve(.light)
+        func rgb(_ color: Color) -> [CGFloat] {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
+            return [round(r * 255), round(g * 255), round(b * 255)]
+        }
+        XCTAssertEqual(rgb(LiraSkin.dawn.bodyBase(theme: theme)), rgb(WKTokens.LiraMaterial.dawnBody))
+        XCTAssertEqual(rgb(LiraSkin.veil.bondCore(theme: theme)), rgb(WKTokens.LiraMaterial.veilBond))
+        XCTAssertEqual(rgb(LiraSkin.rupture.fringe(theme: theme)), rgb(WKTokens.LiraMaterial.ruptureFringe))
     }
 }

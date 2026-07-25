@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Cosmetic skins for Lira — materials only, same rig/poses/anchors.
 /// Dawn default; Veil / Rupture optional. No marketplace unlock economy.
+/// Colors resolve only through `WKTokens.LiraMaterial` / `WKTheme` (no free RGB).
 enum LiraSkin: String, CaseIterable, Identifiable, Codable, Sendable {
     case dawn
     case veil
@@ -39,47 +40,41 @@ enum LiraSkin: String, CaseIterable, Identifiable, Codable, Sendable {
     /// Base body fill (guide / neutral poses). Pose may override temperature.
     func bodyBase(theme: WKTheme) -> Color {
         switch self {
-        case .dawn:
-            return Color(red: 0.91, green: 0.85, blue: 0.77) // #E8D9C4-ish cream
-        case .veil:
-            return Color(red: 0.16, green: 0.18, blue: 0.22) // #2A2E38
-        case .rupture:
-            return Color(red: 0.29, green: 0.27, blue: 0.35) // #4A4558
+        case .dawn: WKTokens.LiraMaterial.dawnBody
+        case .veil: WKTokens.LiraMaterial.veilBody
+        case .rupture: WKTokens.LiraMaterial.ruptureBody
         }
     }
 
     func bodySecondary(theme: WKTheme) -> Color {
         switch self {
-        case .dawn:
-            return Color(red: 0.79, green: 0.72, blue: 0.60)
-        case .veil:
-            return Color(red: 0.23, green: 0.25, blue: 0.31) // mask
-        case .rupture:
-            return Color(red: 0.36, green: 0.31, blue: 0.48) // plate violet
+        case .dawn: WKTokens.LiraMaterial.dawnBodySecondary
+        case .veil: WKTokens.LiraMaterial.veilBodySecondary
+        case .rupture: WKTokens.LiraMaterial.ruptureBodySecondary
         }
     }
 
     func fringe(theme: WKTheme) -> Color {
         switch self {
-        case .dawn: return theme.guide
-        case .veil: return theme.hunterFilament
-        case .rupture: return Color(red: 0.54, green: 0.59, blue: 0.66) // fracture
+        case .dawn: theme.guide
+        case .veil: theme.hunterFilament
+        case .rupture: WKTokens.LiraMaterial.ruptureFringe
         }
     }
 
     func hunterCast(theme: WKTheme) -> Color {
         switch self {
-        case .dawn: return theme.hunter
-        case .veil: return Color(red: 0.42, green: 0.35, blue: 0.54)
-        case .rupture: return theme.hunter
+        case .dawn: theme.hunter
+        case .veil: WKTokens.LiraMaterial.veilCast
+        case .rupture: theme.hunter
         }
     }
 
     func bondCore(theme: WKTheme) -> Color {
         switch self {
-        case .dawn: return theme.bond
-        case .veil: return Color(red: 0.79, green: 0.54, blue: 0.48) // rose-gold soft
-        case .rupture: return theme.bond
+        case .dawn: theme.bond
+        case .veil: WKTokens.LiraMaterial.veilBond
+        case .rupture: theme.bond
         }
     }
 
@@ -92,7 +87,7 @@ enum LiraSkin: String, CaseIterable, Identifiable, Codable, Sendable {
         case .rival:
             return self == .veil
                 ? bodySecondary(theme: theme)
-                : Color(red: 0.88, green: 0.78, blue: 0.68).opacity(self == .dawn ? 1 : 0.85)
+                : WKTokens.LiraMaterial.dawnRivalWarm.opacity(self == .dawn ? 1 : 0.85)
         case .sanctuary:
             return self == .dawn
                 ? theme.sanctuary.opacity(0.9)
@@ -111,7 +106,7 @@ enum LiraSkin: String, CaseIterable, Identifiable, Codable, Sendable {
     func filamentFill(pose: LiraSessionPose, theme: WKTheme) -> Color {
         switch pose {
         case .hunter:
-            return self == .veil ? Color(red: 0.42, green: 0.35, blue: 0.54) : theme.hunterFilament
+            return self == .veil ? WKTokens.LiraMaterial.veilCast : theme.hunterFilament
         case .rival:
             return theme.rival.opacity(0.85)
         case .bond:

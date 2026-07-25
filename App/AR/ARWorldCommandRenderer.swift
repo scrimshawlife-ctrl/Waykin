@@ -766,6 +766,7 @@ final class ARWorldCommandRenderer {
     }
 
     private func presentation(for state: CompanionPresentationState) -> Presentation {
+        // Indicator hues from Echo tokens — never UIColor.system* defaults.
         switch state {
         case .idle:
             Presentation(
@@ -774,7 +775,7 @@ final class ARWorldCommandRenderer {
                 orientation: simd_quatf(angle: 0, axis: [0, 1, 0]),
                 indicatorVisible: false,
                 coreVisible: true,
-                indicatorColor: .white
+                indicatorColor: UIColor(wkHex: 0xF7F5F2)
             )
         case .follow:
             Presentation(
@@ -783,7 +784,7 @@ final class ARWorldCommandRenderer {
                 orientation: simd_quatf(angle: 0.18, axis: [0, 1, 0]),
                 indicatorVisible: false,
                 coreVisible: true,
-                indicatorColor: .systemBlue
+                indicatorColor: UIColor(wkHex: 0x3F8F8A) // guide
             )
         case .investigate:
             Presentation(
@@ -792,7 +793,7 @@ final class ARWorldCommandRenderer {
                 orientation: simd_quatf(angle: -0.22, axis: [1, 0, 0]),
                 indicatorVisible: true,
                 coreVisible: true,
-                indicatorColor: .systemYellow
+                indicatorColor: UIColor(wkHex: 0xE0B040) // caution
             )
         case .alert:
             Presentation(
@@ -801,7 +802,7 @@ final class ARWorldCommandRenderer {
                 orientation: simd_quatf(angle: 0, axis: [0, 1, 0]),
                 indicatorVisible: true,
                 coreVisible: true,
-                indicatorColor: .systemRed
+                indicatorColor: UIColor(wkHex: 0xD17A4A) // rival (pressure, not alarm red)
             )
         case .celebrate:
             Presentation(
@@ -810,7 +811,7 @@ final class ARWorldCommandRenderer {
                 orientation: simd_quatf(angle: .pi / 5, axis: [0, 1, 0]),
                 indicatorVisible: true,
                 coreVisible: true,
-                indicatorColor: .systemGreen
+                indicatorColor: UIColor(wkHex: 0xD4A45A) // bond
             )
         }
     }
