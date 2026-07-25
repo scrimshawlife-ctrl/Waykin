@@ -204,12 +204,11 @@ struct WKTheme: Equatable {
     }
 
     /// Active-session field: mist/indigo foundation with hunter pressure wash (never color-alone for meaning).
-    /// Blends named tokens — no free RGB improvisation.
+    /// Opaque blend of named tokens — root ZStack background must not go translucent.
     func sessionBackground(pressure: Double) -> Color {
         let p = min(1, max(0, pressure))
-        let base = background
-        let wash = hunter.opacity(0.08 + p * 0.28)
-        return base.mix(with: wash, amount: 0.35 + p * 0.45)
+        // Strength of solid hunter wash over opaque base (no alpha on wash).
+        return background.mixOpaque(with: hunter, amount: 0.08 + p * 0.28)
     }
 
     static func resolve(_ colorScheme: ColorScheme) -> WKTheme {
@@ -229,7 +228,8 @@ extension Color {
     }
 
     /// Presentation blend of two solid colors (amount clamped 0…1).
-    func mix(with other: Color, amount: Double) -> Color {
+    /// Result alpha is always **1** so root session backgrounds never become translucent.
+    func mixOpaque(with other: Color, amount: Double) -> Color {
         let t = min(1, max(0, amount))
         #if canImport(UIKit)
         let a = UIColor(self)
@@ -238,16 +238,22 @@ extension Color {
         var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
         a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa)
         b.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+        // Ignore source alphas; composite as opaque sRGB lerp for field backgrounds.
         return Color(
             .sRGB,
             red: Double(ar + (br - ar) * t),
             green: Double(ag + (bg - ag) * t),
             blue: Double(ab + (bb - ab) * t),
-            opacity: Double(aa + (ba - aa) * t)
+            opacity: 1
         )
         #else
         return t < 0.5 ? self : other
         #endif
+    }
+
+    /// Alias for call sites that want an opaque mix.
+    func mix(with other: Color, amount: Double) -> Color {
+        mixOpaque(with: other, amount: amount)
     }
 
     /// UIKit bridge for RealityKit materials / indicators.

@@ -39,6 +39,15 @@ final class WKTokensTests: XCTestCase {
         XCTAssertTrue(theme.isNight)
     }
 
+    func testSessionBackgroundStaysOpaque() {
+        let theme = WKTheme(colorScheme: .light)
+        for p in [0.0, 0.35, 0.75, 1.0] {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            UIColor(theme.sessionBackground(pressure: p)).getRed(&r, green: &g, blue: &b, alpha: &a)
+            XCTAssertEqual(a, 1, accuracy: 0.001, "pressure \(p) must stay opaque")
+        }
+    }
+
     func testPresenceStyleBackgroundUsesTheme() {
         let day = WKTheme(colorScheme: .light)
         let night = WKTheme(colorScheme: .dark)

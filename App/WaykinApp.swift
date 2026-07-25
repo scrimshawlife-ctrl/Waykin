@@ -2776,7 +2776,6 @@ struct BondUpdateView: View {
                     .font(WKTokens.TypeScale.title)
                     .foregroundStyle(theme.bondText)
                     .multilineTextAlignment(.leading)
-                    .accessibilityIdentifier("waykin.bondUpdate.screen")
                     .accessibilityIdentifier("waykin.bondUpdate.headline")
                 HStack(spacing: WKTokens.Space.md) {
                     WKBondOrbitalRing(bondLevel: appModel.companion.bondLevel, size: 88)
@@ -2800,6 +2799,8 @@ struct BondUpdateView: View {
                     .accessibilityIdentifier("waykin.bondUpdate.home")
             }
             .padding(WKTokens.Space.screenMarginX)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("waykin.bondUpdate.screen")
         }
         .navigationBarTitleDisplayMode(.inline)
     }
