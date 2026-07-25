@@ -6,11 +6,11 @@ version: 1.1
 date: 2026-07-25
 status: SUPPORTING
 authority: SUPPORTING
-baseline_sha: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
-baseline_short: d9d1df7
+parent_main_at_prep: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
+baseline_short: PENDING_ARCHIVE_TIP
 marketing_version: "0.9.0"
 build_number: "2"
-validate_observed: PASS_CI_on_236
+validate_observed: PENDING_ON_ARCHIVE_TIP
 outdoor_gate: ISSUE_41_OPEN
 ```
 
@@ -18,7 +18,7 @@ outdoor_gate: ISSUE_41_OPEN
 
 **Authority:** Supporting engineering checklist. Does not override `docs/SOLO_MVP_SCOPE.md`, `KNOWN_LIMITATIONS.md`, or issue #41 evidence rules.
 
-**Note (2026-07-25):** Re-pinned after Hallmark #236 (`d9d1df7`). Marketing **0.9.0** / build **2** set in `project.yml` + `App/Info.plist` for internal TF. Re-run section 2 gates on the archive tip.
+**Note (2026-07-25):** Version **0.9.0 (2)** is introduced in the version-bump PR. Do **not** archive parent tip `d9d1df7` alone (still 1.0/1). After the bump merges, set `git_sha` to the **merge tip** that contains 0.9.0 (2), re-run section 2 gates on **that** SHA, then archive.
 
 **Who:** Human with Apple Developer Program access for signing, App Store Connect, and upload. Agent can run automated gates and fill OBSERVED/NOT_COMPUTABLE rows.
 
@@ -28,11 +28,12 @@ outdoor_gate: ISSUE_41_OPEN
 
 | Field | Value at cut |
 | ----- | ------------ |
-| Cut `git_sha` (full) | `d9d1df7ebb2dd458223f1c5ee2ab1787456c5635` (refresh if main moves) |
+| Cut `git_sha` (full) | **PENDING** — fill with merge tip that contains 0.9.0 (2), not `d9d1df7` alone |
+| Parent main at prep | `d9d1df7` (Hallmark #236; version still 1.0/1) |
 | Cut date (UTC) | 2026-07-25 |
-| Branch | `main` (or RC branch with version bump) |
-| Marketing / build | **0.9.0 (2)** |
-| `make validate` | **PASS** on #236 CI; re-run on archive tip |
+| Branch | `main` after version-bump merge |
+| Marketing / build | **0.9.0 (2)** (this PR) |
+| `make validate` | Re-run on **archive tip** (do not rely only on #236 CI) |
 | Open product blockers | #41 outdoor COH still open — ship only as **internal** TF with known limitations |
 | Dirty tree | Only intentional RC commits |
 

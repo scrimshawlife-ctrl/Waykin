@@ -12,7 +12,7 @@ evidence_class: NOT_COMPUTABLE
 outdoor_qa: NOT_COMPUTABLE
 protocol: docs/design/INDOOR_AR_HYBRID_SMOKE.md
 status: PENDING_HUMAN_DEVICE
-note: Post Hallmark #236 merge tip. Prefer this receipt over older PENDING scaffolds.
+note: Post Hallmark #236 merge tip. Prefer this receipt over older PENDING scaffolds. When filled, set evidence_class to OBSERVED (indoor device); never invent outdoor PASS.
 ```
 
 ## Automated pre-device gates
@@ -53,5 +53,5 @@ note: Post Hallmark #236 merge tip. Prefer this receipt over older PENDING scaff
 
 1. Install Debug build of `d9d1df7` (`d9d1df7ebb2dd458223f1c5ee2ab1787456c5635`) on a physical iPhone.
 2. Follow `docs/design/INDOOR_AR_HYBRID_SMOKE.md`.
-3. Fill I1–I12; set `evidence_class: OBSERVED_INDOOR_DEVICE` if completed.
+3. Fill I1–I12; set `evidence_class: OBSERVED` if completed on a named physical device (note indoor in device_model / notes).
 4. PR the filled receipt (do not claim outdoor PASS).
