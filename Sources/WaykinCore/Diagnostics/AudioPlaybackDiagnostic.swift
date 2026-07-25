@@ -47,6 +47,9 @@ public enum AudioPlaybackReasonCode: String, Codable, Equatable, Sendable {
 public enum AudioDiagnosticChannel: String, Codable, Equatable, Sendable {
     case foreground
     case ambient
+    /// Lifecycle theme cues (launch / spawn / reveal / bond milestone) — layer
+    /// over walk audio rather than contending for the foreground channel.
+    case moment
 }
 
 public enum AudioOutputRouteCategory: String, Codable, Equatable, Sendable {

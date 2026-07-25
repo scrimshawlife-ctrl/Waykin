@@ -117,6 +117,20 @@ final class SoloMVPVerticalSliceTests: XCTestCase {
         XCTAssertNil(AudioExperienceLayer.map(behavior: .idle))
     }
 
+    func testMomentCuesUseThemeKindsAboveWalkPriority() {
+        XCTAssertEqual(AudioExperienceLayer.momentCue(.appLaunch).kind, .appLaunchTheme)
+        XCTAssertEqual(AudioExperienceLayer.momentCue(.companionReveal).kind, .companionReveal)
+        XCTAssertEqual(AudioExperienceLayer.momentCue(.spawn).kind, .spawnTheme)
+        XCTAssertEqual(AudioExperienceLayer.momentCue(.bondMilestone).kind, .bondMilestone)
+        // Debug labels are stable for receipts / diagnostics.
+        XCTAssertEqual(AudioExperienceLayer.momentCue(.spawn).debugLabel, "moment:spawn")
+        // Every moment outranks the loudest walk cue (bondMotif = 5) so a moment
+        // always wins the foreground channel over an in-flight walk cue.
+        for moment in AudioExperienceLayer.Moment.allCases {
+            XCTAssertGreaterThan(AudioExperienceLayer.momentCue(moment).priority, 5)
+        }
+    }
+
     func testBehaviorTransitionCueCooldownAndFirstSeedSilent() {
         // First presentation seeds without audio.
         XCTAssertNil(

@@ -143,4 +143,38 @@ public struct AudioExperienceLayer {
             return nil
         }
     }
+
+    /// One-shot lifecycle "moment" cues, fired at app-lifecycle points rather
+    /// than derived from the walk (launch, onboarding companion reveal, spawn,
+    /// bond milestone). Every moment states the Lira leitmotif — spawn and
+    /// launch are the full theme. These are top-priority foreground one-shots
+    /// (above the loudest walk cue, `bondMotif` = 5) so a moment always wins the
+    /// foreground channel; the *caller* is responsible for firing each once per
+    /// moment (there is no transition cooldown here). See
+    /// `docs/design/LIRA_AUDIO_CUE_FAMILY.md`.
+    public enum Moment: String, Sendable, CaseIterable {
+        case appLaunch
+        case companionReveal
+        case spawn
+        case bondMilestone
+    }
+
+    public static func momentCue(_ moment: Moment, intensity: Double = 0.9) -> AudioCue {
+        let kind: AudioCueKind
+        switch moment {
+        case .appLaunch: kind = .appLaunchTheme
+        case .companionReveal: kind = .companionReveal
+        case .spawn: kind = .spawnTheme
+        case .bondMilestone: kind = .bondMilestone
+        }
+        return AudioCue(
+            kind: kind,
+            intensity: intensity,
+            spatialBias: .center,
+            priority: 6,
+            cooldownGroup: "moment",
+            shouldFade: true,
+            debugLabel: "moment:\(moment.rawValue)"
+        )
+    }
 }

@@ -13,6 +13,10 @@ protocol AudioCuePlaying: AnyObject {
 enum AudioPlaybackChannel: String, Equatable {
     case foreground
     case ambient
+    /// Lifecycle theme cues play here so a spawn/launch theme layers over the
+    /// walk cues (foreground/ambient) instead of suppressing them in the
+    /// single-active-cue-per-channel planner.
+    case moment
 }
 
 struct AudioAssetDescriptor: Equatable {
@@ -34,7 +38,14 @@ enum AudioCueAssetCatalog {
         .pursuitPressure: .init(kind: .pursuitPressure, assetName: "pursuit_pressure", fileExtension: "wav", priority: 4, channel: .foreground, volume: 0.45),
         .pursuitRelease: .init(kind: .pursuitRelease, assetName: "pursuit_release", fileExtension: "wav", priority: 3, channel: .foreground, volume: 0.36),
         .bondMotif: .init(kind: .bondMotif, assetName: "bond_motif", fileExtension: "wav", priority: 5, channel: .foreground, volume: 0.42),
-        .quietShift: .init(kind: .quietShift, assetName: "quiet_shift", fileExtension: "wav", priority: 1, channel: .ambient, volume: 0.30)
+        .quietShift: .init(kind: .quietShift, assetName: "quiet_shift", fileExtension: "wav", priority: 1, channel: .ambient, volume: 0.30),
+        // Lifecycle "moment" cues — the Lira leitmotif family (LIRA_AUDIO_CUE_FAMILY.md).
+        // Assets ship as silent placeholders until the sound pass replaces them
+        // in place; a missing/silent asset degrades to no sound, never a crash.
+        .appLaunchTheme: .init(kind: .appLaunchTheme, assetName: "lira_launch_theme", fileExtension: "wav", priority: 6, channel: .moment, volume: 0.50),
+        .companionReveal: .init(kind: .companionReveal, assetName: "lira_companion_reveal", fileExtension: "wav", priority: 6, channel: .moment, volume: 0.46),
+        .spawnTheme: .init(kind: .spawnTheme, assetName: "lira_spawn_theme", fileExtension: "wav", priority: 6, channel: .moment, volume: 0.48),
+        .bondMilestone: .init(kind: .bondMilestone, assetName: "lira_bond_milestone", fileExtension: "wav", priority: 6, channel: .moment, volume: 0.46)
     ]
 
     static func descriptor(for kind: AudioCueKind) -> AudioAssetDescriptor? {
@@ -570,6 +581,7 @@ final class AppAudioCuePlayer: AudioCuePlaying {
         switch descriptor.channel {
         case .foreground: .foreground
         case .ambient: .ambient
+        case .moment: .moment
         }
     }
 
