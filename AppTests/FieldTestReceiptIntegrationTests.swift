@@ -238,6 +238,57 @@ final class FieldTestReceiptIntegrationTests: XCTestCase {
         XCTAssertNotNil(model.lastSummary)
     }
 
+    func testDoubleEndDemoDoesNotCorruptCompletedReceipt() async throws {
+        let store = ReceiptCaptureStore()
+        let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 5_000))
+        let model = try makeModel(clock: clock, receiptStore: store)
+
+        model.startDemo(.calmDayWalk)
+        model.runDemoToEnd()
+        clock.now = clock.now.addingTimeInterval(120)
+        model.endDemo()
+        // Second End must be a no-op: previously it finalized the live builder as
+        // `.invalidState` and prevented the successful persist path from writing.
+        model.endDemo()
+        await model.waitForPendingPersistence()
+
+        let receipt = try XCTUnwrap(store.receipts.single)
+        XCTAssertEqual(receipt.outcome, .completed)
+        XCTAssertEqual(receipt.persistence, .succeeded)
+        XCTAssertTrue(receipt.summary.memoryWritten)
+        XCTAssertEqual(model.persistenceMemoryCount, 1)
+    }
+
+    func testStartingNextDemoBeforePersistFinishesDoesNotStealPriorReceipt() async throws {
+        let store = ReceiptCaptureStore()
+        let clock = ReceiptTestClock(now: Date(timeIntervalSince1970: 6_000))
+        let model = try makeModel(clock: clock, receiptStore: store)
+
+        model.startDemo(.calmDayWalk)
+        model.runDemoToEnd()
+        clock.now = clock.now.addingTimeInterval(90)
+        model.endDemo()
+        // Begin the next demo while the prior durable write / receipt finish is pending.
+        model.returnHome()
+        clock.now = clock.now.addingTimeInterval(1)
+        model.startDemo(.calmDayWalk)
+        await model.waitForPendingPersistence()
+
+        XCTAssertEqual(store.receipts.count, 1)
+        XCTAssertEqual(store.receipts[0].outcome, .completed)
+        XCTAssertEqual(store.receipts[0].persistence, .succeeded)
+
+        model.runDemoToEnd()
+        clock.now = clock.now.addingTimeInterval(90)
+        model.endDemo()
+        await model.waitForPendingPersistence()
+
+        XCTAssertEqual(store.receipts.count, 2)
+        XCTAssertEqual(store.receipts[1].outcome, .completed)
+        let companion = try model.persistenceStore.loadCompanion()
+        XCTAssertEqual(companion?.bondLevel, CanonicalCompanionIdentity.defaultCompanion().bondLevel + 2)
+    }
+
     private func makeModel(
         clock: ReceiptTestClock,
         audio: (any AudioCuePlaying)? = nil,
