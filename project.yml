@@ -9,6 +9,8 @@ targets:
     platform: iOS
     sources:
       - App
+    resources:
+      - App/Resources/AR
     settings:
       base:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Waykin uses your location during an active movement session to measure distance, pace, and route progress."
@@ -24,7 +26,10 @@ targets:
     platform: iOS
     sources:
       - App/AR
+      - App/Resources/AR
       - ARLab
+    resources:
+      - App/Resources/AR
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.waykin.arlab

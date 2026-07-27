@@ -23,6 +23,10 @@ final class ARWorldCommandRenderer {
     private(set) var lastCompanionTransition: CompanionStateTransition?
     private var elapsedInCompanionState: TimeInterval = 0
 
+    // Animation state for follow only. Loaded on demand, never restarts on repeated follow updates.
+    private var walkingAnimation: AnimationResource?
+    private var walkController: AnimationPlaybackController?
+
     init(
         registry: AREntityRegistry,
         diagnostics: ARDiagnosticRecorder,
@@ -34,11 +38,25 @@ final class ARWorldCommandRenderer {
         self.companionFactory = companionFactory ?? CompanionEntityFactory()
     }
 
-    func render(_ command: ARWorldCommand, in arView: ARView) -> ARCommandResult {
+    func render(_ command: ARWorldCommand, in arView: ARView) async -> ARCommandResult {
         switch command {
         case .spawnCompanion(let presentation):
             diagnostics.record(.placementAttempted, detail: "companion")
-            let entity = companionFactory.makeLira()
+            guard let entity = await companionFactory.makeLira() else {
+                diagnostics.record(.placementDeferred, detail: "companion-static-asset-unavailable")
+                return .deferred("companion-static-asset-unavailable")
+            }
+
+            // Ensure walking animation is available at spawn time for full asset contract.
+            // Missing walking asset or clip defers safely (no gameplay mutation).
+            if walkingAnimation == nil {
+                walkingAnimation = await companionFactory.loadWalkingAnimation()
+            }
+            if walkingAnimation == nil {
+                diagnostics.record(.placementDeferred, detail: "companion-walking-animation-unavailable")
+                return .deferred("companion-walking-animation-unavailable")
+            }
+
             let elapsed = CompanionStateReducer.state(for: presentation.behavior) == companionState
                 ? elapsedInCompanionState
                 : 0
@@ -47,7 +65,7 @@ final class ARWorldCommandRenderer {
                 behavior: presentation.behavior,
                 elapsed: elapsed
             )
-            applyPresentation(for: transition.resolvedState, to: entity)
+            await applyPresentation(for: transition.resolvedState, to: entity)
             let replacing = registry.entity(for: Self.companionID) != nil
             guard placementResolver.place(
                 id: Self.companionID,
@@ -65,6 +83,12 @@ final class ARWorldCommandRenderer {
             } else {
                 commit(transition, elapsed: elapsed)
             }
+            // Ensure anim state matches resolved (in case spawn starts in follow)
+            if transition.resolvedState == .follow {
+                await playWalkingIfNeeded(on: entity)
+            } else {
+                stopWalking()
+            }
             return .accepted("companion")
 
         case .updateCompanion(let presentation):
@@ -81,10 +105,10 @@ final class ARWorldCommandRenderer {
                 elapsed: elapsed
             )
             if transition.outcome == .unchanged || transition.outcome == .celebrationInProgress {
-                applyPresentation(for: transition.resolvedState, to: companion)
+                await applyPresentation(for: transition.resolvedState, to: companion)
                 accept(transition, elapsed: elapsed)
             } else {
-                apply(transition, to: companion, elapsed: elapsed)
+                await apply(transition, to: companion, elapsed: elapsed)
             }
             return .accepted("companion:\(transition.resolvedState.rawValue)")
 
@@ -116,11 +140,16 @@ final class ARWorldCommandRenderer {
         }
     }
 
-    func render(_ commands: [ARWorldCommand], in arView: ARView) -> [ARCommandResult] {
-        commands.map { render($0, in: arView) }
+    func render(_ commands: [ARWorldCommand], in arView: ARView) async -> [ARCommandResult] {
+        var results: [ARCommandResult] = []
+        for command in commands {
+            let r = await render(command, in: arView)
+            results.append(r)
+        }
+        return results
     }
 
-    func setCompanionState(_ state: CompanionPresentationState) -> ARCommandResult {
+    func setCompanionState(_ state: CompanionPresentationState) async -> ARCommandResult {
         guard let anchor = registry.entity(for: Self.companionID),
               let companion = anchor.findEntity(named: CompanionEntityFactory.rootName) else {
             return .deferred("companion missing")
@@ -131,11 +160,11 @@ final class ARWorldCommandRenderer {
             elapsed: state == companionState ? elapsedInCompanionState : 0
         )
         if transition.outcome == .unchanged || transition.outcome == .celebrationInProgress {
-            applyPresentation(for: transition.resolvedState, to: companion)
+            await applyPresentation(for: transition.resolvedState, to: companion)
             accept(transition, elapsed: elapsedInCompanionState)
             return .accepted("companion:\(transition.resolvedState.rawValue)")
         }
-        apply(transition, to: companion)
+        await apply(transition, to: companion)
         return .accepted("companion:\(transition.resolvedState.rawValue)")
     }
 
@@ -146,6 +175,9 @@ final class ARWorldCommandRenderer {
         companionState = .idle
         elapsedInCompanionState = 0
         lastCompanionTransition = nil
+        stopWalking()
+        walkingAnimation = nil
+        walkController = nil
         return .cleared
     }
 
@@ -163,7 +195,8 @@ final class ARWorldCommandRenderer {
                 requested: companionState,
                 elapsed: delta
             )
-            apply(transition, to: companion)
+            // sync apply ok here as no anim
+            applyPresentationSync(for: transition.resolvedState, to: companion)
             return transition
         }
 
@@ -180,7 +213,8 @@ final class ARWorldCommandRenderer {
             return transition
         }
 
-        apply(transition, to: companion, elapsed: elapsed)
+        applyPresentationSync(for: transition.resolvedState, to: companion)
+        commit(transition, elapsed: elapsed)
         return transition
     }
 
@@ -188,8 +222,8 @@ final class ARWorldCommandRenderer {
         _ transition: CompanionStateTransition,
         to entity: Entity,
         elapsed: TimeInterval = 0
-    ) {
-        applyPresentation(for: transition.resolvedState, to: entity)
+    ) async {
+        await applyPresentation(for: transition.resolvedState, to: entity)
         commit(transition, elapsed: elapsed)
     }
 
@@ -220,11 +254,13 @@ final class ARWorldCommandRenderer {
             : 0
     }
 
-    private func applyPresentation(for state: CompanionPresentationState, to entity: Entity) {
+    // Async presentation that also manages animation.
+    private func applyPresentation(for state: CompanionPresentationState, to entity: Entity) async {
         let presentation = presentation(for: state)
         entity.position = presentation.position
-        entity.scale = presentation.scale
         entity.orientation = presentation.orientation
+        // IMPORTANT: Never overwrite the imported mesh's base scale applied once after load in factory.
+        // State adjustments are position/orientation only (within bounded limits).
 
         entity.findEntity(named: "StatusIndicator")?.isEnabled = presentation.indicatorVisible
         entity.findEntity(named: "CoreGlow")?.isEnabled = presentation.coreVisible
@@ -233,6 +269,52 @@ final class ARWorldCommandRenderer {
                 SimpleMaterial(color: presentation.indicatorColor, isMetallic: false)
             ]
         }
+
+        // Animation: walking clip ONLY for follow; loop while active; stop when leaving.
+        // Repeated follow updates must not restart the animation.
+        if state == .follow {
+            await playWalkingIfNeeded(on: entity)
+        } else {
+            stopWalking()
+        }
+    }
+
+    // Sync variant for time-advance paths (no animation side effects needed for celebrate/idle).
+    private func applyPresentationSync(for state: CompanionPresentationState, to entity: Entity) {
+        let presentation = presentation(for: state)
+        entity.position = presentation.position
+        entity.orientation = presentation.orientation
+        // Do not touch scale.
+
+        entity.findEntity(named: "StatusIndicator")?.isEnabled = presentation.indicatorVisible
+        entity.findEntity(named: "CoreGlow")?.isEnabled = presentation.coreVisible
+        if let indicator = entity.findEntity(named: "StatusIndicator") as? ModelEntity {
+            indicator.model?.materials = [
+                SimpleMaterial(color: presentation.indicatorColor, isMetallic: false)
+            ]
+        }
+        // No animation management in sync advance (celebrate path).
+    }
+
+    private func playWalkingIfNeeded(on entity: Entity) async {
+        // Avoid restarting when repeated follow updates arrive.
+        if let ctrl = walkController, ctrl.isPlaying {
+            return
+        }
+        if walkingAnimation == nil {
+            walkingAnimation = await companionFactory.loadWalkingAnimation()
+        }
+        guard let anim = walkingAnimation else {
+            diagnostics.record(.error, detail: "companion-animation-unavailable")
+            return
+        }
+        stopWalking()
+        walkController = entity.playAnimation(anim, transitionDuration: 0.15)
+    }
+
+    private func stopWalking() {
+        walkController?.stop()
+        walkController = nil
     }
 
     private func presentation(for state: CompanionPresentationState) -> Presentation {

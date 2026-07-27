@@ -5,84 +5,63 @@ import UIKit
 struct CompanionEntityFactory {
     static let rootName = "LiraRoot"
 
-    func makeLira(configuration: CompanionVisualConfiguration = .liraPlaceholder) -> Entity {
-        let root = Entity()
-        root.name = Self.rootName
+    private let staticAssetName: String
+    private let walkingAssetName: String
 
-        let body = model(
-            name: "Body",
-            mesh: .generateSphere(radius: 0.18),
-            color: UIColor(red: 0.30, green: 0.72, blue: 0.92, alpha: 1)
-        )
-        body.scale = SIMD3<Float>(0.9, 1.35, 0.72)
-        body.position = [0, configuration.groundOffsetMeters + 0.28, 0]
+    init(
+        staticAssetName: String = "Lira",
+        walkingAssetName: String = "Lira_Walking"
+    ) {
+        self.staticAssetName = staticAssetName
+        self.walkingAssetName = walkingAssetName
+    }
 
-        let head = model(
-            name: "Head",
-            mesh: .generateSphere(radius: 0.14),
-            color: UIColor(red: 0.42, green: 0.86, blue: 1.0, alpha: 1)
-        )
-        head.position = [0, configuration.groundOffsetMeters + 0.54, 0.03]
-
-        let leftEar = ear(name: "LeftEar", x: -0.08, y: configuration.groundOffsetMeters + 0.70)
-        let rightEar = ear(name: "RightEar", x: 0.08, y: configuration.groundOffsetMeters + 0.70)
-
-        let tail = model(
-            name: "Tail",
-            mesh: .generateSphere(radius: 0.14),
-            color: UIColor(red: 0.25, green: 0.64, blue: 0.90, alpha: 1)
-        )
-        tail.scale = SIMD3<Float>(0.32, 1, 0.32)
-        tail.position = [0, configuration.groundOffsetMeters + 0.30, -0.21]
-        tail.scale = SIMD3<Float>(0.32, 1, 0.32)
-        tail.orientation = simd_quatf(angle: .pi / 3, axis: [1, 0, 0])
-
-        let core = model(
-            name: "CoreGlow",
-            mesh: .generateSphere(radius: 0.055),
-            color: UIColor(red: 0.92, green: 0.98, blue: 1.0, alpha: 1)
-        )
-        core.position = [0, configuration.groundOffsetMeters + 0.34, 0.15]
-
-        let shadow = model(
-            name: "GroundShadow",
-            mesh: .generateSphere(radius: 0.20),
-            color: UIColor(white: 0.05, alpha: 0.65)
-        )
-        shadow.scale = SIMD3<Float>(1, 0.01, 1)
-        shadow.position = [0, configuration.groundOffsetMeters, 0]
-        shadow.scale = SIMD3<Float>(1, 0.01, 1)
-
-        let indicator = model(
-            name: "StatusIndicator",
-            mesh: .generateSphere(radius: 0.025),
-            color: UIColor.white
-        )
-        indicator.position = [0, configuration.groundOffsetMeters + 0.77, 0]
-
-        [shadow, body, head, leftEar, rightEar, tail, core, indicator].forEach {
-            root.addChild($0)
+    /// Asynchronously loads the Lira USDZ static mesh, applies configuration height and ground offset once.
+    /// Returns nil for missing/malformed assets (caller defers rendering safely).
+    func makeLira(configuration: CompanionVisualConfiguration = .liraPlaceholder) async -> Entity? {
+        guard let url = Bundle.main.url(forResource: staticAssetName, withExtension: "usdz") else {
+            return nil
         }
-        root.scale = SIMD3<Float>(repeating: configuration.companionHeightMeters / 0.72)
-        return root
+
+        do {
+            let root = try await Entity.load(contentsOf: url)
+            root.name = Self.rootName
+
+            // Apply CompanionVisualConfiguration height and ground offset *once* after loading the imported mesh.
+            // Reference height chosen to approximate prior placeholder scaling behavior for visual consistency.
+            let referenceHeight: Float = 0.72
+            let scaleFactor = configuration.companionHeightMeters / referenceHeight
+            if scaleFactor.isFinite && scaleFactor > 0 {
+                root.scale = SIMD3<Float>(repeating: scaleFactor)
+            }
+            // Ground offset applied to root position (state presentations supply only bounded deltas).
+            if configuration.groundOffsetMeters.isFinite {
+                root.position.y = configuration.groundOffsetMeters
+            }
+
+            return root
+        } catch {
+            // Malformed asset: defer safely, do not mutate gameplay.
+            return nil
+        }
     }
 
-    private func ear(name: String, x: Float, y: Float) -> ModelEntity {
-        let entity = model(
-            name: name,
-            mesh: .generateSphere(radius: 0.085),
-            color: UIColor(red: 0.34, green: 0.76, blue: 0.96, alpha: 1)
-        )
-        entity.scale = SIMD3<Float>(0.65, 1, 0.45)
-        entity.position = [x, y, 0]
-        entity.scale = SIMD3<Float>(0.65, 1, 0.45)
-        return entity
-    }
+    /// Loads the walking animation clip from its dedicated USDZ. Returns nil if asset or clip unavailable.
+    /// Caller decides whether to defer based on use case.
+    func loadWalkingAnimation() async -> AnimationResource? {
+        guard let url = Bundle.main.url(forResource: walkingAssetName, withExtension: "usdz") else {
+            return nil
+        }
 
-    private func model(name: String, mesh: MeshResource, color: UIColor) -> ModelEntity {
-        let material = SimpleMaterial(color: color, roughness: 0.35, isMetallic: false)
-        let entity = ModelEntity(mesh: mesh, materials: [material])
-        entity.name = name
-        return entity
+        do {
+            let animSource = try await Entity.load(contentsOf: url)
+            guard let firstClip = animSource.availableAnimations.first else {
+                return nil
+            }
+            // Return a repeating version; playback site controls start/stop.
+            return firstClip.repeat()
+        } catch {
+            return nil
+        }
     }
 }

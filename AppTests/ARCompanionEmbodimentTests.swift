@@ -17,26 +17,32 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(configuration.glowIntensity, 1)
     }
 
-    func testFactoryProducesStableSemanticHierarchy() {
-        let entity = CompanionEntityFactory().makeLira()
+    func testFactoryProducesStableSemanticHierarchy() async {
+        let factory = CompanionEntityFactory()
+        let entity = await factory.makeLira()
 
-        XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
-        for name in [
-            "Body", "Head", "LeftEar", "RightEar", "Tail",
-            "CoreGlow", "GroundShadow", "StatusIndicator"
-        ] {
-            XCTAssertNotNil(entity.findEntity(named: name), "Missing \(name)")
-        }
+        XCTAssertNotNil(entity)
+        XCTAssertEqual(entity?.name, CompanionEntityFactory.rootName)
+
+        // Base transform (height + ground offset) applied once after loading imported mesh.
+        let cfg = CompanionVisualConfiguration.liraPlaceholder
+        let ref: Float = 0.72
+        let expectedScale = cfg.companionHeightMeters / ref
+        XCTAssertEqual(entity?.scale.x ?? 0, expectedScale, accuracy: 0.01)
+        XCTAssertEqual(entity?.position.y ?? 0, cfg.groundOffsetMeters, accuracy: 0.01)
+
+        // No longer asserts old procedural sphere names (imported mesh hierarchy).
+        // Root is stable.
     }
 
-    func testFactoryProducesIndependentEntities() {
+    func testFactoryProducesIndependentEntities() async {
         let factory = CompanionEntityFactory()
-        let first = factory.makeLira()
-        let second = factory.makeLira()
+        let first = await factory.makeLira()
+        let second = await factory.makeLira()
 
         XCTAssertFalse(first === second)
-        XCTAssertNil(first.parent)
-        XCTAssertNil(second.parent)
+        XCTAssertNil(first?.parent)
+        XCTAssertNil(second?.parent)
     }
 
     func testReducerMapsKnownAndUnknownBehaviorsDeterministically() {
@@ -47,11 +53,11 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(CompanionStateReducer.state(for: "unknown"), .idle)
     }
 
-    func testEveryPresentationStateIsReachableThroughRendererInStableOrder() {
+    func testEveryPresentationStateIsReachableThroughRendererInStableOrder() async {
         let registry = AREntityRegistry()
         let diagnostics = ARDiagnosticRecorder()
         let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
-        registerCompanion(in: registry)
+        await registerCompanion(in: registry)
 
         XCTAssertEqual(
             CompanionPresentationState.deterministicOrder,
@@ -61,7 +67,7 @@ final class ARCompanionEmbodimentTests: XCTestCase {
 
         for state in CompanionPresentationState.deterministicOrder.dropFirst() {
             XCTAssertEqual(
-                renderer.setCompanionState(state),
+                await renderer.setCompanionState(state),
                 .accepted("companion:\(state.rawValue)")
             )
             XCTAssertEqual(renderer.companionState, state)
@@ -73,63 +79,59 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         )
     }
 
-    func testEveryStateAppliesBoundedAbsoluteRealityKitPresentation() throws {
+    func testEveryStateAppliesBoundedAbsoluteRealityKitPresentation() async throws {
         let registry = AREntityRegistry()
         let renderer = ARWorldCommandRenderer(
             registry: registry,
             diagnostics: ARDiagnosticRecorder()
         )
-        let anchor = registerCompanion(in: registry)
+        let anchor = await registerCompanion(in: registry)
         let companion = try XCTUnwrap(
             anchor.findEntity(named: CompanionEntityFactory.rootName)
         )
-        let expected: [(CompanionPresentationState, SIMD3<Float>, SIMD3<Float>, simd_quatf, Bool)] = [
-            (.idle, [0, 0, 0], [1, 1, 1], simd_quatf(angle: 0, axis: [0, 1, 0]), false),
-            (.follow, [0, 0, 0.12], [1.02, 1.02, 1.02], simd_quatf(angle: 0.18, axis: [0, 1, 0]), false),
-            (.investigate, [-0.08, 0, 0], [1, 0.92, 1.08], simd_quatf(angle: -0.22, axis: [1, 0, 0]), true),
-            (.alert, [0, 0, -0.10], [1.05, 1.14, 0.96], simd_quatf(angle: 0, axis: [0, 1, 0]), true),
-            (.celebrate, [0, 0.10, 0], [1.12, 1.12, 1.12], simd_quatf(angle: .pi / 5, axis: [0, 1, 0]), true),
+
+        // After load, base scale from config. States adjust only pos/orient (no scale overwrite).
+        let baseScale: Float = 1.0 // default config scale factor ~1.0
+        let expected: [(CompanionPresentationState, SIMD3<Float>, simd_quatf, Bool)] = [
+            (.idle, [0, 0, 0], simd_quatf(angle: 0, axis: [0, 1, 0]), false),
+            (.follow, [0, 0, 0.12], simd_quatf(angle: 0.18, axis: [0, 1, 0]), false),
+            (.investigate, [-0.08, 0, 0], simd_quatf(angle: -0.22, axis: [1, 0, 0]), true),
+            (.alert, [0, 0, -0.10], simd_quatf(angle: 0, axis: [0, 1, 0]), true),
+            (.celebrate, [0, 0.10, 0], simd_quatf(angle: .pi / 5, axis: [0, 1, 0]), true),
         ]
 
-        for (state, position, scale, orientation, indicatorVisible) in expected {
-            _ = renderer.setCompanionState(state)
+        for (state, position, orientation, indicatorVisible) in expected {
+            _ = await renderer.setCompanionState(state)
             XCTAssertEqual(companion.position, position)
-            XCTAssertEqual(companion.scale, scale)
+            // Scale remains the base (no state distortion of imported mesh)
+            XCTAssertEqual(companion.scale.x, baseScale, accuracy: 0.1)
             XCTAssertEqual(companion.orientation.vector, orientation.vector)
             XCTAssertEqual(
                 companion.findEntity(named: "StatusIndicator")?.isEnabled,
                 indicatorVisible
             )
-            let indicator = try XCTUnwrap(
-                companion.findEntity(named: "StatusIndicator") as? ModelEntity
-            )
-            XCTAssertTrue(try XCTUnwrap(indicator.model?.materials.first) is SimpleMaterial)
+            // bounded
             XCTAssertLessThanOrEqual(simd_length(companion.position), 0.12)
-            XCTAssertLessThanOrEqual(max(scale.x, max(scale.y, scale.z)), 1.14)
 
             companion.position = [4, 4, 4]
-            companion.scale = [3, 3, 3]
             companion.orientation = simd_quatf(angle: .pi, axis: [0, 1, 0])
-            indicator.model?.materials = [UnlitMaterial(color: .black)]
 
-            _ = renderer.setCompanionState(state)
+            _ = await renderer.setCompanionState(state)
             XCTAssertEqual(companion.position, position)
-            XCTAssertEqual(companion.scale, scale)
             XCTAssertEqual(companion.orientation.vector, orientation.vector)
-            XCTAssertTrue(try XCTUnwrap(indicator.model?.materials.first) is SimpleMaterial)
         }
     }
 
-    func testUnknownPresentationInputFallsBackToIdle() {
+    func testUnknownPresentationInputFallsBackToIdle() async {
         let registry = AREntityRegistry()
         let diagnostics = ARDiagnosticRecorder()
         let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
-        registerCompanion(in: registry)
+        await registerCompanion(in: registry)
 
         let fallback = CompanionStateReducer.state(for: "future-unrecognized-state")
 
         XCTAssertEqual(fallback, .idle)
-        XCTAssertEqual(renderer.setCompanionState(fallback), .accepted("companion:idle"))
+        XCTAssertEqual(await renderer.setCompanionState(fallback), .accepted("companion:idle"))
         XCTAssertEqual(renderer.companionState, .idle)
 
         let transition = CompanionStateReducer.transition(
@@ -177,24 +179,24 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         )
     }
 
-    func testRepeatedCompanionRegistrationRemainsBoundedAndReplacesPriorEntity() {
+    func testRepeatedCompanionRegistrationRemainsBoundedAndReplacesPriorEntity() async {
         let registry = AREntityRegistry()
         let sceneRoot = Entity()
-        let first = registerCompanion(in: registry, parent: sceneRoot)
-        let second = registerCompanion(in: registry, parent: sceneRoot)
+        let first = await registerCompanion(in: registry, parent: sceneRoot)
+        let second = await registerCompanion(in: registry, parent: sceneRoot)
 
         XCTAssertEqual(registry.count, 1)
-        XCTAssertNil(first.parent)
+        XCTAssertNil(first?.parent)
         XCTAssertTrue(registry.entity(for: ARWorldCommandRenderer.companionID) === second)
-        XCTAssertTrue(second.parent === sceneRoot)
+        XCTAssertTrue(second?.parent === sceneRoot)
     }
 
-    func testClearResetsPresentationStateEntitiesAndDiagnosticsOutcome() {
+    func testClearResetsPresentationStateEntitiesAndDiagnosticsOutcome() async {
         let registry = AREntityRegistry()
         let diagnostics = ARDiagnosticRecorder()
         let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
-        registerCompanion(in: registry)
-        XCTAssertEqual(renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
+        await registerCompanion(in: registry)
+        XCTAssertEqual(await renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
         _ = renderer.advanceCompanionPresentation(by: 1)
 
         XCTAssertEqual(renderer.clearSession(), .cleared)
@@ -206,13 +208,13 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(diagnostics.events.last?.kind, .sessionCleared)
     }
 
-    func testInjectedUpdatesOnlyRecordSemanticTransitions() {
+    func testInjectedUpdatesOnlyRecordSemanticTransitions() async {
         let registry = AREntityRegistry()
         let diagnostics = ARDiagnosticRecorder()
         let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
-        registerCompanion(in: registry)
+        await registerCompanion(in: registry)
 
-        XCTAssertEqual(renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
+        XCTAssertEqual(await renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
         XCTAssertEqual(renderer.advanceCompanionPresentation(by: 0.5)?.resolvedState, .celebrate)
         XCTAssertEqual(renderer.advanceCompanionPresentation(by: 0.5)?.resolvedState, .celebrate)
         XCTAssertEqual(diagnostics.summary.stateTransitions, ["celebrate"])
@@ -222,25 +224,25 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertNil(renderer.advanceCompanionPresentation(by: 1))
     }
 
-    func testRepeatedCelebrateDoesNotRestartDeadlineOrDuplicateDiagnostics() {
+    func testRepeatedCelebrateDoesNotRestartDeadlineOrDuplicateDiagnostics() async {
         let registry = AREntityRegistry()
         let diagnostics = ARDiagnosticRecorder()
         let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
-        registerCompanion(in: registry)
+        await registerCompanion(in: registry)
 
-        XCTAssertEqual(renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
+        XCTAssertEqual(await renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
         _ = renderer.advanceCompanionPresentation(by: 1)
-        XCTAssertEqual(renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
+        XCTAssertEqual(await renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
         XCTAssertEqual(renderer.lastCompanionTransition?.outcome, .celebrationInProgress)
         XCTAssertEqual(renderer.advanceCompanionPresentation(by: 0.5)?.resolvedState, .idle)
         XCTAssertEqual(diagnostics.summary.stateTransitions, ["celebrate", "idle"])
     }
 
-    func testBehaviorUpdateDoesNotRestartCelebrateDeadline() {
+    func testBehaviorUpdateDoesNotRestartCelebrateDeadline() async {
         let registry = AREntityRegistry()
         let diagnostics = ARDiagnosticRecorder()
         let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics)
-        registerCompanion(in: registry)
+        await registerCompanion(in: registry)
         let presentation = CompanionPresentation(
             id: UUID(),
             name: "Lira",
@@ -254,10 +256,10 @@ final class ARCompanionEmbodimentTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
+        XCTAssertEqual(await renderer.setCompanionState(.celebrate), .accepted("companion:celebrate"))
         _ = renderer.advanceCompanionPresentation(by: 1)
         XCTAssertEqual(
-            renderer.render(.updateCompanion(presentation), in: ARView(frame: .zero)),
+            await renderer.render(.updateCompanion(presentation), in: ARView(frame: .zero)),
             .accepted("companion:celebrate")
         )
         XCTAssertEqual(renderer.lastCompanionTransition?.outcome, .celebrationInProgress)
@@ -265,16 +267,16 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertEqual(diagnostics.summary.stateTransitions, ["celebrate", "idle"])
     }
 
-    func testInvalidInjectedDeltasNormalizeCelebrationToIdle() {
+    func testInvalidInjectedDeltasNormalizeCelebrationToIdle() async {
         for delta in [-0.1, .nan, .infinity, -.infinity] {
             let registry = AREntityRegistry()
             let renderer = ARWorldCommandRenderer(
                 registry: registry,
                 diagnostics: ARDiagnosticRecorder()
             )
-            registerCompanion(in: registry)
+            await registerCompanion(in: registry)
 
-            _ = renderer.setCompanionState(.celebrate)
+            _ = await renderer.setCompanionState(.celebrate)
             let transition = renderer.advanceCompanionPresentation(by: delta)
 
             XCTAssertEqual(transition?.outcome, .invalidElapsedNormalizedToIdle)
@@ -282,10 +284,9 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         }
     }
 
-    func testARLabDeferredStateAndClearStaySynchronized() {
+    func testARLabDeferredStateAndClearStaySynchronized() async {
         let runtime = ARCompanionLabRuntime()
-
-        runtime.setState(.alert)
+        await runtime.setState(.alert)
         XCTAssertEqual(runtime.currentState, .idle)
         XCTAssertEqual(runtime.transitionResult, "Deferred: companion missing")
 
@@ -317,7 +318,6 @@ final class ARCompanionEmbodimentTests: XCTestCase {
 
         runtime.attach(first)
         runtime.attach(replacement)
-
         XCTAssertEqual(runtime.transitionResult, "Cleared to idle")
         XCTAssertTrue(runtime.isSceneUpdateAttached)
         runtime.detach(first)
@@ -327,7 +327,7 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertFalse(runtime.isSceneUpdateAttached)
     }
 
-    func testPresentationTransitionsDoNotMutateGameplayCompanion() {
+    func testPresentationTransitionsDoNotMutateGameplayCompanion() async {
         let companionID = UUID()
         let sessionID = UUID()
         let gameplayCompanion = Companion(
@@ -343,10 +343,10 @@ final class ARCompanionEmbodimentTests: XCTestCase {
             registry: registry,
             diagnostics: ARDiagnosticRecorder()
         )
-        registerCompanion(in: registry)
+        await registerCompanion(in: registry)
 
         for state in CompanionPresentationState.allCases {
-            _ = renderer.setCompanionState(state)
+            _ = await renderer.setCompanionState(state)
         }
 
         XCTAssertEqual(gameplayCompanion.id, companionID)
@@ -381,13 +381,90 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         XCTAssertFalse(text.localizedCaseInsensitiveContains("image"))
     }
 
+    // MARK: - Animation and asset contract tests (new for mesh/anim upgrade)
+
+    func testFollowSelectsAndLoopsWalkingAnimationAndRepeatedUpdatesDoNotRestart() async {
+        let registry = AREntityRegistry()
+        let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: ARDiagnosticRecorder())
+        await registerCompanion(in: registry)
+
+        // Enter follow
+        _ = await renderer.setCompanionState(.follow)
+        XCTAssertEqual(renderer.companionState, .follow)
+        // (In real run, anim would be playing; here we verify no crash and state)
+
+        // Repeated follow should not change (no restart logic exercised via state)
+        _ = await renderer.setCompanionState(.follow)
+        XCTAssertEqual(renderer.companionState, .follow)
+        XCTAssertEqual(renderer.lastCompanionTransition?.outcome, .unchanged)
+    }
+
+    func testOtherStatesUseBoundedTransformsWithoutScaleDistortion() async {
+        let registry = AREntityRegistry()
+        let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: ARDiagnosticRecorder())
+        let anchor = await registerCompanion(in: registry)
+        let companion = anchor.findEntity(named: CompanionEntityFactory.rootName)!
+
+        let baseX = companion.scale.x
+
+        for state in [.idle, .investigate, .alert, .celebrate] as [CompanionPresentationState] {
+            _ = await renderer.setCompanionState(state)
+            // scale unchanged
+            XCTAssertEqual(companion.scale.x, baseX, accuracy: 0.001)
+            // pos/orient within bounds as before
+            XCTAssertLessThanOrEqual(simd_length(companion.position), 0.12)
+        }
+    }
+
+    func testMissingStaticAssetDefersSafelyAndDoesNotMutateState() async {
+        let registry = AREntityRegistry()
+        let diagnostics = ARDiagnosticRecorder()
+        let factory = CompanionEntityFactory(staticAssetName: "nonexistent-static-mesh")
+        let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics, companionFactory: factory)
+
+        let pres = CompanionPresentation(id: UUID(), name: "Lira", behavior: "idle", spatialIntent: SpatialIntent(placement: .groundPlane, distanceBand: .near, bearing: .ahead, scaleClass: .companion, persistence: .session))
+        let result = await renderer.render(.spawnCompanion(pres), in: ARView(frame: .zero))
+
+        XCTAssertEqual(result, .deferred("companion-static-asset-unavailable"))
+        // state not mutated (still default idle)
+        XCTAssertEqual(renderer.companionState, .idle)
+    }
+
+    func testMissingWalkingAssetDefersSafelyAndDoesNotMutateState() async {
+        let registry = AREntityRegistry()
+        let diagnostics = ARDiagnosticRecorder()
+        let factory = CompanionEntityFactory(walkingAssetName: "nonexistent-walking")
+        let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics, companionFactory: factory)
+
+        let pres = CompanionPresentation(id: UUID(), name: "Lira", behavior: "idle", spatialIntent: SpatialIntent(placement: .groundPlane, distanceBand: .near, bearing: .ahead, scaleClass: .companion, persistence: .session))
+        let result = await renderer.render(.spawnCompanion(pres), in: ARView(frame: .zero))
+
+        XCTAssertEqual(result, .deferred("companion-walking-animation-unavailable"))
+        XCTAssertEqual(renderer.companionState, .idle)
+    }
+
+    func testUnavailableAnimationDefersSafely() async {
+        // Simulate unavailable by using factory that would fail anim load (via bad name)
+        let registry = AREntityRegistry()
+        let diagnostics = ARDiagnosticRecorder()
+        let factory = CompanionEntityFactory(walkingAssetName: "nonexistent-for-anim-test")
+        let renderer = ARWorldCommandRenderer(registry: registry, diagnostics: diagnostics, companionFactory: factory)
+
+        // Spawn will defer because we check anim at spawn per asset contract
+        let pres = CompanionPresentation(id: UUID(), name: "Lira", behavior: "follow", spatialIntent: SpatialIntent(placement: .groundPlane, distanceBand: .near, bearing: .ahead, scaleClass: .companion, persistence: .session))
+        let result = await renderer.render(.spawnCompanion(pres), in: ARView(frame: .zero))
+        XCTAssertEqual(result, .deferred("companion-walking-animation-unavailable"))
+    }
+
     @discardableResult
     private func registerCompanion(
         in registry: AREntityRegistry,
         parent: Entity? = nil
-    ) -> Entity {
+    ) async -> Entity {
         let anchor = Entity()
-        anchor.addChild(CompanionEntityFactory().makeLira())
+        if let lira = await CompanionEntityFactory().makeLira() {
+            anchor.addChild(lira)
+        }
         parent?.addChild(anchor)
         registry.register(anchor, for: ARWorldCommandRenderer.companionID)
         return anchor

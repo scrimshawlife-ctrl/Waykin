@@ -414,14 +414,14 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
         model.detachARWorldCommandHandler(owner: owner)
     }
 
-    func testOrderedBatchUsesExistingRendererAndClearRemovesPresentation() throws {
+    func testOrderedBatchUsesExistingRendererAndClearRemovesPresentation() async throws {
         let registry = AREntityRegistry()
         let renderer = ARWorldCommandRenderer(
             registry: registry,
             diagnostics: ARDiagnosticRecorder()
         )
         let anchor = Entity()
-        anchor.addChild(CompanionEntityFactory().makeLira())
+        if let lira = await CompanionEntityFactory().makeLira() { anchor.addChild(lira) }
         registry.register(anchor, for: ARWorldCommandRenderer.companionID)
 
         var runtime = CompanionRuntime()
@@ -433,7 +433,7 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
         let arView = ARView(frame: .zero, cameraMode: .nonAR, automaticallyConfigureSession: false)
 
         XCTAssertEqual(
-            renderer.render(mapper.update(companionRuntime: runtime, event: event), in: arView),
+            await renderer.render(mapper.update(companionRuntime: runtime, event: event), in: arView),
             [
                 .accepted("companion:follow"),
                 .removed(CanonicalARWorldCommandMapper.discoveryID.uuidString),
@@ -442,9 +442,9 @@ final class CanonicalARRuntimeIntegrationTests: XCTestCase {
         )
         XCTAssertEqual(renderer.companionState, .follow)
         XCTAssertEqual(registry.count, 1)
-        _ = renderer.render(mapper.update(companionRuntime: runtime, event: event), in: arView)
+        _ = await renderer.render(mapper.update(companionRuntime: runtime, event: event), in: arView)
         XCTAssertEqual(registry.count, 1)
-        XCTAssertEqual(renderer.render(mapper.clear(), in: arView), [.cleared])
+        XCTAssertEqual(await renderer.render(mapper.clear(), in: arView), [.cleared])
         XCTAssertEqual(registry.count, 0)
         XCTAssertEqual(renderer.companionState, .idle)
     }

@@ -72,7 +72,7 @@ final class ARCompanionLabRuntime {
         self.arView = nil
     }
 
-    func placeLira() {
+    func placeLira() async {
         guard let arView else { return }
         let presentation = CompanionPresentation(
             id: UUID(),
@@ -80,15 +80,15 @@ final class ARCompanionLabRuntime {
             behavior: currentState.rawValue,
             spatialIntent: companionIntent
         )
-        let result = renderer.render(.spawnCompanion(presentation), in: arView)
+        let result = await renderer.render(.spawnCompanion(presentation), in: arView)
         report(result)
-        synchronizeCompanionState(after: result)
+        await synchronizeCompanionState(after: result)
     }
 
-    func setState(_ state: CompanionPresentationState) {
-        let result = renderer.setCompanionState(state)
+    func setState(_ state: CompanionPresentationState) async {
+        let result = await renderer.setCompanionState(state)
         report(result)
-        synchronizeCompanionState(after: result)
+        await synchronizeCompanionState(after: result)
     }
 
     func spawnDiscovery() {
@@ -104,7 +104,10 @@ final class ARCompanionLabRuntime {
                 persistence: .transient
             )
         )
-        report(renderer.render(.spawnDiscovery(presentation), in: arView))
+        Task { @MainActor in
+            let res = await self.renderer.render(.spawnDiscovery(presentation), in: arView)
+            self.report(res)
+        }
     }
 
     func spawnThreat() {
@@ -121,7 +124,10 @@ final class ARCompanionLabRuntime {
                 persistence: .transient
             )
         )
-        report(renderer.render(.spawnThreat(presentation), in: arView))
+        Task { @MainActor in
+            let res = await self.renderer.render(.spawnThreat(presentation), in: arView)
+            self.report(res)
+        }
     }
 
     func clear() {
@@ -158,7 +164,7 @@ final class ARCompanionLabRuntime {
         }
     }
 
-    private func synchronizeCompanionState(after result: ARCommandResult) {
+    private func synchronizeCompanionState(after result: ARCommandResult) async {
         guard case .accepted = result else {
             if case .deferred(let detail) = result {
                 transitionResult = "Deferred: \(detail)"
@@ -228,7 +234,9 @@ struct ARCompanionLabView: View {
                 .font(.caption2)
 
                 if controlsExpanded {
-                    Button("Place Lira") { runtime.placeLira() }
+                    Button("Place Lira") {
+                        Task { await runtime.placeLira() }
+                    }
                         .buttonStyle(.borderedProminent)
                         .accessibilityLabel("Place Lira in the scene")
                         .accessibilityIdentifier("waykin.ar.placeCompanion")
@@ -271,7 +279,9 @@ struct ARCompanionLabView: View {
     }
 
     private func stateButton(_ state: CompanionPresentationState) -> some View {
-        Button(state.rawValue.capitalized) { runtime.setState(state) }
+        Button(state.rawValue.capitalized) {
+            Task { await runtime.setState(state) }
+        }
             .buttonStyle(.bordered)
             .tint(runtime.currentState == state ? .accentColor : .secondary)
             .accessibilityLabel(state.labControlAccessibilityLabel)

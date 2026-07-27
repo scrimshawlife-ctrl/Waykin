@@ -48,8 +48,10 @@ final class CanonicalARSessionRuntime {
         self.arView = arView
         arView.session = sessionCoordinator.session
         sceneUpdateSubscription = arView.scene.subscribe(to: SceneEvents.Update.self) { [weak self] event in
-            self?.drainPendingCommands()
-            self?.advancePresentation(by: event.deltaTime)
+            Task { @MainActor [weak self] in
+                await self?.drainPendingCommands()
+                self?.advancePresentation(by: event.deltaTime)
+            }
         }
         sessionCoordinator.onCapabilityStateChange = { [weak self] state in
             self?.capabilityState = state
@@ -69,7 +71,12 @@ final class CanonicalARSessionRuntime {
             self.commandHandlerOwner = nil
         }
         pendingCommands.removeAll(keepingCapacity: true)
-        report(render(.clearSession, in: arView))
+        Task { @MainActor [weak self] in
+            guard let self, let view = self.arView else { return }
+            let res = await self.render(.clearSession, in: view)
+            self.report(res)
+            self.companionState = .idle
+        }
         sceneUpdateSubscription?.cancel()
         sceneUpdateSubscription = nil
         sessionStartTask?.cancel()
@@ -83,15 +90,21 @@ final class CanonicalARSessionRuntime {
         guard let arView else { return }
         if commands.contains(.clearSession) {
             pendingCommands.removeAll(keepingCapacity: true)
-            report(render(.clearSession, in: arView))
-            companionState = .idle
+            Task { @MainActor [weak self] in
+                guard let self, let view = self.arView else { return }
+                let res = await self.render(.clearSession, in: view)
+                self.report(res)
+                self.companionState = .idle
+            }
             return
         }
 
         for command in commands {
             enqueue(command)
         }
-        drainPendingCommands()
+        Task { @MainActor [weak self] in
+            await self?.drainPendingCommands()
+        }
     }
 
     private func enqueue(_ command: ARWorldCommand) {
@@ -119,12 +132,12 @@ final class CanonicalARSessionRuntime {
         }
     }
 
-    private func drainPendingCommands() {
+    private func drainPendingCommands() async {
         guard let arView else { return }
         var index = pendingCommands.startIndex
         while index < pendingCommands.endIndex {
             let command = pendingCommands[index]
-            let result = render(command, in: arView)
+            let result = await render(command, in: arView)
             report(result)
             guard case .deferred = result else {
                 pendingCommands.remove(at: index)
@@ -147,8 +160,11 @@ final class CanonicalARSessionRuntime {
         companionState = transition.resolvedState
     }
 
-    private func render(_ command: ARWorldCommand, in arView: ARView) -> ARCommandResult {
-        renderCommandOverride?(command, arView) ?? renderer.render(command, in: arView)
+    private func render(_ command: ARWorldCommand, in arView: ARView) async -> ARCommandResult {
+        if let override = renderCommandOverride {
+            return override(command, arView)
+        }
+        return await renderer.render(command, in: arView)
     }
 
     private func report(_ result: ARCommandResult) {
