@@ -228,6 +228,13 @@ final class ARWorldCommandRenderer {
 
         entity.findEntity(named: "StatusIndicator")?.isEnabled = presentation.indicatorVisible
         entity.findEntity(named: "CoreGlow")?.isEnabled = presentation.coreVisible
+
+        // Walking animation only on follow
+        if state == .follow {
+            playWalkingAnimation(on: entity)
+        } else {
+            stopWalkingAnimation(on: entity)
+        }
         if let indicator = entity.findEntity(named: "StatusIndicator") as? ModelEntity {
             indicator.model?.materials = [
                 SimpleMaterial(color: presentation.indicatorColor, isMetallic: false)
@@ -285,6 +292,7 @@ final class ARWorldCommandRenderer {
         }
     }
 
+
     private struct Presentation {
         let position: SIMD3<Float>
         let scale: SIMD3<Float>
@@ -292,5 +300,25 @@ final class ARWorldCommandRenderer {
         let indicatorVisible: Bool
         let coreVisible: Bool
         let indicatorColor: UIColor
+    }
+
+    // MARK: - Walking animation (follow only)
+    private func playWalkingAnimation(on entity: Entity) {
+        guard let url = Bundle.main.url(forResource: "Lira_Walking", withExtension: "usdz") else { return }
+        Task { @MainActor in
+            do {
+                let asset = try await Entity.load(contentsOf: url)
+                if let first = asset.availableAnimations.first {
+                    entity.stopAllAnimations()
+                    entity.playAnimation(first.repeat(count: 0), transitionDuration: 0.15)
+                }
+            } catch {
+                // Asset missing or no animation data — graceful no-op
+            }
+        }
+    }
+
+    private func stopWalkingAnimation(on entity: Entity) {
+        entity.stopAllAnimations()
     }
 }
