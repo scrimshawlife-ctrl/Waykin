@@ -34,7 +34,6 @@ struct CompanionEntityFactory {
         )
         tail.scale = SIMD3<Float>(0.32, 1, 0.32)
         tail.position = [0, configuration.groundOffsetMeters + 0.30, -0.21]
-        tail.scale = SIMD3<Float>(0.32, 1, 0.32)
         tail.orientation = simd_quatf(angle: .pi / 3, axis: [1, 0, 0])
 
         let core = model(
@@ -51,7 +50,6 @@ struct CompanionEntityFactory {
         )
         shadow.scale = SIMD3<Float>(1, 0.01, 1)
         shadow.position = [0, configuration.groundOffsetMeters, 0]
-        shadow.scale = SIMD3<Float>(1, 0.01, 1)
 
         let indicator = model(
             name: "StatusIndicator",
@@ -64,6 +62,21 @@ struct CompanionEntityFactory {
             root.addChild($0)
         }
         root.scale = SIMD3<Float>(repeating: configuration.companionHeightMeters / 0.72)
+        return root
+    }
+
+    /// Loads the walking animation asset when available.
+    /// Returns a configured root (procedural base). Animation playback is managed in the renderer.
+    func makeLiraWithWalking(configuration: CompanionVisualConfiguration = .liraPlaceholder) async -> Entity {
+        let root = makeLira(configuration: configuration)
+
+        guard let url = Bundle.main.url(forResource: "Lira_Walking", withExtension: "usdz") else {
+            return root
+        }
+
+        // Best-effort preload to validate the bundled resource.
+        // Actual clip playback is driven from ARWorldCommandRenderer.
+        _ = try? await Entity.load(contentsOf: url)
         return root
     }
 
