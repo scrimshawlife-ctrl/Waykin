@@ -24,69 +24,139 @@ enum RealWalkSessionState: Equatable {
     case failed
 }
 
+@MainActor
+enum WaykinAppBootstrapResult {
+    case ready(ModelContainer, WaykinAppModel)
+    case unavailable
+}
+
+@MainActor
+struct WaykinAppBootstrapper {
+    typealias PrimaryContainerFactory = (_ isUITesting: Bool, _ shouldReset: Bool) throws -> ModelContainer
+
+    private let makePrimaryContainer: PrimaryContainerFactory
+    private let makeFallbackContainer: () throws -> ModelContainer
+
+    init(
+        makePrimaryContainer: @escaping PrimaryContainerFactory = WaykinAppBootstrapper.makePrimaryContainer,
+        makeFallbackContainer: @escaping () throws -> ModelContainer = WaykinAppBootstrapper.makeFallbackContainer
+    ) {
+        self.makePrimaryContainer = makePrimaryContainer
+        self.makeFallbackContainer = makeFallbackContainer
+    }
+
+    func bootstrap(isUITesting: Bool, shouldReset: Bool) -> WaykinAppBootstrapResult {
+        do {
+            let container = try makePrimaryContainer(isUITesting, shouldReset)
+            return makeReadyResult(container: container, persistenceMode: "FILE_BACKED")
+        } catch {
+            do {
+                let container = try makeFallbackContainer()
+                return makeReadyResult(container: container, persistenceMode: "IN_MEMORY_FALLBACK")
+            } catch {
+                return .unavailable
+            }
+        }
+    }
+
+    private func makeReadyResult(
+        container: ModelContainer,
+        persistenceMode: String
+    ) -> WaykinAppBootstrapResult {
+        let model = WaykinAppModel(persistenceStore: PersistenceStore(modelContainer: container))
+        model.persistenceMode = persistenceMode
+        return .ready(container, model)
+    }
+
+    private static func makePrimaryContainer(
+        isUITesting: Bool,
+        shouldReset: Bool
+    ) throws -> ModelContainer {
+        if isUITesting {
+            return try PersistenceStore.makeFileBackedContainer(reset: shouldReset)
+        }
+
+        let url = try PersistenceConfiguration.persistentStoreURL()
+        let schema = Schema([CompanionRecord.self, SessionMemoryRecord.self])
+        let config = ModelConfiguration(schema: schema, url: url)
+        return try ModelContainer(for: schema, configurations: config)
+    }
+
+    private static func makeFallbackContainer() throws -> ModelContainer {
+        let schema = Schema([CompanionRecord.self, SessionMemoryRecord.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: config)
+    }
+}
+
 @main
 struct WaykinApp: App {
-    @Environment(\.scenePhase) private var scenePhase
-    let container: ModelContainer
-    @State private var appModel: WaykinAppModel
+    private let bootstrapResult: WaykinAppBootstrapResult
 
     init() {
-        do {
-            let isUITesting = ProcessInfo.processInfo.arguments.contains("-WAYKIN_UI_TESTING")
-            var shouldReset = false
-            let args = ProcessInfo.processInfo.arguments
-            if let idx = args.firstIndex(of: "-WAYKIN_RESET_STATE"), idx + 1 < args.count {
+        let args = ProcessInfo.processInfo.arguments
+        let isUITesting = args.contains("-WAYKIN_UI_TESTING")
+        var shouldReset = false
+        if let idx = args.firstIndex(of: "-WAYKIN_RESET_STATE"), idx + 1 < args.count {
             let val = args[idx + 1].trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             shouldReset = (val == "YES" || val == "TRUE" || val == "1")
         }
-
-            let container: ModelContainer
-            if isUITesting {
-                container = try PersistenceStore.makeFileBackedContainer(reset: shouldReset)
-            } else {
-                let url = try PersistenceConfiguration.persistentStoreURL()
-                let schema = Schema([CompanionRecord.self, SessionMemoryRecord.self])
-                let config = ModelConfiguration(schema: schema, url: url)
-                container = try ModelContainer(for: schema, configurations: config)
-            }
-            self.container = container
-
-            let store = PersistenceStore(modelContainer: container)
-            self._appModel = State(initialValue: WaykinAppModel(persistenceStore: store))
-        } catch {
-            // Fallback for non-critical paths; UI tests will fail explicitly if file-backed required
-            let fallbackContainer = try! ModelContainer(for: CompanionRecord.self, SessionMemoryRecord.self)
-            self.container = fallbackContainer
-            self._appModel = State(initialValue: WaykinAppModel(persistenceStore: PersistenceStore(modelContainer: fallbackContainer)))
-        }
+        bootstrapResult = WaykinAppBootstrapper().bootstrap(
+            isUITesting: isUITesting,
+            shouldReset: shouldReset
+        )
     }
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack(path: $appModel.path) {
-                HomeView()
-                    .navigationDestination(for: AppRoute.self) { route in
-                        switch route {
-                        case .activeSession(let scenario):
-                            ActiveSessionView(scenario: scenario)
-                        case .summary(let id):
-                            if let summary = appModel.lastSummary, summary.id == id {
-                                SessionSummaryView(summary: summary)
-                            } else {
-                                Text("Summary not found")
-                            }
-                        case .memoryHistory:
-                            MemoryHistoryView()
+            switch bootstrapResult {
+            case .ready(let container, let model):
+                WaykinAppRootView(container: container, appModel: model)
+            case .unavailable:
+                ContentUnavailableView(
+                    "Waykin couldn't start",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text("Local storage is unavailable. Close and reopen the app to try again.")
+                )
+            }
+        }
+    }
+}
+
+private struct WaykinAppRootView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    let container: ModelContainer
+    @State private var appModel: WaykinAppModel
+
+    init(container: ModelContainer, appModel: WaykinAppModel) {
+        self.container = container
+        self._appModel = State(initialValue: appModel)
+    }
+
+    var body: some View {
+        NavigationStack(path: $appModel.path) {
+            HomeView()
+                .navigationDestination(for: AppRoute.self) { route in
+                    switch route {
+                    case .activeSession(let scenario):
+                        ActiveSessionView(scenario: scenario)
+                    case .summary(let id):
+                        if let summary = appModel.lastSummary, summary.id == id {
+                            SessionSummaryView(summary: summary)
+                        } else {
+                            Text("Summary not found")
                         }
+                    case .memoryHistory:
+                        MemoryHistoryView()
                     }
-            }
-            .environment(appModel)
-            .onChange(of: scenePhase) { _, phase in
-                appModel.handleScenePhase(phase)
-            }
-            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
-                appModel.handleAudioSessionInterruption(notification)
-            }
+                }
+        }
+        .environment(appModel)
+        .onChange(of: scenePhase) { _, phase in
+            appModel.handleScenePhase(phase)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { notification in
+            appModel.handleAudioSessionInterruption(notification)
         }
         .modelContainer(container)
     }
