@@ -4,8 +4,51 @@ import UIKit
 @MainActor
 struct CompanionEntityFactory {
     static let rootName = "LiraRoot"
+    static let animatedMeshName = "LiraAnimatedMesh"
+    private static var cachedAsset: Entity?
 
     func makeLira(configuration: CompanionVisualConfiguration = .liraPlaceholder) -> Entity {
+        if let asset = Self.loadAsset()?.clone(recursive: true) {
+            return makeAssetLira(asset: asset, configuration: configuration)
+        }
+        return makeProceduralLira(configuration: configuration)
+    }
+
+    private static func loadAsset() -> Entity? {
+        if let cachedAsset {
+            return cachedAsset
+        }
+        guard let asset = try? Entity.load(named: "Lira_Walking") else {
+            return nil
+        }
+        cachedAsset = asset
+        return asset
+    }
+
+    private func makeAssetLira(
+        asset: Entity,
+        configuration: CompanionVisualConfiguration
+    ) -> Entity {
+        let root = Entity()
+        root.name = Self.rootName
+
+        asset.name = Self.animatedMeshName
+        let bounds = asset.visualBounds(relativeTo: asset)
+        let sourceHeight = max(bounds.extents.y, 0.001)
+        let scale = configuration.companionHeightMeters / sourceHeight
+        asset.scale = SIMD3<Float>(repeating: scale)
+        asset.position = [
+            -bounds.center.x * scale,
+            configuration.groundOffsetMeters - bounds.min.y * scale,
+            -bounds.center.z * scale,
+        ]
+        root.addChild(asset)
+
+        addPresentationOverlays(to: root, configuration: configuration)
+        return root
+    }
+
+    private func makeProceduralLira(configuration: CompanionVisualConfiguration) -> Entity {
         let root = Entity()
         root.name = Self.rootName
 
@@ -65,19 +108,32 @@ struct CompanionEntityFactory {
         return root
     }
 
-    /// Loads the walking animation asset when available.
-    /// Returns a configured root (procedural base). Animation playback is managed in the renderer.
+    /// Retained as an async-compatible entry point for callers that prepare entities off the render path.
     func makeLiraWithWalking(configuration: CompanionVisualConfiguration = .liraPlaceholder) async -> Entity {
-        let root = makeLira(configuration: configuration)
+        makeLira(configuration: configuration)
+    }
 
-        guard let url = Bundle.main.url(forResource: "Lira_Walking", withExtension: "usdz") else {
-            return root
-        }
+    private func addPresentationOverlays(
+        to root: Entity,
+        configuration: CompanionVisualConfiguration
+    ) {
+        let height = configuration.companionHeightMeters
+        let core = model(
+            name: "CoreGlow",
+            mesh: .generateSphere(radius: max(0.018, height * 0.045)),
+            color: UIColor(red: 0.92, green: 0.98, blue: 1.0, alpha: 1)
+        )
+        core.position = [0, configuration.groundOffsetMeters + height * 0.46, height * 0.18]
 
-        // Best-effort preload to validate the bundled resource.
-        // Actual clip playback is driven from ARWorldCommandRenderer.
-        _ = try? await Entity.load(contentsOf: url)
-        return root
+        let indicator = model(
+            name: "StatusIndicator",
+            mesh: .generateSphere(radius: max(0.012, height * 0.025)),
+            color: .white
+        )
+        indicator.position = [0, configuration.groundOffsetMeters + height * 1.08, 0]
+
+        root.addChild(core)
+        root.addChild(indicator)
     }
 
     private func ear(name: String, x: Float, y: Float) -> ModelEntity {

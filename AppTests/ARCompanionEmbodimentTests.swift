@@ -21,12 +21,23 @@ final class ARCompanionEmbodimentTests: XCTestCase {
         let entity = CompanionEntityFactory().makeLira()
 
         XCTAssertEqual(entity.name, CompanionEntityFactory.rootName)
-        for name in [
-            "Body", "Head", "LeftEar", "RightEar", "Tail",
-            "CoreGlow", "GroundShadow", "StatusIndicator"
-        ] {
+        for name in ["CoreGlow", "StatusIndicator"] {
             XCTAssertNotNil(entity.findEntity(named: name), "Missing \(name)")
         }
+    }
+
+    func testBundledLiraMeshLoadsWithAnimationAtCompanionScale() throws {
+        let entity = CompanionEntityFactory().makeLira()
+        let mesh = try XCTUnwrap(
+            entity.findEntity(named: CompanionEntityFactory.animatedMeshName),
+            "Expected the bundled animated mesh rather than the procedural fallback"
+        )
+
+        XCTAssertFalse(mesh.availableAnimations.isEmpty)
+        let bounds = mesh.visualBounds(relativeTo: entity)
+        XCTAssertGreaterThan(bounds.extents.y, 0.4)
+        XCTAssertLessThanOrEqual(bounds.extents.y, 1.5)
+        XCTAssertGreaterThanOrEqual(bounds.min.y, -0.01)
     }
 
     func testFactoryProducesIndependentEntities() {

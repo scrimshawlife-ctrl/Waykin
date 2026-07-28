@@ -304,21 +304,25 @@ final class ARWorldCommandRenderer {
 
     // MARK: - Walking animation (follow only)
     private func playWalkingAnimation(on entity: Entity) {
-        guard let url = Bundle.main.url(forResource: "Lira_Walking", withExtension: "usdz") else { return }
-        Task { @MainActor in
-            do {
-                let asset = try await Entity.load(contentsOf: url)
-                if let first = asset.availableAnimations.first {
-                    entity.stopAllAnimations()
-                    entity.playAnimation(first.repeat(count: 0), transitionDuration: 0.15)
-                }
-            } catch {
-                // Asset missing or no animation data — graceful no-op
-            }
-        }
+        guard let target = animationTarget(in: entity),
+              let first = target.availableAnimations.first else { return }
+        target.stopAllAnimations()
+        target.playAnimation(first.repeat(count: 0), transitionDuration: 0.15)
     }
 
     private func stopWalkingAnimation(on entity: Entity) {
         entity.stopAllAnimations()
+    }
+
+    private func animationTarget(in entity: Entity) -> Entity? {
+        if !entity.availableAnimations.isEmpty {
+            return entity
+        }
+        for child in entity.children {
+            if let target = animationTarget(in: child) {
+                return target
+            }
+        }
+        return nil
     }
 }
