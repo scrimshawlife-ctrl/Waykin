@@ -18,6 +18,10 @@ depends_on:
 
 **Purpose:** Confirm on a **physical iPhone indoors** that the **Ember Fox** packaged runtime loads, replaces any procedural fallback, animates the skeleton, and recovers cleanly — without claiming outdoor glare, GPS, or #41 COH PASS.
 
+**Visual gold standard (Prabu device test):** companion should read as the stylized fox mesh in  
+[`receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md`](receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md)  
+([evidence PNG](receipts/evidence/IMG_2534_prabu_ember_fox_device.png)) — **not** procedural multi-sphere placeholder. Operator strip should show authored `animated_usdz` (or equivalent) with animation playing when follow is active.
+
 **Who:** Human with Debug (or Release + `-WAYKIN_OPERATOR_DEBUG`) build on tip `main` **≥ `b17864e`** (PR #246).
 
 **Not this packet:** Daylight outdoor walk (#41). Use outdoor packet for that.

@@ -71,9 +71,10 @@ make validate-simulator
 | `git diff --check` | **PASS** | No whitespace errors on tracked changes |
 | `validate-simulator` | **PASS** | App build + UI tests (see below) |
 | UI tests (`WaykinUITests`) | **PASS** | 13 executed, 1 skipped, 0 failures |
-| Physical indoor smoke | **NOT_COMPUTABLE** | Human device |
+| Physical indoor smoke (full I1–I14) | **NOT_COMPUTABLE** | Human device on freeze tip |
+| Prabu mesh visual reference | **OBSERVED** (separate receipt) | Authored fox on device; SHA unknown — see `DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md` |
 | Outdoor #41 | **NOT_COMPUTABLE** | Human daylight |
-| TF archive | **HOLD** | Issue #247 |
+| TF archive | **HOLD** | Issue #247 until freeze-tip device confirm |
 
 ## Mesh-specific checks (package / config)
 

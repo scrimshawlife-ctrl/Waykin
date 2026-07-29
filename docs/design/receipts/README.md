@@ -43,6 +43,8 @@ OUTDOOR_QA_RECEIPT_<DATE>_<SHORT_SHA>_PENDING.md
 
 | File | Status |
 | ---- | ------ |
+| `DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md` | **Visual gold standard** — Prabu device photo; authored fox + `animated_usdz`; install SHA **not** on image |
+| `evidence/IMG_2534_prabu_ember_fox_device.png` | Converted still from `IMG_2534.heic` |
 | `INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md` | **Historical** (artist-blend / pre-Ember Fox install target) |
 | Protocol | `../INDOOR_AR_HYBRID_SMOKE.md` (Ember Fox checks) |
 
