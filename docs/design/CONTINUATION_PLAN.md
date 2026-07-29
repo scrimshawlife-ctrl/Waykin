@@ -42,7 +42,7 @@ Remaining value is **documentation accuracy**, **fresh automated baseline**, and
 | Phase A laptop validate (post-mesh) | **Required** on current tip (pre-mesh receipts are historical) |
 | Indoor device smoke | **Human — next** (Ember Fox protocol) |
 | Outdoor #41 COH | **Human — daylight** on post-mesh tip |
-| AR redesign docs (#245) | Supporting only; recover onto current main — do not merge stale branch |
+| AR redesign docs | Supporting only; recover via fresh branch from freeze tip (replaces stale #245 history) |
 
 ## Completed eng waves (recent)
 

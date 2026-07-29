@@ -16,7 +16,7 @@ Last updated: 2026-07-29 (**FREEZE MERGED** — #249; device indoor next; no red
 | Issue #41 — outdoor / physical validation | Human device | **Parked** — scaffold [OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md](../design/receipts/OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md); walk after indoor preferred | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 | Issue #247 — TF archive hold | Product / dist | **Softened, not closed** — Prabu photo shows authored mesh on *some* build; still need OBSERVED on **exact freeze/archive SHA** before TF | [#247](https://github.com/scrimshawlife-ctrl/Waykin/issues/247) |
 | Internal TestFlight RC | Human (signing / ASC) | **Blocked** — freeze + #247 + fresh validate first | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md) |
-| PR #245 AR redesign docs | Docs lane | **Parked behind freeze** — SUPPORTING only; recover onto freeze tip later; do **not** merge stale branch | [#245](https://github.com/scrimshawlife-ctrl/Waykin/pull/245) |
+| AR redesign docs recovery | Docs lane | **In progress** — fresh branch from current main (Ember Fox inventory); supersedes stale [#245](https://github.com/scrimshawlife-ctrl/Waykin/pull/245) history | SUPPORTING only; no Phase 0 binding edits |
 | AR session redesign PRs / Phase 0 law | — | **Not started** — build-on-top only after freeze + device honesty | Continuation plan steps 9–12 |
 
 ## Tip identity

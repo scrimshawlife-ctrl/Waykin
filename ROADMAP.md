@@ -1,5 +1,7 @@
 # Waykin Roadmap
 
+> **North star (reference only):** [`docs/design/PRODUCT_VISION_NORTH_STAR.md`](docs/design/PRODUCT_VISION_NORTH_STAR.md) — AR companion across walks/runs/rides + fitness; later worldbuilding and user-designed companions/experiences. Gated path: [`docs/canonical/MVP_TO_VISION_LADDER.md`](docs/canonical/MVP_TO_VISION_LADDER.md). Near-term AR session redesign planning: [`docs/design/AR_PRODUCT_REDESIGN_MAP.md`](docs/design/AR_PRODUCT_REDESIGN_MAP.md) (**SUPPORTING**). This roadmap remains evidence-gated engineering for the **current** binding MVP.
+
 Waykin advances by proving one bounded layer before promoting the next. This roadmap is directional; GitHub issues and accepted milestone documents authorize implementation.
 
 ## Status Legend

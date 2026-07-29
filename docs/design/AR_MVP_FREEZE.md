@@ -84,6 +84,7 @@ When this freeze is accepted:
 ## Related
 
 - [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) v5.0
+- [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) — SUPPORTING redesign planning (does not lift freeze)
 - [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md)
 - [AR_REPLAY_VALIDATION.md](../AR_REPLAY_VALIDATION.md)
 - [ACTIVE_WORK.md](../collaboration/ACTIVE_WORK.md)

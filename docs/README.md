@@ -29,6 +29,12 @@ Waykin documentation is organized by **authority**, **maturity**, and **evidence
 | [`SOLO_MVP_SCOPE.md`](SOLO_MVP_SCOPE.md) | Constraints that keep Waykin implementable by one person |
 | [`../ROADMAP.md`](../ROADMAP.md) | Evidence-gated progression from physical-loop proof to future systems |
 | [`canonical/CURRENT_CAPABILITY_MATRIX.md`](canonical/CURRENT_CAPABILITY_MATRIX.md) | What is implemented, under validation, deferred, or future-only |
+| [`design/AR_PRODUCT_REDESIGN_MAP.md`](design/AR_PRODUCT_REDESIGN_MAP.md) | AR product redesign master map — **SUPPORTING** (not binding) |
+| [`plans/AR_APP_REDESIGN_PLAN.md`](plans/AR_APP_REDESIGN_PLAN.md) | Phased AR-app redesign plan — supporting |
+| [`design/AR_SYSTEM_INVENTORY.md`](design/AR_SYSTEM_INVENTORY.md) | File-level AR system inventory — supporting |
+| [`design/AR_SESSION_IA_CONFLICTS.md`](design/AR_SESSION_IA_CONFLICTS.md) | Active Session IA conflicts (C1–C11) — supporting |
+| [`design/PRODUCT_VISION_NORTH_STAR.md`](design/PRODUCT_VISION_NORTH_STAR.md) | Long-term vision — **REFERENCE_ONLY** |
+| [`canonical/MVP_TO_VISION_LADDER.md`](canonical/MVP_TO_VISION_LADDER.md) | Gated ladder MVP → north star (R0–R8) — supporting |
 | [`../KNOWN_LIMITATIONS.md`](../KNOWN_LIMITATIONS.md) | Validated, partial, deferred, and `NOT_COMPUTABLE` gates |
 
 ## Engineering
