@@ -29,6 +29,9 @@ Waykin documentation is organized by **authority**, **maturity**, and **evidence
 | [`SOLO_MVP_SCOPE.md`](SOLO_MVP_SCOPE.md) | Constraints that keep Waykin implementable by one person |
 | [`../ROADMAP.md`](../ROADMAP.md) | Evidence-gated progression from physical-loop proof to future systems |
 | [`canonical/CURRENT_CAPABILITY_MATRIX.md`](canonical/CURRENT_CAPABILITY_MATRIX.md) | What is implemented, under validation, deferred, or future-only |
+| [`design/AR_PRODUCT_REDESIGN_MAP.md`](design/AR_PRODUCT_REDESIGN_MAP.md) | **AR product redesign map** (identity, architecture envelope, phases) — supporting |
+| [`plans/AR_APP_REDESIGN_PLAN.md`](plans/AR_APP_REDESIGN_PLAN.md) | Phased AR-app redesign plan (law → evidence → UX) — supporting |
+| [`design/AR_SYSTEM_INVENTORY.md`](design/AR_SYSTEM_INVENTORY.md) | File-level AR system inventory — supporting |
 | [`../KNOWN_LIMITATIONS.md`](../KNOWN_LIMITATIONS.md) | Validated, partial, deferred, and `NOT_COMPUTABLE` gates |
 
 ## Engineering

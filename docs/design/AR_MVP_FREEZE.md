@@ -71,3 +71,13 @@ When this freeze is accepted:
 - [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) v0.3
 - [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md)
 - [AR_REPLAY_VALIDATION.md](../AR_REPLAY_VALIDATION.md)
+
+## Related — AR product redesign (supporting)
+
+Product direction (planning): **AR-designed** session surface; no longer audio-first identity.
+
+- [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) — full map and freeze rings  
+- [../plans/AR_APP_REDESIGN_PLAN.md](../plans/AR_APP_REDESIGN_PLAN.md) — phased plan  
+- [AR_SYSTEM_INVENTORY.md](AR_SYSTEM_INVENTORY.md) — file inventory  
+
+**Freeze still applies:** feature expansion in `App/AR/**` requires a scoped issue. Redesign Phase 0 is docs/agents only; Phase 2 UX defaults require an explicit unfreeze issue.

@@ -1,5 +1,8 @@
 # Waykin Continuation Plan
 
+> **AR redesign map (supporting):** see [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) and [../plans/AR_APP_REDESIGN_PLAN.md](../plans/AR_APP_REDESIGN_PLAN.md) for AR-designed product direction and phases. This continuation plan remains the device-evidence lane.
+
+
 ```yaml
 document_id: WAYKIN-CONTINUATION-001
 version: 4.1

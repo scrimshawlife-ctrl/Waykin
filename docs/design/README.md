@@ -2,6 +2,19 @@
 
 Visual system imports and production follow-ons for the app repository.
 
+
+## AR product redesign (2026-07-29)
+
+| Doc | Purpose | Class |
+| --- | ------- | ----- |
+| [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) | **Master map**: identity, architecture envelope, freeze rings, target IA, doc deltas | SUPPORTING |
+| [AR_SYSTEM_INVENTORY.md](AR_SYSTEM_INVENTORY.md) | File-level AR / presentation inventory | SUPPORTING |
+| [../plans/AR_APP_REDESIGN_PLAN.md](../plans/AR_APP_REDESIGN_PLAN.md) | Phased plan (Phase 0 law → evidence → AR-default UX) | SUPPORTING |
+| [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md) | What may change in `App/AR/**` without a new issue | FROZEN |
+| [REAL_WALK_TO_AR_MAPPING.md](REAL_WALK_TO_AR_MAPPING.md) | Walk/demo → `ARWorldCommand` lifecycle | OBSERVED |
+
+**Operator direction:** product is **no longer audio-first**; design for **AR** as primary session surface while movement remains gameplay authority. Binding law still says audio-first until Phase 0 PR.
+
 ## UI product vs engineering practice
 
 | Doc | Purpose | Class |
@@ -48,7 +61,11 @@ Visual system imports and production follow-ons for the app repository.
 | [receipts/](receipts/) | Filled outdoor / sim / indoor smoke receipts |
 | [receipts/samples/](receipts/samples/) | Field-test JSON format samples (not device PASS) |
 
-## Recommended order (2026-07-25)
+## Recommended order (2026-07-29)
+
+0. Read **[AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md)** + plan before new AR UX work
+
+## Recommended order (2026-07-25, historical lane)
 
 1. Design / presentation / AR mid-LOD / Hallmark polish — **complete on main** (see CONTINUATION_PLAN v4.1)
 2. **AR-F freeze** — maintenance/defects only unless #41 or scoped issue
