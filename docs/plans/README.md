@@ -14,3 +14,4 @@ Persistence implementation is sequenced as WP-DB1 through WP-DB6. CloudKit remai
 | [AR_APP_REDESIGN_PLAN.md](AR_APP_REDESIGN_PLAN.md) | Phased AR-app redesign (law → evidence → UX) |
 | [../design/AR_PRODUCT_REDESIGN_MAP.md](../design/AR_PRODUCT_REDESIGN_MAP.md) | Master redesign map |
 | [../design/AR_SYSTEM_INVENTORY.md](../design/AR_SYSTEM_INVENTORY.md) | System inventory |
+| [../design/AR_SESSION_IA_CONFLICTS.md](../design/AR_SESSION_IA_CONFLICTS.md) | Session IA conflicts |

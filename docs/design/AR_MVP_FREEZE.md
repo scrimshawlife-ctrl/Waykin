@@ -78,6 +78,7 @@ Product direction (planning): **AR-designed** session surface; no longer audio-f
 
 - [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) — full map and freeze rings  
 - [../plans/AR_APP_REDESIGN_PLAN.md](../plans/AR_APP_REDESIGN_PLAN.md) — phased plan  
-- [AR_SYSTEM_INVENTORY.md](AR_SYSTEM_INVENTORY.md) — file inventory  
+- [AR_SYSTEM_INVENTORY.md](AR_SYSTEM_INVENTORY.md) — file inventory
+- [AR_SESSION_IA_CONFLICTS.md](AR_SESSION_IA_CONFLICTS.md) — session IA conflict register  
 
 **Freeze still applies:** feature expansion in `App/AR/**` requires a scoped issue. Redesign Phase 0 is docs/agents only; Phase 2 UX defaults require an explicit unfreeze issue.

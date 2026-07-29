@@ -9,6 +9,7 @@ Visual system imports and production follow-ons for the app repository.
 | --- | ------- | ----- |
 | [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) | **Master map**: identity, architecture envelope, freeze rings, target IA, doc deltas | SUPPORTING |
 | [AR_SYSTEM_INVENTORY.md](AR_SYSTEM_INVENTORY.md) | File-level AR / presentation inventory | SUPPORTING |
+| [AR_SESSION_IA_CONFLICTS.md](AR_SESSION_IA_CONFLICTS.md) | Active Session IA conflicts (C1–C11) for AR-designed product | SUPPORTING |
 | [../plans/AR_APP_REDESIGN_PLAN.md](../plans/AR_APP_REDESIGN_PLAN.md) | Phased plan (Phase 0 law → evidence → AR-default UX) | SUPPORTING |
 | [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md) | What may change in `App/AR/**` without a new issue | FROZEN |
 | [REAL_WALK_TO_AR_MAPPING.md](REAL_WALK_TO_AR_MAPPING.md) | Walk/demo → `ARWorldCommand` lifecycle | OBSERVED |

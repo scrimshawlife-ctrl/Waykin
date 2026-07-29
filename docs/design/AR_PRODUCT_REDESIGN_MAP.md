@@ -13,6 +13,7 @@ constraint: "Respect current architecture; do not break the repo"
 related:
   - docs/plans/AR_APP_REDESIGN_PLAN.md
   - docs/design/AR_SYSTEM_INVENTORY.md
+  - docs/design/AR_SESSION_IA_CONFLICTS.md
   - docs/design/AR_MVP_FREEZE.md
   - docs/design/REAL_WALK_TO_AR_MAPPING.md
   - WAYKIN_SPEC.md
@@ -279,12 +280,17 @@ Session Summary → Memory → Home
 - Importing AR frameworks into `WaykinCore`
 - Claiming outdoor AR PASS from simulator alone
 
+## 13b. Session IA conflicts (summary)
+
+Active Session today is **2D-rooted** with AR as optional cover. AR-designed product inverts root/fallback. Full register: [`AR_SESSION_IA_CONFLICTS.md`](AR_SESSION_IA_CONFLICTS.md) (C1–C11: law vs tree, exclusive Lira, dual covers, a11y spine, pocket vs eyes-up, authority deadlock).
+
 ## 14. Related documents (full web)
 
 | Topic | Doc |
 | ----- | --- |
 | Phased execution | [`../plans/AR_APP_REDESIGN_PLAN.md`](../plans/AR_APP_REDESIGN_PLAN.md) |
 | File inventory | [`AR_SYSTEM_INVENTORY.md`](AR_SYSTEM_INVENTORY.md) |
+| Session IA conflicts | [`AR_SESSION_IA_CONFLICTS.md`](AR_SESSION_IA_CONFLICTS.md) |
 | Freeze | [`AR_MVP_FREEZE.md`](AR_MVP_FREEZE.md) |
 | Walk→AR | [`REAL_WALK_TO_AR_MAPPING.md`](REAL_WALK_TO_AR_MAPPING.md) |
 | UI modality | [`WAYKIN_UIUX_SPEC.md`](WAYKIN_UIUX_SPEC.md) |

@@ -102,6 +102,8 @@ Binding docs no longer define Waykin as audio-first; AR is primary **designed** 
 
 **Requires:** Phase 0 merged + GitHub issue unfreezing **UX-only** items (not new mechanics).
 
+**IA conflicts to close:** [`../design/AR_SESSION_IA_CONFLICTS.md`](../design/AR_SESSION_IA_CONFLICTS.md) (especially C2 exclusive Lira, C3 session root, C4 map modality, C9 fallback).
+
 | ID | Task | Constraint |
 | -- | ---- | ---------- |
 | P2.1 | Default present AR when capability available at walk start (or stronger primary CTA) | Mirrored Pause/End; no swipe-dismiss trap (#126) |
@@ -202,7 +204,8 @@ Phase 4 only if product ratifies
 ## References
 
 - Map: [`../design/AR_PRODUCT_REDESIGN_MAP.md`](../design/AR_PRODUCT_REDESIGN_MAP.md)  
-- Inventory: [`../design/AR_SYSTEM_INVENTORY.md`](../design/AR_SYSTEM_INVENTORY.md)  
+- Inventory: [`../design/AR_SYSTEM_INVENTORY.md`](../design/AR_SYSTEM_INVENTORY.md)
+- Session IA conflicts: [`../design/AR_SESSION_IA_CONFLICTS.md`](../design/AR_SESSION_IA_CONFLICTS.md)  
 - Freeze: [`../design/AR_MVP_FREEZE.md`](../design/AR_MVP_FREEZE.md)  
 - Walk mapping: [`../design/REAL_WALK_TO_AR_MAPPING.md`](../design/REAL_WALK_TO_AR_MAPPING.md)  
 - UIUX: [`../design/WAYKIN_UIUX_SPEC.md`](../design/WAYKIN_UIUX_SPEC.md)  
