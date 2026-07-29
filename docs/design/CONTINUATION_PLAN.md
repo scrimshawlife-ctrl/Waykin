@@ -64,7 +64,7 @@ Remaining value is **documentation accuracy**, **fresh automated baseline**, and
 ```text
 FREEZE LANE (do not skip)
 1. Re-baseline current documentation          ← done on docs/current-main-rebaseline
-2. Validate post–Ember Fox lineage → receipt  ← POST_EMBER_FOX_BASELINE_* 
+2. Validate post–Ember Fox lineage → receipt  ← POST_EMBER_FOX_BASELINE_*
 3. Merge freeze docs to main (write-access gate)
 4. Stop feature/redesign work on other branches that predate the freeze tip
 
@@ -101,7 +101,7 @@ git diff --check
 | Validate | OVERALL PASS (package tests + WaykinApp) |
 | Version | Info.plist **0.9.0** / **2** (revalidate before RC claim) |
 
-Pre-mesh Phase A receipt (historical): `docs/design/receipts/PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md`  
+Pre-mesh Phase A receipt (historical): `docs/design/receipts/PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md`
 **Re-run Phase A** on current tip before archive/device install claims.
 
 ## Phase B — Indoor Ember Fox smoke (human, ~15 min)
@@ -116,8 +116,8 @@ Protocol: [INDOOR_AR_HYBRID_SMOKE.md](INDOOR_AR_HYBRID_SMOKE.md)
 6. Share field-test JSON (schema ≥ 5); no coordinates.
 7. Fill a tip-bound PENDING receipt; `evidence_class: OBSERVED` (note indoor).
 
-Historical scaffold (artist-blend era, not current install target):  
-`docs/design/receipts/INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md`  
+Historical scaffold (artist-blend era, not current install target):
+`docs/design/receipts/INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md`
 **Does not close #41.**
 
 ## Phase C — Internal TestFlight (human; gated)
@@ -139,7 +139,7 @@ Protocol: [OUTDOOR_SESSION_PACKET.md](OUTDOOR_SESSION_PACKET.md) + issue #41.
 3. Report **mesh/runtime** evidence separately from **world-event** evidence (pressure curve from #248 changes variety reachability, not density intent).
 4. Silhouette, plant/replant, authored walk in sun, continuity, audio, thermal.
 
-Historical outdoor scaffold: `docs/design/receipts/OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md`  
+Historical outdoor scaffold: `docs/design/receipts/OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md`
 Create a new tip-bound scaffold when walking `7df3a16` or later.
 
 ## Explicit non-goals
@@ -178,5 +178,5 @@ Create a new tip-bound scaffold when walking `7df3a16` or later.
 
 ---
 
-**Live board:** [ACTIVE_WORK.md](../collaboration/ACTIVE_WORK.md)  
+**Live board:** [ACTIVE_WORK.md](../collaboration/ACTIVE_WORK.md)
 **Parked backlog:** [DEFERRED_RECOMMENDATIONS.md](DEFERRED_RECOMMENDATIONS.md)

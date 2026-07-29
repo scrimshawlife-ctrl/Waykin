@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scaffold indoor AR hybrid smoke receipt + run automated pre-device gates.
+# Scaffold indoor Ember Fox AR smoke receipt + run automated pre-device gates.
 # Does NOT claim outdoor or device AR quality.
 set -euo pipefail
 
@@ -14,7 +14,7 @@ RECEIPT_DIR="docs/design/receipts"
 mkdir -p "$RECEIPT_DIR"
 RECEIPT="${RECEIPT_DIR}/INDOOR_AR_HYBRID_SMOKE_${STAMP}_${SHA}_PENDING.md"
 
-echo "=== Waykin Indoor AR hybrid smoke prep ==="
+echo "=== Waykin Indoor Ember Fox AR smoke prep ==="
 echo "sha: $FULL"
 
 PASS_USDZ=FAIL
@@ -33,7 +33,7 @@ set -e
 if [ "$VAL_EXIT" -eq 0 ]; then PASS_VALIDATE=PASS; fi
 
 cat > "$RECEIPT" <<EOF
-# Indoor AR hybrid smoke receipt (PENDING human device)
+# Indoor Ember Fox AR smoke receipt (PENDING human device)
 
 \`\`\`yaml
 document_id: WAYKIN-INDOOR-AR-HYBRID-SMOKE-RECEIPT
@@ -43,8 +43,10 @@ git_short: $SHA
 device_model:         # fill on device
 ios:                 # fill
 operator:            # fill
-evidence_class: NOT_COMPUTABLE   # change to OBSERVED_INDOOR_DEVICE when walk done
+evidence_class: NOT_COMPUTABLE   # change to OBSERVED when walk done (note indoor in device fields)
 outdoor_qa: NOT_COMPUTABLE
+companion_runtime: MESHY_EMBER_FOX_WALK_V1
+visual_reference: docs/design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md
 protocol: docs/design/INDOOR_AR_HYBRID_SMOKE.md
 status: PENDING_HUMAN_DEVICE
 \`\`\`
@@ -55,23 +57,33 @@ status: PENDING_HUMAN_DEVICE
 | ----- | ------ |
 | make check-lira-usdz | $PASS_USDZ |
 | make validate | $PASS_VALIDATE |
+| installed tip SHA | $FULL |
 
-## Device results I1–I12
+## Visual gold standard
+
+Compare to Prabu device still:
+- \`docs/design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md\`
+- \`docs/design/receipts/evidence/IMG_2534_prabu_ember_fox_device.png\`
+- Expect authored fox mesh, not procedural spheres; \`animated_usdz\` when follow/anim live.
+
+## Device results I1–I14
 
 | ID | Check | Result | Notes |
 | -- | ----- | ------ | ----- |
-| I1 | Cold launch → Home | | |
-| I2 | Demo Begin Walk + operator strip | | |
-| I3 | AR full-screen cover + Pause/End | | |
-| I4 | Plant Lira on table/floor | | |
-| I5 | Motion dcc/hybrid/puppet | | label: |
-| I6 | State motion change | | |
-| I7 | Lens cover / tracking loss | | |
-| I8 | Leave AR clean | | |
-| I9 | Re-open single entity | | |
-| I10 | Reduce Motion | | |
-| I11 | Skin swap if available | | |
-| I12 | Receipt share arPresentation | | |
+| I1 | Cold launch / clean install | | |
+| I2 | Session start; persistence healthy | | |
+| I3 | AR full-screen + Pause/End | | |
+| I4 | Procedural fallback only during load | | timing: |
+| I5 | Ember Fox replaces fallback | | match Prabu look? |
+| I6 | Single companion after replace | | anchor count: |
+| I7 | Height / ground contact | | |
+| I8 | Skeleton animation | | strip labels: |
+| I9 | Stationary pause / idle | | |
+| I10 | Closing distance / follow anim | | |
+| I11 | Plant / replant / interrupt / background | | |
+| I12 | End session + arPresentation receipt | | schema: |
+| I13 | Audio under intended policy | | |
+| I14 | No severe hitch / thermal / re-decode | | |
 
 ## Failures → new bounded issues
 
@@ -81,13 +93,14 @@ status: PENDING_HUMAN_DEVICE
 
 - Outdoor #41 COH / glare
 - GPS integrity
-- Battery / thermal (unless filled)
+- Battery / thermal PASS (unless OBSERVED rows filled)
+- Closing #247 without this tip's SHA recorded
 
 ## Operator
 
-1. Install Debug build of \`$SHA\` on a physical iPhone.
-2. Follow \`docs/design/INDOOR_AR_HYBRID_SMOKE.md\`.
-3. Fill I1–I12; set \`evidence_class: OBSERVED_INDOOR_DEVICE\` if completed.
+1. Install Debug build of exact tip \`$FULL\` on a physical iPhone (\`git pull\` first; do not assume a stale short SHA).
+2. Follow \`docs/design/INDOOR_AR_HYBRID_SMOKE.md\` v2 (Ember Fox).
+3. Fill I1–I14; set \`evidence_class: OBSERVED\` if completed on named device (note indoor in device fields). Never use \`OBSERVED_INDOOR_DEVICE\`.
 4. PR the filled receipt (do not claim outdoor PASS).
 EOF
 

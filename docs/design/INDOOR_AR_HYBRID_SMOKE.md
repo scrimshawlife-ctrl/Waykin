@@ -18,8 +18,8 @@ depends_on:
 
 **Purpose:** Confirm on a **physical iPhone indoors** that the **Ember Fox** packaged runtime loads, replaces any procedural fallback, animates the skeleton, and recovers cleanly — without claiming outdoor glare, GPS, or #41 COH PASS.
 
-**Visual gold standard (Prabu device test):** companion should read as the stylized fox mesh in  
-[`receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md`](receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md)  
+**Visual gold standard (Prabu device test):** companion should read as the stylized fox mesh in
+[`receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md`](receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md)
 ([evidence PNG](receipts/evidence/IMG_2534_prabu_ember_fox_device.png)) — **not** procedural multi-sphere placeholder. Operator strip should show authored `animated_usdz` (or equivalent) with animation playing when follow is active.
 
 **Who:** Human with Debug (or Release + `-WAYKIN_OPERATOR_DEBUG`) build on tip `main` **≥ `b17864e`** (PR #246).
@@ -71,14 +71,14 @@ Install **exact** tip. Do not mix SHAs mid-session.
 
 ## 2. Operator chrome
 
-- DEBUG build: operator strip ON during Active Session  
-- Settings → Field-test receipts → after AR session end, **Share latest JSON**  
+- DEBUG build: operator strip ON during Active Session
+- Settings → Field-test receipts → after AR session end, **Share latest JSON**
 - Confirm receipt schema ≥ 5 and inspect:
 
-  - `summary.arPresentation.arSessionOpened`  
-  - `finalLODDescription` / `meshEvidenceClass` (expect Ember Fox / `MESHY_EMBER_FOX_WALK_V1` class when authored path ran)  
-  - `motionDiagnosticsLine` (skeleton / authored walk when live)  
-  - `continuityReplantCount`, `companionPlaced`  
+  - `summary.arPresentation.arSessionOpened`
+  - `finalLODDescription` / `meshEvidenceClass` (expect Ember Fox / `MESHY_EMBER_FOX_WALK_V1` class when authored path ran)
+  - `motionDiagnosticsLine` (skeleton / authored walk when live)
+  - `continuityReplantCount`, `companionPlaced`
 
 - Console.app: subsystem `life.scrimshaw.waykin`, category `ar`
 
@@ -131,11 +131,11 @@ Legacy I-series IDs from v1.0 (DCC motion labels) are retired for new walks; his
 
 ## 5. Evidence rules
 
-- `OBSERVED` only for direct device sight  
-- Indoor ≠ outdoor glare  
-- FAIL → **new bounded defect issue** (do not sidewalk-edit product under freeze)  
-- Do not close #41 from this packet  
-- Issue **#247** (TF hold) may close only when authored mesh replacement is OBSERVED on the archive tip  
+- `OBSERVED` only for direct device sight
+- Indoor ≠ outdoor glare
+- FAIL → **new bounded defect issue** (do not sidewalk-edit product under freeze)
+- Do not close #41 from this packet
+- Issue **#247** (TF hold) may close only when authored mesh replacement is OBSERVED on the archive tip
 
 ---
 

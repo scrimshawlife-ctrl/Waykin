@@ -5,7 +5,7 @@ document_id: WAYKIN-INDOOR-AR-HYBRID-SMOKE-RECEIPT
 date_utc: 2026-07-29T19:15:00Z
 git_sha: 7df3a169ede507ce54469330318f66c4603f8c3d
 git_short: 7df3a16
-code_lineage_note: app binary from main 7df3a16 (Ember Fox #246 + pressure #248)
+code_lineage_note: app binary from main 7df3a16 (Ember Fox #246 + pressure #248); after #249 merge install current main HEAD not this parent short alone
 freeze_docs_pr: 249
 device_model:         # fill on device
 ios:                 # fill
@@ -16,7 +16,7 @@ companion_runtime: MESHY_EMBER_FOX_WALK_V1
 visual_reference: docs/design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md
 protocol: docs/design/INDOOR_AR_HYBRID_SMOKE.md
 status: PENDING_HUMAN_DEVICE
-note: Prefer install main tip after PR #249 merges (or ≥ 7df3a16 with same mesh/runtime). When filled set evidence_class OBSERVED (indoor); never invent outdoor PASS.
+note: After #249 merges, git pull and install exact HEAD. Scaffold name pins code lineage for prep only. When filled set evidence_class OBSERVED (note indoor); never use OBSERVED_INDOOR_DEVICE; never invent outdoor PASS.
 ```
 
 ## Automated pre-device gates

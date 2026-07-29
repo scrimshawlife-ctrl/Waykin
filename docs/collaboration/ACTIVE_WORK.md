@@ -23,8 +23,9 @@ Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline
 
 | Field | Value |
 |---|---|
-| `main` tip (full) | `7df3a169ede507ce54469330318f66c4603f8c3d` |
-| `main` tip (short) | `7df3a16` |
+| Code lineage (app/mesh binary) | `7df3a169ede507ce54469330318f66c4603f8c3d` (`7df3a16`) — Ember Fox #246 + pressure #248 |
+| Freeze docs PR | [#249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) — docs-only on top of code lineage; **after merge**, `main` tip moves to the freeze merge commit |
+| Install / device / #247 SHA rule | Always `git pull` then record **`git rev-parse HEAD`** of the install build. Do **not** treat `7df3a16` as the post-freeze archive tip once #249 lands — use the **current `main` tip** at install time |
 | Current companion | Packaged **Ember Fox** USDZ (`MESHY_EMBER_FOX_WALK_V1`) |
 | Mesh integration authority | [PR #246](https://github.com/scrimshawlife-ctrl/Waykin/pull/246) (`b17864e`) |
 | Mesh runtime | Versioned asynchronous template loading; procedural fallback; live authored replacement; scene-owned anchors explicitly removed |
@@ -54,11 +55,11 @@ Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline
 
 ## Operator order (human)
 
-1. **Re-baseline validate** on tip `7df3a16` (or later main) → new Phase A / post–Ember Fox receipt.
-2. **Connect iPhone** → install Debug tip `7df3a16` → indoor Ember Fox smoke (fallback → authored replace, single anchor, skeleton walk) → `evidence_class: OBSERVED` (note indoor).
-3. Confirm #247 can close only with **device** evidence that the authored mesh replaced the procedural fallback.
+1. **Merge freeze docs #249**, then `git checkout main && git pull --ff-only` and record **exact HEAD**.
+2. **Connect iPhone** → install Debug of **that HEAD** (not a remembered parent short SHA) → indoor Ember Fox smoke (fallback → authored replace, single anchor, skeleton walk; match Prabu visual ref) → `evidence_class: OBSERVED` (note indoor).
+3. Confirm #247 can close only with **device** evidence on the **exact install SHA** that the authored mesh replaced the procedural fallback.
 4. **Archive Release** only after #247 hold lifts and validate PASS on archive SHA; re-check marketing/build if prior candidate was already uploaded.
-5. **Daylight outdoor #41** on same tip when free; COH only with OBSERVED device rows. Mesh/runtime rows and world-event rows stay separate.
+5. **Daylight outdoor #41** on the same install SHA when free; COH only with OBSERVED device rows. Mesh/runtime rows and world-event rows stay separate.
 
 ## Intake
 

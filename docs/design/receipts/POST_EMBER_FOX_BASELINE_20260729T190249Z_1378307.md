@@ -3,7 +3,8 @@
 ```yaml
 document_id: WAYKIN-POST-EMBER-FOX-BASELINE
 date_utc: 2026-07-29T19:02:49Z
-evidence_class: OBSERVED_LAPTOP
+evidence_class: OBSERVED
+environment: laptop
 status: PASS
 code_lineage_main: 7df3a169ede507ce54469330318f66c4603f8c3d
 docs_branch_sha: 1378307884e10558cdc40ce33c2f93e8e214bd33
@@ -12,6 +13,7 @@ companion_runtime: MESHY_EMBER_FOX_WALK_V1
 mesh_authority_pr: 246
 gameplay_pressure_pr: 248
 freeze_intent: FREEZE_ENGINEERING_BASELINE_THEN_BUILD_ON_TOP
+whitespace_note: initial freeze-range commits had trailing-whitespace; fixed in follow-up commit before freeze merge
 ```
 
 ## Purpose
@@ -68,7 +70,8 @@ make validate-simulator
 | `swift test` / package | **PASS** | **133** tests, 0 failures |
 | Native `WaykinApp` build | **PASS** | Best-effort in validate |
 | `make validate` OVERALL | **PASS** | package + generation |
-| `git diff --check` | **PASS** | No whitespace errors on tracked changes |
+| `git diff --check` (initial freeze commits) | **FAIL** (corrected) | Trailing whitespace in docs/READMEs on range vs main; **fixed** in follow-up commit — re-run `git diff --check origin/main...HEAD` before merge |
+| `git diff --check` (post-fix tip) | **Required green** | Must PASS on freeze tip before archive claims |
 | `validate-simulator` | **PASS** | App build + UI tests (see below) |
 | UI tests (`WaykinUITests`) | **PASS** | 13 executed, 1 skipped, 0 failures |
 | Physical indoor smoke (full I1–I14) | **NOT_COMPUTABLE** | Human device on freeze tip |
@@ -127,5 +130,5 @@ NEXT LANES ONLY AFTER FREEZE DOCS MERGE:
 
 ---
 
-**Live board:** `docs/collaboration/ACTIVE_WORK.md`  
+**Live board:** `docs/collaboration/ACTIVE_WORK.md`
 **Continuation:** `docs/design/CONTINUATION_PLAN.md` (freeze-then-build)

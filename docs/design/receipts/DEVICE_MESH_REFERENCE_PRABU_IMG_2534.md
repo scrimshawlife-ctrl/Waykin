@@ -88,16 +88,16 @@ ok_present
 
 When running indoor Ember Fox smoke on the freeze tip, compare:
 
-1. Companion silhouette / style ≈ this reference (fox, not spheres).  
-2. Operator strip shows `animated_usdz` (or equivalent authored class) and animation playing when moving/follow.  
+1. Companion silhouette / style ≈ this reference (fox, not spheres).
+2. Operator strip shows `animated_usdz` (or equivalent authored class) and animation playing when moving/follow.
 3. Single companion after load/replace.
 
 Mismatch → narrow defect issue; do not replace mesh without an asset issue.
 
 ## Explicit non-claims
 
-- Does not by itself close #41.  
-- Does not authorize TF archive without tip-bound SHA confirmation.  
+- Does not by itself close #41.
+- Does not authorize TF archive without tip-bound SHA confirmation.
 - Does not promote redesign docs or product-law changes.
 
 ---

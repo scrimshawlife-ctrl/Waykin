@@ -8,9 +8,9 @@ mesh_authority_pr: 246
 supersedes: ARTIST_BLEND_HERO_DCC_MID_LOD
 ```
 
-Primary: `App/Resources/Lira_AR_Base.usdz` (bundled via xcodegen)  
-Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`  
-Docs mirror: `docs/assets/companion/ar/Lira_AR_Base.usdz`  
+Primary: `App/Resources/Lira_AR_Base.usdz` (bundled via xcodegen)
+Mirror: `App/Resources/Companion/Lira/Lira_AR_Base.usdz`
+Docs mirror: `docs/assets/companion/ar/Lira_AR_Base.usdz`
 
 Current runtime package is the **Ember Fox** walk USDZ shipped by **PR #246**. The three tracked copies must remain **byte-identical**.
 
@@ -24,7 +24,7 @@ Do **not** re-import or replace this mesh without an explicit asset issue. Close
 make check-lira-usdz
 ```
 
-Marker: `docs/assets/companion/ar/artist/EXPORT_OK` — `MESHY_EMBER_FOX_WALK_V1`.  
+Marker: `docs/assets/companion/ar/artist/EXPORT_OK` — `MESHY_EMBER_FOX_WALK_V1`.
 Validation: `usdchecker --arkit` PASS on package (see EXPORT_OK).
 
 ## Runtime
