@@ -14,7 +14,7 @@ Do not invent values like `OBSERVED_INDOOR_DEVICE` — use `OBSERVED` and note i
 | Marketing / build (in tree) | **0.9.0 (2)** — revalidate; TF archive held by #247 |
 | Phase A (laptop, post-mesh) | `POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md` — **PASS** laptop validate (code lineage `7df3a16`) |
 | Phase A (pre-mesh, historical) | `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` — **PASS on `3cc8ac2` only** |
-| Indoor human | Re-scaffold on install tip; prior `*_3cc8ac2_PENDING` is **historical** |
+| Indoor human | `INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md` — **PENDING** (Ember Fox; Prabu visual ref) |
 | Outdoor human | Re-scaffold on install tip; prior `*_3cc8ac2_PENDING` is **historical** |
 
 Older `*_PENDING.md` scaffolds for prior SHAs are **historical / superseded** for new walks; keep for history only. Do not rewrite their original SHAs.
@@ -45,10 +45,9 @@ OUTDOOR_QA_RECEIPT_<DATE>_<SHORT_SHA>_PENDING.md
 | ---- | ------ |
 | `DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md` | **Visual gold standard** — Prabu device photo; authored fox + `animated_usdz`; install SHA **not** on image |
 | `evidence/IMG_2534_prabu_ember_fox_device.png` | Converted still from `IMG_2534.heic` |
+| `INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md` | **Current** indoor scaffold — fill on freeze tip / `7df3a16` lineage |
 | `INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md` | **Historical** (artist-blend / pre-Ember Fox install target) |
 | Protocol | `../INDOOR_AR_HYBRID_SMOKE.md` (Ember Fox checks) |
-
-Create a new tip-bound indoor PENDING receipt when installing `7df3a16` or later.
 
 ## Phase A (laptop / sim)
 
