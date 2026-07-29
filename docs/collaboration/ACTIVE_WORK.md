@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-25 (main `d7954ac` — Phase A PASS; device + TF human lane)
+Last updated: 2026-07-29 (main `7df3a16` — Ember Fox mesh/runtime on main via #246; real-walk pressure curve via #248)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,59 +10,73 @@ Last updated: 2026-07-25 (main `d7954ac` — Phase A PASS; device + TF human lan
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — daylight re-walk on tip `d7954ac` (or ≥ `3cc8ac2` with same binary identity) | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · [OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md](../design/receipts/OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md) |
-| Indoor AR hybrid smoke | Human device | **Armed** — Phase A PASS; fill PENDING on install tip | [INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md](../design/receipts/INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md) · protocol [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) |
-| Internal TestFlight RC | Human (signing / ASC) | **Ready to archive** — marketing **0.9.0** / build **2**; laptop validate PASS | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md) · [PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md](../design/receipts/PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md) |
+| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — daylight re-walk on tip `7df3a16` (post–Ember Fox) | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · re-scaffold outdoor receipt on this tip |
+| Indoor Ember Fox smoke | Human device | **Armed** — package/runtime on main; fill device receipt on install tip | Protocol [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · prior scaffolds on `3cc8ac2` are **historical** |
+| Issue #247 — TF archive hold | Product / dist | **Open hold** — do not archive TestFlight **0.9.0 (2)** until device confirms authored mesh replaces procedural fallback on post-#246 tip | [#247](https://github.com/scrimshawlife-ctrl/Waykin/issues/247) |
+| Internal TestFlight RC | Human (signing / ASC) | **Blocked on #247 + fresh validate** — marketing still **0.9.0** / build **2** in tree; revalidate version/build before any archive | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md) |
+| PR #245 AR redesign docs | Docs lane | **Open supporting** — do **not** merge stale branch; recover docs onto current `main` (see continuation plan Workstream E) | [#245](https://github.com/scrimshawlife-ctrl/Waykin/pull/245) |
 
 ## Tip identity
 
 | Field | Value |
 |---|---|
-| `main` tip (full) | `d7954ac44000da76f53ee687ebb26fed9dcfeeca` |
-| `main` tip (short) | `d7954ac` |
-| Marketing / build | **0.9.0 (2)** |
-| Phase A validate SHA | `3cc8ac2` (ancestor; app version + binary same; tip adds docs only via #239) |
-| Open product issues | [#41](https://github.com/scrimshawlife-ctrl/Waykin/issues/41) only |
-| Open PRs | Prefer none; board is device/TF human lane |
+| `main` tip (full) | `7df3a169ede507ce54469330318f66c4603f8c3d` |
+| `main` tip (short) | `7df3a16` |
+| Current companion | Packaged **Ember Fox** USDZ (`MESHY_EMBER_FOX_WALK_V1`) |
+| Mesh integration authority | [PR #246](https://github.com/scrimshawlife-ctrl/Waykin/pull/246) (`b17864e`) |
+| Mesh runtime | Versioned asynchronous template loading; procedural fallback; live authored replacement; scene-owned anchors explicitly removed |
+| Gameplay tuning (not AR impl) | Real-walk pressure curve — [PR #248](https://github.com/scrimshawlife-ctrl/Waykin/pull/248) |
+| Superseded mesh PRs | [#242](https://github.com/scrimshawlife-ctrl/Waykin/pull/242) and [#243](https://github.com/scrimshawlife-ctrl/Waykin/pull/243) **closed**; do not merge |
+| Marketing / build (in tree) | **0.9.0 (2)** — **revalidate** before retaining as RC; #247 holds archive |
+| Last pre-mesh Phase A receipt | `3cc8ac2` / tip `d7954ac` era — **historical**; re-run validate on current tip |
+| Open implementation issues | [#41](https://github.com/scrimshawlife-ctrl/Waykin/issues/41), [#247](https://github.com/scrimshawlife-ctrl/Waykin/issues/247) (re-query at execution; do not assume “#41 only”) |
+| Open PRs (non-mesh) | #245 (docs redesign, supporting), #244 (license) — treat as separate lanes |
 
 ## Recently completed (main)
 
 | Work | Evidence |
 |---|---|
-| Coordination doc sync to tip | PR #240 · main `d7954ac` |
-| Phase A + device/TF handoff receipts | PR #239 · `7089b5d` |
-| TF cut SHA pin | PR #238 · `3cc8ac2` |
+| Real-walk event pressure on real distances | PR #248 · main `7df3a16` |
+| Ember Fox package + load/replace/anchor/animation runtime | PR #246 · `b17864e` |
+| Coordination doc sync (pre-mesh tip) | PR #240 · `d7954ac` — **historical tip pin** |
+| Phase A + device/TF handoff receipts (artist-blend era) | PR #239 · `7089b5d` — **historical** |
+| TF cut SHA pin (artist-blend era) | PR #238 · `3cc8ac2` — **historical** |
 | Marketing 0.9.0 (2) + board + indoor scaffold | PR #237 · `2d969a0` |
-| Hallmark UI polish (Trail featured, single state chip, LiraMaterial tokens, left-bias, WaykinDisplay titles) | PR #236 · `d9d1df7` |
+| Hallmark UI polish | PR #236 · `d9d1df7` |
 | Session double-End receipt/bond guard | PR #235 · `dc54694` |
 | Audio cue family + lifecycle + AR presentation audio | PRs #230–#234 |
-| DCC bake / composition / artist mid-LOD | PRs #222–#226 |
+| Artist-blend / DCC mid-LOD (now superseded as runtime default) | PRs #222–#226 — **historical package**; not current runtime |
 | Privacy manifest + encryption | PRs #215 / #219 |
 | Persistence WP-DB1–DB5 | PRs #185–#192 |
 
 ## Operator order (human)
 
-1. **Connect iPhone** → install Debug tip `d7954ac` → indoor I1–I12 → `evidence_class: OBSERVED` (note indoor).
-2. **Archive Release** tip → Internal Testing (0.9.0 / 2) — re-run `make validate` if tip moved past Phase A receipt.
-3. **Daylight outdoor #41** on same tip when free; COH only with OBSERVED device rows.
+1. **Re-baseline validate** on tip `7df3a16` (or later main) → new Phase A / post–Ember Fox receipt.
+2. **Connect iPhone** → install Debug tip `7df3a16` → indoor Ember Fox smoke (fallback → authored replace, single anchor, skeleton walk) → `evidence_class: OBSERVED` (note indoor).
+3. Confirm #247 can close only with **device** evidence that the authored mesh replaced the procedural fallback.
+4. **Archive Release** only after #247 hold lifts and validate PASS on archive SHA; re-check marketing/build if prior candidate was already uploaded.
+5. **Daylight outdoor #41** on same tip when free; COH only with OBSERVED device rows. Mesh/runtime rows and world-event rows stay separate.
 
 ## Intake
 
 | Work | Reason |
 |---|---|
-| Device Motion chrome after plant (`dcc` / clip ids) | Indoor smoke + #41 |
-| Smooth companion follow polish | Field-tune if needed after #217 |
+| Ember Fox indoor smoke (replace, single companion, skeleton anim) | Device lane after #246 |
+| Outdoor #41 on Ember Fox tip | Mesh + world-event evidence separate |
+| Recover #245 redesign docs on current main | Docs only; SUPPORTING authority |
+| Phase 0 product-law AR vs audio identity | Before AR session redesign PRs |
+| Smooth companion follow polish | Field-tune only after device evidence |
 | WP-DB6 CloudKit evaluation ADR | Only if multi-device restore required |
-| Optional DM Sans / extra SVG icons | Dedicated issue only |
+| Per-state animation clips on Ember Fox skeleton | Incremental; preserve base mesh |
 | Orc / FutureSelf cleanup | Migration issue + Codable tests |
 
 ## Blocked
 
 | Work | Reason | Required resolution |
 |---|---|---|
-| Indoor smoke OBSERVED | Needs physical iPhone | Connect device; fill indoor PENDING receipt |
-| #41 outdoor COH PASS | Device + daylight | Outdoor packet + COH; do not invent PASS from sim |
-| TestFlight upload | Human Apple signing / ASC | Organizer archive of tip with 0.9.0 (2) |
+| Indoor smoke OBSERVED (post-mesh) | Needs physical iPhone on tip ≥ `b17864e` | Install tip; fill Ember Fox indoor receipt |
+| #41 outdoor COH PASS | Device + daylight on post-mesh tip | Outdoor packet + COH; do not invent PASS from sim |
+| TestFlight archive 0.9.0 (2) | Issue #247 hold + code moved past pre-mesh Phase A | Device mesh replacement evidence; fresh validate; revalidate version/build |
 
 ## Field-test JSON (agents)
 
@@ -76,14 +90,17 @@ See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md).
 
 - Pathfinding v2, Health v2, Watch, AI Directors RC, multi-companion
 - Marketplace / multiplayer
+- Broad AR UX redesign until binding docs are reconciled (Phase 0)
 
 ## Merge hygiene
 
 ```text
-Main tip: d7954ac · version 0.9.0 (2)
+Main tip: 7df3a16 · companion: Ember Fox (MESHY_EMBER_FOX_WALK_V1)
 Ruleset: 1 write-access approving review required
-Do not reintroduce Meshy walk as default Lira_AR_Base.usdz
-Do not claim outdoor PASS without #41 device receipt
+Do not re-import or replace the Ember Fox mesh without an explicit asset issue
+Do not merge closed PRs #242 or #243 (superseded by #246)
+Do not force-merge stale branches onto main
+Do not claim outdoor PASS without #41 device receipt on the tested SHA
 ```
 
 ## UI authority (quick)

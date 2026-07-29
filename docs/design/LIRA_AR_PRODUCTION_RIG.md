@@ -2,38 +2,43 @@
 
 ```yaml
 document_id: WAYKIN-LIRA-AR-RIG-001
-version: 0.6
-status: ARTIST_BLEND_HERO_DCC_MID_LOD_SHIPPED
-usdz: ARTIST_BLEND_HERO_DCC_MID_LOD
+version: 0.7
+date: 2026-07-29
+status: MESHY_EMBER_FOX_WALK_V1_SHIPPED
+usdz: MESHY_EMBER_FOX_WALK_V1
+mesh_authority_pr: 246
 mesh_descriptor: SHIPPED
-runtime_animation_clips: SHIPPED_PUPPET_STATIC_MESH
-skeletal_joint_hierarchy: PROMOTED_MARKERS
-blender_armature_rigid_bind: REFERENCE_ONLY
-direction: spectral_living_familiar
-evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
-source_mesh: ArtSource/Companion/Lira/meshy/Meshy_Lira_ImageTo3D_Textured.usdz
-armature: puppet_markers_plus_optional_prior_LiraArmature
-puppet_style: staticMesh_body_plus_spectral_fx
-spectral_fx: A2_CoreGlow_A3_Filament_GroundShadow
+runtime_animation: EMBEDDED_WALK_ON_SKELETON
+procedural_fallback: SHIPPED_BOUNDED_LOAD_ONLY
+supersedes: ARTIST_BLEND_HERO_DCC_MID_LOD
+direction: spectral_living_familiar_with_ember_fox_package
+evidence_class: MESHY_EMBER_FOX_WALK_V1
+armature: meshy_auto_skin_12_joints
 ```
 
-## What shipped
+## Current runtime (PR #246)
 
 | Layer | Implementation | Status |
 | ----- | -------------- | ------ |
 | Session 2D | Spectral still matrix 7×3 | DIRECTION_ACCEPTED |
-| AR mid-LOD | Procedural Living Familiar (`CompanionEntityFactory`) | **Shipped** (fallback) |
-| AR mesh primitives | `LiraMeshGeometry` (tapered head, sensor blades, filament segments) | **Shipped** (fallback) |
-| AR local motion | `LiraARMotion` multi-seg filament, ears/tail, body bob, hunter echo | **Shipped** |
-| AR runtime clips | `LiraARAnimationLibrary` (`AnimationResource` FromToBy) | **Shipped** |
-| AR skeletal puppet | `LiraSkeletalAnimationLibrary` + `LiraSkeletalPlayer` | **Shipped** (entity-bind) |
-| AR USDZ load | `LiraARAssetLoader` + hierarchy **promote** for incomplete meshes | **Wired** |
-| AR USDZ asset | `App/Resources/Lira_AR_Base.usdz` | **ARTIST_BLEND_HERO_DCC_MID_LOD** (~4.8 MB; armature + DCC clips) |
-| Blender armature | `LiraArmature` 25 bones | **Shipped** (`build_lira_armature.py`) |
-| Heat-map skin | Auto-weights Body/Head/ears/legs; FX rigid | **Shipped** (`skin_lira_armature.py`) |
-| Artist source | `ArtSource/Companion/Lira/lira.blend` | Export: `scripts/export_lira_blend_to_usdz.sh` |
-| Generated fallback | `docs/assets/companion/ar/src/Lira_AR_Base.usda` | `scripts/build_lira_usdz.sh` |
-| Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Mid-LOD + armature |
+| Packaged AR companion | Ember Fox `Lira_AR_Base.usdz` (triple-mirrored) | **Current default** |
+| Async template load | Versioned load + live authored replacement | **Shipped** (#246) |
+| Procedural Living Familiar | `CompanionEntityFactory` | **Bounded fallback only** |
+| Anchor cleanup | Scene-owned anchors explicitly removed on replace/clear | **Shipped** |
+| Animation | Embedded walk cycle → skeleton target | **Shipped** |
+| Per-state DCC sidecars | Six clip USDZs still bundled | Present; not bound while authored walk is active |
+| AR USDZ load path | `LiraARAssetLoader` | **Shipped** |
+| Superseded package | Artist-blend / DCC mid-LOD | **Historical** — not active runtime |
+| Superseded mesh PRs | #242 / #243 | **Closed** — do not merge |
+| Animation plan | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Incremental clips without base-mesh replace |
+
+### Historical (superseded as default)
+
+| Layer | Note |
+| ----- | ---- |
+| Artist-blend package | Was ~4.8–5.3 MB `ARTIST_BLEND_HERO_DCC_MID_LOD`; retired as runtime default by #246 |
+| Puppet / promote markers | Still used for incomplete meshes and fallback paths |
+| Blender export scripts | Remain for future compatible rigs; do not overwrite Ember Fox without an issue |
 
 ## Anchors (required)
 
