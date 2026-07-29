@@ -9,6 +9,8 @@ authority: SUPPORTING
 maturity: NEAR_TERM
 evidence_class: CODE_AND_DOC_AUDIT
 operator_intent: "No longer audio-first; design for AR"
+north_star: docs/design/PRODUCT_VISION_NORTH_STAR.md
+ladder: docs/canonical/MVP_TO_VISION_LADDER.md
 constraint: "Respect current architecture; do not break the repo"
 related:
   - docs/plans/AR_APP_REDESIGN_PLAN.md
@@ -22,6 +24,16 @@ related:
   - docs/canonical/CURRENT_CAPABILITY_MATRIX.md
   - docs/governance/DOCUMENT_AUTHORITY.md
 ```
+
+## 0. North star vs this map
+
+| Doc | Horizon |
+| ---- | ------- |
+| [`PRODUCT_VISION_NORTH_STAR.md`](PRODUCT_VISION_NORTH_STAR.md) | **Eventual:** AR companion on walks/runs/rides + fitness; worldbuilding; user-designed companions & experiences |
+| [`../canonical/MVP_TO_VISION_LADDER.md`](../canonical/MVP_TO_VISION_LADDER.md) | Gated rungs R0–R8 from MVP → north star |
+| **This map** | **Near-term only:** AR-designed **walk** MVP (R1), architecture-preserving |
+
+This map is **chapter one**, not the full vision.
 
 ## 1. Purpose
 
@@ -291,6 +303,8 @@ Active Session today is **2D-rooted** with AR as optional cover. AR-designed pro
 | Phased execution | [`../plans/AR_APP_REDESIGN_PLAN.md`](../plans/AR_APP_REDESIGN_PLAN.md) |
 | File inventory | [`AR_SYSTEM_INVENTORY.md`](AR_SYSTEM_INVENTORY.md) |
 | Session IA conflicts | [`AR_SESSION_IA_CONFLICTS.md`](AR_SESSION_IA_CONFLICTS.md) |
+| North star vision | [`PRODUCT_VISION_NORTH_STAR.md`](PRODUCT_VISION_NORTH_STAR.md) |
+| MVP → vision ladder | [`../canonical/MVP_TO_VISION_LADDER.md`](../canonical/MVP_TO_VISION_LADDER.md) |
 | Freeze | [`AR_MVP_FREEZE.md`](AR_MVP_FREEZE.md) |
 | Walk→AR | [`REAL_WALK_TO_AR_MAPPING.md`](REAL_WALK_TO_AR_MAPPING.md) |
 | UI modality | [`WAYKIN_UIUX_SPEC.md`](WAYKIN_UIUX_SPEC.md) |

@@ -15,3 +15,5 @@ Persistence implementation is sequenced as WP-DB1 through WP-DB6. CloudKit remai
 | [../design/AR_PRODUCT_REDESIGN_MAP.md](../design/AR_PRODUCT_REDESIGN_MAP.md) | Master redesign map |
 | [../design/AR_SYSTEM_INVENTORY.md](../design/AR_SYSTEM_INVENTORY.md) | System inventory |
 | [../design/AR_SESSION_IA_CONFLICTS.md](../design/AR_SESSION_IA_CONFLICTS.md) | Session IA conflicts |
+| [../design/PRODUCT_VISION_NORTH_STAR.md](../design/PRODUCT_VISION_NORTH_STAR.md) | North-star vision |
+| [../canonical/MVP_TO_VISION_LADDER.md](../canonical/MVP_TO_VISION_LADDER.md) | MVP → vision ladder |

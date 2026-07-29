@@ -13,6 +13,11 @@ constraint: "Do not break Core isolation, freeze discipline, determinism, or saf
 
 ## Goal
 
+Near-term goal is **R1** on the [`MVP → vision ladder`](../canonical/MVP_TO_VISION_LADDER.md): AR-designed **walk** companion.
+Long-term destination: [`PRODUCT_VISION_NORTH_STAR.md`](../design/PRODUCT_VISION_NORTH_STAR.md) (multi-activity, fitness, worldbuilding, creators) — **not** implemented by this plan alone.
+
+## Goal (plan scope)
+
 Redesign Waykin as an **AR-designed walking companion app** while **preserving** the existing architecture:
 
 - movement = gameplay authority  

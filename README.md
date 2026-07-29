@@ -85,7 +85,7 @@ Demo Mode runs the same deterministic loop without physical movement or location
 | Multiplayer, marketplace, LiveOps | 🔒 Deferred | Outside current scope |
 | Generalized AI Director | 🔒 Future reference | Not current implementation authority |
 
-See the complete [`Current Capability Matrix`](docs/canonical/CURRENT_CAPABILITY_MATRIX.md). AR redesign planning: [`AR Product Redesign Map`](docs/design/AR_PRODUCT_REDESIGN_MAP.md).
+See the complete [`Current Capability Matrix`](docs/canonical/CURRENT_CAPABILITY_MATRIX.md). AR redesign planning: [`AR Product Redesign Map`](docs/design/AR_PRODUCT_REDESIGN_MAP.md). Long-term vision: [`North Star`](docs/design/PRODUCT_VISION_NORTH_STAR.md) · [`MVP → Vision Ladder`](docs/canonical/MVP_TO_VISION_LADDER.md).
 
 ## Quick Start
 

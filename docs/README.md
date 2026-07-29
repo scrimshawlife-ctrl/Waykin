@@ -33,6 +33,8 @@ Waykin documentation is organized by **authority**, **maturity**, and **evidence
 | [`plans/AR_APP_REDESIGN_PLAN.md`](plans/AR_APP_REDESIGN_PLAN.md) | Phased AR-app redesign plan (law → evidence → UX) — supporting |
 | [`design/AR_SYSTEM_INVENTORY.md`](design/AR_SYSTEM_INVENTORY.md) | File-level AR system inventory — supporting |
 | [`design/AR_SESSION_IA_CONFLICTS.md`](design/AR_SESSION_IA_CONFLICTS.md) | Active Session IA conflicts (C1–C11) — supporting |
+| [`design/PRODUCT_VISION_NORTH_STAR.md`](design/PRODUCT_VISION_NORTH_STAR.md) | Long-term vision (multi-activity, fitness, worldbuilding, creators) — **REFERENCE_ONLY** |
+| [`canonical/MVP_TO_VISION_LADDER.md`](canonical/MVP_TO_VISION_LADDER.md) | Gated ladder MVP → north star (R0–R8) — supporting |
 | [`../KNOWN_LIMITATIONS.md`](../KNOWN_LIMITATIONS.md) | Validated, partial, deferred, and `NOT_COMPUTABLE` gates |
 
 ## Engineering
