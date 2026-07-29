@@ -52,7 +52,41 @@ final class LiraARAssetLoader {
         guard let authoredController else { return false }
         return authoredController.isPlaying
     }
-    private var template: Entity?
+
+    /// Pause or resume the authored clip.
+    ///
+    /// The packaged fox ships a single walk cycle. Looping it unconditionally means she
+    /// treads on the spot while standing still, which reads as broken rather than idle —
+    /// so the renderer runs it only while she is actually covering ground.
+    private(set) var isAuthoredAnimationIntentionallyPaused = false
+    /// Per-state clips authored for the packaged fox rig, keyed by companion state.
+    /// Empty until `Fox_<State>.usdz` sidecars are added; the embedded walk cycle covers
+    /// every state until then.
+    private(set) var foxStateClips: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource] = [:]
+    /// Which state the authored clip is currently expressing, so a repeat request for the
+    /// same state does not restart it mid-stride.
+    private var authoredClipState: LiraSkeletalAnimationLibrary.ClipID?
+
+    func setAuthoredAnimationPaused(_ paused: Bool) {
+        isAuthoredAnimationIntentionallyPaused = paused
+        guard let authoredController, authoredController.isValid else { return }
+        if paused {
+            if authoredController.isPlaying { authoredController.pause() }
+        } else if !authoredController.isPlaying {
+            authoredController.resume()
+        }
+    }
+    /// Increments whenever the packaged template changes (loaded, replaced, cleared).
+    ///
+    /// The companion is spawned as soon as the game asks, which is routinely before a
+    /// ~19MB rig has finished decoding — so the first companion is the procedural
+    /// placeholder. Continuity then reports `ok_present` and never re-plants, leaving the
+    /// placeholder on screen for the whole session while the real asset sits loaded and
+    /// unused. The renderer compares this against the generation it spawned with.
+    private(set) var templateGeneration: Int = 0
+    private var template: Entity? {
+        didSet { templateGeneration &+= 1 }
+    }
     var skin: LiraSkin = .dawn
 
     /// Load optional artist USDZ. Safe to call repeatedly.
@@ -79,22 +113,11 @@ final class LiraARAssetLoader {
             // a single arbitrary clip forever, silently discarding the state-driven set.
             let clipCount = Self.animationClipCount(loaded)
             if Self.animationHost(loaded) != nil, !Self.hasRequiredNodes(loaded) {
-                let animatedRoot = Self.adoptAnimatedHierarchy(loaded, skin: skin)
-                guard Self.hasRequiredNodes(animatedRoot) else {
-                    clearTemplate(reason: .procedural, note: "animated_hierarchy_invalid")
-                    return
-                }
-                if let body = animatedRoot.findEntity(named: "Body") {
-                    // Scale an inner node rather than Body itself: per-frame local motion
-                    // resets Body.scale to 1 for static-mesh puppets, which would silently
-                    // undo height normalization. (Root scale is owned by `makeLira`.)
-                    let target = body.children.first(where: { Self.hasModelGeometry($0) }) ?? body
-                    Self.normalizeVisualHeight(target, targetHeightMeters: 0.72)
-                }
-                if Self.isAuthoredBodyStaticMesh(animatedRoot) {
-                    Self.plantBodyOnGround(animatedRoot)
-                    Self.layoutSpectralFXAnchors(on: animatedRoot)
-                }
+                // Wrap, scale, ground — nothing else. Renaming the export's container,
+                // injecting marker nodes and scaling the node the clip writes to are all
+                // steps built for the primitive companion; on an authored rig they are
+                // opportunities to mangle it. Measure the asset once and place it.
+                let animatedRoot = Self.adoptAnimatedRigMinimally(loaded)
                 template = animatedRoot
                 source = .usdz(url.lastPathComponent)
                 preserveAuthoredMaterials = true
@@ -104,7 +127,8 @@ final class LiraARAssetLoader {
                 // walk cycle, which reads on device as gliding rather than walking.
                 authoredRigOwnsPose = true
                 authoredClips = Self.collectAnimations(animatedRoot)
-                loadNote = "usdz_active_animated_skelanim:clips=\(clipCount)"
+                let foxMapped = await loadFoxStateClips()
+                loadNote = "usdz_active_animated_skelanim:clips=\(clipCount);fox_states=\(foxMapped)"
                 return
             }
 
@@ -199,8 +223,26 @@ final class LiraARAssetLoader {
         return mapped.count
     }
 
+    /// Load `Fox_<State>.usdz` sidecars authored against the packaged fox rig.
+    /// Returns how many states resolved. Safe when none are present.
+    @discardableResult
+    func loadFoxStateClips(
+        urls: [(baseName: String, url: URL)] = LiraARAssetCatalog.foxClipUSDZURLs
+    ) async -> Int {
+        var mapped: [LiraSkeletalAnimationLibrary.ClipID: AnimationResource] = [:]
+        for (baseName, url) in urls {
+            guard let id = Self.clipID(matchingBaseName: baseName),
+                  let entity = try? await Self.loadEntity(from: url),
+                  let (_, clip) = Self.preferredAuthoredClip(in: entity) else { continue }
+            mapped[id] = clip
+        }
+        foxStateClips = mapped
+        return mapped.count
+    }
+
     /// Map export basename (`Lira_Idle`) → skeletal clip id.
     static func clipID(matchingBaseName name: String) -> LiraSkeletalAnimationLibrary.ClipID? {
+        // `Fox_Idle` and `Lira_Idle` both resolve to `.idle`; the suffix is what matters.
         let key = name.lowercased()
         if key.contains("idle") { return .idle }
         if key.contains("follow") { return .follow }
@@ -351,6 +393,75 @@ final class LiraARAssetLoader {
         return nil
     }
 
+    /// Place an authored animated rig with the fewest possible touches.
+    ///
+    /// The rig arrives correct — measured 0.72m, textured, with a valid skeleton — and
+    /// every extra step is a chance to break it. So: wrap it in a clean root that nothing
+    /// animates, scale that wrapper to the canonical height, and sit it on the ground.
+    /// No renaming of the export's own containers, no injected marker nodes, and crucially
+    /// no scaling of the node the clip writes transform keys to.
+    static func adoptAnimatedRigMinimally(
+        _ loaded: Entity,
+        targetHeightMeters: Float = 0.72
+    ) -> Entity {
+        let root = Entity()
+        root.name = CompanionEntityFactory.rootName
+        // A wrapper the animation never touches, so height survives playback.
+        let scaler = Entity()
+        scaler.name = "Body"
+        root.addChild(scaler)
+        scaler.addChild(loaded)
+
+        let bounds = loaded.visualBounds(relativeTo: scaler)
+        let sourceHeight = max(bounds.extents.y, 0.0001)
+        let factor = targetHeightMeters / sourceHeight
+        if factor.isFinite, factor > 0, abs(factor - 1) > 0.01 {
+            scaler.scale = SIMD3<Float>(repeating: factor)
+        }
+        // Centre horizontally and rest the lowest point on y=0.
+        let scaled = loaded.visualBounds(relativeTo: scaler)
+        loaded.position = [
+            -scaled.center.x,
+            -(scaled.center.y - scaled.extents.y * 0.5),
+            -scaled.center.z,
+        ]
+
+        // Empty semantic markers so `hasRequiredNodes` and the presentation lookups still
+        // resolve. These carry no geometry, so they cannot obscure the rig — it was the
+        // spectral FX *meshes* hung off them that buried the authored mesh, not the
+        // transforms themselves.
+        let markerOffsets: [String: SIMD3<Float>] = [
+            "Head": SIMD3(0, 0.42, 0.10),
+            "LeftEar": SIMD3(-0.10, 0.50, 0.04),
+            "RightEar": SIMD3(0.10, 0.50, 0.04),
+            "Tail": SIMD3(0, 0.18, -0.28),
+            "Filament": SIMD3(0, 0.28, -0.20),
+            "CoreGlow": SIMD3(0, 0.32, 0.12),
+            "GroundShadow": SIMD3(0, 0.01, 0),
+            "StatusIndicator": SIMD3(0, 0.58, 0),
+        ]
+        for name in CompanionEntityFactory.requiredNodeNames where root.findEntity(named: name) == nil {
+            let marker = Entity()
+            marker.name = name
+            if let offset = markerOffsets[name] { marker.position = offset }
+            root.addChild(marker)
+        }
+        if root.findEntity(named: "CoreHalo") == nil {
+            let halo = Entity()
+            halo.name = "CoreHalo"
+            halo.position = SIMD3(0, 0.34, 0.12)
+            root.addChild(halo)
+        }
+        if root.findEntity(named: LiraARMotion.hunterEchoNodeName) == nil {
+            let echo = Entity()
+            echo.name = LiraARMotion.hunterEchoNodeName
+            echo.position = SIMD3(0.04, 0.28, -0.08)
+            echo.isEnabled = false
+            root.addChild(echo)
+        }
+        return root
+    }
+
     /// Adopt a skinned/animated USDZ **without moving any geometry**.
     ///
     /// `promoteIncompleteHierarchy` reparents meshes under a fresh `Body`, which breaks
@@ -420,8 +531,32 @@ final class LiraARAssetLoader {
     /// re-parents the entity on each re-plant, which stops any running animation. Prefers
     /// the entity's own library and falls back to the resources captured at load, since a
     /// clone may not carry them.
+    /// Play the clip for a companion state, falling back to the embedded walk cycle when
+    /// no sidecar exists for it. Re-requesting the running state is a no-op.
+    func playAuthoredAnimation(
+        on entity: Entity,
+        for state: LiraSkeletalAnimationLibrary.ClipID
+    ) {
+        guard hasAuthoredAnimation else { return }
+        guard let clip = foxStateClips[state] else {
+            if authoredClipState != nil { authoredClipState = nil; playAuthoredAnimation(on: entity) }
+            else if authoredController == nil { playAuthoredAnimation(on: entity) }
+            return
+        }
+        guard authoredClipState != state else { return }
+        authoredClipState = state
+        isAuthoredAnimationIntentionallyPaused = false
+        let host = Self.preferredAuthoredClip(in: entity)?.0 ?? entity
+        authoredController = host.playAnimation(
+            clip.repeat(duration: .infinity),
+            transitionDuration: 0.25,
+            startsPaused: false
+        )
+    }
+
     func playAuthoredAnimation(on entity: Entity) {
         guard hasAuthoredAnimation else { return }
+        isAuthoredAnimationIntentionallyPaused = false
         // Ask for an explicitly unbounded repeat; the plain `repeat()` was observed
         // running a single cycle on this skeletal resource. A watchdog in the renderer
         // restarts it regardless, so this is belt-and-braces.

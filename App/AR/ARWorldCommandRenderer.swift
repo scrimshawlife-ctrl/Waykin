@@ -147,6 +147,7 @@ final class ARWorldCommandRenderer {
                 skeletalPlayer.clear()
                 return .deferred("companion")
             }
+            spawnedTemplateGeneration = assetLoader.templateGeneration
             diagnostics.record(replacing ? .entityReplaced : .entityCreated, detail: "companion")
             diagnostics.record(.placementSucceeded, detail: "companion")
             // Ambient skeletal clip for resolved state (spawn scale stays procedural).
@@ -255,6 +256,33 @@ final class ARWorldCommandRenderer {
     @discardableResult
     func maintainCompanionContinuity(in arView: ARView) -> Bool {
         guard registry.entity(for: Self.companionID) != nil else { return false }
+        // Upgrade a companion that was built before the packaged asset finished decoding.
+        // Without this the procedural placeholder stays for the whole session — continuity
+        // only ever reported `ok_present`, so the real rig was loaded but never shown.
+        if assetLoader.templateGeneration != spawnedTemplateGeneration {
+            let replacement = assetLoader.makeLira()
+            prepareSkeletalPlayback(on: replacement)
+            applyPresentation(for: companionState, to: replacement)
+            if placementResolver.place(
+                id: Self.companionID,
+                intent: SpatialIntent(
+                    placement: .groundPlane,
+                    distanceBand: .near,
+                    bearing: .ahead,
+                    scaleClass: .companion,
+                    persistence: .session
+                ),
+                entity: replacement,
+                in: arView
+            ) {
+                spawnedTemplateGeneration = assetLoader.templateGeneration
+                diagnostics.record(.entityReplaced, detail: "template_upgrade")
+                if assetLoader.hasAuthoredAnimation {
+                    assetLoader.playAuthoredAnimation(on: replacement)
+                }
+                return true
+            }
+        }
         let ok = placementResolver.ensureCompanionContinuity(
             id: Self.companionID,
             makeEntity: { [assetLoader] in assetLoader.makeLira() },
@@ -316,6 +344,8 @@ final class ARWorldCommandRenderer {
     private static let authoredAnimationWatchdogInterval: TimeInterval = 0.4
     private var authoredAnimationWatchdogElapsed: TimeInterval = 0
     private var skeletalWatchdogElapsed: TimeInterval = 0
+    /// Which packaged template the live companion was built from. `-1` = none placed.
+    private var spawnedTemplateGeneration: Int = -1
     /// Smoothed walker pace (m/s), estimated from camera movement.
     private var walkerSpeedEstimate: Float = 0
     private var lastCameraPosition: SIMD3<Float>?
@@ -371,7 +401,10 @@ final class ARWorldCommandRenderer {
         authoredAnimationWatchdogElapsed += delta
         guard authoredAnimationWatchdogElapsed >= Self.authoredAnimationWatchdogInterval else { return }
         authoredAnimationWatchdogElapsed = 0
-        guard !assetLoader.isAuthoredAnimationPlaying,
+        // A paused clip is not a stalled clip — restarting it here would defeat the
+        // movement gate and put her back to treading on the spot.
+        guard !assetLoader.isAuthoredAnimationIntentionallyPaused,
+              !assetLoader.isAuthoredAnimationPlaying,
               let companion = liveCompanionRoot(), companion.isEnabled else { return }
         assetLoader.playAuthoredAnimation(on: companion)
     }
@@ -471,6 +504,8 @@ final class ARWorldCommandRenderer {
         // until comfortably close. Without the gap between the two she hovers constantly.
         if gap > Self.followLeashMetersLira { isClosingDistance = true }
         if gap <= Self.followSettleMetersLira { isClosingDistance = false }
+        // One clip, used honestly: stride while covering ground, settle when arrived.
+        assetLoader.setAuthoredAnimationPaused(!isClosingDistance)
 
         guard isClosingDistance else {
             // Settled: hold position and simply turn to watch the walker.
@@ -621,6 +656,11 @@ final class ARWorldCommandRenderer {
         if shouldDriveSkeletal {
             skeletalPlayer.play(state: state, on: entity)
             // Hunter echo remains procedural; ambient joints owned by skeletal clips.
+            applyHunterEcho(to: entity, state: state, elapsed: localMotionElapsed)
+        } else if assetLoader.hasAuthoredAnimation {
+            // Authored rig: use the per-state fox clip when one exists, else keep the
+            // embedded walk cycle running.
+            assetLoader.playAuthoredAnimation(on: entity, for: LiraSkeletalAnimationLibrary.clip(for: state))
             applyHunterEcho(to: entity, state: state, elapsed: localMotionElapsed)
         } else if assetLoader.authoredRigOwnsPose {
             applyHunterEcho(to: entity, state: state, elapsed: localMotionElapsed)

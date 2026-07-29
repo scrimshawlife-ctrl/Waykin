@@ -21,6 +21,32 @@ enum LiraARAssetCatalog {
         "Lira_Spawn",
     ]
 
+    /// Per-state clips authored against the *packaged fox* rig.
+    ///
+    /// The `Lira_*` sidecars above target the retired 25-joint artist armature and share
+    /// **zero** joints with the fox, so they can never bind to it. The fox is rigged as a
+    /// standard humanoid — 19 of its 24 joints use Mixamo names — so any clip exported for
+    /// that skeleton drops straight in. Drop `Fox_<State>.usdz` into
+    /// `App/Resources/Companion/Lira/Clips/`, add it to `project.yml` resources, and the
+    /// loader binds it to that state automatically. Missing states fall back to the walk
+    /// cycle embedded in the base package, so a partial set is safe to ship.
+    static let foxClipBaseNames: [String] = [
+        "Fox_Idle",
+        "Fox_Follow",
+        "Fox_Investigate",
+        "Fox_Alert",
+        "Fox_Celebrate",
+        "Fox_Spawn",
+    ]
+
+    /// Fox per-state sidecar URLs present in the bundle. Empty until clips are added.
+    static var foxClipUSDZURLs: [(baseName: String, url: URL)] {
+        foxClipBaseNames.compactMap { name in
+            guard let url = dccClipUSDZURL(baseName: name) else { return nil }
+            return (name, url)
+        }
+    }
+
     /// Bundle URL for artist USDZ if present in the app package.
     static var baseUSDZURL: URL? {
         // Prefer nested path, then bundle root (xcodegen packages root Resources reliably).

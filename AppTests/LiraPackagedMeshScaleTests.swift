@@ -106,6 +106,45 @@ final class LiraPackagedMeshScaleTests: XCTestCase {
         XCTAssertLessThan(playing.extents.y, 1.60, "ballooned once playing: \(playing.extents.y) m")
     }
 
+    /// Replacing a companion must take the previous one out of the scene. Anchors added
+    /// with `scene.addAnchor` are owned by the scene, so `removeFromParent()` leaves them
+    /// rendered — the procedural placeholder kept standing in front of the packaged mesh.
+    func testReplacingACompanionRemovesThePreviousAnchorFromTheScene() throws {
+        let arView = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
+        let registry = AREntityRegistry()
+        let first = AnchorEntity(world: .zero)
+        first.addChild(CompanionEntityFactory().makeLira())
+        arView.scene.addAnchor(first)
+        registry.register(first, for: "companion")
+        XCTAssertEqual(arView.scene.anchors.count, 1)
+
+        let second = AnchorEntity(world: .zero)
+        second.addChild(CompanionEntityFactory().makeLira())
+        arView.scene.addAnchor(second)
+        registry.register(second, for: "companion")
+
+        print("WAYKIN_SCENE_ANCHORS after replace: \(arView.scene.anchors.count)")
+        XCTAssertEqual(arView.scene.anchors.count, 1, "stale companion left in the scene")
+        XCTAssertNil(first.scene, "previous anchor still attached")
+    }
+
+    /// The retired `Lira_*` sidecars target a 25-joint artist armature; the packaged fox
+    /// is a 24-joint humanoid. They share no joints, so they can never drive it — recorded
+    /// here so the next person does not spend an evening trying to make them bind.
+    func testRetiredArtistClipsCannotDriveTheFoxRig() async throws {
+        let (entity, loader) = try await loadedCompanion()
+        try XCTSkipUnless(loader.hasAuthoredAnimation, "packaged asset is not an authored rig")
+        await loader.loadDCCClipSidecars()
+        let player = LiraSkeletalPlayer()
+        _ = player.install(on: entity, externalDCC: loader.dccClipLibrary)
+        print("WAYKIN_FOX_STATE_CLIPS: \(loader.foxStateClips.count)")
+        print("WAYKIN_RETIRED_SIDECARS: \(loader.dccClipLibrary.count)")
+        XCTAssertTrue(
+            loader.hasAuthoredAnimation,
+            "the fox must keep driving itself rather than deferring to incompatible clips"
+        )
+    }
+
     func testPackagedCompanionSitsOnTheGroundPlane() async throws {
         let (entity, _) = try await loadedCompanion()
         let bounds = entity.visualBounds(relativeTo: nil)
