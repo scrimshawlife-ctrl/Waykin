@@ -96,8 +96,11 @@ Binding docs no longer define Waykin as audio-first; AR is primary **designed** 
 
 ### Exit criteria
 
-- No new outdoor PASS claim without receipt
-- Failures filed as defects (freeze allows defects)
+- **P1.2 indoor Ember Fox smoke** filled with tip-bound `evidence_class: OBSERVED` (or PARTIAL with filed defects) — not SKIPPED by default
+- **P1.3 outdoor #41** filled with tip-bound COH PASS/PARTIAL/FAIL (OBSERVED only) — not inventable from sim/indoor
+- No new outdoor PASS claim without outdoor receipt on the tested SHA
+- Failures filed as **narrow defects** (freeze allows defects; no broad redesign from a single FAIL)
+- Phase 1 does **not** exit while indoor and outdoor device rows remain NOT_COMPUTABLE without an explicit product waiver issue
 
 ---
 
@@ -105,7 +108,7 @@ Binding docs no longer define Waykin as audio-first; AR is primary **designed** 
 
 **Objective:** Product *feels* like an AR app when the device can do AR.
 
-**Requires:** Phase 0 merged + GitHub issue unfreezing **UX-only** items (not new mechanics).
+**Requires:** Phase 0 merged + **Phase 1 exit criteria met** (indoor smoke + outdoor #41 tip-bound receipts, or explicit waiver issue) + GitHub issue unfreezing **UX-only** items (not new mechanics).
 
 **IA conflicts to close:** [`../design/AR_SESSION_IA_CONFLICTS.md`](../design/AR_SESSION_IA_CONFLICTS.md) (especially C2 exclusive Lira, C3 session root, C4 map modality, C9 fallback).
 

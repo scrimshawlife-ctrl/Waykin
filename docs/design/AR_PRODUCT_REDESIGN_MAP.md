@@ -162,7 +162,8 @@ WaykinAppModel
 | Rule | Detail |
 | ---- | ------ |
 | Default | World-plane plant (ground raycast → `AnchorEntity`) |
-| Fallback | Camera-anchor if raycast fails |
+| Fallback 1 | If raycast fails: **assumed-ground** world anchor at estimated floor height (`ARPlacementResolver.placeCompanion`) |
+| Fallback 2 | If assumed-ground also fails: **camera-anchor** placement |
 | Continuity | Re-plant if missing / detached / > ~6 m from camera |
 | `.follow` | Local pose only — **not** continuous walker re-anchor |
 | Expansion | Continuous escort requires **new product issue + ADR** |
