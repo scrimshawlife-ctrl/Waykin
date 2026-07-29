@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-29 (main `7df3a16` — Ember Fox mesh/runtime on main via #246; real-walk pressure curve via #248)
+Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline on lineage `7df3a16`; no redesign until freeze merges)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,11 +10,13 @@ Last updated: 2026-07-29 (main `7df3a16` — Ember Fox mesh/runtime on main via 
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| Issue #41 — outdoor / physical validation | Human device | **Parked / PARTIAL** — daylight re-walk on tip `7df3a16` (post–Ember Fox) | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) · re-scaffold outdoor receipt on this tip |
-| Indoor Ember Fox smoke | Human device | **Armed** — package/runtime on main; fill device receipt on install tip | Protocol [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · prior scaffolds on `3cc8ac2` are **historical** |
-| Issue #247 — TF archive hold | Product / dist | **Open hold** — do not archive TestFlight **0.9.0 (2)** until device confirms authored mesh replaces procedural fallback on post-#246 tip | [#247](https://github.com/scrimshawlife-ctrl/Waykin/issues/247) |
-| Internal TestFlight RC | Human (signing / ASC) | **Blocked on #247 + fresh validate** — marketing still **0.9.0** / build **2** in tree; revalidate version/build before any archive | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md) |
-| PR #245 AR redesign docs | Docs lane | **Open supporting** — do **not** merge stale branch; recover docs onto current `main` (see continuation plan Workstream E) | [#245](https://github.com/scrimshawlife-ctrl/Waykin/pull/245) |
+| **Freeze: docs re-baseline + laptop receipt** | Docs / eng | **In progress** — branch `docs/current-main-rebaseline`; receipt `POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md`; merge before build-on-top | [CONTINUATION_PLAN.md](../design/CONTINUATION_PLAN.md) |
+| Indoor Ember Fox smoke | Human device | **Armed after freeze merge** — install freeze tip; fill device receipt | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) |
+| Issue #41 — outdoor / physical validation | Human device | **Parked** until freeze tip is install target | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
+| Issue #247 — TF archive hold | Product / dist | **Open hold** — no TF archive until authored mesh OBSERVED on freeze lineage | [#247](https://github.com/scrimshawlife-ctrl/Waykin/issues/247) |
+| Internal TestFlight RC | Human (signing / ASC) | **Blocked** — freeze + #247 + fresh validate first | [TESTFLIGHT_RC_CHECKLIST.md](../design/TESTFLIGHT_RC_CHECKLIST.md) |
+| PR #245 AR redesign docs | Docs lane | **Parked behind freeze** — SUPPORTING only; recover onto freeze tip later; do **not** merge stale branch | [#245](https://github.com/scrimshawlife-ctrl/Waykin/pull/245) |
+| AR session redesign PRs / Phase 0 law | — | **Not started** — build-on-top only after freeze + device honesty | Continuation plan steps 9–12 |
 
 ## Tip identity
 

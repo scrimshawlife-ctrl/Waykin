@@ -4,8 +4,8 @@
 document_id: WAYKIN-CONTINUATION-001
 version: 5.0
 date: 2026-07-29
-status: STABILIZE_REBASELINE_DEVICE_EVIDENCE
-goal: docs_rebaseline_then_validate_then_indoor_ember_fox_then_outdoor_41
+status: FREEZE_BASELINE_THEN_BUILD_ON_TOP
+goal: freeze_docs_and_laptop_baseline_then_device_only_then_optional_redesign
 outdoor_qa: PARKED_SEE_DEFERRED_RECOMMENDATIONS
 ar_status: MAINTENANCE_PLUS_APPROVED_MESH_RUNTIME_ONLY
 ui_package: Waykin-Design/11_Approved-Exports/CANDIDATE_v0.2/
@@ -59,19 +59,29 @@ Remaining value is **documentation accuracy**, **fresh automated baseline**, and
 | TF 0.9.0 (2) + board (pre-mesh) | #237 · `2d969a0` |
 | Pre-mesh cut SHA + Phase A + board sync | #238–#240 · tip `d7954ac` — **historical tip** |
 
-## Safe sequence (campaign)
+## Safe sequence (campaign) — freeze first, then build
 
 ```text
-1. Re-baseline current documentation          ← this refresh
-2. Validate current main → fresh receipt
-3. Indoor Ember Fox smoke (device)
-4. Outdoor evidence walk (#41)
-5. Recover PR #245 docs onto current main (SUPPORTING)
-6. Phase 0 binding product-law reconciliation
-7. AR session shell in bounded PRs
-8. State animations incrementally (preserve base mesh)
-9. Internal TestFlight from validated SHA
+FREEZE LANE (do not skip)
+1. Re-baseline current documentation          ← done on docs/current-main-rebaseline
+2. Validate post–Ember Fox lineage → receipt  ← POST_EMBER_FOX_BASELINE_* 
+3. Merge freeze docs to main (write-access gate)
+4. Stop feature/redesign work on other branches that predate the freeze tip
+
+DEVICE LANE (on frozen lineage only)
+5. Indoor Ember Fox smoke (device OBSERVED)
+6. Resolve or re-scope #247 (authored mesh on device)
+7. Outdoor evidence walk (#41)
+8. Internal TestFlight only after #247 + validate on archive SHA
+
+BUILD-ON-TOP LANE (only after freeze + device honesty)
+9. Recover PR #245 docs onto freeze tip (SUPPORTING; never merge stale branch)
+10. Phase 0 binding product-law reconciliation
+11. AR session shell in bounded PRs
+12. State animations incrementally (preserve base mesh)
 ```
+
+**Rule:** Do not start steps 9–12 until freeze docs are on `main` and device lanes are at least armed with tip-bound receipts. Prefer freezing release engineering over parallel redesign churn.
 
 ## Phase A — Pre-device gates (laptop)
 

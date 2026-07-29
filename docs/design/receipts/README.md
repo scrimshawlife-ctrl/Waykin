@@ -12,7 +12,7 @@ Do not invent values like `OBSERVED_INDOOR_DEVICE` — use `OBSERVED` and note i
 | Prefer install tip | `main` @ `7df3a16` (`7df3a169ede507ce54469330318f66c4603f8c3d`) |
 | Companion runtime | Packaged **Ember Fox** (`MESHY_EMBER_FOX_WALK_V1`) via PR #246 |
 | Marketing / build (in tree) | **0.9.0 (2)** — revalidate; TF archive held by #247 |
-| Phase A (laptop, post-mesh) | **Required** — create `POST_EMBER_FOX_BASELINE_*` or new `PHASE_A_PREDEVICE_*` on current tip |
+| Phase A (laptop, post-mesh) | `POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md` — **PASS** laptop validate (code lineage `7df3a16`) |
 | Phase A (pre-mesh, historical) | `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` — **PASS on `3cc8ac2` only** |
 | Indoor human | Re-scaffold on install tip; prior `*_3cc8ac2_PENDING` is **historical** |
 | Outdoor human | Re-scaffold on install tip; prior `*_3cc8ac2_PENDING` is **historical** |
