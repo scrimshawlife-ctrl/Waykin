@@ -2,25 +2,29 @@
 
 ```yaml
 document_id: WAYKIN-TESTFLIGHT-RC-001
-version: 1.1
-date: 2026-07-25
+version: 1.2
+date: 2026-07-29
 status: SUPPORTING
 authority: SUPPORTING
-parent_main_at_prep: d9d1df7ebb2dd458223f1c5ee2ab1787456c5635
-phase_a_validate_sha: 3cc8ac21a3bbe286486c551b04630b5531ec928c
-main_tip_at_doc_sync: d7954ac44000da76f53ee687ebb26fed9dcfeeca
-baseline_short: d7954ac
+parent_main_at_prep: 7df3a169ede507ce54469330318f66c4603f8c3d
+phase_a_validate_sha: REQUIRES_FRESH_POST_EMBER_FOX_RUN
+main_tip_at_doc_sync: 7df3a169ede507ce54469330318f66c4603f8c3d
+baseline_short: 7df3a16
+companion_runtime: MESHY_EMBER_FOX_WALK_V1
+mesh_authority_pr: 246
 marketing_version: "0.9.0"
 build_number: "2"
-validate_observed: PASS_LOCAL_20260725T194535Z_3cc8ac2
+marketing_note: revalidate_before_retaining_as_rc
+validate_observed: HISTORICAL_PASS_LOCAL_20260725T194535Z_3cc8ac2_PRE_MESH
 outdoor_gate: ISSUE_41_OPEN
+archive_hold: ISSUE_247_OPEN
 ```
 
 **Purpose:** Prepare an internal TestFlight release candidate without claiming outdoor AR/GPS PASS or App Store public launch readiness.
 
 **Authority:** Supporting engineering checklist. Does not override `docs/SOLO_MVP_SCOPE.md`, `KNOWN_LIMITATIONS.md`, or issue #41 evidence rules.
 
-**Note (2026-07-25):** Marketing **0.9.0** / build **2** is on main. Phase A `make validate` **PASS** on `3cc8ac2` (receipt `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2`). Main tip `d7954ac` adds docs only after that SHA — same app version. Prefer archiving **current `main` tip** after `git pull`; re-run validate if **code** moved past Phase A.
+**Note (2026-07-29):** Marketing **0.9.0** / build **2** remains in tree. Code has moved past the pre-mesh Phase A on `3cc8ac2` / tip `d7954ac`: Ember Fox mesh/runtime is on main via **#246**, pressure tuning via **#248**. Pre-mesh validate PASS is **historical only**. Prefer archiving **current `main` tip** after `git pull` and a **fresh** `make validate`. Issue **#247** holds archive until device evidence shows the authored companion replaces the procedural placeholder.
 
 **Who:** Human with Apple Developer Program access for signing, App Store Connect, and upload. Agent can run automated gates and fill OBSERVED/NOT_COMPUTABLE rows.
 
@@ -30,13 +34,14 @@ outdoor_gate: ISSUE_41_OPEN
 
 | Field | Value at cut |
 | ----- | ------------ |
-| Recommended archive tip | Current `main` (`d7954ac` at doc sync; pull first) |
-| Phase A validate SHA | `3cc8ac21a3bbe286486c551b04630b5531ec928c` |
-| Cut date (UTC) | 2026-07-25 |
+| Recommended archive tip | Current `main` (`7df3a16` at doc sync; pull first) |
+| Phase A validate SHA | **Fill at cut** — must be post–Ember Fox (`≥ b17864e`); do not reuse `3cc8ac2` PASS |
+| Cut date (UTC) | |
 | Branch | `main` |
-| Marketing / build | **0.9.0 (2)** |
-| `make validate` | **PASS** local 2026-07-25T19:45:22Z on `3cc8ac2` (130 package tests + WaykinApp) |
-| Open product blockers | #41 outdoor COH still open — ship only as **internal** TF with known limitations |
+| Marketing / build | **0.9.0 (2)** in tree — revalidate; bump build if already uploaded |
+| Companion package | Ember Fox `Lira_AR_Base.usdz` (`MESHY_EMBER_FOX_WALK_V1`) present in archive |
+| `make validate` | **Fill at cut** (pre-mesh PASS on `3cc8ac2` is historical only) |
+| Open product blockers | #41 outdoor COH open; **#247** holds archive until authored mesh on device; internal TF only |
 | Dirty tree | Only intentional RC commits |
 
 If tip moves after this doc’s baseline, re-run section 2 and rewrite the SHA rows.
@@ -91,14 +96,16 @@ git diff --check
 | Gate | Required | Result (fill) |
 | ---- | -------- | ------------- |
 | core isolation | PASS | |
-| lira usdz (Meshy ≤ soft budget) | PASS | |
+| lira usdz (Ember Fox integrity + triple match) | PASS | |
 | collaboration coordination | PASS | |
 | make validate (package + native best-effort) | PASS | |
 | git diff --check | PASS | |
 | validate-simulator | Recommended if UI changed since last TF | |
 | CI on cut commit (GitHub Actions) | PASS | |
 
-**Baseline OBSERVED (2026-07-25 on `3cc8ac2`):** isolation PASS, usdz PASS (`ARTIST_BLEND_HERO_DCC_MID_LOD`, ~5.3 MB + 6 DCC sidecars), collab PASS, validate PASS (130 package tests + WaykinApp native build).
+**Historical baseline (2026-07-25 on `3cc8ac2`, pre-mesh):** isolation PASS, usdz PASS (`ARTIST_BLEND_HERO_DCC_MID_LOD`, ~5.3 MB + 6 DCC sidecars), collab PASS, validate PASS (130 package tests + WaykinApp native build). **Not valid for post-#246 archive.**
+
+**Current expectation (tip ≥ `b17864e`):** usdz PASS with `MESHY_EMBER_FOX_WALK_V1`, triple byte-identical packages (~20 MB under 20 MB hard cap), catalog evidence, integrity script green. Fill OBSERVED rows only after a fresh local run.
 
 ---
 
@@ -133,7 +140,7 @@ git diff --check
 | ---- | ------------------------ | -------------------- |
 | Demo walk | Completes; summary/memory; no location required | N/A |
 | Real walk | Permission honesty; pause when inactive/background | GPS quality still #41 |
-| AR | Plants/clears; freeze compliance; Meshy package loads or soft fallback | Outdoor COH #41 |
+| AR | Plants/clears; freeze compliance; Ember Fox replaces procedural fallback; single companion | Outdoor COH #41; #247 mesh on device |
 | Continuity | Indoor hybrid smoke preferred before TF wave | Outdoor re-walk after mitigations |
 | Path / map | Presentation-only; clears on end/fail | Outdoor map readability NOT_COMPUTABLE |
 | HealthKit | Optional; deny path still walks | Device auth/lifecycle evidence open |
@@ -250,10 +257,11 @@ Build SHA: <paste full SHA>
 - Companion Walk loop (Demo + real walk), Lira presence, Bond, semantic audio
 - Session map presentation (not navigation-grade)
 - Optional HealthKit step/distance enrichment
-- AR presentation with packaged Meshy Lira mid-LOD (freeze maintenance path)
+- AR presentation with packaged Ember Fox companion (freeze maintenance path; PR #246)
 
 ### Engineering / known limitations
 - Outdoor AR/GPS/audio quality: issue #41 — NOT_COMPUTABLE until daylight COH on this tip
+- Authored mesh vs procedural fallback: confirm on device before archive (#247)
 - Privacy notice still DRAFT_FOR_PRODUCT_REVIEW for public store
 - Local-first persistence only (no CloudKit)
 
@@ -285,16 +293,18 @@ Build SHA: <paste full SHA>
 | **BLOCKED** | Validate red; missing PrivacyInfo; wrong entitlements (e.g. background location added accidentally); no signing; critical crash on TF1–TF2 |
 | **NOT READY for public App Store** | Until product-reviewed legal URLs/policy, outdoor honesty narrative, and product sign-off beyond internal TF |
 
-### Baseline verdict (2026-07-25, tip `d7954ac` / Phase A `3cc8ac2`)
+### Baseline verdict (2026-07-29, tip `7df3a16` — docs re-baseline)
 
 | Dimension | Verdict |
 | --------- | ------- |
-| Engineering package/native validate | **READY** (PASS on `3cc8ac2`; re-run if code moves) |
-| Marketing / build | **0.9.0 (2)** on main |
+| Engineering package/native validate | **REQUIRES FRESH RUN** on tip ≥ `b17864e` (pre-mesh PASS on `3cc8ac2` is historical) |
+| Companion package | Ember Fox on main (#246); triple package integrity expected |
+| Marketing / build | **0.9.0 (2)** in tree — revalidate; bump if already uploaded |
 | Privacy manifest + encryption | **READY** (#215 / #219) |
 | Legal product review | **OPEN** (draft privacy for public store) |
 | Outdoor evidence | **Residual** (#41) |
-| TestFlight readiness | **READY for internal TF** once human signing + Organizer archive |
+| Mesh on device | **HOLD** (#247) until OBSERVED authored replacement |
+| TestFlight readiness | **BLOCKED** by #247 + fresh validate; then human signing + Organizer archive |
 | App Store public | **BLOCKED** pending legal review + product outdoor honesty + release decision |
 
 ---

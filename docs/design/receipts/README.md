@@ -5,24 +5,27 @@ Evidence files only. Do not invent OBSERVED results.
 **Evidence vocabulary:** `OBSERVED` · `INFERRED` · `NOT_COMPUTABLE` (see `AGENTS.md`).  
 Do not invent values like `OBSERVED_INDOOR_DEVICE` — use `OBSERVED` and note indoor in device fields.
 
-## Current tip (2026-07-25)
+## Current tip (2026-07-29)
 
 | Field | Value |
 | ----- | ----- |
-| Prefer install tip | `main` @ `d7954ac` (or ≥ `3cc8ac2` with 0.9.0 / 2) |
-| Marketing / build | **0.9.0 (2)** |
-| Phase A (laptop) | `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` — **PASS** |
-| Indoor human | `INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md` — **PENDING** |
-| Outdoor human | `OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md` — **PENDING** |
+| Prefer install tip | `main` @ `7df3a16` (`7df3a169ede507ce54469330318f66c4603f8c3d`) |
+| Companion runtime | Packaged **Ember Fox** (`MESHY_EMBER_FOX_WALK_V1`) via PR #246 |
+| Marketing / build (in tree) | **0.9.0 (2)** — revalidate; TF archive held by #247 |
+| Phase A (laptop, post-mesh) | `POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md` — **PASS** laptop validate (code lineage `7df3a16`) |
+| Phase A (pre-mesh, historical) | `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` — **PASS on `3cc8ac2` only** |
+| Indoor human | `INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md` — **PENDING** (Ember Fox; Prabu visual ref) |
+| Outdoor human | `OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md` — **PENDING** (post-mesh tip scaffold) |
 
-Older `*_PENDING.md` scaffolds for prior SHAs are **superseded** for new walks; keep for history only.
+Older `*_PENDING.md` scaffolds for prior SHAs are **historical / superseded** for new walks; keep for history only. Do not rewrite their original SHAs.
 
 ## Outdoor / physical
 
 | File | Status |
 | ---- | ------ |
-| `OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md` | **PARTIAL** historical operator notes (pre-mitigation). Not full COH PASS. |
-| `OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md` | **Current** outdoor scaffold — fill on daylight walk |
+| `OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md` | **PARTIAL** historical operator notes (pre-mitigation, pre-mesh). Not full COH PASS. |
+| `OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md` | **Current** outdoor scaffold — fill on daylight walk of freeze tip |
+| `OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md` | **Historical** outdoor scaffold for artist-blend tip era |
 | Template | `../OUTDOOR_QA_RECEIPT_TEMPLATE.md` |
 
 Outdoor filled copies should use:
@@ -31,19 +34,29 @@ Outdoor filled copies should use:
 OUTDOOR_QA_RECEIPT_YYYYMMDD_<device-model>.md
 ```
 
+or tip-bound:
+
+```text
+OUTDOOR_QA_RECEIPT_<DATE>_<SHORT_SHA>_PENDING.md
+```
+
 ## Indoor AR hybrid smoke
 
 | File | Status |
 | ---- | ------ |
-| `INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md` | **Current** indoor scaffold — fill on device |
-| Protocol | `../INDOOR_AR_HYBRID_SMOKE.md` |
+| `DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md` | **Visual gold standard** — Prabu device photo; authored fox + `animated_usdz`; install SHA **not** on image |
+| `evidence/IMG_2534_prabu_ember_fox_device.png` | Converted still from `IMG_2534.heic` |
+| `INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md` | **Current** indoor scaffold — fill on freeze tip / `7df3a16` lineage |
+| `INDOOR_AR_HYBRID_SMOKE_20260725T194535Z_3cc8ac2_PENDING.md` | **Historical** (artist-blend / pre-Ember Fox install target) |
+| Protocol | `../INDOOR_AR_HYBRID_SMOKE.md` (Ember Fox checks) |
 
 ## Phase A (laptop / sim)
 
 | File | Status |
 | ---- | ------ |
-| `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` | **PASS** validate on `3cc8ac2` (130 tests) |
+| `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` | **Historical PASS** validate on `3cc8ac2` (pre-mesh) |
 | Older `PHASE_A_PREDEVICE_*` | Historical |
+| Post–Ember Fox baseline | Create on validate of tip ≥ `b17864e` / `7df3a16` |
 
 ## Simulator preflight / engineering
 
@@ -57,6 +70,7 @@ See [`samples/`](samples/) — real sim export (schema 4) + synthetic schema **5
 
 - `OBSERVED` only from named device/build sessions.
 - PARTIAL outdoor AR receipt does **not** close Issue #41.
-- After mitigations (continuity, audio, Hallmark UI, DCC), re-walk on **current main tip** for COH PASS claims.
+- After mesh/runtime supersession (#246), re-walk on **current main tip** for COH PASS claims.
 - Do not treat `samples/*.json` as outdoor AR or device PASS.
 - Prefer newest tip-bound PENDING receipt when starting a new human session.
+- Historical receipts retain original SHAs; label them historical rather than rewriting.

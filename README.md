@@ -79,7 +79,8 @@ Demo Mode runs the same deterministic loop without physical movement or location
 | Deterministic Demo Mode | ✅ Implemented | Package-testable |
 | Local session memories | ✅ Implemented | Concise, privacy-bounded facts |
 | Real-walk Core Location wiring | 🟡 Validation | Outdoor GPS requires device receipts (#41) |
-| AR app adapter (MVP) | ✅ Implemented (frozen) | Presentation-only; outdoor tracking PARTIAL / re-walk |
+| AR app adapter (MVP) | ✅ Implemented (frozen) | Presentation-only; outdoor tracking PARTIAL / re-walk (#41) |
+| Packaged companion (Ember Fox) | ✅ Implemented (#246) | Async load + procedural fallback + live replace; device outdoor evidence still open |
 | Path progress + session map | ✅ Implemented | Semantic path, not navigation-grade |
 | HealthKit read enrichment | ✅ Implemented | Soft context; physical HK evidence open |
 | Multiplayer, marketplace, LiveOps | 🔒 Deferred | Outside current scope |
