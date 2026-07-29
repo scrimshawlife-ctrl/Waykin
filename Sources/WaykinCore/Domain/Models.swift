@@ -86,7 +86,16 @@ public struct WorldState: Codable, Equatable, Sendable {
         let durationEnergy = min(0.25, session.activeTime / 1200)
         let familiarity = min(1, session.distanceMeters / 2000)
         let idlePressure = session.movementState == .paused ? 0.18 : 0
-        let distancePressure = min(0.55, session.distanceMeters / 3000)
+        // Pressure built almost entirely from distance on a 3km scale, which put half the
+        // event vocabulary out of reach of an ordinary walk: `distantPresence` needed 720m,
+        // `pursuitBegins` 1080m, `pursuitIntensifies` 1650m. Field walks run 17-134m, so
+        // pursuit — a core pillar — had never once been reachable on device.
+        //
+        // Distance still leads, on a scale a real walk reaches, and a slow time component
+        // means even a short stroll develops some texture. Both stay individually capped so
+        // pressure remains bounded rather than a ramp toward punishment.
+        let distancePressure = min(0.45, session.distanceMeters / 1200)
+        let durationPressure = min(0.20, session.activeTime / 900)
         let fatiguePressure = session.activeTime > 900 ? 0.12 : 0
 
         return WorldState(
@@ -98,7 +107,7 @@ public struct WorldState: Codable, Equatable, Sendable {
             bondLevel: bondLevel,
             familiarity: familiarity,
             energy: min(1, movementEnergy + durationEnergy),
-            pressure: min(1, idlePressure + distancePressure + fatiguePressure),
+            pressure: min(1, idlePressure + distancePressure + durationPressure + fatiguePressure),
             lastEventAt: lastEventAt
         )
     }
