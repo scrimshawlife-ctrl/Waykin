@@ -2,6 +2,21 @@
 
 Visual system imports and production follow-ons for the app repository.
 
+## AR product redesign (SUPPORTING — recovered post-freeze)
+
+| Doc | Purpose | Class |
+| --- | ------- | ----- |
+| [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) | Master map: identity, architecture envelope, freeze rings, target IA | SUPPORTING / NEAR_TERM |
+| [AR_SYSTEM_INVENTORY.md](AR_SYSTEM_INVENTORY.md) | File-level AR / presentation inventory (Ember Fox runtime) | SUPPORTING |
+| [AR_SESSION_IA_CONFLICTS.md](AR_SESSION_IA_CONFLICTS.md) | Active Session IA conflicts (C1–C11) | SUPPORTING |
+| [PRODUCT_VISION_NORTH_STAR.md](PRODUCT_VISION_NORTH_STAR.md) | Long-term multi-activity / worldbuilding / creators vision | REFERENCE_ONLY / FUTURE |
+| [../canonical/MVP_TO_VISION_LADDER.md](../canonical/MVP_TO_VISION_LADDER.md) | Gated R0–R8 MVP → vision ladder | SUPPORTING |
+| [../plans/AR_APP_REDESIGN_PLAN.md](../plans/AR_APP_REDESIGN_PLAN.md) | Phased plan (Phase 0 law → evidence → AR-default UX) | SUPPORTING |
+
+**Authority:** these docs **do not** override binding product law or AR MVP freeze. Phase 0 binding edits are a separate PR. Implementation waits for freeze + device honesty (see CONTINUATION_PLAN).
+
+**Operator direction (intent):** design for **AR** as primary session surface when capable; movement remains gameplay authority; audio is supporting/fallback. Binding docs may still say audio-first until Phase 0.
+
 ## UI product vs engineering practice
 
 | Doc | Purpose | Class |
@@ -39,7 +54,7 @@ Visual system imports and production follow-ons for the app repository.
 | [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md) | AR mid-LOD + USDZ async load |
 | [LIRA_AR_SCULPT_PLAN.md](LIRA_AR_SCULPT_PLAN.md) | **Production sculpt** AR package (issue #220; replace Meshy interim) |
 | [LIRA_ANIMATION_PLAN.md](LIRA_ANIMATION_PLAN.md) | Session + AR animation draft plan |
-| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | v4.1 device evidence lane (indoor → TF → outdoor #41) |
+| [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) | Freeze-then-build continuation (device evidence → optional redesign) |
 | [AR_MVP_FREEZE.md](AR_MVP_FREEZE.md) | AR presentation frozen for engineering |
 | [REAL_WALK_TO_AR_MAPPING.md](REAL_WALK_TO_AR_MAPPING.md) | Real/demo walk → AR commands |
 | [PATHFINDING.md](PATHFINDING.md) | Semantic path progress + summary surfacing |
