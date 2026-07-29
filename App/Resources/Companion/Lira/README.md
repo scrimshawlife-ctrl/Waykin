@@ -1,7 +1,7 @@
 # Packaged Lira AR USDZ
 
 ```yaml
-evidence_class: ARTIST_BLEND_HERO_DCC_MID_LOD
+evidence_class: MESHY_EMBER_FOX_WALK_V1
 file: Lira_AR_Base.usdz
 runtime_size: ~4.8MB_artist_blend_dcc
 ```

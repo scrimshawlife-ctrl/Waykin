@@ -356,6 +356,13 @@ struct CanonicalARSessionView: View {
                         }
 
                         Button {
+                            // Publish before ending. `onEnd` writes the walk receipt
+                            // synchronously, while the AR snapshot was only published from
+                            // `detach` / `onDisappear` — which run *after* the cover
+                            // dismisses. Ending from inside AR therefore produced receipts
+                            // claiming `arSessionOpened: false` for walks that plainly used
+                            // AR, making every field diagnostic unusable.
+                            runtime.publishPresentationDiagnostics(to: appModel)
                             onEnd?()
                         } label: {
                             WKIconLabel(title: "End", icon: .stop)

@@ -21,6 +21,15 @@ final class LiraARAssetLoader {
     /// True when the packaged USDZ ships its own skeletal clip (UsdSkel walk cycle).
     /// The renderer must not install puppet clips over it, and `makeLira` loops it.
     private(set) var hasAuthoredAnimation = false
+    /// True when the semantic nodes carry authored geometry rather than being empty
+    /// markers — i.e. a real multi-part artist rig.
+    ///
+    /// The per-frame puppet motion writes directly to `Head`, `LeftEar`, `RightEar`,
+    /// `Tail`, `Filament` and `Body`. That is safe when those are empty transform markers
+    /// created by promotion, but on an artist rig they are the actual body parts, so the
+    /// same writes tear the companion into floating pieces. When this is true the pose
+    /// belongs to the skeletal clips and the puppet locals must leave it alone.
+    private(set) var authoredRigOwnsPose = false
     /// Clips captured from the template at load. `clone(recursive:)` does not reliably
     /// carry an entity's animation library, and every re-plant calls `removeFromParent()`
     /// which stops playback — so the resources are kept here and re-applied after each
@@ -90,6 +99,10 @@ final class LiraARAssetLoader {
                 source = .usdz(url.lastPathComponent)
                 preserveAuthoredMaterials = true
                 hasAuthoredAnimation = true
+                // The authored clip owns every joint. Without this the renderer reports
+                // `puppet_pose` and keeps writing per-frame local transforms over the
+                // walk cycle, which reads on device as gliding rather than walking.
+                authoredRigOwnsPose = true
                 authoredClips = Self.collectAnimations(animatedRoot)
                 loadNote = "usdz_active_animated_skelanim:clips=\(clipCount)"
                 return
@@ -236,6 +249,7 @@ final class LiraARAssetLoader {
         loadNote = note
         preserveAuthoredMaterials = false
         hasAuthoredAnimation = false
+        authoredRigOwnsPose = false
         authoredClips = []
         dccClipLibrary = [:]
         dccSidecarNote = "sidecars=cleared"
@@ -309,6 +323,13 @@ final class LiraARAssetLoader {
         return root
     }
 
+    /// Whether the articulated semantic nodes hold real meshes rather than empty markers.
+    /// `Head` is the discriminator: promotion never gives it geometry, an artist rig does.
+    static func hasAuthoredSemanticGeometry(_ root: Entity) -> Bool {
+        guard let head = root.findEntity(named: "Head") else { return false }
+        return hasModelGeometry(head)
+    }
+
     /// Total animation clips RealityKit exposed across the loaded subtree.
     /// Surfaced in `loadNote` so a field receipt distinguishes "USD import produced no
     /// clips" from "clips imported but never played" — two very different bugs.
@@ -376,7 +397,11 @@ final class LiraARAssetLoader {
             root.addChild(echo)
         }
 
-        installSpectralFX(on: root, skin: skin)
+        // Deliberately no `installSpectralFX` here. That injects procedural geometry —
+        // a 0.45m ground disc, core/halo spheres, filament segments — sized and coloured
+        // for the old primitive companion, and `applySpectralFXSkin` then paints it in the
+        // skin palette. On an authored textured mesh it buries the model under pale blobs.
+        // The markers above stay as empty transforms so `hasRequiredNodes` still passes.
         return root
     }
 
@@ -397,24 +422,70 @@ final class LiraARAssetLoader {
     /// clone may not carry them.
     func playAuthoredAnimation(on entity: Entity) {
         guard hasAuthoredAnimation else { return }
-        let host = Self.animationHost(entity) ?? entity
         // Ask for an explicitly unbounded repeat; the plain `repeat()` was observed
         // running a single cycle on this skeletal resource. A watchdog in the renderer
         // restarts it regardless, so this is belt-and-braces.
-        if let own = host.availableAnimations.first {
-            authoredController = host.playAnimation(
-                own.repeat(duration: .infinity),
+        guard let (host, clip) = Self.preferredAuthoredClip(in: entity) else {
+            guard let stored = authoredClips.first else { return }
+            authoredController = entity.playAnimation(
+                stored.repeat(duration: .infinity),
                 transitionDuration: 0.2,
                 startsPaused: false
             )
             return
         }
-        guard let stored = authoredClips.first else { return }
         authoredController = host.playAnimation(
-            stored.repeat(duration: .infinity),
+            clip.repeat(duration: .infinity),
             transitionDuration: 0.2,
             startsPaused: false
         )
+    }
+
+    /// The real skeletal clip, and the entity that owns it.
+    ///
+    /// RealityKit surfaces one authored `SkelAnimation` as several entries — measured on
+    /// the packaged fox:
+    ///
+    ///     /LiraRoot.[global scene animation]
+    ///     /LiraRoot.[default subtree animation]
+    ///     /LiraRoot/Body.[default subtree animation]
+    ///     /LiraRoot/Body/Armature.[/root/Armature/Armature/Anim[0]]   <- the joint curves
+    ///     /LiraRoot/Body/Armature.[default scene animation]
+    ///     /LiraRoot/Body/Armature.[default subtree animation]
+    ///
+    /// Taking `availableAnimations.first` picks the *scene* animation on the root, which
+    /// replays the export's baked root transform — translate, rotate and scale — over the
+    /// companion every loop instead of driving the skeleton. On device that reads as
+    /// sliding without stepping, and it fights the follow motion for control of the root.
+    /// Prefer a named clip on the deepest owning entity, ignoring the synthesized wrappers.
+    static func preferredAuthoredClip(in root: Entity) -> (Entity, AnimationResource)? {
+        var best: (Entity, AnimationResource, Int)?
+        func isSynthesized(_ name: String) -> Bool {
+            let n = name.lowercased()
+            return n.contains("scene animation") || n.contains("subtree animation")
+        }
+        func visit(_ entity: Entity, depth: Int) {
+            for clip in entity.availableAnimations where !isSynthesized(clip.name ?? "") {
+                if best == nil || depth > best!.2 {
+                    best = (entity, clip, depth)
+                }
+            }
+            for child in entity.children { visit(child, depth: depth + 1) }
+        }
+        visit(root, depth: 0)
+        if let best { return (best.0, best.1) }
+        // Every entry was synthesized: fall back to the deepest owner so the clip is at
+        // least applied to the rig rather than the companion root.
+        var fallback: (Entity, AnimationResource, Int)?
+        func visitAny(_ entity: Entity, depth: Int) {
+            if let clip = entity.availableAnimations.first,
+               fallback == nil || depth > fallback!.2 {
+                fallback = (entity, clip, depth)
+            }
+            for child in entity.children { visitAny(child, depth: depth + 1) }
+        }
+        visitAny(root, depth: 0)
+        return fallback.map { ($0.0, $0.1) }
     }
 
     /// Meshy image-to-3d (and similar) ships a single textured mesh without A1–A3 names.
@@ -492,6 +563,8 @@ final class LiraARAssetLoader {
             root.addChild(echo)
         }
 
+        // Promotion creates empty marker transforms, so the spectral layer is what makes
+        // A2 core / A3 filament / ground shadow visible at all on a hierarchy-less export.
         installSpectralFX(on: root, skin: skin)
         return root
     }
@@ -694,6 +767,10 @@ final class LiraARAssetLoader {
         let height = bounds.extents.y
         guard height.isFinite, height > 0.05 else { return }
         let factor = targetHeightMeters / height
+        // Lower bound is a sanity floor against degenerate bounds. Keep it conservative:
+        // the packaged fox reports a 223-unit local extent but its SkelRoot carries an
+        // animated scale, so world bounds already come back near-target. Loosening this
+        // would let a stale or mis-measured bound shrink the companion to nothing.
         guard factor.isFinite, factor > 0.01, abs(factor - 1) > 0.05 else { return }
         root.scale *= factor
     }

@@ -1,11 +1,17 @@
-usd=/Users/prabu/.openclaw/workspace/workspace-coding/Waykin-canonical/docs/assets/companion/ar/artist/Lira_AR_Base.usd
-blend=ArtSource/Companion/Lira/lira.blend
-evidence=ARTIST_BLEND_HERO_DCC_MID_LOD
-armature=LiraArmature
-bone_bind=hero_region_paint
-dcc_clips=Lira_Idle,Lira_Follow,Lira_Investigate,Lira_Alert,Lira_Celebrate,Lira_Spawn
-clip_usds=Lira_Idle.usd,Lira_Follow.usd,Lira_Investigate.usd,Lira_Alert.usd,Lira_Celebrate.usd,Lira_Spawn.usd
-body_vgroups=25
-body_multi_bone_verts=1830
-body_multi_bone_ratio=1.0
-body_max_influences=4
+source=Meshy_AI_Animation_Walking.usdz (Meshy AI image-to-3d, Ember Fox concept, 2026-07-27)
+evidence=MESHY_EMBER_FOX_WALK_V1
+armature=Armature
+bone_bind=meshy_auto_skin
+joints=12
+dcc_clips=Anim
+clip_usds=embedded
+frames=1-32@24fps
+texture=texture_0.jpg (4096 PNG source downscaled to 2048, quality 88)
+packaging=usdzip 64-byte aligned; DomeLight env_light stripped so AR environment lighting applies
+validation=usdchecker --arkit PASS
+supersedes=ARTIST_BLEND_HERO_DCC_MID_LOD
+note=Single embedded walk cycle. The artist-blend package was a Blender primitive assembly
+ and did not read as the brand fox (see #220). The six per-state DCC clip sidecars remain
+ bundled but are not bound while an authored clip is present: LiraSkeletalPlayer stands
+ down for authored rigs. Per-state animation returns when a rig carrying the semantic
+ A1-A3 hierarchy ships.

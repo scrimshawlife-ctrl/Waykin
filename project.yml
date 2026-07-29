@@ -75,7 +75,10 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         # Grants native full-screen rendering; without it iOS letterboxes the app
         # at a reduced logical size and ARView collapses into a thin camera band.
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: Lira_Glyph_Dawn
+          UIImageRespectsSafeAreaInsets: true
         # Audio-first: cues must survive screen lock / phone-in-pocket during a walk.
         UIBackgroundModes: [audio]
     dependencies:

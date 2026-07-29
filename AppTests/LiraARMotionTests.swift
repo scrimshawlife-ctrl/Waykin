@@ -170,7 +170,7 @@ final class LiraARMotionTests: XCTestCase {
         XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ)
         let loader = LiraARAssetLoader()
         await loader.preloadFromBundle()
-        // Hard requirement for shipped ARTIST_BLEND_HERO_DCC_MID_LOD package.
+        // Hard requirement for shipped MESHY_EMBER_FOX_WALK_V1 package.
         guard case .usdz = loader.source else {
             XCTFail("packaged USDZ must load: \(loader.activeLODDescription)")
             return

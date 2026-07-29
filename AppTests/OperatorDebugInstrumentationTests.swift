@@ -15,7 +15,7 @@ final class OperatorDebugInstrumentationTests: XCTestCase {
             FieldTestARPresentationSummary(
                 arSessionOpened: true,
                 finalLODDescription: "procedural_living_familiar_mid",
-                meshEvidenceClass: "ARTIST_BLEND_HERO_DCC_MID_LOD",
+                meshEvidenceClass: "MESHY_EMBER_FOX_WALK_V1",
                 finalContinuityNote: "ok_present",
                 finalCapabilityState: "tracking",
                 placementDeferredCount: 1,
@@ -49,7 +49,7 @@ final class OperatorDebugInstrumentationTests: XCTestCase {
             FieldTestARPresentationSummary(
                 arSessionOpened: true,
                 finalLODDescription: "artist_usdz:Lira_AR_Base",
-                meshEvidenceClass: "ARTIST_BLEND_HERO_DCC_MID_LOD",
+                meshEvidenceClass: "MESHY_EMBER_FOX_WALK_V1",
                 finalContinuityNote: "ok_present",
                 companionPlaced: true
             )
