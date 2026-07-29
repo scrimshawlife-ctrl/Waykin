@@ -99,8 +99,9 @@ See [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md).
 ## Merge hygiene
 
 ```text
-Main tip: 7df3a16 · companion: Ember Fox (MESHY_EMBER_FOX_WALK_V1)
-Ruleset: 1 write-access approving review required
+Code lineage: 7df3a16 · freeze docs: #249 · companion: Ember Fox (MESHY_EMBER_FOX_WALK_V1)
+After #249 merges: install/record current main HEAD (not a remembered parent short SHA)
+Ruleset: 1 write-access approving review + resolved conversations required
 Do not re-import or replace the Ember Fox mesh without an explicit asset issue
 Do not merge closed PRs #242 or #243 (superseded by #246)
 Do not force-merge stale branches onto main
