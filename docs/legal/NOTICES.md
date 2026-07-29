@@ -1,19 +1,18 @@
-# Notices and open-source attribution
+# Notices and attribution
 
 ```yaml
 document_id: WAYKIN-LEGAL-NOTICES
-version: 1.0
-date: 2026-07-20
+version: 2.0
+date: 2026-07-29
 ```
 
-## Waykin source
+## Waykin source (Zero State)
 
-Copyright contributors to the Waykin project.  
-Licensed under the **Apache License, Version 2.0** — full text: [LICENSE](../../LICENSE).
+Copyright (c) 2024–2026 **Zero State**.  
+All rights reserved.
 
-```
-http://www.apache.org/licenses/LICENSE-2.0
-```
+Waykin is **proprietary software**. Full terms: [LICENSE](../../LICENSE).  
+No Proprietary, MIT, or other open-source license is granted for the current tree.
 
 ## Platform frameworks (runtime)
 
@@ -36,8 +35,8 @@ Current app typography uses **system fonts** unless otherwise noted.
 
 ## Generated and artist assets
 
-- Procedural / generated mid-LOD assets are project work product.  
-- Artist blend sources under `ArtSource/` retain provenance receipts; redistribution follows the project Apache license unless a file states otherwise.
+- Procedural / generated mid-LOD assets are Zero State work product.  
+- Artist blend sources under `ArtSource/` retain provenance receipts; redistribution is governed by the project proprietary LICENSE unless a file states a separate third-party license.
 
 ## No endorsement
 

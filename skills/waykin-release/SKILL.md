@@ -51,7 +51,7 @@ make check-lira-usdz
 Read and confirm present:
 
 - `docs/legal/PRIVACY.md`, `TERMS.md`, `SAFETY.md`, `NOTICES.md`
-- `LICENSE` Apache-2.0
+- `LICENSE` Proprietary (Zero State)
 - Usage descriptions: Location When-In-Use, Camera, Health share
 - No background location entitlement unless product explicitly adds it (MVP: foreground walk only)
 

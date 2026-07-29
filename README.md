@@ -23,7 +23,7 @@
   <a href="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/waykin-ci.yml"><img alt="Waykin CI" src="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/waykin-ci.yml/badge.svg?branch=main"></a>
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white">
   <img alt="Platform iOS" src="https://img.shields.io/badge/platform-iOS-0A84FF?logo=apple&logoColor=white">
-  <a href="LICENSE"><img alt="Apache 2.0 License" src="https://img.shields.io/badge/license-Apache--2.0-6E56CF"></a>
+  <a href="LICENSE"><img alt="Proprietary — Zero State" src="https://img.shields.io/badge/license-Proprietary-334155"></a>
 </p>
 
 <p align="center">
@@ -167,7 +167,7 @@ Future-state specifications are reference material until promoted through an acc
 
 ## Safety and Privacy
 
-Legal and safety documents live under [`docs/legal/`](docs/legal/README.md) (Privacy, Terms, Safety brief, Notices). Source code is [Apache 2.0](LICENSE).
+Legal and safety documents live under [`docs/legal/`](docs/legal/README.md) (Privacy, Terms, Safety brief, Notices). Source code is **proprietary — property of Zero State** ([LICENSE](LICENSE)).
 
 - Waykin is not safety equipment or medical advice.
 - Location is requested only during an active real walk.
@@ -263,4 +263,7 @@ Start with [`CONTRIBUTING.md`](CONTRIBUTING.md). Coding agents must also read [`
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE).
+**Proprietary** — Copyright (c) 2024–2026 **Zero State**.  
+All rights reserved. Waykin is the property of Zero State. No open-source license is granted.
+
+See [`LICENSE`](LICENSE) and [`docs/legal/`](docs/legal/README.md). Contact Zero State for commercial licensing.

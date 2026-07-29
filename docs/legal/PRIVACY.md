@@ -9,7 +9,7 @@ status: DRAFT_FOR_PRODUCT_REVIEW
 
 **Last updated:** 2026-07-20
 
-This notice describes how the **Waykin** iOS application handles information in its current solo-MVP form. It applies to the open-source project and local builds of the app. A commercial publisher may replace this with a jurisdiction-specific privacy policy before App Store release.
+This notice describes how the **Waykin** iOS application handles information in its current solo-MVP form. It applies to Zero State’s Waykin product and local builds of the app. A commercial publisher may replace this with a jurisdiction-specific privacy policy before App Store release.
 
 ## Summary
 

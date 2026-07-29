@@ -110,7 +110,7 @@ git diff --check
 | `docs/legal/TERMS.md` | Present | Same review gate for public store |
 | `docs/legal/SAFETY.md` | Present | Walking safety expectations |
 | `docs/legal/NOTICES.md` | Present | Third-party / Apple frameworks |
-| `LICENSE` | Apache-2.0 | OSS; App Store listing is separate |
+| `LICENSE` | Proprietary (Zero State) | App Store listing is separate |
 | Location When-In-Use usage string | In Info.plist | Foreground walk only |
 | Camera usage string | In Info.plist | AR session only |
 | Health share usage string | In Info.plist | Optional enrichment; Demo never requires |
