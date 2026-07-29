@@ -1,5 +1,8 @@
 # Contributing to Waykin
 
+> **Ownership:** Waykin is the **property of Zero State**. This repository is **proprietary** ([LICENSE](LICENSE)). Contributions are accepted only under assignment / exclusive license to Zero State. Do not submit third-party open-source code under conflicting terms.
+
+
 ## Workflow
 
 1. Start from an approved GitHub issue.

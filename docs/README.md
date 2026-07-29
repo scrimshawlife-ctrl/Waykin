@@ -91,8 +91,8 @@ A green build does not validate GPS, device audio, battery, thermal behavior, ou
 | [`legal/PRIVACY.md`](legal/PRIVACY.md) | Privacy notice (draft for product review) |
 | [`legal/TERMS.md`](legal/TERMS.md) | Terms of use (draft for product review) |
 | [`legal/SAFETY.md`](legal/SAFETY.md) | Outdoor movement safety brief (in-app) |
-| [`legal/NOTICES.md`](legal/NOTICES.md) | Apache 2.0 and third-party notices |
-| [`../LICENSE`](../LICENSE) | Apache License 2.0 source license |
+| [`legal/NOTICES.md`](legal/NOTICES.md) | Proprietary (Zero State) and third-party notices |
+| [`../LICENSE`](../LICENSE) | Proprietary — property of Zero State |
 
 ## Collaboration
 

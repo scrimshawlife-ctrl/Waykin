@@ -5,8 +5,8 @@ name = "waykin-skill-pack"
 version = "1.0.0"
 repo = "scrimshawlife-ctrl/Waykin"
 baseline_main = "60afcef"
-license = "Apache-2.0"
-author = "Waykin engineering"
+license = "Proprietary"
+author = "Zero State"
 
 [install]
 # Relative skill directories under skills/
