@@ -50,7 +50,7 @@ shasum -a 256 App/Resources/Lira_AR_Base.usdz \
 make test
 make validate
 git diff --check
-# make validate-simulator — started; fill if completed on this SHA
+make validate-simulator
 ```
 
 ## Results
@@ -69,7 +69,8 @@ git diff --check
 | Native `WaykinApp` build | **PASS** | Best-effort in validate |
 | `make validate` OVERALL | **PASS** | package + generation |
 | `git diff --check` | **PASS** | No whitespace errors on tracked changes |
-| `validate-simulator` | **PENDING / NOT_COMPUTABLE in this receipt** | Was still running at write time; do not invent PASS |
+| `validate-simulator` | **PASS** | App build + UI tests (see below) |
+| UI tests (`WaykinUITests`) | **PASS** | 13 executed, 1 skipped, 0 failures |
 | Physical indoor smoke | **NOT_COMPUTABLE** | Human device |
 | Outdoor #41 | **NOT_COMPUTABLE** | Human daylight |
 | TF archive | **HOLD** | Issue #247 |
@@ -92,16 +93,16 @@ git diff --check
 2. Device confirmation that authored mesh replaces procedural fallback is still a TF hold (#247).
 3. USDZ exceeds 12MB soft budget (WARN only; under 20MB hard cap).
 4. Marketing **0.9.0 (2)** is in tree but **not** proven as archive candidate until fresh TF checklist on freeze SHA.
-5. Simulator UI suite result not recorded in this receipt if still running.
+5. Simulator PASS is not outdoor or physical-device PASS.
 6. Supporting AR redesign docs (#245) are **not** binding and were **not** merged into this freeze.
 
 ## Evidence classes
 
 | Class | Content |
 | ----- | ------- |
-| **OBSERVED** | Validate PASS; 133 package tests; USDZ triple match; usdchecker Success; toolchain versions above; docs-only commit `1378307` on top of code `7df3a16` |
-| **INFERRED** | App binary identity for product behavior matches `7df3a16` code lineage (docs commit does not change Swift/USDZ) |
-| **NOT_COMPUTABLE** | Indoor device smoke; outdoor COH; TF upload; thermal/battery; human audio loudness; full simulator UI result if unfinished |
+| **OBSERVED** | Validate PASS; 133 package tests; USDZ triple match; usdchecker Success; `validate-simulator` OVERALL PASS (13 UI tests, 0 failures, 1 skipped); toolchain versions above; docs-only commits on top of code `7df3a16` |
+| **INFERRED** | App binary identity for product behavior matches `7df3a16` code lineage (docs commits do not change Swift/USDZ) |
+| **NOT_COMPUTABLE** | Indoor device smoke; outdoor COH; TF upload; thermal/battery; human audio loudness |
 
 ## Freeze contract (build on top)
 
