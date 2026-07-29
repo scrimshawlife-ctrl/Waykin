@@ -15,7 +15,7 @@ Do not invent values like `OBSERVED_INDOOR_DEVICE` — use `OBSERVED` and note i
 | Phase A (laptop, post-mesh) | `POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md` — **PASS** laptop validate (code lineage `7df3a16`) |
 | Phase A (pre-mesh, historical) | `PHASE_A_PREDEVICE_20260725T194535Z_3cc8ac2.md` — **PASS on `3cc8ac2` only** |
 | Indoor human | `INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md` — **PENDING** (Ember Fox; Prabu visual ref) |
-| Outdoor human | Re-scaffold on install tip; prior `*_3cc8ac2_PENDING` is **historical** |
+| Outdoor human | `OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md` — **PENDING** (post-mesh tip scaffold) |
 
 Older `*_PENDING.md` scaffolds for prior SHAs are **historical / superseded** for new walks; keep for history only. Do not rewrite their original SHAs.
 
@@ -24,6 +24,7 @@ Older `*_PENDING.md` scaffolds for prior SHAs are **historical / superseded** fo
 | File | Status |
 | ---- | ------ |
 | `OUTDOOR_AR_RECEIPT_20260720_DEVICE_PARTIAL.md` | **PARTIAL** historical operator notes (pre-mitigation, pre-mesh). Not full COH PASS. |
+| `OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md` | **Current** outdoor scaffold — fill on daylight walk of freeze tip |
 | `OUTDOOR_QA_RECEIPT_20260725T194535Z_3cc8ac2_PENDING.md` | **Historical** outdoor scaffold for artist-blend tip era |
 | Template | `../OUTDOOR_QA_RECEIPT_TEMPLATE.md` |
 
