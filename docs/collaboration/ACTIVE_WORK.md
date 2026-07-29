@@ -2,7 +2,7 @@
 
 This file is a repository-readable coordination surface for humans and coding agents. GitHub issues and pull requests remain the authoritative records.
 
-Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline on lineage `7df3a16`; no redesign until freeze merges)
+Last updated: 2026-07-29 (**FREEZE MERGED** — #249 on main `d8c0620`; device indoor next; no redesign until device honesty)
 
 > **Coordination contract:** [Issue #47](https://github.com/scrimshawlife-ctrl/Waykin/issues/47) · **Live workflow:** [Project #1](https://github.com/users/scrimshawlife-ctrl/projects/1) · [Coordination protocol](GITHUB_PROJECT_COORDINATION.md)
 
@@ -10,8 +10,8 @@ Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **Freeze: docs re-baseline + laptop receipt** | Docs / eng | **PR open** — [#249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) (`docs/current-main-rebaseline`); receipt + Prabu mesh ref; merge before build-on-top | [CONTINUATION_PLAN.md](../design/CONTINUATION_PLAN.md) · [PR #249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) |
-| Indoor Ember Fox smoke | Human device | **Scaffold ready** — fill [INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md](../design/receipts/INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md) after #249 merge; visual gold = Prabu IMG_2534 | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · [DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md](../design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md) |
+| **Freeze: docs re-baseline + laptop receipt** | Docs / eng | **Merged** — [#249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) → main `d8c0620` | [CONTINUATION_PLAN.md](../design/CONTINUATION_PLAN.md) · [POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md](../design/receipts/POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md) |
+| Indoor Ember Fox smoke | Human device | **Next** — install main `d8c0620`; fill [INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md](../design/receipts/INDOOR_AR_HYBRID_SMOKE_20260729T191500Z_7df3a16_PENDING.md); visual gold = Prabu IMG_2534 | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · [DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md](../design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md) |
 | Prabu device mesh reference | Prabu (historical OBSERVED) | **Authored fox on device** (not procedural spheres); strip `animated_usdz` + `anim=PLAYING` — **SHA not on photo** | [DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md](../design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md) · evidence PNG |
 | Issue #41 — outdoor / physical validation | Human device | **Parked** — scaffold [OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md](../design/receipts/OUTDOOR_QA_RECEIPT_20260729T191500Z_7df3a16_PENDING.md); walk after indoor preferred | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
 | Issue #247 — TF archive hold | Product / dist | **Softened, not closed** — Prabu photo shows authored mesh on *some* build; still need OBSERVED on **exact freeze/archive SHA** before TF | [#247](https://github.com/scrimshawlife-ctrl/Waykin/issues/247) |
@@ -23,9 +23,11 @@ Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline
 
 | Field | Value |
 |---|---|
-| Code lineage (app/mesh binary) | `7df3a169ede507ce54469330318f66c4603f8c3d` (`7df3a16`) — Ember Fox #246 + pressure #248 |
-| Freeze docs PR | [#249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) — docs-only on top of code lineage; **after merge**, `main` tip moves to the freeze merge commit |
-| Install / device / #247 SHA rule | Always `git pull` then record **`git rev-parse HEAD`** of the install build. Do **not** treat `7df3a16` as the post-freeze archive tip once #249 lands — use the **current `main` tip** at install time |
+| `main` tip (full) | `d8c062013fea4e0e0fc7fe661b050f12135d9163` |
+| `main` tip (short) | `d8c0620` |
+| Code lineage (app/mesh binary) | Unchanged from `7df3a16` (Ember Fox #246 + pressure #248); freeze #249 is docs/evidence only |
+| Freeze docs | [#249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) **merged** |
+| Install / device / #247 SHA rule | Install **`d8c0620`** (or later main HEAD after `git pull`); record exact `git rev-parse HEAD` on the device build |
 | Current companion | Packaged **Ember Fox** USDZ (`MESHY_EMBER_FOX_WALK_V1`) |
 | Mesh integration authority | [PR #246](https://github.com/scrimshawlife-ctrl/Waykin/pull/246) (`b17864e`) |
 | Mesh runtime | Versioned asynchronous template loading; procedural fallback; live authored replacement; scene-owned anchors explicitly removed |
@@ -55,8 +57,8 @@ Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline
 
 ## Operator order (human)
 
-1. **Merge freeze docs #249**, then `git checkout main && git pull --ff-only` and record **exact HEAD**.
-2. **Connect iPhone** → install Debug of **that HEAD** (not a remembered parent short SHA) → indoor Ember Fox smoke (fallback → authored replace, single anchor, skeleton walk; match Prabu visual ref) → `evidence_class: OBSERVED` (note indoor).
+1. `git checkout main && git pull --ff-only` → tip should be **`d8c0620`** (or later).
+2. **Connect iPhone** → install Debug of **that HEAD** → indoor Ember Fox smoke (I1–I14; match Prabu visual ref) → `evidence_class: OBSERVED` (note indoor).
 3. Confirm #247 can close only with **device** evidence on the **exact install SHA** that the authored mesh replaced the procedural fallback.
 4. **Archive Release** only after #247 hold lifts and validate PASS on archive SHA; re-check marketing/build if prior candidate was already uploaded.
 5. **Daylight outdoor #41** on the same install SHA when free; COH only with OBSERVED device rows. Mesh/runtime rows and world-event rows stay separate.
