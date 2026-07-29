@@ -183,6 +183,29 @@ final class LiraSkeletalPlayer {
         isDriving = true
     }
 
+    /// Whether the clip is genuinely still running.
+    ///
+    /// `isDriving` only records that a clip was started. `AnimationResource.repeat()` was
+    /// observed not to loop these skeletal resources — playback ends after a single ~2s
+    /// cycle while `isDriving` stays true, so the companion freezes mid-walk and the
+    /// diagnostics still report `skel_on`. The renderer polls this to restart.
+    var isPlaybackActive: Bool {
+        playbackController?.isPlaying ?? false
+    }
+
+    /// Restart the current clip after playback ended on its own.
+    func replayActiveClip(on entity: Entity) {
+        guard isInstalled, let clip = activeClip else { return }
+        let resource = library[clip] ?? library[.idle] ?? library[.follow] ?? library.values.first
+        guard let resource else { return }
+        playbackController = entity.playAnimation(
+            clip.isLooping ? resource.repeat() : resource,
+            transitionDuration: 0,
+            startsPaused: false
+        )
+        isDriving = true
+    }
+
     /// Stop playback but keep library installed.
     func stop() {
         stopPlaybackOnly()

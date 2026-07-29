@@ -97,8 +97,16 @@ enum WKTokens {
         static let displayMin: CGFloat = 28
         /// Brand display face for large titles / ceremonial screens.
         static let display: Font = WaykinTypography.display(size: 36, relativeTo: .largeTitle)
-        /// Brand display face for screen titles (Home, Session Select, Summary).
-        static let title: Font = WaykinTypography.display(size: 24, relativeTo: .title2)
+        /// Screen titles (Home, Session Select, Summary).
+        ///
+        /// Deliberately **not** the brand display face. `WaykinDisplay-Regular` is an
+        /// uppercase-only subset — 42 glyphs, `A–Z` plus digits, no lowercase — so on a
+        /// sentence-case title iOS drew the leading capital from the brand font and fell
+        /// back to the system face for the rest: "Choose a path" and "Ready for the path"
+        /// rendered two typefaces mid-word. Ceremonial all-caps text can still opt into
+        /// the brand face via `TypeScale.display` or `WaykinTypography.display(for:size:)`,
+        /// which falls back automatically when a string needs glyphs the subset lacks.
+        static let title: Font = .system(.title2, design: .default, weight: .medium)
         /// Readable body — system, Dynamic Type.
         static let body: Font = .system(size: 16, weight: .regular, design: .default)
         static let caption: Font = .system(size: 12, weight: .medium, design: .default)

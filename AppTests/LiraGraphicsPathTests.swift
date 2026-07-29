@@ -45,7 +45,8 @@ final class LiraGraphicsPathTests: XCTestCase {
                 || loader.activeLODDescription.contains("generated_usdz")
                 || loader.activeLODDescription.contains("meshy_usdz")
                 || loader.activeLODDescription.contains("artist_blend_usdz")
-                || loader.activeLODDescription.contains("artist_usdz"),
+                || loader.activeLODDescription.contains("artist_usdz")
+                || loader.activeLODDescription.contains("animated_usdz"),
             "unexpected LOD: \(loader.activeLODDescription) loadNote=\(loader.loadNote)"
         )
         XCTAssertNotEqual(loader.loadNote, "not_attempted")

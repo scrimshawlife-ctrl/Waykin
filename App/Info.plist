@@ -44,6 +44,13 @@
 	     rendering. Without it iOS runs in legacy letterbox (reduced logical size),
 	     which shrinks the whole UI and crams ARView into a thin camera band. -->
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>Lira_Glyph_Dawn</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

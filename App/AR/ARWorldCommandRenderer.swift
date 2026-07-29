@@ -83,7 +83,8 @@ final class ARWorldCommandRenderer {
             ? (assetLoader.isAuthoredAnimationPlaying ? "anim=PLAYING" : "anim=stopped")
             : "anim=none"
         let sidecar = assetLoader.dccSidecarNote
-        return "\(lod) | \(driving) | \(src) | clip=\(clip) | \(authored) | \(sidecar)"
+        let pose = assetLoader.authoredRigOwnsPose ? "rig_pose" : "puppet_pose"
+        return "\(lod) | \(driving) | \(src) | clip=\(clip) | \(authored) | \(pose)"
     }
 
     /// Whether the authored walk clip is running, for AR chrome + receipts.
@@ -146,6 +147,7 @@ final class ARWorldCommandRenderer {
                 skeletalPlayer.clear()
                 return .deferred("companion")
             }
+            spawnedTemplateGeneration = assetLoader.templateGeneration
             diagnostics.record(replacing ? .entityReplaced : .entityCreated, detail: "companion")
             diagnostics.record(.placementSucceeded, detail: "companion")
             // Ambient skeletal clip for resolved state (spawn scale stays procedural).
@@ -254,6 +256,33 @@ final class ARWorldCommandRenderer {
     @discardableResult
     func maintainCompanionContinuity(in arView: ARView) -> Bool {
         guard registry.entity(for: Self.companionID) != nil else { return false }
+        // Upgrade a companion that was built before the packaged asset finished decoding.
+        // Without this the procedural placeholder stays for the whole session — continuity
+        // only ever reported `ok_present`, so the real rig was loaded but never shown.
+        if assetLoader.templateGeneration != spawnedTemplateGeneration {
+            let replacement = assetLoader.makeLira()
+            prepareSkeletalPlayback(on: replacement)
+            applyPresentation(for: companionState, to: replacement)
+            if placementResolver.place(
+                id: Self.companionID,
+                intent: SpatialIntent(
+                    placement: .groundPlane,
+                    distanceBand: .near,
+                    bearing: .ahead,
+                    scaleClass: .companion,
+                    persistence: .session
+                ),
+                entity: replacement,
+                in: arView
+            ) {
+                spawnedTemplateGeneration = assetLoader.templateGeneration
+                diagnostics.record(.entityReplaced, detail: "template_upgrade")
+                if assetLoader.hasAuthoredAnimation {
+                    assetLoader.playAuthoredAnimation(on: replacement)
+                }
+                return true
+            }
+        }
         let ok = placementResolver.ensureCompanionContinuity(
             id: Self.companionID,
             makeEntity: { [assetLoader] in assetLoader.makeLira() },
@@ -314,6 +343,9 @@ final class ARWorldCommandRenderer {
     /// How often to check that the authored walk clip is still running.
     private static let authoredAnimationWatchdogInterval: TimeInterval = 0.4
     private var authoredAnimationWatchdogElapsed: TimeInterval = 0
+    private var skeletalWatchdogElapsed: TimeInterval = 0
+    /// Which packaged template the live companion was built from. `-1` = none placed.
+    private var spawnedTemplateGeneration: Int = -1
     /// Smoothed walker pace (m/s), estimated from camera movement.
     private var walkerSpeedEstimate: Float = 0
     private var lastCameraPosition: SIMD3<Float>?
@@ -342,11 +374,37 @@ final class ARWorldCommandRenderer {
     /// observed stopped. Throttled so a clip that refuses to start cannot thrash the
     /// animation system every frame.
     private func advanceAuthoredAnimationWatchdog(by delta: TimeInterval) {
+        // The companion can spawn before the USDZ preload finishes, so the puppet player
+        // may already be installed by the time an authored rig arrives. Both then drive the
+        // same joints — the receipt showed `skel_on | puppet:multiPart:6_clips` alongside
+        // `anim=PLAYING`. Stand the puppet down as soon as an authored clip exists.
+        if assetLoader.hasAuthoredAnimation, skeletalPlayer.isInstalled {
+            skeletalPlayer.clear()
+            if let companion = liveCompanionRoot() {
+                assetLoader.playAuthoredAnimation(on: companion)
+            }
+        }
+
+        // Skeletal (DCC) path: same non-looping behaviour, different player. Without this
+        // she keeps gliding along on the follow motion while her legs are frozen mid-stride,
+        // which reads on device as floating rather than walking.
+        if !assetLoader.hasAuthoredAnimation, shouldDriveSkeletal {
+            skeletalWatchdogElapsed += delta
+            if skeletalWatchdogElapsed >= Self.authoredAnimationWatchdogInterval {
+                skeletalWatchdogElapsed = 0
+                if !skeletalPlayer.isPlaybackActive, let companion = liveCompanionRoot() {
+                    skeletalPlayer.replayActiveClip(on: companion)
+                }
+            }
+        }
         guard assetLoader.hasAuthoredAnimation else { return }
         authoredAnimationWatchdogElapsed += delta
         guard authoredAnimationWatchdogElapsed >= Self.authoredAnimationWatchdogInterval else { return }
         authoredAnimationWatchdogElapsed = 0
-        guard !assetLoader.isAuthoredAnimationPlaying,
+        // A paused clip is not a stalled clip — restarting it here would defeat the
+        // movement gate and put her back to treading on the spot.
+        guard !assetLoader.isAuthoredAnimationIntentionallyPaused,
+              !assetLoader.isAuthoredAnimationPlaying,
               let companion = liveCompanionRoot(), companion.isEnabled else { return }
         assetLoader.playAuthoredAnimation(on: companion)
     }
@@ -446,6 +504,8 @@ final class ARWorldCommandRenderer {
         // until comfortably close. Without the gap between the two she hovers constantly.
         if gap > Self.followLeashMetersLira { isClosingDistance = true }
         if gap <= Self.followSettleMetersLira { isClosingDistance = false }
+        // One clip, used honestly: stride while covering ground, settle when arrived.
+        assetLoader.setAuthoredAnimationPaused(!isClosingDistance)
 
         guard isClosingDistance else {
             // Settled: hold position and simply turn to watch the walker.
@@ -495,7 +555,10 @@ final class ARWorldCommandRenderer {
             }
         }
         guard let companion = liveCompanionRoot() else { return }
-        if shouldDriveSkeletal {
+        if shouldDriveSkeletal || assetLoader.authoredRigOwnsPose {
+            // Authored rig: the skeletal clips own every joint. The puppet locals below
+            // write straight to Head/ears/Tail/Filament/Body, which on a real multi-part
+            // mesh are the body parts themselves — running them scatters her.
             applyHunterEcho(to: companion, state: companionState, elapsed: localMotionElapsed)
         } else if reduceMotionEnabled {
             applyRestLocalMotion(to: companion, state: companionState)
@@ -593,6 +656,13 @@ final class ARWorldCommandRenderer {
         if shouldDriveSkeletal {
             skeletalPlayer.play(state: state, on: entity)
             // Hunter echo remains procedural; ambient joints owned by skeletal clips.
+            applyHunterEcho(to: entity, state: state, elapsed: localMotionElapsed)
+        } else if assetLoader.hasAuthoredAnimation {
+            // Authored rig: use the per-state fox clip when one exists, else keep the
+            // embedded walk cycle running.
+            assetLoader.playAuthoredAnimation(on: entity, for: LiraSkeletalAnimationLibrary.clip(for: state))
+            applyHunterEcho(to: entity, state: state, elapsed: localMotionElapsed)
+        } else if assetLoader.authoredRigOwnsPose {
             applyHunterEcho(to: entity, state: state, elapsed: localMotionElapsed)
         } else if reduceMotionEnabled {
             applyRestLocalMotion(to: entity, state: state)

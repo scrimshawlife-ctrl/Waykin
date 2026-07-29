@@ -2,12 +2,12 @@ import RealityKit
 import XCTest
 @testable import WaykinApp
 
-/// Hard asserts on packaged ARTIST_BLEND_HERO_DCC_MID_LOD (not soft procedural fallback).
+/// Hard asserts on packaged MESHY_EMBER_FOX_WALK_V1 (not soft procedural fallback).
 @MainActor
 final class LiraHeroDCCUSDZTests: XCTestCase {
     func testPackagedEvidenceClassIsArtistBlendHeroDCCMidLOD() {
-        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "ARTIST_BLEND_HERO_DCC_MID_LOD")
-        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("ARTIST_BLEND_HERO_DCC_MID_LOD"))
+        XCTAssertEqual(LiraARAssetCatalog.packagedEvidenceClass, "MESHY_EMBER_FOX_WALK_V1")
+        XCTAssertTrue(LiraARAssetCatalog.packagedLODHint.contains("MESHY_EMBER_FOX_WALK_V1"))
         XCTAssertTrue(LiraARAssetCatalog.hasPackagedUSDZ)
     }
 
@@ -26,10 +26,12 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
             loader.loadNote.contains("meshy_textured")
                 || loader.loadNote.contains("artist_blend")
                 || loader.loadNote.contains("skinned")
+                || loader.loadNote.contains("animated_skelanim")
         )
         XCTAssertTrue(
             loader.activeLODDescription.contains("meshy_usdz")
                 || loader.activeLODDescription.contains("artist_blend_usdz")
+                || loader.activeLODDescription.contains("animated_usdz")
         )
 
         let entity = loader.makeLira()
@@ -110,13 +112,21 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
             return
         }
 
-        XCTAssertFalse(
+        // MESHY_EMBER_FOX_WALK_V1 ships a single skinned mesh with one embedded walk
+        // cycle and no A1-A3 semantic nodes, so it is expected to take the authored path:
+        // the mesh keeps its own clip and LiraSkeletalPlayer stands down. Per-state binding
+        // returns when a rig carrying the semantic hierarchy ships (#220).
+        XCTAssertTrue(
             loader.hasAuthoredAnimation,
-            "artist multi-part package must not take hierarchy-less single-clip path"
+            "packaged fox is an authored single-clip rig: loadNote=\(loader.loadNote)"
         )
         XCTAssertTrue(
-            loader.loadNote.contains("artist_blend"),
+            loader.loadNote.contains("animated_skelanim"),
             "loadNote=\(loader.loadNote)"
+        )
+        XCTAssertTrue(
+            loader.preserveAuthoredMaterials,
+            "authored textures must survive skin recolour"
         )
 
         let entity = loader.makeLira()
@@ -146,7 +156,8 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         }
         print("WAYKIN_SIM_ANIM_BINDING: \(report)")
 
-        XCTAssertEqual(style, .multiPart, "artist mid-LOD should be multiPart")
+        // Single skinned Meshy mesh promotes to a Body container, so staticMesh is correct.
+        XCTAssertEqual(style, .staticMesh, "packaged fox is a single skinned mesh")
         // Default layer often exposes 0 DCC clips; puppet (or sidecar externalDCC) still drives.
         XCTAssertTrue(
             player.clipSource == .dcc || player.clipSource == .hybrid || player.clipSource == .puppet,
@@ -173,8 +184,10 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
         let mapped = await loader.loadDCCClipSidecars(urls: sidecarURLs)
 
         let entity = loader.makeLira()
-        XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: entity), .multiPart)
-        XCTAssertFalse(loader.hasAuthoredAnimation)
+        XCTAssertEqual(LiraSkeletalRig.puppetStyle(for: entity), .staticMesh)
+        // Sidecars still map, but the packaged fox carries its own clip, so the renderer
+        // deliberately leaves the puppet library idle rather than layering it on the rig.
+        XCTAssertTrue(loader.hasAuthoredAnimation)
 
         let player = LiraSkeletalPlayer()
         XCTAssertTrue(player.install(on: entity, externalDCC: loader.dccClipLibrary))
@@ -192,7 +205,12 @@ final class LiraHeroDCCUSDZTests: XCTestCase {
 
         // Sidecar files exist; RealityKit may still expose 0 animations for Blender crate
         // exports. When mapped > 0 we expect dcc/hybrid; otherwise puppet fill is honest.
-        if mapped > 0 {
+        if loader.hasAuthoredAnimation {
+            // Authored single-clip rig: the renderer never drives this player, so its
+            // clipSource carries no meaning. What matters is that the sidecars still
+            // resolved, ready for a future rig that exposes the semantic hierarchy.
+            XCTAssertGreaterThanOrEqual(loader.dccClipLibrary.count, 1, report)
+        } else if mapped > 0 {
             XCTAssertTrue(
                 player.clipSource == .dcc || player.clipSource == .hybrid,
                 report

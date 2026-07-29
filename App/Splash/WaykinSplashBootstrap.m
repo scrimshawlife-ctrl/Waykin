@@ -185,11 +185,14 @@ static void WaykinPresentSplash(void) {
 
     controller.view.alpha = 0.0;
     controller.view.transform = CGAffineTransformMakeScale(1.015, 1.015);
-    [UIView animateWithDuration:0.28 animations:^{
+    // The launch screen now paints the same background and Lira glyph, so this window
+    // continues an image already on screen rather than replacing a blank one. Fading in
+    // fast keeps that continuous; the hold is what the walker actually reads.
+    [UIView animateWithDuration:0.12 animations:^{
         controller.view.alpha = 1.0;
         controller.view.transform = CGAffineTransformIdentity;
     } completion:^(BOOL finished) {
-        [UIView animateWithDuration:0.62 delay:0.72 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+        [UIView animateWithDuration:0.55 delay:0.85 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             controller.view.alpha = 0.0;
             controller.view.transform = CGAffineTransformMakeScale(1.025, 1.025);
         } completion:^(BOOL finished) {

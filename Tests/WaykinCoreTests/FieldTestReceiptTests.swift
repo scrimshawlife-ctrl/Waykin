@@ -76,7 +76,7 @@ final class FieldTestReceiptTests: XCTestCase {
         let ar = FieldTestARPresentationSummary(
             arSessionOpened: true,
             finalLODDescription: "artist_usdz:Lira_AR_Base",
-            meshEvidenceClass: "ARTIST_BLEND_HERO_DCC_MID_LOD",
+            meshEvidenceClass: "MESHY_EMBER_FOX_WALK_V1",
             finalContinuityNote: "planted_camera:replant_missing+camera_fallback",
             finalCapabilityState: "tracking",
             motionDiagnosticsLine: "dcc:idle hybrid",

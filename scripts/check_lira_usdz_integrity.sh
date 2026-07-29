@@ -52,16 +52,16 @@ if [[ -n "$first_entry" ]]; then
 fi
 
 if [[ -f "$MARKER" ]]; then
-  if grep -E 'MESHY_TEXTURED_STATIC_V1|ARTIST_BLEND_HERO_DCC_MID_LOD|ARTIST_BLEND_SKINNED_MID_LOD|ARTIST_BLEND_ARMATURE_MID_LOD|ARTIST_BLEND_MID_LOD' "$MARKER" >/dev/null; then
+  if grep -E 'MESHY_TEXTURED_STATIC_V1|MESHY_EMBER_FOX_WALK_V1|ARTIST_BLEND_SKINNED_MID_LOD|ARTIST_BLEND_ARMATURE_MID_LOD|ARTIST_BLEND_MID_LOD' "$MARKER" >/dev/null; then
     pass "EXPORT_OK evidence marker"
   else
     fail "EXPORT_OK missing known evidence class"
   fi
 fi
 
-# Artist DCC clip sidecars (optional but expected for ARTIST_BLEND_HERO_DCC_MID_LOD).
+# Artist DCC clip sidecars (optional but expected for MESHY_EMBER_FOX_WALK_V1).
 CLIP_DIR="$ROOT/App/Resources/Companion/Lira/Clips"
-if grep -q 'ARTIST_BLEND_HERO_DCC_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift" 2>/dev/null; then
+if grep -q 'MESHY_EMBER_FOX_WALK_V1' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift" 2>/dev/null; then
   missing=0
   for clip in Lira_Idle Lira_Follow Lira_Investigate Lira_Alert Lira_Celebrate Lira_Spawn; do
     if [[ ! -f "$CLIP_DIR/${clip}.usdz" ]]; then
@@ -106,8 +106,8 @@ fi
 # Catalog Swift evidence class should match shipped package class
 if grep -q 'MESHY_TEXTURED_STATIC_V1' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
   pass "catalog evidence MESHY_TEXTURED_STATIC_V1"
-elif grep -q 'ARTIST_BLEND_HERO_DCC_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
-  pass "catalog evidence ARTIST_BLEND_HERO_DCC_MID_LOD"
+elif grep -q 'MESHY_EMBER_FOX_WALK_V1' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
+  pass "catalog evidence MESHY_EMBER_FOX_WALK_V1"
 elif grep -q 'ARTIST_BLEND_SKINNED_MID_LOD' "$ROOT/App/AR/Companion/LiraARAssetCatalog.swift"; then
   pass "catalog evidence ARTIST_BLEND_SKINNED_MID_LOD"
 fi
