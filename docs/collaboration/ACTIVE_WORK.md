@@ -10,7 +10,7 @@ Last updated: 2026-07-29 (**FREEZE LANE** — re-baseline docs + laptop baseline
 
 | Work | Owner | Status | Dependency |
 |---|---|---|---|
-| **Freeze: docs re-baseline + laptop receipt** | Docs / eng | **In progress** — branch `docs/current-main-rebaseline`; receipt `POST_EMBER_FOX_BASELINE_20260729T190249Z_1378307.md`; merge before build-on-top | [CONTINUATION_PLAN.md](../design/CONTINUATION_PLAN.md) |
+| **Freeze: docs re-baseline + laptop receipt** | Docs / eng | **PR open** — [#249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) (`docs/current-main-rebaseline`); receipt + Prabu mesh ref; merge before build-on-top | [CONTINUATION_PLAN.md](../design/CONTINUATION_PLAN.md) · [PR #249](https://github.com/scrimshawlife-ctrl/Waykin/pull/249) |
 | Indoor Ember Fox smoke | Human device | **Armed after freeze merge** — install freeze tip; fill device receipt; **visual gold standard** = Prabu IMG_2534 | [INDOOR_AR_HYBRID_SMOKE.md](../design/INDOOR_AR_HYBRID_SMOKE.md) · [DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md](../design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md) |
 | Prabu device mesh reference | Prabu (historical OBSERVED) | **Authored fox on device** (not procedural spheres); strip `animated_usdz` + `anim=PLAYING` — **SHA not on photo** | [DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md](../design/receipts/DEVICE_MESH_REFERENCE_PRABU_IMG_2534.md) · evidence PNG |
 | Issue #41 — outdoor / physical validation | Human device | **Parked** until freeze tip is install target | [DEFERRED_RECOMMENDATIONS.md](../design/DEFERRED_RECOMMENDATIONS.md) |
