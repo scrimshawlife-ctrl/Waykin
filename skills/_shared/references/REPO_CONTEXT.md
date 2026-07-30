@@ -4,7 +4,7 @@ Read this once at skill start. Prefer absolute repo paths from `git rev-parse --
 
 ## Product
 
-- Audio-first **walking** companion app (Lira). Solo MVP.
+- AR-designed **walking** companion app (Lira). Solo MVP. Movement is gameplay authority; AR is the primary designed session surface when capable; audio is a required supporting channel.
 - Binding scope: `docs/SOLO_MVP_SCOPE.md`, `WAYKIN_SPEC.md`, `ARCHITECTURE.md`, `AGENTS.md`, `docs/governance/DOCUMENT_AUTHORITY.md`.
 - One activity: walking. Not run/cycle expansion without scope promotion.
 

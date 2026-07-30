@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <strong>An audio-first adaptive walking experience.</strong><br>
+  <strong>An AR-designed adaptive walking experience.</strong><br>
   You move. Lira moves with you. The world responds. Bond grows.
 </p>
 
@@ -48,9 +48,9 @@ The launch product remains intentionally small enough for one developer to under
 | | Pillar | Current contract |
 |---|---|---|
 | 🚶 | **Real movement** | Walking is the launch activity and primary gameplay input. |
-| ✨ | **Persistent companion** | Lira is the single companion and responds through a bounded behavior vocabulary. |
+| ✨ | **AR companion presence** | Lira is the single companion and AR is her primary designed session surface when capability allows. |
 | 🌎 | **Adaptive world** | Seeded events emerge from movement, context, familiarity, energy, and pressure. |
-| 🎧 | **Semantic audio** | Audio communicates presence, discovery, pressure, transition, and Bond. |
+| 🎧 | **Supporting semantic audio** | Audio preserves presence, discovery, pressure, transition, accessibility, and pocket-safe continuity. |
 | 🏃 | **Bounded pursuit** | Tension exists without punishment, coercion, or an enemy-platform expansion. |
 | ❤️ | **Bond** | One persistent progression measure represents the relationship with Lira. |
 

@@ -46,9 +46,9 @@ Redesign Waykin as an **AR-designed walking companion app** while **preserving**
 
 ---
 
-## Phase 0 — Product law (docs / agents only)
+## Phase 0 — Product law (docs / agents only) — COMPLETE via issue #252
 
-**Objective:** Make “AR-designed” the written product contract so humans and agents stop optimizing for audio-first identity.
+**Objective:** Make “AR-designed” the written product contract so humans and agents stop optimizing for the prior audio-first identity. **Status:** complete via issue #252; no production paths were unfrozen.
 
 ### Work items
 

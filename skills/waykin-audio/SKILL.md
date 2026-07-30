@@ -12,7 +12,7 @@ metadata:
 
 # waykin-audio
 
-Waykin is **audio-first**. Semantic cues are Core; filenames and AVAudioSession are App.
+Waykin is **AR-designed**, with audio as a required supporting channel for presence, accessibility, safety, and pocket use. Semantic cues are Core; filenames and AVAudioSession are App.
 
 ## 0. Ownership
 

@@ -34,7 +34,7 @@
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Audio-first walking experience: cues must keep playing with the screen
+	<!-- Pocket-safe supporting audio: cues must keep playing with the screen
 	     locked and the phone in a pocket. Without this, backgrounding kills audio. -->
 	<key>UIBackgroundModes</key>
 	<array>

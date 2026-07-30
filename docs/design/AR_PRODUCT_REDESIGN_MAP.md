@@ -76,7 +76,7 @@ Precedence (from `docs/governance/DOCUMENT_AUTHORITY.md`):
 5. ADRs
 6. … lower tiers …
 
-This map and `docs/plans/AR_APP_REDESIGN_PLAN.md` are **SUPPORTING / NEAR_TERM**. They cannot silently override binding audio-first language until Phase 0 lands.
+This map and `docs/plans/AR_APP_REDESIGN_PLAN.md` remain **SUPPORTING / NEAR_TERM**. Phase 0 product-law reconciliation is complete via issue #252; later UX and runtime phases still require their own evidence gates and scoped issues.
 
 ## 4. Whole-product map
 
@@ -255,16 +255,16 @@ Session Summary → Memory → Home
 
 | Conflict | Severity | Resolution owner |
 | -------- | -------- | ---------------- |
-| Binding **audio-first** vs AR design intent | High | Phase 0 binding docs |
+| Prior binding audio-first identity vs AR design intent | **Resolved in Phase 0** | Issue #252 binding docs |
 | **AR MVP freeze** vs redesign work | High | Ring A vs issue-scoped Ring B |
 | UIUX “presence OR AR not both animating” | Med | Keep; AR cover replaces active 2D animation |
 | Outdoor PARTIAL vs AR marketing | High | #41 before PASS claims |
-| Skills `REPO_CONTEXT` audio-first | Med | Phase 0 agent pack |
+| Prior skill-pack audio-first identity | **Resolved in Phase 0** | Issue #252 agent pack |
 | Continuous follow expectation vs world-plant | Med | Product education + optional later ADR |
 
-## 11. Binding doc delta map (Phase 0)
+## 11. Binding doc delta map (Phase 0 complete, issue #252)
 
-| Document | Today | Target edit |
+| Document | Prior state | Phase 0 result |
 | -------- | ----- | ----------- |
 | `docs/SOLO_MVP_SCOPE.md` | audio-first promise; audio-only presentation path | AR-designed promise; multi-channel presentation with AR primary design target |
 | `WAYKIN_SPEC.md` | audio-first contract; AR as #8 | AR-designed contract; AR presentation elevated; audio remains MVP system |
@@ -324,8 +324,8 @@ Active Session today is **2D-rooted** with AR as optional cover. AR-designed pro
 
 | Label | Claim |
 | ----- | ----- |
-| OBSERVED | AR command spine, freeze, optional fullScreenCover entry, audio-first binding language |
-| INFERRED | Product feels multi-modal; audio-first under-describes ship |
+| OBSERVED | AR command spine, freeze, optional fullScreenCover entry, and Phase 0 AR-designed binding language |
+| INFERRED | AR-designed identity now describes the intended channel order; shipped session IA remains 2D-rooted pending later gated work |
 | NOT_COMPUTABLE | Whether session-default AR will increase return intent (needs outdoor/device product evidence; not inventable) |
 | NOT_COMPUTABLE | Outdoor AR quality PASS until #41 re-walk |
 

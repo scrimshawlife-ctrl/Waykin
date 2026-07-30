@@ -2,7 +2,7 @@
 
 ## Product Promise
 
-Waykin is an audio-first adaptive walking experience where the real world quietly appears to notice, remember, and respond through Lira, Bond, bounded phenomena, and concise session memories.
+Waykin is an AR-designed adaptive walking experience where Lira meets the user in the world as they walk. Movement remains gameplay authority; AR is the primary designed session surface when capability allows, while audio, 2D presence, map, and HUD preserve continuity, accessibility, and safety.
 
 The first release should make a user finish a walk and want to go out again tomorrow to see what happens.
 
@@ -12,7 +12,7 @@ The first release should make a user finish a walk and want to go out again tomo
 2. World State
 3. Event Generator
 4. Companion Runtime
-5. Audio Experience Layer
+5. Multi-channel Presentation Layer (AR primary when capable; semantic audio required)
 
 Persistence may support these systems by storing Bond, companion identity, and concise memories. It must not become a generalized platform.
 
@@ -26,7 +26,7 @@ Local field-test receipts may observe existing runtime signals for bounded engin
 - One coherent world interpretation: the world quietly responds to movement.
 - One persistent progression measure: Bond.
 - One deterministic event-generation mechanism.
-- One audio-first semantic presentation path.
+- One shared semantic presentation path across AR, audio, 2D presence, map, and HUD, with AR as the primary designed surface when capability allows.
 - One deterministic Demo Mode.
 - One physical-device walk path.
 - Minimal session, summary, and memory UI.
@@ -59,7 +59,7 @@ Presentation quality must communicate current metrics and pressure through natur
 
 ## Expansion Gate
 
-No major system may be added until repeated physical-device sessions demonstrate that the existing loop creates return intent and the current limitation cannot be solved through configuration, audio, tuning, or simplification.
+No major system may be added until repeated physical-device sessions demonstrate that the existing loop creates return intent and the current limitation cannot be solved through configuration, presentation, tuning, or simplification.
 
 Legacy Orc Pursuit and Future Self compatibility models may be deleted only after no repository references remain outside their declarations, no persisted production data depends on their Codable representation, and migration or versioning behavior is explicitly tested. Until then, they remain inert compatibility state.
 

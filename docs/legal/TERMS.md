@@ -18,7 +18,7 @@ That license governs **copyright in the software**, not your walking activity or
 
 ## 2. The experience
 
-Waykin is an **audio-first adaptive walking experience** with a companion (Lira). It is entertainment / experiential software.
+Waykin is an **AR-designed adaptive walking experience** with a companion (Lira). AR is a presentation surface, not navigation or safety authority, and the experience remains entertainment / experiential software.
 
 **Not medical advice.** Waykin is not a medical device, not a diagnostic tool, and not a substitute for professional advice. Do not rely on it for health, navigation safety, or emergency response.
 

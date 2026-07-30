@@ -7,7 +7,7 @@
 
 ## Context
 
-Waykin is a solo-developer, audio-first adaptive movement application. Its MVP must complete walks without a network dependency and currently persists a small amount of durable state: Lira, Bond, and concise session memories. Preferences and field-test evidence already use separate storage mechanisms appropriate to their semantics.
+At the time of this persistence decision, Waykin was described as a solo-developer, audio-first adaptive movement application. The current product identity is AR-designed; the local-first persistence decision is unchanged. Its MVP must complete walks without a network dependency and currently persists a small amount of durable state: Lira, Bond, and concise session memories. Preferences and field-test evidence already use separate storage mechanisms appropriate to their semantics.
 
 The current SwiftData implementation proves file-backed reopen behavior, but the persistent schema is not explicitly versioned, production initialization can fall back without adequately exposing degraded durability, companion retrieval is based on unspecified fetch order, and the one-memory-per-session invariant is enforced primarily in application code.
 

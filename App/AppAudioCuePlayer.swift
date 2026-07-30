@@ -148,7 +148,7 @@ extension AVAudioSession: AudioSessionControlling {
     }
 
     func configureAmbientMixing() throws {
-        // `.playback`, not `.ambient`. Waykin is an audio-first walking experience:
+        // `.playback`, not `.ambient`. Audio is a required pocket-safe supporting channel:
         //  - `.ambient` is silenced by the hardware ring/silent switch (cues inaudible).
         //  - `.ambient` stops on backgrounding, so audio died whenever the screen locked
         //    or the phone went in a pocket — i.e. during the actual walk.

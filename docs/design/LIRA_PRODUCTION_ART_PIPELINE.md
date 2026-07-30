@@ -16,7 +16,7 @@ direction_lock: Echo + Lira spectral Living Familiar (DIRECTION_ACCEPTED)
 
 Move Lira from **procedural Echo placeholder** (session silhouette + AR sphere-rig) to **production-quality art** without expanding product scope.
 
-Authoritative product rules: one companion, audio-first, no multi-companion, no marketplace-driven skins, hunter without gore.
+Authoritative product rules: one companion, AR-designed presentation, no multi-companion, no marketplace-driven skins, hunter without gore.
 
 ## Current state (OBSERVED in app)
 
