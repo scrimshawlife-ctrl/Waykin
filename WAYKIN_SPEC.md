@@ -9,7 +9,7 @@
 
 ## Product Contract
 
-Waykin is an audio-first adaptive walking experience in which one persistent companion, Lira, and one bounded pursuit-pressure state respond to how the user moves.
+Waykin is an AR-designed adaptive walking experience in which one persistent companion, Lira, and one bounded pursuit-pressure state respond to how the user moves. AR is the primary designed session surface when the device supports it. Semantic audio remains a required supporting presentation channel. Movement remains the sole gameplay authority.
 
 The current product is a solo-developer MVP vertical slice. Complexity belongs in deterministic data and configuration, not in additional platforms or generalized systems.
 

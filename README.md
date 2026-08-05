@@ -27,8 +27,8 @@
 </p>
 
 <p align="center">
-  <strong>An audio-first adaptive walking experience.</strong><br>
-  You move. Lira moves with you. The world responds. Bond grows.
+  <strong>An AR-designed adaptive walking experience.</strong><br>
+  You move. Lira meets you in the world. The world responds. Bond grows.
 </p>
 
 > **Concept visual.** The hero communicates product direction and is not evidence of implemented application graphics or AR functionality. See [`docs/assets/BRAND_GUIDE.md`](docs/assets/BRAND_GUIDE.md).
@@ -50,7 +50,7 @@ The launch product remains intentionally small enough for one developer to under
 | 🚶 | **Real movement** | Walking is the launch activity and primary gameplay input. |
 | ✨ | **Persistent companion** | Lira is the single companion and responds through a bounded behavior vocabulary. |
 | 🌎 | **Adaptive world** | Seeded events emerge from movement, context, familiarity, energy, and pressure. |
-| 🎧 | **Semantic audio** | Audio communicates presence, discovery, pressure, transition, and Bond. |
+| 🎧 | **Semantic audio** | Audio communicates presence, discovery, pressure, transition, and Bond as a supporting channel. |
 | 🏃 | **Bounded pursuit** | Tension exists without punishment, coercion, or an enemy-platform expansion. |
 | ❤️ | **Bond** | One persistent progression measure represents the relationship with Lira. |
 

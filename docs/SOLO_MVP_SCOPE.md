@@ -2,7 +2,7 @@
 
 ## Product Promise
 
-Waykin is an audio-first adaptive walking experience where the real world quietly appears to notice, remember, and respond through Lira, Bond, bounded phenomena, and concise session memories.
+Waykin is an AR-designed adaptive walking experience. One companion, Lira, meets you in the world as you walk. Movement is the game. AR, audio, map, and HUD are presentation channels — with AR the primary designed surface when the device allows. The real world quietly appears to notice, remember, and respond through Lira, Bond, bounded phenomena, and concise session memories.
 
 The first release should make a user finish a walk and want to go out again tomorrow to see what happens.
 
@@ -26,7 +26,7 @@ Local field-test receipts may observe existing runtime signals for bounded engin
 - One coherent world interpretation: the world quietly responds to movement.
 - One persistent progression measure: Bond.
 - One deterministic event-generation mechanism.
-- One audio-first semantic presentation path.
+- One multi-channel presentation path (AR primary when available, audio as required supporting channel, 2D presence and map as fallback).
 - One deterministic Demo Mode.
 - One physical-device walk path.
 - Minimal session, summary, and memory UI.

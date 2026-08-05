@@ -2,8 +2,8 @@
 
 ```yaml
 document_id: WAYKIN-AR-MVP-FREEZE-001
-version: 1.2
-date: 2026-07-29
+version: 1.3
+date: 2026-08-05
 status: FROZEN_FOR_ENGINEERING
 evidence_class: SIMULATOR_PLUS_CODE
 outdoor_physical_ar: PARTIAL_DEVICE_2026_07_20_HISTORICAL
@@ -12,11 +12,14 @@ outdoor_pass: REQUIRES_REWALK_ISSUE_41
 packaged_companion: MESHY_EMBER_FOX_WALK_V1
 mesh_authority_pr: 246
 main_tip_at_refresh: 7df3a16
+phase_0_identity: "#254 (docs only; does not lift this freeze)"
 ```
 
 ## Purpose
 
 Declare AR presentation **complete for MVP engineering** so pathfinding and HealthKit can proceed without AR feature creep. Mesh/runtime shipping under approved issues (e.g. #246) is **package + loader maintenance**, not a freeze exit.
+
+**Phase 0 product identity** (#254) updates binding language from audio-first to AR-designed. That change is documentation only and does **not** authorize feature expansion under this freeze.
 
 ## In scope (frozen as shipped)
 
@@ -39,7 +42,7 @@ Declare AR presentation **complete for MVP engineering** so pathfinding and Heal
 - Multi-companion AR, marketplace assets
 - Navigation map UI, AR glasses
 - New companion mechanics
-- Broad AR session UX redesign before Phase 0 product-law reconciliation
+- Broad AR session UX redesign before Phase 0 product-law reconciliation (Phase 0 is tracked under #254; still does not lift this freeze)
 
 ### Authorized mesh package history
 
@@ -85,6 +88,7 @@ When this freeze is accepted:
 
 - [CONTINUATION_PLAN.md](CONTINUATION_PLAN.md) v5.0
 - [AR_PRODUCT_REDESIGN_MAP.md](AR_PRODUCT_REDESIGN_MAP.md) — SUPPORTING redesign planning (does not lift freeze)
+- [AR_APP_REDESIGN_PLAN.md](../plans/AR_APP_REDESIGN_PLAN.md) — Phase 0 identity work tracked under #254
 - [LIRA_AR_PRODUCTION_RIG.md](LIRA_AR_PRODUCTION_RIG.md)
 - [AR_REPLAY_VALIDATION.md](../AR_REPLAY_VALIDATION.md)
 - [ACTIVE_WORK.md](../collaboration/ACTIVE_WORK.md)
