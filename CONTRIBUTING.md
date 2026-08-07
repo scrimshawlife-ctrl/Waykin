@@ -48,8 +48,11 @@ Every PR must state:
 make build
 make test
 make validate
+python3 Tools/version.py check
 git diff --check
 ```
+
+For release cuts, bump with `python3 Tools/version.py …`, update [`CHANGELOG.md`](CHANGELOG.md), and follow [`docs/VERSIONING.md`](docs/VERSIONING.md) / [`docs/SHIP_CHECKLIST.md`](docs/SHIP_CHECKLIST.md).
 
 `make validate` includes the WaykinCore framework-isolation guard
 (`make check-core-isolation`): platform frameworks (ARKit, RealityKit,

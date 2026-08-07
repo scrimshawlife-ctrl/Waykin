@@ -42,6 +42,15 @@ git status --short || true
 EXIT_CODE=0
 
 echo ""
+echo "--- Version parity (VERSION / BUILD / Info.plist / project.yml) ---"
+if python3 "${REPO_ROOT}/Tools/version.py" check; then
+  echo "version parity: PASS"
+else
+  echo "version parity: FAIL"
+  EXIT_CODE=1
+fi
+
+echo ""
 echo "--- Structural guard: WaykinCore framework isolation ---"
 if "${SCRIPT_DIR}/check_core_framework_isolation.sh"; then
   echo "core framework isolation: PASS"
