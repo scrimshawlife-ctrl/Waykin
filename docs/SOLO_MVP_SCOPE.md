@@ -12,7 +12,7 @@ The first release should make a user finish a walk and want to go out again tomo
 2. World State
 3. Event Generator
 4. Companion Runtime
-5. Multi-channel Presentation Layer (AR primary when capable; semantic audio required)
+5. Audio Experience Layer (required) with AR presentation adapter as the primary designed session surface when capability allows; 2D presence, map, and HUD remain distinct supporting presentation owners — not a generalized multi-channel platform
 
 Persistence may support these systems by storing Bond, companion identity, and concise memories. It must not become a generalized platform.
 
@@ -26,7 +26,7 @@ Local field-test receipts may observe existing runtime signals for bounded engin
 - One coherent world interpretation: the world quietly responds to movement.
 - One persistent progression measure: Bond.
 - One deterministic event-generation mechanism.
-- One shared semantic presentation path across AR, audio, 2D presence, map, and HUD, with AR as the primary designed surface when capability allows.
+- One semantic presentation path with AR as the primary designed surface when capability allows; Audio Experience Layer remains required; 2D presence, map, and HUD stay supporting channels under their existing owners.
 - One deterministic Demo Mode.
 - One physical-device walk path.
 - Minimal session, summary, and memory UI.
