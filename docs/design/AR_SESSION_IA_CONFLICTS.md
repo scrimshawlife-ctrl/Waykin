@@ -66,14 +66,14 @@ Session Summary
 
 | Source | Says |
 | ------ | ---- |
-| Binding law (`SOLO_MVP_SCOPE`, `WAYKIN_SPEC`) | Audio-first product |
+| Binding law (`SOLO_MVP_SCOPE`, `WAYKIN_SPEC`) | **AR-designed**; movement authority; AR primary when capable; audio supporting |
 | UIUX B1 | “Audio is the primary channel; the screen confirms” |
 | UIUX B2 + shipped | Screen-first session; AR optional |
 | Operator + redesign map | AR-designed; AR primary session surface |
 
-**Conflict:** Three competing “primaries” (audio / 2D screen / AR) without one ordered channel stack.
+**Phase 0 status:** Binding law now defines the ordered channel stack. The remaining conflict is implementation/UIUX alignment: shipped 2D root and legacy UIUX wording have not yet been promoted to AR-default UX.
 
-**Resolution direction:** Phase 0 law + UIUX B1 rewrite: AR primary **designed** surface when capable; audio required **support**; 2D fallback/HUD.
+**Resolution direction:** Phase 0 law is complete via issue #252. Phase 2 must amend UIUX B1 and the session tree: AR primary **designed** surface when capable; audio required **support**; 2D fallback/HUD.
 
 ---
 
@@ -266,18 +266,18 @@ Glance adapter publishes from `activePresencePresentation` when enabled, indepen
 
 | Doc class | Session stance |
 | ---------- | -------------- |
-| BINDING scope/spec | Audio-first |
+| BINDING scope/spec | **AR-designed**; Phase 0 complete |
 | DESIGN_REFERENCE UIUX | 2D root; AR cover; “don’t redesign session” |
 | SUPPORTING redesign map + this file | AR root when capable |
 | AR MVP freeze | No silent `App/AR/**` feature expansion |
 
-Agents and PRs will follow UIUX/binding until Phase 0 + UIUX B1–B4 amendment.
+Agents and PRs now follow AR-designed binding law. Production UX remains frozen until Phase 1 evidence and a scoped Phase 2 issue authorize UIUX B1–B4 and session-shell changes.
 
 ## 4. Conflict graph
 
 ```text
                     ┌──────────────┐
-                    │ Product law  │ audio-first
+                    │ Product law  │ AR-designed
                     └──────┬───────┘
                            │ C1
               ┌────────────┼────────────┐

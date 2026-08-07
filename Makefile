@@ -1,7 +1,7 @@
 # Waykin Validation Makefile
 # Canonical targets for build, test, and validation.
 
-.PHONY: generate build test demo validate validate-collaboration validate-simulator clean-generated check-core-isolation test-core-isolation check-lira-usdz install-skills check-skills
+.PHONY: generate build test demo validate validate-collaboration validate-simulator clean-generated check-core-isolation test-core-isolation check-lira-usdz install-skills check-skills version-check
 
 generate:
 	@rm -rf Waykin.xcodeproj
@@ -44,3 +44,6 @@ install-skills:
 
 check-skills:
 	@./skills/install.sh --check
+
+version-check:
+	@python3 Tools/version.py check

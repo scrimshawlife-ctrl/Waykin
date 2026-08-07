@@ -76,7 +76,7 @@ DEVICE LANE (on frozen lineage only)
 
 BUILD-ON-TOP LANE (only after freeze + device honesty)
 9. Recover PR #245 docs onto freeze tip (SUPPORTING; never merge stale branch)
-10. Phase 0 binding product-law reconciliation
+10. Phase 0 binding product-law reconciliation — issue #252
 11. AR session shell in bounded PRs
 12. State animations incrementally (preserve base mesh)
 ```

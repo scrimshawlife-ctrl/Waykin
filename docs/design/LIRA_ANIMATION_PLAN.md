@@ -27,7 +27,7 @@ procedural_mesh_mid_lod: SHIPPED
 
 ## Purpose
 
-Define how Lira **moves** across session UI and AR without expanding product scope (one companion, audio-first, no multiplayer/marketplace).
+Define how Lira **moves** across session UI and AR without expanding product scope (one companion, AR-designed presentation, no multiplayer/marketplace).
 
 This plan binds animation to existing state machines:
 

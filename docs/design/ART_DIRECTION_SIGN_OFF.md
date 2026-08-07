@@ -28,7 +28,7 @@ The **spectral Living Familiar** generated pack is accepted as the locked visual
 ## Locked constraints
 
 - Product name **Lira**; one companion; no marketplace multi-companion.
-- Audio-first; stills support presence, not gameplay expansion.
+- AR-designed; stills and audio support presence without gameplay expansion.
 - Night climate is indigo-earth Echo, not inverted day mist.
 - AR mid-LOD may remain procedural until sculpted USDZ lands; stills direction is binding for materials and silhouette.
 

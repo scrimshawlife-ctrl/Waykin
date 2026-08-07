@@ -1,6 +1,6 @@
 # Waykin Architecture
 
-Waykin is currently a solo-developer MVP vertical slice, not a platform. The architecture is bounded around one walking loop and five primary runtime systems.
+Waykin is an AR-designed solo-developer MVP vertical slice, not a platform. Movement remains gameplay authority. AR is the primary designed session surface when capability allows, while audio, 2D presence, map, and HUD are supporting presentation channels over the same semantic state.
 
 ## Runtime Flow
 
@@ -36,10 +36,11 @@ SessionMemory + Bond
 - Movement Engine: owns session transitions, elapsed and active time, distance, speed, route points, simulation, and accepted real walking samples.
 - World State: derives serializable session context from local movement signals, Bond, time context, familiarity, energy, and pressure.
 - Event Generator: emits zero or one deterministic semantic event per tick using a seeded, weighted, cooldown-aware configuration.
-- Companion presentation matrix: single source for behavior + relative distance + AR presentation string mapping (`CompanionPresentationMatrix`).
+- Companion presentation matrix: single source for behavior + relative distance + shared presentation mapping (`CompanionPresentationMatrix`).
 - Companion Runtime: applies experience commands (and event overlays) into Lira’s small behavior vocabulary.
 - Audio Experience Layer: maps world events and companion behavior transitions onto the seven semantic cue kinds (priority + cooldown); path soft cues use the same kinds via `PathAudioCoupling` when event/behavior audio is silent.
-- App Audio Adapter: maps cue kinds to bundled produced WAVs, enforces a two-channel playback bound, and owns Apple audio-session lifecycle behavior.
+- AR Presentation Adapter: maps semantic state through `ARWorldCommand` into the primary designed session surface on capable devices without owning gameplay truth.
+- App Audio Adapter: maps cue kinds to bundled produced WAVs, enforces a two-channel playback bound, and owns pocket-safe Apple audio-session lifecycle behavior.
 - Path progress: semantic on-path / strained / offPath presentation (not navigation).
 
 Persistence supports Bond and concise memories. It is not a generalized backend or content platform.

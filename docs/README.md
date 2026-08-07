@@ -42,9 +42,15 @@ Waykin documentation is organized by **authority**, **maturity**, and **evidence
 | Document | Purpose |
 |---|---|
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | High-level engine boundaries and data flow |
+| [`TESTING.md`](TESTING.md) | Test layers, CI map, smoke matrix, definition of done |
+| [`VERSIONING.md`](VERSIONING.md) | Semantic versioning + App Store build numbers |
+| [`SHIP_CHECKLIST.md`](SHIP_CHECKLIST.md) | TestFlight / App Store ship gates |
 | [`AUDIO_ASSET_CONTRACT.md`](AUDIO_ASSET_CONTRACT.md) | Semantic audio cue ownership and app-target asset mapping |
 | [`../DEMO_SCRIPT.md`](../DEMO_SCRIPT.md) | Terminal demo and iOS simulator flows |
 | [`assets/runtime-architecture.svg`](assets/runtime-architecture.svg) | Reusable runtime architecture diagram |
+| [`../CHANGELOG.md`](../CHANGELOG.md) | Keep a Changelog release history |
+| [`../SECURITY.md`](../SECURITY.md) | Vulnerability reporting and security posture |
+| [`../CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md) | Collaborator conduct |
 
 ## Design and UI presentation
 
@@ -91,8 +97,8 @@ A green build does not validate GPS, device audio, battery, thermal behavior, ou
 | [`legal/PRIVACY.md`](legal/PRIVACY.md) | Privacy notice (draft for product review) |
 | [`legal/TERMS.md`](legal/TERMS.md) | Terms of use (draft for product review) |
 | [`legal/SAFETY.md`](legal/SAFETY.md) | Outdoor movement safety brief (in-app) |
-| [`legal/NOTICES.md`](legal/NOTICES.md) | Apache 2.0 and third-party notices |
-| [`../LICENSE`](../LICENSE) | Apache License 2.0 source license |
+| [`legal/NOTICES.md`](legal/NOTICES.md) | Proprietary (Zero State) and third-party notices |
+| [`../LICENSE`](../LICENSE) | Proprietary — property of Zero State |
 
 ## Collaboration
 

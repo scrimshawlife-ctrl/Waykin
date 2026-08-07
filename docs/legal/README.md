@@ -16,8 +16,8 @@ They are not a substitute for counsel. Product owners should review before store
 | [PRIVACY.md](PRIVACY.md) | What data Waykin uses, stores, and does **not** sell |
 | [TERMS.md](TERMS.md) | Terms of use for the software and walking experience |
 | [SAFETY.md](SAFETY.md) | Outdoor movement safety brief (also shown in-app) |
-| [NOTICES.md](NOTICES.md) | Open-source license and third-party notices |
-| [../LICENSE](../../LICENSE) | Apache License 2.0 (repository source code) |
+| [NOTICES.md](NOTICES.md) | Proprietary ownership (Zero State) and third-party notices |
+| [../LICENSE](../../LICENSE) | Proprietary license — property of Zero State |
 
 ## In-app
 

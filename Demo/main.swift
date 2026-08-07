@@ -2,7 +2,7 @@ import Foundation
 import WaykinCore
 
 print("=== WAYKIN SOLO MVP DEMO ===")
-print("Deterministic audio-first walking loop; no GPS or permissions required.\n")
+print("Deterministic AR-designed walking loop with semantic presentation output; no GPS, camera, or permissions required.\n")
 
 let movement = MovementEngine()
 let companion = Companion(id: UUID(), name: "Lira", archetype: "explorer", bondLevel: 12, lastSessionID: nil, memories: [])

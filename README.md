@@ -19,15 +19,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/validate.yml"><img alt="Canonical validation" src="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/validate.yml/badge.svg?branch=main"></a>
-  <a href="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/waykin-ci.yml"><img alt="Waykin CI" src="https://github.com/scrimshawlife-ctrl/Waykin/actions/workflows/waykin-ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/Zero-State-LLC/Waykin/actions/workflows/validate.yml"><img alt="Canonical validation" src="https://github.com/Zero-State-LLC/Waykin/actions/workflows/validate.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/Zero-State-LLC/Waykin/actions/workflows/waykin-ci.yml"><img alt="Waykin CI" src="https://github.com/Zero-State-LLC/Waykin/actions/workflows/waykin-ci.yml/badge.svg?branch=main"></a>
+  <img alt="Version" src="https://img.shields.io/badge/version-0.9.0-43C7B8">
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white">
   <img alt="Platform iOS" src="https://img.shields.io/badge/platform-iOS-0A84FF?logo=apple&logoColor=white">
-  <a href="LICENSE"><img alt="Apache 2.0 License" src="https://img.shields.io/badge/license-Apache--2.0-6E56CF"></a>
+  <a href="LICENSE"><img alt="Proprietary — Zero State" src="https://img.shields.io/badge/license-Proprietary-334155"></a>
 </p>
 
 <p align="center">
-  <strong>An audio-first adaptive walking experience.</strong><br>
+  <strong>An AR-designed adaptive walking experience.</strong><br>
   You move. Lira moves with you. The world responds. Bond grows.
 </p>
 
@@ -48,9 +49,9 @@ The launch product remains intentionally small enough for one developer to under
 | | Pillar | Current contract |
 |---|---|---|
 | 🚶 | **Real movement** | Walking is the launch activity and primary gameplay input. |
-| ✨ | **Persistent companion** | Lira is the single companion and responds through a bounded behavior vocabulary. |
+| ✨ | **AR companion presence** | Lira is the single companion and AR is her primary designed session surface when capability allows. |
 | 🌎 | **Adaptive world** | Seeded events emerge from movement, context, familiarity, energy, and pressure. |
-| 🎧 | **Semantic audio** | Audio communicates presence, discovery, pressure, transition, and Bond. |
+| 🎧 | **Supporting semantic audio** | Audio preserves presence, discovery, pressure, transition, accessibility, and pocket-safe continuity. |
 | 🏃 | **Bounded pursuit** | Tension exists without punishment, coercion, or an enemy-platform expansion. |
 | ❤️ | **Bond** | One persistent progression measure represents the relationship with Lira. |
 
@@ -100,13 +101,14 @@ See the complete [`Current Capability Matrix`](docs/canonical/CURRENT_CAPABILITY
 ### Build and Validate
 
 ```bash
-git clone https://github.com/scrimshawlife-ctrl/Waykin.git
+git clone https://github.com/Zero-State-LLC/Waykin.git
 cd Waykin
 
 make build
 make test
 make validate
 make validate-simulator
+python3 Tools/version.py check
 ```
 
 `make validate-simulator` targets `iPhone 17 Pro` by default. Override it with:
@@ -168,7 +170,7 @@ Future-state specifications are reference material until promoted through an acc
 
 ## Safety and Privacy
 
-Legal and safety documents live under [`docs/legal/`](docs/legal/README.md) (Privacy, Terms, Safety brief, Notices). Source code is [Apache 2.0](LICENSE).
+Legal and safety documents live under [`docs/legal/`](docs/legal/README.md) (Privacy, Terms, Safety brief, Notices). Source code is **proprietary — property of Zero State** ([LICENSE](LICENSE)).
 
 - Waykin is not safety equipment or medical advice.
 - Location is requested only during an active real walk.
@@ -199,6 +201,24 @@ make test              # Swift package tests (count changes over time)
 
 Do not claim GPS, outdoor audio loudness, battery, thermal, outdoor usability, interruption recovery, or outdoor AR quality without direct device evidence on a named build.
 
+## Versioning and release
+
+Waykin uses semantic versioning. Current cut: **`0.9.0`** (build from `BUILD`).
+
+| Artifact | Role |
+|---|---|
+| `VERSION` / `BUILD` | Single source of truth |
+| `App/Info.plist` + `project.yml` | iOS marketing version + build |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+| [`docs/VERSIONING.md`](docs/VERSIONING.md) | Bump policy and commands |
+| [`docs/SHIP_CHECKLIST.md`](docs/SHIP_CHECKLIST.md) | TestFlight / App Store gates |
+
+```bash
+python3 Tools/version.py show
+python3 Tools/version.py check
+python3 Tools/version.py bump patch
+```
+
 ## Roadmap
 
 Waykin progresses by proving one bounded layer before promoting the next:
@@ -208,7 +228,7 @@ Waykin progresses by proving one bounded layer before promoting the next:
 3. **Experience tuning** — outdoor balance of produced cues and event weights from device receipts (engineering tones already replaced).
 4. **Future systems** — Watch / AI Directors only through explicit promotion after MVP evidence gates.
 
-See [`ROADMAP.md`](ROADMAP.md) for milestones, status labels, and promotion gates.
+See [`ROADMAP.md`](ROADMAP.md) for milestones, status labels, and promotion gates. Ship readiness: [`docs/SHIP_CHECKLIST.md`](docs/SHIP_CHECKLIST.md).
 
 ## Repository Guide
 
@@ -264,4 +284,7 @@ Start with [`CONTRIBUTING.md`](CONTRIBUTING.md). Coding agents must also read [`
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE).
+**Proprietary** — Copyright (c) 2024–2026 **Zero State** / **Zero State LLC**.  
+All rights reserved. Waykin is the property of Zero State. No open-source license is granted.
+
+See [`LICENSE`](LICENSE) and [`docs/legal/`](docs/legal/README.md). Contact Zero State for commercial licensing.

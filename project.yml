@@ -79,7 +79,7 @@ targets:
           UIColorName: LaunchBackground
           UIImageName: Lira_Glyph_Dawn
           UIImageRespectsSafeAreaInsets: true
-        # Audio-first: cues must survive screen lock / phone-in-pocket during a walk.
+        # Pocket-safe supporting audio: cues must survive screen lock / phone-in-pocket during a walk.
         UIBackgroundModes: [audio]
     dependencies:
       - package: Waykin

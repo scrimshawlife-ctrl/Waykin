@@ -9,16 +9,16 @@ status: DRAFT_FOR_PRODUCT_REVIEW
 
 **Last updated:** 2026-07-20
 
-These terms govern use of the **Waykin** software as provided by this open-source project. If you redistribute or ship a branded build, replace or extend these terms as required by your counsel and store policies.
+These terms govern use of the **Waykin** software, which is **proprietary property of Zero State**. If Zero State redistributes or ships a branded build, replace or extend these terms as required by counsel and store policies.
 
-## 1. License to the code
+## 1. Ownership and license to the code
 
-Source code is licensed under the **Apache License 2.0** — see [LICENSE](../../LICENSE) and [NOTICES.md](NOTICES.md).  
-That license governs **copyright in the software**, not your walking activity or any local data you generate.
+Waykin is the **property of Zero State**. Source code and related materials are **proprietary** — see [LICENSE](../../LICENSE) and [NOTICES.md](NOTICES.md).  
+No open-source license is granted. Ownership of the software does not include ownership of your walking activity or any local data you generate on your device.
 
 ## 2. The experience
 
-Waykin is an **audio-first adaptive walking experience** with a companion (Lira). It is entertainment / experiential software.
+Waykin is an **AR-designed adaptive walking experience** with a companion (Lira). AR is a presentation surface, not navigation or safety authority, and the experience remains entertainment / experiential software.
 
 **Not medical advice.** Waykin is not a medical device, not a diagnostic tool, and not a substitute for professional advice. Do not rely on it for health, navigation safety, or emergency response.
 
@@ -34,7 +34,7 @@ You may pause or end a session at any time; stopping is never framed as failure.
 You agree not to:
 
 - use the software to harass, harm, or endanger others;
-- reverse-engineer proprietary platform SDKs beyond what the open-source license and applicable law allow;
+- reverse-engineer Waykin or proprietary platform SDKs beyond what applicable law expressly allows;
 - misrepresent experimental AR or outdoor quality as certified without evidence;
 - use the software where prohibited by law.
 
@@ -44,11 +44,11 @@ MVP local builds may operate **without** a Waykin account. Future online feature
 
 ## 6. Disclaimer of warranties
 
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, and noninfringement, to the maximum extent permitted by law. See also Apache License 2.0 §7–8.
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, and noninfringement, to the maximum extent permitted by law. See also [LICENSE](../../LICENSE).
 
 ## 7. Limitation of liability
 
-To the maximum extent permitted by law, contributors and copyright holders are not liable for any damages arising from walking outdoors, AR use, location inaccuracy, audio distraction, or reliance on the software. You assume the risks of outdoor movement.
+To the maximum extent permitted by law, Zero State and other copyright holders are not liable for any damages arising from walking outdoors, AR use, location inaccuracy, audio distraction, or reliance on the software. You assume the risks of outdoor movement.
 
 ## 8. Third-party platforms
 
@@ -60,5 +60,5 @@ Terms may be updated in-repo. Continued use after a published update constitutes
 
 ## 10. Contact
 
-Project issues: GitHub repository for Waykin.  
-Commercial operators must provide a support contact before public distribution.
+Project issues: GitHub repository for Waykin (owner: Zero State).  
+Licensing and commercial inquiries: Zero State via the repository maintainers.

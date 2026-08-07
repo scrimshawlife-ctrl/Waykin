@@ -253,7 +253,7 @@ enum LegalContent {
     static let terms = """
     Waykin Terms (summary)
 
-    Software is Apache 2.0 licensed (see Notices). This is an experiential walking app, not medical advice and not certified turn-by-turn navigation.
+    Software is proprietary property of Zero State (see Notices / LICENSE). This is an experiential walking app, not medical advice and not certified turn-by-turn navigation.
 
     You are responsible for outdoor safety. You may stop anytime.
 
@@ -275,7 +275,7 @@ enum LegalContent {
     static let notices = """
     Notices
 
-    Waykin source is licensed under Apache License 2.0 (LICENSE file).
+    Waykin is proprietary property of Zero State (LICENSE file).
 
     Apple frameworks (SwiftUI, CoreLocation, MapKit, ARKit, RealityKit, HealthKit, AVFoundation) are subject to Apple’s agreements.
 

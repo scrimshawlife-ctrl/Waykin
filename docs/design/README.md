@@ -15,7 +15,7 @@ Visual system imports and production follow-ons for the app repository.
 
 **Authority:** these docs **do not** override binding product law or AR MVP freeze. Phase 0 binding edits are a separate PR. Implementation waits for freeze + device honesty (see CONTINUATION_PLAN).
 
-**Operator direction (intent):** design for **AR** as primary session surface when capable; movement remains gameplay authority; audio is supporting/fallback. Binding docs may still say audio-first until Phase 0.
+**Operator direction (intent):** design for **AR** as primary session surface when capable; movement remains gameplay authority; audio is supporting/fallback. Phase 0 promotes this identity into binding docs.
 
 ## UI product vs engineering practice
 
